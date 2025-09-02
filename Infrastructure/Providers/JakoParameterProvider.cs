@@ -33,7 +33,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
-                AfterWash = p.sampleDescription!.Contains("1 Wash")==true? 1: 3,
+                AfterWash = p.sampleDescription!.Contains("1 Wash")==true? 1: 5,
                 Ballast = (_helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!)) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)"
@@ -45,7 +45,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!)=="Cotton"? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = (p.sampleDescription!.Contains("Rain")|| p.sampleDescription.Contains("Padding")||p.sampleDescription.Contains("Down Jackets"))==true?p.DCProcedure:"Tumble Dry",
                 Temperature = (p.sampleDescription!.Contains("Rain") || p.sampleDescription.Contains("Padding") || p.sampleDescription.Contains("Down Jackets")) == true ? (p.WashingProcedure!.Contains("4") ? "40" : "30") :"40",
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 5,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton"? "1400 rpm, automatic time 1:50h"
                 : _helper.MaxComposition(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash"
@@ -61,7 +61,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.sampleDescription!.Contains("Dyed")==true?"170":"130",
+                Temperature = p.sampleDescription!.Contains("Sublimation") ==true?"130":"170",
                 Program = "30",
             },
             ("Print Durability For JAKO", _) => new WetParameterIso
@@ -102,19 +102,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string Menu, string Item, string? Lv,string? Lt), string?> _map = new()
         {
-            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Vegetable")] = "3000r",
-            [("RegularFabric(JAKO)", "Pilling Resistance", null, "Synthetic")] = "7000r",
-            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Synthetic")] = "7000r",
+            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Vegetable")] = "Cycle: 3000r",
+            [("RegularFabric(JAKO)", "Pilling Resistance", "Polyester", "Synthetic")] = "Cycle: 7000r",
+            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Synthetic")] = "Cycle: 7000r",
             [("RegularFabric(JAKO)", "Pilling Resistance", null, null)] = null,
-            [("RegularFabric(JAKO)", "CF to Light", null, null)] = "L-5",
-            [("RegularFabric(JAKO)", "Bursting Strength", null, null)] = "350KPa",
-            [("RegularFabric(JAKO)", "Tensile Strength", null, null)] = "250N",
-            [("RegularFabric(JAKO)", "Tear Strength", null, null)] = "15N",
-            [("RegularFabric(JAKO)", "Extension and Recovery", null, null)] = "Load 3daN,5 Cycles",
-            [("RegularFabric(JAKO)", "Water Vapour Transmission", null, null)] = ">g/m²/24 hours value in TP",
-            [("RegularFabric(JAKO)", "Air Permeability", null, null)] = "< 5 L/m²s",
-            [("RegularFabric(JAKO)", "Snagging Resistance", null, null)] = "600r",
-            [("RegularFabric(JAKO)", "Abrasion Resistance", null, null)] = "9KPa,30000r",
+            [("RegularFabric(JAKO)", "Seam Slippage", null, null)] = "Load: 16N",
+            [("RegularFabric(JAKO)", "CF to Light", null, null)] = "L-4",
+            [("RegularFabric(JAKO)", "Bursting Strength", null, null)] = "Diameter: 30.5mm (Test Area: 7.3cm²)",
+            [("RegularFabric(JAKO)", "Tensile Strength", null, null)] = "Gauge: 75mm",
+            [("RegularFabric(JAKO)", "Extension and Recovery", null, null)] = "Load: 3daN,Cycle: 5",
+            [("RegularFabric(JAKO)", "Air Permeability", null, null)] = "Area 20cm², P: 100Pa",
+            [("RegularFabric(JAKO)", "Snagging Resistance", null, null)] = "Cycle: 600r",
+            [("RegularFabric(JAKO)", "Abrasion Resistance", null, null)] = "Load: 9KPa,Cycle: 30000r",
+            [("RegularFabric(JAKO)", "Water Repellency-Spray Test", null, null)] = "Original & After wash",
+            [("RegularFabric(JAKO)", "Spriality/Skewing", null, null)] = "Same as Appearance",
+            [("RegularFabric(JAKO)", "CF to Chlorinated Water",null,null)] = "Confirmation with CS is required",
         };
 
         private static string? GetParameter(string menu, string item, string? lv,string? lt)

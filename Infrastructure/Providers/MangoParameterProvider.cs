@@ -72,18 +72,18 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string Menu, string Item, string? Lv), string?> _map = new()
         {
-            [("Knit(Mango)", "Pilling Resistance", "Vegetable")] = "14400r",
-            [("Knit(Mango)", "Pilling Resistance", "Man-made")] = "10800r",
-            [("Knit(Mango)", "Pilling Resistance", "Synthetic")] = "10800r",
-            [("Knit(Mango)", "Pilling Resistance", "Animal")] = "7200r",
+            [("Knit(Mango)", "Pilling Resistance", "Vegetable")] = "Cycle: 14400r",
+            [("Knit(Mango)", "Pilling Resistance", "Man-made")] = "Cycle: 10800r",
+            [("Knit(Mango)", "Pilling Resistance", "Synthetic")] = "Cycle: 10800r",
+            [("Knit(Mango)", "Pilling Resistance", "Animal")] = "Cycle: 7200r",
             [("Knit(Mango)", "Pilling Resistance", null)] = null,
-            [("Knit(Mango)", "CF to Light", null)] = "L-5",
+            [("Knit(Mango)", "CF to Light", null)] = "Light: L-5",
 
-            [("Woven(Mango)", "Water Resistance-Hydrostatic Pressure", null)] = "90cm H2O",
-            [("Woven(Mango)", "CF to Light", null)] = "L-5",
-            [("Woven(Mango)", "Snagging Resistance", null)] = "600r",
-            [("Woven(Mango)", "Pilling Resistance", null)] = "2000r",
-            [("Woven(Mango)", "Abrasion Resistance", null)] = "9KPa,15000r",
+            [("Woven(Mango)", "Water Resistance-Hydrostatic Pressure", null)] = "Pressure: 90cm H2O",
+            [("Woven(Mango)", "CF to Light", null)] = "Light: L-5",
+            [("Woven(Mango)", "Snagging Resistance", null)] = "Cycle: 7600r",
+            [("Woven(Mango)", "Pilling Resistance", null)] = "Cycle: 72000r",
+            [("Woven(Mango)", "Abrasion Resistance", null)] = "Load: 9KPa,Cycle: 15000r",
         };
 
         private static string? GetParameter(string menu, string item, string? lv)

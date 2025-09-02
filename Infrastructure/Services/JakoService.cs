@@ -80,23 +80,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 
         private static ParamDto CreateResponse(string itemName, WetParameterIso p, string Param) => itemName switch
         {
-            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, null, null, null, null, null, null),
-            "CF to Hot Pressing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, null, null, null, null, null, null, null, null, null),
-            "Appearance" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null, null),
-            "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null, null),
-            "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, Param, null, null, null),
-            "Print Durability For JAKO" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, null, null, p.DryProcedure, null, null, null, null, null, null),
-            "Heat Press Test For JAKO" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, null, null, null, null, null, null, null, null, null),
-            "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, Param, null, null, null),
-            "Abrasion Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, Param, null, null, null),
-            "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, Param, null,null),
-            "Bursting Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Tensile Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Extension and Recovery" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Tear Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Air Permeability" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Water Vapour Transmission" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, null, Param),
-            _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null, null)
+            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, null, null, null, null, null),
+            "CF to Hot Pressing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, null, null, null, null, null, null, null, null),
+            "Appearance" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, p.AfterWash, null),
+            "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null),
+            "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Print Durability For JAKO" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, null, null, p.DryProcedure, null, null, null, null, null),
+            "Heat Press Test For JAKO" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, null, null, null, null, null, null, null, null),
+            "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Abrasion Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Seam Slippage" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Bursting Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Tensile Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Extension and Recovery" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Air Permeability" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Water Repellency-Spray Test" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Spriality/Skewing" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "CF to Chlorinated Water" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };
     }
 }

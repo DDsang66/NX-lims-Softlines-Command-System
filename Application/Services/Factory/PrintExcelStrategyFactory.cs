@@ -6,8 +6,8 @@ using System.Web;
 using System.IO;
 using OfficeOpenXml;
 using System.Configuration;
-using NX_lims_Softlines_Command_System.Application.Interfaces;
-using NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExcelMethod;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod;
+using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 
 namespace NX_lims_Softlines_Command_System.Tools.Factory
 {

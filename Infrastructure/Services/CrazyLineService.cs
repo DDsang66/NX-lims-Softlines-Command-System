@@ -76,13 +76,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         //返回前端需要的实体对象
         private static ParamDto CreateResponse(string itemName, WetParameterAatcc p, string Param) => itemName switch
         {
-            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null, null),
-            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", null, null, null, p.SpecialCareInstruction, p.DryProcedure, null, null, p.Cycle, null, null, null),
-            "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null, null),
-            "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, Param, null, null, null),
-            "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, Param, null, null, null),
-            "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, Param, null, null),
-            _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null, null)
+            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
+            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", null, null, null, p.SpecialCareInstruction, p.DryProcedure, null, null, p.Cycle, null, null),
+            "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null),
+            "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Spriality/Skewing" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };
 
     }

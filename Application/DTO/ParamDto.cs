@@ -12,8 +12,7 @@
         string? WashingProcedure,
         string? IsSensitive,
         string? Cycle,
-        string? Light,
-        string? HydrostaticPressure,
+        int? AfterWash,
         string? Param
         );
 }

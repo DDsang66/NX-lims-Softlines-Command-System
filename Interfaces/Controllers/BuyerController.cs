@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Application.Interfaces;
+using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Models;
 using System.Collections.Generic;

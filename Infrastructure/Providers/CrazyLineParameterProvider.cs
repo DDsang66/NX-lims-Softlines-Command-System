@@ -25,7 +25,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure.Contains("Cold") == true ? "88" : "105",
                 Program = p.WashingProcedure.Contains("Cold") == true ? "1B" : "1A",
-                SteelBallNum = 10
+                SteelBallNum = 10,
+                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("CF to Washing", _, _) => new WetParameterAatcc
             {
@@ -46,6 +47,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("DS to Washing", _, _) => new WetParameterAatcc
             {
@@ -64,6 +66,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
+                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
@@ -123,13 +126,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string Menu, string Item), string?> _map = new()
         {
-            [("Knit(CrazyLine)", "Pilling Resistance")] = "30min",
-            [("Knit(CrazyLine)", "CF to Light")] = "20 AFU",
-            [("Knit(CrazyLine)", "Snagging Resistance")] = "600 Revolutions",
+            [("Knit(CrazyLine)", "Pilling Resistance")] = "Time: 30min",
+            [("Knit(CrazyLine)", "CF to Light")] = "Light: 20 AFU",
+            [("Knit(CrazyLine)", "Snagging Resistance")] = "Cycle: 600 Revolutions",
+            [("Knit(CrazyLine)", "Spriality/Skewing")] = "Same as DS to Washing",
 
-            [("Woven(CrazyLine)", "Snagging Resistance")] = "600 Revolutions",
-            [("Woven(CrazyLine)", "CF to Light")] = "20 AFU",
-            [("Woven(CrazyLine)", "Pilling Resistance")] = "30min",
+            [("Woven(CrazyLine)", "Snagging Resistance")] = "Cycle: 600 Revolutions",
+            [("Woven(CrazyLine)", "CF to Light")] = "Light: 20 AFU",
+            [("Woven(CrazyLine)", "Pilling Resistance")] = "Time: 30min",
+            [("Woven(CrazyLine)", "Spriality/Skewing")] = "Same as DS to Washing",
         };
 
         private static string? GetParameter(string menu, string item)
