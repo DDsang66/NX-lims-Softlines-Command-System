@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.FileSystemGlobbing;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Interfaces;
+using NX_lims_Softlines_Command_System.Domain.Model;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Models;
 using OfficeOpenXml;
 using System.Text.RegularExpressions;
@@ -9,8 +11,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExc
 {
     public class PrintCrazyLineExcel : IPrintExcelStrategy
     {
-        private readonly LabDbContext _db;
-        public PrintCrazyLineExcel(LabDbContext db)
+        private readonly LabDbContextSec _db;
+        public PrintCrazyLineExcel(LabDbContextSec db)
         {
             _db = db;
         }
@@ -474,16 +476,16 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExc
                 // 5) 其余参数
                 if (dto.Type == "Wet")
                 {
-                    var wp = _db.WetParameters
-                                .FirstOrDefault(p => p.Item == itemName && p.OrderNumber == reportNo);
-                    var extraMap = WetExtraMap.GetValueOrDefault(itemName, (wp, dto, reportNo) => new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>())(wp,dto, reportNo);
+                    var wp = _db.WetParameterAATCC
+                                .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
+                    var extraMap = WetExtraMap.GetValueOrDefault(itemName, (wp, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>())(wp,dto, reportNo);
 
                     foreach (var kv in extraMap)
                     {
                         // 如果 wp 为 null，提供一个默认值或者跳过某些操作
                         if (wp == null)
                         {
-                            var defaultWp = new WetParameters();
+                            var defaultWp = new WetParameterAatcc();
                             ws.Cells[kv.Key].Value = kv.Value(defaultWp, dto, reportNo);
                         }
                         else
@@ -569,21 +571,21 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExc
             ["Samll Parts"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
         };
 
-        private static readonly Dictionary<string, Func<WetParameters, CheckListDto, string, Dictionary<string, Func<WetParameters, CheckListDto, string, string>>>> WetExtraMap = new()
+        private static readonly Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>>> WetExtraMap = new()
         {
             ["DS to Washing"] = (w ,dto, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameters,CheckListDto, string, string>>();
-                if (w.WashingProcedure.Contains("Machine"))
+                var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
+                if (w.WashingProcedure!.Contains("Machine"))
                 {
                     map["P1"] = (w, dto, reportNo) => reportNo;
                     map["A3"] = (w, dto, reportNo) => "AATCC TM 135-2018t";
                     map["A5"] = (w, dto, reportNo) => w.Cycle + " Cycle";
-                    map["V4"] = (w, dto, reportNo) => w.Temperature;
-                    map["E4"] = (w, dto, reportNo) => w.Program;
-                    map["M5"] = (w, dto, reportNo) => w.DryProcedure;
-                    map["K4"] = (w, dto, reportNo) => w.DryCondition;
-                    map["A8"] = (w, dto, reportNo) => w.SCI ?? null;
+                    map["V4"] = (w, dto, reportNo) => w.Temperature!;
+                    map["E4"] = (w, dto, reportNo) => w.Program!;
+                    map["M5"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["K4"] = (w, dto, reportNo) => w.DryCondition!;
+                    map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
 
                 }
                 else if (w.WashingProcedure.Contains("Hand"))
@@ -592,62 +594,62 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExc
                     map["A3"] = (w, dto, reportNo) => 
                     (dto.sampleDescription!.Contains("Socks")|| dto.sampleDescription!.Contains("Gloves")|| dto.sampleDescription!.Contains("Cap")) 
                     ==true? "AATCC TM 150-2018t/AATCC TS006" : "AATCC TM 135-2018t/AATCC TS006";
-                    map["H7"] = (w, dto, reportNo) => w.Temperature;
-                    map["M7"] = (w, dto, reportNo) => w.DryProcedure;
-                    map["A8"] = (w, dto, reportNo) => w.SCI ?? null;
+                    map["H7"] = (w, dto, reportNo) => w.Temperature!;
+                    map["M7"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
                 }
                 return map;
             },
             ["DS to Dry-clean"] = (w, dto, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>();
+                var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
                 if (dto.sampleDescription?.Contains("Fabric") == true)
                 {
                     map["M1"] = (w, dto, reportNo) => reportNo;
                     map["A3"] = (w, dto, reportNo) => "AATCC TM158-1978e10(2016)e";
-                    map["F4"] = (w, dto, reportNo) => w.IsSensitive == "Y" ? "Sensitive" : "Normal";
+                    map["F4"] = (w, dto, reportNo) => w.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else 
                 {
                     map["P1"] = (w, dto, reportNo) => reportNo;
                     map["A3"] = (w, dto, reportNo) => "AATCC TM158-1978e10(2016)e";
-                    map["G4"] = (w, dto, reportNo) => w.IsSensitive == "Y" ? "Sensitive" : "Normal";
+                    map["G4"] = (w, dto, reportNo) => w.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 return map;
             },
-            ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>
+            ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
             {
                 ["E1"] = (w, dto, reportNo) =>reportNo,
                 ["A3"] = (w, dto, reportNo) => "AATCC TM61-2013e(2020)e2",
-                ["B4"] = (w, dto, reportNo) => w!.Program,
-                ["F4"] = (w, dto, reportNo) => w!.Temperature,
-                ["H5"] = (w, dto, reportNo) => w!.SteelBall.ToString()!,
-                ["J5"] = (w, dto, reportNo) => w!.WashingProcedure.Contains("Hand Wash Cold") ? "Rubbow" : "Steel"
+                ["B4"] = (w, dto, reportNo) => w!.Program!,
+                ["F4"] = (w, dto, reportNo) => w!.Temperature!,
+                ["H5"] = (w, dto, reportNo) => w!.SteelBallNum.ToString()!,
+                ["J5"] = (w, dto, reportNo) => w!.WashingProcedure!.Contains("Hand Wash Cold") ? "Rubbow" : "Steel"
             },
-            ["CF to Rubbing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>
+            ["CF to Rubbing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
             {
                 ["E1"] = (w, dto, reportNo) => reportNo,
                 ["A20"] = (w, dto, reportNo) => "AATCC TM8-2016e(2022)e"
 
             },
-            ["CF to Light"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>
+            ["CF to Light"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
             {
                 ["E1"] = (w, dto, reportNo) => reportNo,
                 ["A28"] = (w, dto, reportNo) => "AATCC TM16.3-2020",
                 ["B32"] = (w, dto, reportNo) => "20"
             },
-            ["CF to Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>
+            ["CF to Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => "AATCC TM15-2021e"
 
             },
-            ["CF to Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>
+            ["CF to Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A25"] = (w, dto, reportNo) => "AATCC TM107-2022e",
             },
-            ["CF to Dry-clean"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameters, CheckListDto, string, string>>
+            ["CF to Dry-clean"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A37"] = (w, dto, reportNo) => "AATCC TM132-2004e3(2013)e3",

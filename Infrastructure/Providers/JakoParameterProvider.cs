@@ -33,6 +33,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
+                AfterWash = p.sampleDescription!.Contains("1 Wash")==true? 1: 3,
                 Ballast = (_helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!)) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)"
@@ -44,7 +45,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!)=="Cotton"? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = (p.sampleDescription!.Contains("Rain")|| p.sampleDescription.Contains("Padding")||p.sampleDescription.Contains("Down Jackets"))==true?p.DCProcedure:"Tumble Dry",
                 Temperature = (p.sampleDescription!.Contains("Rain") || p.sampleDescription.Contains("Padding") || p.sampleDescription.Contains("Down Jackets")) == true ? (p.WashingProcedure!.Contains("4") ? "40" : "30") :"40",
-                AfterWash = 3,
+                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton"? "1400 rpm, automatic time 1:50h"
                 : _helper.MaxComposition(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash"

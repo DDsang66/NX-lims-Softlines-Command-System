@@ -27,12 +27,6 @@ namespace NX_lims_Softlines_Command_System.Controllers
                 // 获取买家信息
                 string buyer = jsonData.buyer;
 
-                // 获取打印策略
-                //IPrintExcelStrategy printStrategy = PrintExcelStrategyFactory.GetStrategy(buyer);
-
-                //// 异步处理 JSON 数据
-                //printStrategy.PrintJsonData(jsonData, packageWet, packagePhysics);
-
                 // 异步保存 Excel 文件
                 await Task.Run(() => packageWet.Save());
                 await Task.Run(() => packagePhysics.Save());

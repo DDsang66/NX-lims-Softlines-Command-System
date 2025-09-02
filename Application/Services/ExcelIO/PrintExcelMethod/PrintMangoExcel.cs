@@ -7,14 +7,16 @@ using NX_lims_Softlines_Command_System.Application.Interfaces;
 using static NX_lims_Softlines_Command_System.Tools.Factory.PrintExcelStrategyFactory;
 using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.Drawing;
+using NX_lims_Softlines_Command_System.Domain.Model;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExcelMethod
 {
 
     public sealed class PrintMangoExcel : IPrintExcelStrategy
     {
-        private readonly LabDbContext _db;
-        public PrintMangoExcel(LabDbContext db)
+        private readonly LabDbContextSec _db;
+        public PrintMangoExcel(LabDbContextSec db)
         {
             _db = db;
         }
@@ -352,8 +354,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExc
                 // 5) 其余参数
                 if (dto.Type == "Wet")
                 {
-                    var wp = _db.WetParameters
-                                .FirstOrDefault(p => p.Item == itemName && p.OrderNumber == reportNo);
+                    var wp = _db.WetParameterISO
+                                .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
                     var extraMap = WetExtraMap.GetValueOrDefault(itemName, new());
 
                     foreach (var kv in extraMap)
@@ -361,7 +363,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExc
                         // 如果 wp 为 null，提供一个默认值或者跳过某些操作
                         if (wp == null)
                         {
-                            var defaultWp = new WetParameters();
+                            var defaultWp = new WetParameterIso();
                             ws.Cells[kv.Key].Value = kv.Value(defaultWp, dto, reportNo);
                         }
                         else
@@ -423,31 +425,31 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelIO.PrintExc
         };
 
         // 其余Wet固定/动态参数  →  (单元格, 取值Func)  
-        private static readonly Dictionary<string, Dictionary<string, Func<WetParameters, CheckListDto, string, string>>> WetExtraMap = new()
+        private static readonly Dictionary<string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>> WetExtraMap = new()
         {
             ["DS to Washing"] = new()
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR3"] = (w, dto, reportNo) => (dto.Standard ?? "").Replace(",", " / ").TrimEnd(' ', '/'),
-                ["AX4"] = (w, dto, reportNo) => w.WashingProcedure,
-                ["BY4"] = (w, dto, reportNo) => w.Temperature,
-                ["BG5"] = (w, dto, reportNo) => w.Ballast,
-                ["BI6"] = (w, dto, reportNo) => w.DryProcedure,
-                ["AR11"] =(w, dto, reportNo) => w.SCI
+                ["AX4"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["BY4"] = (w, dto, reportNo) => w.Temperature!,
+                ["BG5"] = (w, dto, reportNo) => w.Ballast!,
+                ["BI6"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["AR11"] =(w, dto, reportNo) => w.SpecialCareInstruction ?? null
             },
             ["DS to Dry-clean"] = new()
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR3"] = (w, dto, reportNo) => (dto.Standard ?? "").Replace(",", " / ").TrimEnd(' ', '/'),
-                ["AW4"] = (w, dto, reportNo) => w!.IsSensitive == "Y" ? "Sensitive" : "Normal"
+                ["AW4"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal"
             },
             ["CF to Washing"] = new()
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => "(ISO 105 C06:2010)",
-                ["B4"] = (w, dto, reportNo) => w.Program,
-                ["E4"] = (w, dto, reportNo) => w.Temperature,
-                ["J5"] = (w, dto, reportNo) => w.SteelBall.ToString()!,
+                ["B4"] = (w, dto, reportNo) => w.Program!,
+                ["E4"] = (w, dto, reportNo) => w.Temperature!,
+                ["J5"] = (w, dto, reportNo) => w.SteelBallNum.ToString()!,
             },
             ["CF to Rubbing"] = new()
             {

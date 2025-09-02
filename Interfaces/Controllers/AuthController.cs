@@ -4,9 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Tools;
 using NX_lims_Softlines_Command_System.Domain.Model;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Models;
-
-
 using System.IdentityModel.Tokens.Jwt;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
@@ -16,8 +15,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
     public class AuthController : ControllerBase
     {
         private readonly JwtService _jwt;
-        private readonly LabDbContext _db;
-        public AuthController(JwtService jwt, LabDbContext db)
+        private readonly LabDbContextSec _db;
+        public AuthController(JwtService jwt, LabDbContextSec db)
         {
             _jwt = jwt;
             _db = db;
@@ -30,8 +29,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             if (user == null) return Unauthorized("账号或密码错误");
 
             // 2. 发令牌
-            var tokens = _jwt.GenerateTokens(user.Id.ToString());
-            string reviewer = user.Name!;
+            var tokens = _jwt.GenerateTokens(user.UserId.ToString());
+            string reviewer = user.NickName!;
             var response = new
             {
                 tokens = tokens,
@@ -72,12 +71,13 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 // 使用雪花算法生成唯一 ID
                 var snowflake = new SnowflakeIdGenerator();
                 long userId = snowflake.NextId();
-                var newUser = new Users
+                var newUser = new User
                 {
-                    Id = userId,
+                    UserId = userId.ToString(),
                     UserName = req.Email,
                     PassWord = hasPwd,
-                    Name = req.NickName,
+                    NickName = req.NickName,
+                    EmployeeId = "Default"
 
                 };
                 _db.Add(newUser);
@@ -92,13 +92,12 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
         }
 
-        private Users? ValidateUser(string username, string pwd)
+        private User? ValidateUser(string username, string pwd)
         {
             PasswordHasher ph = new PasswordHasher();
-            string hasPwd = ph.HashPassword(pwd);
             var user = _db.User.FirstOrDefault(u => u.UserName == username);
             if (user == null) return null;
-            bool isPasswordCorrect = /*(hasPwd == user!.PassWord) ? true : false*/ true;
+            bool isPasswordCorrect = ph.VerifyHashedPassword(user.PassWord, pwd) == PasswordVerificationResult.Success;
             if (isPasswordCorrect)
             {
                 return user!;

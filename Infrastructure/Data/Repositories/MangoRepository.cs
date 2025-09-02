@@ -5,6 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
+using NX_lims_Softlines_Command_System.Domain.Model;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 {
@@ -12,9 +14,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
     //与数据库交互
     public class MangoRepository : IRepository
     {
-        private readonly LabDbContext _db;
+        private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public MangoRepository(LabDbContext db,FiberContentHelper helper)
+        public MangoRepository(LabDbContextSec db,FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -28,11 +30,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 var Menu = await _db.Menu.FirstOrDefaultAsync(m => m.MenuName == menuName);
                 if (Menu == null) return null;
 
-                var properties = typeof(Menus).GetProperties();
+                var properties = typeof(Menu).GetProperties();
                 var standards = properties
-                    .Where(p => p.Name.StartsWith("Item"))
-                    .Select(p => p.GetValue(Menu)?.ToString())
-                    .Where(v => !string.IsNullOrEmpty(v))
+                    .Where(p => p.Name.StartsWith("StandardIndex"))
+                    .Select(p => p.GetValue(Menu))
+                    .OfType<int?>()
+                    .Where(v => v.HasValue)
                     .ToList();
 
                 var checkLists = new List<CheckListDto>();
@@ -40,8 +43,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 {
                     try
                     {
-                        int itemID =  _db.Standards.FirstOrDefault(s => s.Value_data == standard)!.ItemID;
-
+                        int? itemID = _db.Standard.FirstOrDefault(s => s.StandardId == standard)!.ItemIndex;
+                        string? standardCore = _db.Standard.FirstOrDefault(s => s.StandardId == standard)!.StandardCode;
                         var item = await _db.Item.FindAsync(itemID);
                         if (item != null)
                         {
@@ -49,7 +52,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                             {
                                 MenuName = menuName,
                                 ItemName = item.ItemName,
-                                Standard = standard,
+                                Standard = standardCore,
                                 Type = item.Type,
                                 Parameter = null
                             });
@@ -78,29 +81,29 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" }
                  .Contains(itemName))
                 return default(T);
-            var Param = await _db.WetParameters
-                              .FirstOrDefaultAsync(p => p.Item == itemName && p.OrderNumber == input.OrderNumber);
+            var Param = await _db.WetParameterISO
+                              .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
             MangoParameterProvider wetParam = new MangoParameterProvider(_helper);
             if (Param != null) {
                 var updatedParam = wetParam.CreateWetParameters(input);
-                updatedParam.ID = Param.ID;
+                updatedParam.ParamId = Param.ParamId;
                 _db.Entry(Param).CurrentValues.SetValues(updatedParam);
                 await _db.SaveChangesAsync();
                 Param = updatedParam;
             }
             else
             {
-                var newParam = new WetParameters//没有找到对应的对象，随即构造一个
+                var newParam = new WetParameterIso//没有找到对应的对象，随即构造一个
                 {
                     StandardType = "ISO",
-                    IsSensitive = "N",
-                    OrderNumber = input.OrderNumber,
-                    Item = itemName
+                    Sensitive = "N",
+                    ReportNumber = input.OrderNumber,
+                    ContactItem = itemName
                 };
                 Param = wetParam.CreateWetParameters(input);
-                foreach (var prop in typeof(WetParameters).GetProperties())
+                foreach (var prop in typeof(WetParameterIso).GetProperties())
                 {
-                    if (prop.CanWrite && prop.Name != "ID") // 跳过主键字段
+                    if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
                     {
                         var value = prop.GetValue(Param);
                         if (value != null)
@@ -110,7 +113,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     }
                 }
 
-                await _db.WetParameters.AddAsync(newParam);
+                await _db.WetParameterISO.AddAsync(newParam);
                 await _db.SaveChangesAsync();
                 Param = newParam;
             }

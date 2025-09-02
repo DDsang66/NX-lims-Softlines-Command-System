@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
@@ -48,7 +49,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                 var dtos = new List<object>();
                 foreach (var item in itemNames!)
                 {
-                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameters>(
+                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterAatcc>(
                         new ParamsInput
                         {
                             WashingProcedure = infoDto.washingProcedure,
@@ -62,7 +63,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             ItemName = item
                         }, item);
                     string? param = await helper.CreateParameters(infoDto, item)!;
-                    dtos.Add(CreateResponse(item, wetParams ?? new WetParameters { Item = item }, param!));
+                    dtos.Add(CreateResponse(item, wetParams ?? new WetParameterAatcc {ContactItem = item }, param!));
                 }
                 return dtos;
             }
@@ -73,15 +74,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             return null;
         }
         //返回前端需要的实体对象
-        private static ParamDto CreateResponse(string itemName, WetParameters p, string Param) => itemName switch
+        private static ParamDto CreateResponse(string itemName, WetParameterAatcc p, string Param) => itemName switch
         {
-            "CF to Washing" => new(p.Item, p.OrderNumber, p.Temperature + "°F", p.Program, p.SteelBall, null, null, null, p.WashingProcedure, null, null, null, null, null),
-            "DS to Washing" => new(p.Item, p.OrderNumber, p.Temperature + "°F", null, null, null, p.SCI, p.DryProcedure, null, null, p.Cycle, null, null, null),
-            "DS to Dry-clean" => new(p.Item, p.OrderNumber, null, null, null, null, null, null, null, p.IsSensitive, null, null, null, null),
+            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null, null),
+            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", null, null, null, p.SpecialCareInstruction, p.DryProcedure, null, null, p.Cycle, null, null, null),
+            "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null, null),
             "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, Param, null, null, null),
             "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, Param, null, null, null),
             "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, Param, null, null),
-            _ => new(p.Item, p.OrderNumber, null, null, null, null, null, null, null, null, null, null, null, null)
+            _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null, null)
         };
 
     }

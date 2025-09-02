@@ -2,6 +2,7 @@
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using Microsoft.AspNetCore.Mvc;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
@@ -15,40 +16,41 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             _helper = helper;
         }
         //仅仅用于修改对应ItemName中的Parameter
-        public WetParameters CreateWetParameters(ParamsInput p) => (p.ItemName, p.WashingProcedure, p.DCProcedure) switch
+        public WetParameterAatcc CreateWetParameters(ParamsInput p) => (p.ItemName, p.WashingProcedure, p.DCProcedure) switch
         {
-            ("CF to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameters
+            ("CF to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
-                Item = p.ItemName,
-                OrderNumber = p.OrderNumber,
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure.Contains("Cold") == true ? "88" : "105",
                 Program = p.WashingProcedure.Contains("Cold") == true ? "1B" : "1A",
-                SteelBall = 10
+                SteelBallNum = 10
             },
-            ("CF to Washing", _, _) => new WetParameters {
-                Item = p.ItemName,
-                OrderNumber = p.OrderNumber,
+            ("CF to Washing", _, _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure!.Contains("Cold") ? "85"
                 : p.WashingProcedure!.Contains("Warm") ? "105"
                 : "0",
                 Program = (p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm")) ? "ref 2A" : "",
-                SteelBall = (p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm")) ? 50 : 0
+                SteelBallNum = (p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm")) ? 50 : 0
             },
-            ("DS to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameters
+            ("DS to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
-                Item = p.ItemName,
-                OrderNumber = p.OrderNumber,
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
             },
-            ("DS to Washing", _, _) => new WetParameters
+            ("DS to Washing", _, _) => new WetParameterAatcc
             {
-                Item = p.ItemName,
-                OrderNumber = p.OrderNumber,
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber,
                 Program = WetParamHelper(p.WashingProcedure!),
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
@@ -63,15 +65,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
             },
-            ("DS to Dry-clean", _, _) => new WetParameters {
-                Item = p.ItemName,
-                OrderNumber = p.OrderNumber,
-                IsSensitive = ((p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true) ||
-                                  (p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive") ? "Y" : "N" },
-            _ => new WetParameters
+            ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
-                Item = p.ItemName,
-                OrderNumber = p.OrderNumber
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber,
+                Sensitive = ((p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true) ||
+                                  (p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive") ? "Y" : "N" },
+            _ => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber
             }
         };
 

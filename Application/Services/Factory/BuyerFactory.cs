@@ -15,13 +15,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
     }
     public class BuyerFactory : IBuyerFactory
     {
-        private readonly LabDbContext _dbContext;
-        private readonly LabDbContextSec _dbContextSec;
+        private readonly LabDbContextSec _dbContext;
         private readonly FiberContentHelper _fiberHelper;
-        public BuyerFactory(LabDbContext dbContext, LabDbContextSec dbContextSec, FiberContentHelper fiberHelper)
+        public BuyerFactory(LabDbContextSec dbContext, FiberContentHelper fiberHelper)
         {
             _dbContext = dbContext;
-            _dbContextSec = dbContextSec;
             _fiberHelper = fiberHelper;
         }
 
@@ -34,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                 case "CrazyLine":
                     return new CrazyLineBuyer(new CrazyLineService(new CrazyLineRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "Jako":
-                    return new JakoBuyer(new JakoService(new JakoRepository(_dbContextSec, _fiberHelper), _fiberHelper));
+                    return new JakoBuyer(new JakoService(new JakoRepository(_dbContext, _fiberHelper), _fiberHelper));
                 default:
                     throw new ArgumentException("Invalid buyer type");
             }
