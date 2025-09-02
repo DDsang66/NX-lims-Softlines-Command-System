@@ -1,0 +1,286 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NX_lims_Softlines_Command_System</RootNamespace>
+    <UserSecretsId>4d43e3d3-7507-48a7-a74f-9f950cc90f5e</UserSecretsId>
+    <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+    <PackageReference Include="EPPlus" Version="8.0.8" />
+    <PackageReference Include="FreeSpire.XLS" Version="14.2.0" />
+    <PackageReference Include="FuzzySharp" Version="2.0.2" />
+    <PackageReference Include="Microsoft.AspNet.Identity.Core" Version="2.2.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.19" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.7">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.7" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Domain\Services\" />
+    <Folder Include="Domain\ValueObjects\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\ExcelModel\Adidas_FLAM_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\Adidas_PHY_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\Adidas_WET_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\CommonModel-PHY-CON.xlsx" />
+    <None Include="wwwroot\ExcelModel\CommonModel.xlsx" />
+    <None Include="wwwroot\ExcelModel\CrazyLine_FIB_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\Crazyline_PHY_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\Crazyline_WET_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\Mango_FIB_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\Mango_PHY_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\Mango_WET_sheet.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\33488_Mango_PHY_20250721171327_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\33488_Mango_WET_20250721171326_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34634_Mango_WET_20250724143339_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34681_Mango_PHY_20250716110741_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34681_Mango_WET_20250716110740_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34687_Mango_FIB_20250716113235_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34687_Mango_PHY_20250716113235_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34687_Mango_WET_20250716113235_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34799_Mango_FIB_20250717083036_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34799_Mango_FIB_20250729143837_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34799_Mango_PHY_20250717085615_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34799_Mango_PHY_20250729143837_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34799_Mango_WET_20250717090525_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34799_Mango_WET_20250729143837_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34799_Mango_WET_20250729144133_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34926_Mango_FIB_20250717153142_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34926_Mango_PHY_20250717153142_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34926_Mango_WET_20250717153142_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34927_Mango_WET_20250724142501_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34927_Mango_WET_20250729143320_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34935_Mango_FIB_20250717153855_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34935_Mango_PHY_20250717153855_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34935_Mango_WET_20250717153855_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34980_Mango_FIB_20250717152415_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34980_Mango_PHY_20250717152415_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34980_Mango_WET_20250717152415_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34987_Mango_FIB_20250717180730_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34987_Mango_PHY_20250717180730_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\34987_Mango_WET_20250717180730_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35001_Mango_FIB_20250717174607_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35001_Mango_PHY_20250717174607_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35001_Mango_WET_20250717174607_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35002_Mango_FIB_20250717173331_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35002_Mango_PHY_20250717173331_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35002_Mango_WET_20250717173331_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35003_Mango_FIB_20250717175042_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35003_Mango_PHY_20250717175042_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35003_Mango_WET_20250717175042_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35004_Mango_FIB_20250717173845_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35004_Mango_PHY_20250717173845_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35004_Mango_WET_20250717173845_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35005_Mango_FIB_20250717180011_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35005_Mango_PHY_20250717175856_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35005_Mango_WET_20250717175856_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35006_Mango_FIB_20250717180313_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35006_Mango_PHY_20250717180313_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35006_Mango_WET_20250717180313_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35007_Mango_FIB_20250717175436_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35007_Mango_PHY_20250717175436_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35007_Mango_WET_20250717175436_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35008_Mango_FIB_20250717172723_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35008_Mango_PHY_20250717172723_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35008_Mango_PHY_20250718084959_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35008_Mango_WET_20250717172723_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35094_Mango_FIB_20250718135910_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35094_Mango_PHY_20250718135910_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35094_Mango_WET_20250718135910_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35095_Mango_FIB_20250718135551_Wang,Haocheng.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35095_Mango_PHY_20250718135551_Wang,Haocheng.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35095_Mango_WET_20250718135551_Wang,Haocheng.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35162_Mango_FIB_20250718141130_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35162_Mango_PHY_20250718141130_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35162_Mango_WET_20250718141130_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35184_Mango_FIB_20250718140719_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35184_Mango_PHY_20250718140719_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35184_Mango_WET_20250718140719_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35258_Mango_FIB_20250718170355_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35258_Mango_PHY_20250718170355_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35258_Mango_WET_20250718170355_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35282_Mango_PHY_20250721180131_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35282_Mango_WET_20250721180131_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35286_Mango_PHY_20250722111028_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35286_Mango_WET_20250722111028_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35295_Mango_PHY_20250721175859_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35295_Mango_WET_20250721175859_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35298_Mango_PHY_20250721181322_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35298_Mango_WET_20250721181322_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35346_Mango_PHY_20250721174757_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35346_Mango_WET_20250721174757_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35348_Mango_PHY_20250721173946_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35348_Mango_WET_20250721173946_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35350_Mango_PHY_20250721174339_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35350_Mango_WET_20250721174339_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35351_Mango_PHY_20250721175545_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35351_Mango_WET_20250721175545_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35351_Mango_WET_20250728142631_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35410_Mango_WET_20250721172723_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35411_Mango_WET_20250721172526_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35451_Mango_PHY_20250721181835_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35451_Mango_WET_20250721181835_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35487_Mango_WET_20250721173741_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35489_Mango_PHY_20250721172931_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35490_Mango_PHY_20250721175137_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35490_Mango_WET_20250721175137_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35491_Mango_PHY_20250721173525_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35491_Mango_WET_20250721173525_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35492_Mango_PHY_20250721173137_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35492_Mango_WET_20250721173137_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35546_Mango_PHY_20250721172220_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35546_Mango_WET_20250721172220_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35623_Mango_PHY_20250722111530_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35623_Mango_WET_20250722111530_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35646_Mango_PHY_20250722112112_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35646_Mango_WET_20250722112112_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35753_Mango_PHY_20250722155940_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35753_Mango_WET_20250722155940_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35754_Mango_PHY_20250722155142_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35754_Mango_WET_20250722155142_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35755_Mango_PHY_20250722160249_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35755_Mango_WET_20250722160249_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35756_Mango_PHY_20250722154536_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35756_Mango_WET_20250722154536_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35808_Mango_PHY_20250723103614_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35808_Mango_WET_20250723103614_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35809_Mango_PHY_20250723104205_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35809_Mango_WET_20250723104205_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35945_Mango_PHY_20250723155957_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35945_Mango_WET_20250723155957_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35946_Mango_PHY_20250723160502_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35947_Mango_PHY_20250723160644_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\35947_Mango_WET_20250723160644_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36027_Mango_PHY_20250723164249_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36027_Mango_WET_20250723164249_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36028_Mango_PHY_20250724141257_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36028_Mango_WET_20250724141257_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36096_Mango_PHY_20250724102619_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36096_Mango_WET_20250724102619_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36127_Mango_PHY_20250724145017_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36127_Mango_WET_20250724145017_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36128_Mango_PHY_20250724144649_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36128_Mango_WET_20250724144649_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36129_Mango_PHY_20250724143601_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36129_Mango_WET_20250724143601_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36136_Mango_PHY_20250724144153_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36136_Mango_WET_20250724144153_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36240_Mango_PHY_20250725150344_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36240_Mango_WET_20250725150344_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36273_Mango_PHY_20250725171532_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36273_Mango_WET_20250725171532_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36274_Mango_PHY_20250725171827_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36274_Mango_WET_20250725171827_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36350_Mango_PHY_20250725170256_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36350_Mango_WET_20250725170256_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36351_Mango_PHY_20250725170935_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36351_Mango_WET_20250725170935_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36356_Mango_PHY_20250725152402_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36356_Mango_WET_20250725152402_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36357_Mango_PHY_20250725152814_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36357_Mango_WET_20250725152814_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36357_Mango_WET_20250728165053_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36358_Mango_PHY_20250725153318_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36358_Mango_PHY_20250728173117_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36358_Mango_WET_20250725153318_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36358_Mango_WET_20250728173117_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36436_Mango_PHY_20250725171256_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36437_Mango_PHY_20250725172212_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36437_Mango_WET_20250725172212_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36505_Mango_PHY_20250728115057_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36505_Mango_WET_20250728115057_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36568_Mango_PHY_20250729085627_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36568_Mango_WET_20250729085627_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36570_Mango_PHY_20250730094108_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36570_Mango_WET_20250730094108_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36704_Mango_PHY_20250729083613_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36704_Mango_WET_20250729083613_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36886_Mango_WET_20250730091532_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36888_Mango_PHY_20250729174123_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36888_Mango_WET_20250729174123_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36911_Mango_PHY_20250730092853_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36911_Mango_WET_20250730092853_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36912_Mango_PHY_20250730093440_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36912_Mango_WET_20250730093440_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36913_Mango_PHY_20250730092548_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36913_Mango_WET_20250730092548_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36914_Mango_PHY_20250730093809_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36914_Mango_WET_20250730093809_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36916_Mango_PHY_20250730092120_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36916_Mango_WET_20250730092120_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36917_Mango_PHY_20250730091214_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36917_Mango_WET_20250730091214_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36920_Mango_PHY_20250730090500_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SaveData\36920_Mango_WET_20250730090500_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\10001_Mango_PHY_20250805115532_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\10001_Mango_WET_20250805115532_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\36505_Mango_WET_20250805161153_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\36887_Mango_WET_20250730095740_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37052_Mango_PHY_20250730141207_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37052_Mango_WET_20250730141207_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37053_Mango_PHY_20250730142834_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37053_Mango_WET_20250730142834_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37118_Mango_PHY_20250730141916_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37118_Mango_WET_20250730141916_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37240_Mango_PHY_20250731154728_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37240_Mango_WET_20250731154728_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37266_Mango_PHY_20250801090416_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37266_Mango_WET_20250801090416_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37291_Mango_PHY_20250731154125_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37291_Mango_WET_20250731154125_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37347_Mango_PHY_20250801085829_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37347_Mango_WET_20250801085829_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37438_Mango_PHY_20250801163512_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37438_Mango_WET_20250801163512_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37445_Mango_PHY_20250801162412_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37445_Mango_WET_20250801162412_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37452_Mango_PHY_20250801162923_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37452_Mango_WET_20250801162923_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37453_Mango_WET_20250801163214_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37597_Mango_PHY_20250804105633_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37597_Mango_WET_20250804105633_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37655_Mango_WET_20250804165012_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37678_Mango_WET_20250804165813_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37851_Mango_PHY_20250805160632_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37851_Mango_WET_20250805160632_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37881_Mango_PHY_20250805170709_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37882_Mango_PHY_20250806093450_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37882_Mango_WET_20250806093450_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37943_Mango_PHY_20250806091620_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37943_Mango_WET_20250806091620_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37944_Mango_PHY_20250806092807_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37944_Mango_WET_20250806092807_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37945_Mango_PHY_20250806092504_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37945_Mango_WET_20250806092504_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37947_Mango_PHY_20250806092038_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37947_Mango_PHY_20250807091017_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\37947_Mango_WET_20250806092038_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38010_Mango_PHY_20250806141724_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38010_Mango_WET_20250806141724_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38088_Mango_PHY_20250806142157_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38088_Mango_WET_20250806142157_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38104_Mango_PHY_20250806172531_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38104_Mango_WET_20250806172531_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38105_Mango_PHY_20250806141115_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38105_Mango_PHY_20250806172135_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38105_Mango_WET_20250806141115_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\SavingExcel\38105_Mango_WET_20250806172135_Chen,Guangxv.xlsx" />
+    <None Include="wwwroot\ExcelModel\Washing Procedure.pdf" />
+  </ItemGroup>
+
+</Project>
