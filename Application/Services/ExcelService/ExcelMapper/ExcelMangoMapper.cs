@@ -1,10 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office.CustomUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-
-namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
+﻿namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
 {
     public static class ExcelMangoMapper
     {
@@ -79,7 +73,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                "A12", "A13", "A14", "A15","A15"
+                "A12", "A13", "A14", "A15","A16"
             };
         }
         public static string[] GetPillingCellAddresses(string menuName)

@@ -71,7 +71,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = "60",
                 Program = "1200 rpn, automatic time 1:20h",
                 DryProcedure = "Tumble Dry",
-                AfterWash = p.sampleDescription!.Contains("1st Bulk") == true ? 20 : 10
+                AfterWash = p.sampleDescription!.Contains("Repeat Order") == true ? 10 : 20
             },
             ("CF to Hot Pressing", _) => new WetParameterIso
             {

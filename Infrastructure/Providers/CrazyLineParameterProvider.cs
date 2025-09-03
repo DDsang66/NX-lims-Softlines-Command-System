@@ -73,7 +73,37 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber,
                 Sensitive = ((p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true) ||
-                                  (p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive") ? "Y" : "N" },
+                                  (p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive") ? "Y" : "N" 
+            },
+            ("Spriality/Skewing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber,
+                DryProcedure = p.DryProcedure,
+                WashingProcedure = p.WashingProcedure,
+                Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+            },
+            ("Spriality/Skewing", _, _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber,
+                Program = WetParamHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80"
+                : p.WashingProcedure.Contains("Warm") ? "105"
+                : p.WashingProcedure.Contains("Hot") ? "120"
+                : "140",
+                Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                DryCondition = DryConditionHelper(p.DryProcedure!),
+                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+            },
             _ => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,

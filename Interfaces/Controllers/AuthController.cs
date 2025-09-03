@@ -77,8 +77,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                     UserName = req.Email,
                     PassWord = hasPwd,
                     NickName = req.NickName,
-                    EmployeeId = "Default"
-
+                    EmployeeId = "Default",
+                    PermissionIndex = 1   //权限映表索引
                 };
                 _db.Add(newUser);
                 _db.SaveChanges();

@@ -81,8 +81,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
             [("Woven(Mango)", "Water Resistance-Hydrostatic Pressure", null)] = "Pressure: 90cm H2O",
             [("Woven(Mango)", "CF to Light", null)] = "Light: L-5",
-            [("Woven(Mango)", "Snagging Resistance", null)] = "Cycle: 7600r",
-            [("Woven(Mango)", "Pilling Resistance", null)] = "Cycle: 72000r",
+            [("Woven(Mango)", "Snagging Resistance", null)] = "Cycle: 600r",
+            [("Woven(Mango)", "Pilling Resistance", null)] = "Cycle: 2000r",
             [("Woven(Mango)", "Abrasion Resistance", null)] = "Load: 9KPa,Cycle: 15000r",
         };
 

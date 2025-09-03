@@ -1,10 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office.CustomUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
-
-namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
+﻿namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
 {
     public static class ExcelCrazyLineMapper
     {
@@ -152,7 +146,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
                 "Socks" => new List<string> { "A10", "A11", "A12" },
                 "Gloves" => new List<string> { "A10", "A11", "A12" },
                 "Cap" => new List<string> { "A10", "A11", "A12" },
-                _ => new List<string> { "M9", "T9", "AA9", "AI9", "G13", "AB13", "G24", "AB24" }
+                _ => new List<string> { "A10", "A11", "A12" }
             };
             return stringSpirality?.ToArray() ?? new string[0];
         }

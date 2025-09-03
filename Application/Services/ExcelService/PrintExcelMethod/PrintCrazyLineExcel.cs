@@ -436,7 +436,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
-            int offset = OffsetRule.GetValueOrDefault(itemName, 0); // 获取偏移量，默认为0
+            int offset = 0;
+            if (dto.sampleDescription!.Contains("Fabric"))
+            {
+                offset = OffsetRule.GetValueOrDefault(itemName, 0);
+            }// 获取偏移量，默认为0
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
             int sheetCnt = (int)Math.Ceiling(samples.Length / (double)capacity);
 
@@ -514,6 +518,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Seam Slippage"] = "Seam Slippage",
             ["Pilling Resistance"] = "Pilling&Snagging",
             ["Snagging Resistance"] = "Pilling&Snagging",
+            ["Spriality/Skewing"] = "Spirality",
             ["Small Parts"] = "Small Part",
             ["Resistance to Snapping of Snap Fasteners"] = "Snapping & Unsnapping",
             ["Resistance to Unsnapping of Snap Fasteners"] = "Snapping & Unsnapping",
@@ -652,7 +657,29 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A37"] = (w, dto, reportNo) => "AATCC TM132-2004e3(2013)e3",
             },
-
+            ["Spriality/Skewing"] = (w, dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
+                map["P1"] = (w, dto, reportNo) => reportNo;
+                map["A3"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Socks") == true ? "AATCC TM 179-2023, Method 1, Option 1" : "AATCC TM 179-2023, Method 2, Option 3";
+                map["C5"] = (w, dto, reportNo) => "3";
+                if (w.WashingProcedure!.Contains("Machine"))
+                {
+                    map["O31"] = (w, dto, reportNo) => "AATCC TM 179-2023";
+                    map["D32"] = (w, dto, reportNo) => w.Program!;
+                    map["I32"] = (w, dto, reportNo) => w.DryCondition!;
+                    map["U32"] = (w, dto, reportNo) => w.Temperature!;
+                    map["A33"] = (w, dto, reportNo) => w.Cycle!;
+                    map["M33"] = (w, dto, reportNo) => w.DryProcedure!;
+                }
+                else if (w.WashingProcedure.Contains("Hand"))
+                {
+                    map["O35"] = (w, dto, reportNo) => "AATCC TM 179-2023";
+                    map["G36"] = (w, dto, reportNo) => w.Temperature!;
+                    map["K36"] = (w, dto, reportNo) => w.DryProcedure!;
+                }
+                return map;
+            },
         };
 
         private static readonly Dictionary<string, Func<CheckListDto, string, Dictionary<string, Func<CheckListDto, string, string>>>> PhyExtraMap = new()

@@ -23,7 +23,7 @@ namespace NX_lims_Softlines_Command_System.Tools.Factory
                 "Mango" => _sp.GetRequiredService<PrintMangoExcel>(),
                 "Adidas" => _sp.GetRequiredService<PrintAdidasExcel>(),
                 "CrazyLine" => _sp.GetRequiredService<PrintCrazyLineExcel>(),
-                //"Jako" => _sp.GetRequiredService<PrintJakoLineExcel>(),
+                "Jako" => _sp.GetRequiredService<PrintJakoExcel>(),
                 _ => throw new ArgumentException($"Unknown buyer: {buyer}")
             };
     }

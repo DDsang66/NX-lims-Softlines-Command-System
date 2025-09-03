@@ -256,6 +256,7 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("user_name");
+            entity.Property(e => e.PermissionIndex).HasColumnName("permission_index");
         });
 
         modelBuilder.Entity<WetParameterAatcc>(entity =>
