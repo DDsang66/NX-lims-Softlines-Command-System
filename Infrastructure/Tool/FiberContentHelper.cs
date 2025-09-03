@@ -2,16 +2,16 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Models;
+using NX_lims_Softlines_Command_System.Domain.Model;
 using System.Text.Json.Nodes;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
 {
     public class FiberContentHelper
     {
-        private readonly LabDbContext _db;
+        private readonly LabDbContextSec _db;
 
-        public  FiberContentHelper(LabDbContext db)
+        public  FiberContentHelper(LabDbContextSec db)
         {
             _db = db;
         }
@@ -37,7 +37,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
                 return null;
 
             // 一次性取出 FiberName -> FiberSource 的映射
-            var nameToSource = await _db.Composition
+            var nameToSource = await _db.Compositions
                 .Where(c => c.FiberName != null)
                 .ToDictionaryAsync(c => c.FiberName!, c => c.FiberSource);
 
@@ -65,7 +65,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
             {
                 var key = char.ToUpper(item.Composition![0]) +
                       item.Composition.Substring(1).ToLower();
-                var fiber = _db.Composition.FirstOrDefault(f => f.FiberName == key);
+                var fiber = _db.Compositions.FirstOrDefault(f => f.FiberName == key);
                 string? type = fiber?.FiberSource;
                 if (type == Type) { isExist = true; }
             }
@@ -80,7 +80,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
             if (composition == null) return null;
 
             // 从数据库中查出该 type 对应的所有 FiberName
-            var fiberNames = _db.Composition
+            var fiberNames = _db.Compositions
                 .Where(c => c.FiberType == type)
                 .Select(c => c.FiberName)
                 .ToHashSet(); // 用于快速查找
@@ -104,7 +104,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
             if (composition == null) return null;
 
             // 从数据库中查出该 source 对应的所有 FiberName
-            var fiberNames = _db.Composition
+            var fiberNames = _db.Compositions
                 .Where(c => c.FiberSource == source)
                 .Select(c => c.FiberName)
                 .ToHashSet(); // 用于快速查找

@@ -2,7 +2,6 @@
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using NX_lims_Softlines_Command_System.Models;
 using SixLabors.Fonts.Unicode;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers

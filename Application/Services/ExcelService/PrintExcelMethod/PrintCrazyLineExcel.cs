@@ -478,7 +478,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 // 5) 其余参数
                 if (dto.Type == "Wet")
                 {
-                    var wp = _db.WetParameterAATCC
+                    var wp = _db.WetParameterAatccs
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
                     var extraMap = WetExtraMap.GetValueOrDefault(itemName, (wp, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>())(wp, dto, reportNo);
 

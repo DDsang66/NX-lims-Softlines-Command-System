@@ -4,9 +4,9 @@ using Newtonsoft.Json;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
-using NX_lims_Softlines_Command_System.Models;
 using System.Collections.Generic;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using NX_lims_Softlines_Command_System.Domain.Model;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 {
@@ -14,9 +14,9 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
     [Route("api/buyer")]
     public class BuyerController : ControllerBase
     {
-        private readonly LabDbContext _db;
+        private readonly LabDbContextSec _db;
         private readonly IBuyerFactory _factory;
-        public BuyerController(LabDbContext db, IBuyerFactory factory)
+        public BuyerController(LabDbContextSec db, IBuyerFactory factory)
         {
             _db = db;
             _factory = factory;

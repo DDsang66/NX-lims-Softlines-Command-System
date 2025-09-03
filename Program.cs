@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Domain.Model;
-using NX_lims_Softlines_Command_System.Models;
 using NX_lims_Softlines_Command_System.Tools.Factory;
 using OfficeOpenXml;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -77,8 +76,8 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddSwaggerGen();
 
 
-            builder.Services.AddDbContext<LabDbContext>(options =>
-                options.UseSqlServer(builder.Configuration.GetConnectionString("LabCommandTestEntities")));
+            //builder.Services.AddDbContext<LabDbContext>(options =>
+            //    options.UseSqlServer(builder.Configuration.GetConnectionString("LabCommandTestEntities")));
 
             builder.Services.AddDbContext<LabDbContextSec>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("NX-limsLabCommandSys")));

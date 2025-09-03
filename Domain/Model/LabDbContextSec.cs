@@ -7,51 +7,52 @@ namespace NX_lims_Softlines_Command_System.Domain.Model;
 
 public partial class LabDbContextSec : DbContext
 {
-    public LabDbContextSec()
-    {
-    }
-
     public LabDbContextSec(DbContextOptions<LabDbContextSec> options)
         : base(options)
     {
     }
 
-    public DbSet<AdidasMethodItemMap> AdidasMethodItemMap { get; set; }
+    public virtual DbSet<AdidasMethodItemMap> AdidasMethodItemMaps { get; set; }
 
-    public DbSet<Composition> Composition { get; set; }
+    public virtual DbSet<Composition> Compositions { get; set; }
 
-    public DbSet<Item> Item { get; set; }
+    public virtual DbSet<Feeback> Feebacks { get; set; }
 
-    public DbSet<Menu> Menu { get; set; }
+    public virtual DbSet<Item> Items { get; set; }
 
-    public DbSet<Standard> Standard { get; set; }
+    public virtual DbSet<Menu> Menus { get; set; }
 
-    public DbSet<User> User { get; set; }
+    public virtual DbSet<Permission> Permissions { get; set; }
 
-    public DbSet<WetParameterAatcc> WetParameterAATCC { get; set; }
+    public virtual DbSet<Standard> Standards { get; set; }
 
-    public DbSet<WetParameterIso> WetParameterISO { get; set; }
+    public virtual DbSet<User> Users { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Server=GUANGXDDCHEN\\SQLEXPRESS;Database=NX-lims Lab Command Sys;Trusted_Connection=True;TrustServerCertificate=True");
+    public virtual DbSet<UserProfile> UserProfiles { get; set; }
+
+    public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
+
+    public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
         {
+            entity.HasKey(e => e.MethodId);
+
             entity.ToTable("adidas_method_item_map");
 
             entity.Property(e => e.MethodId)
                 .ValueGeneratedNever()
-                .HasColumnName("id");
-            entity.Property(e => e.MethodName)
-                .HasMaxLength(100)
-                .IsUnicode(false)
-                .HasColumnName("item_name");
+                .HasColumnName("method_id");
             entity.Property(e => e.MethodCode)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("method_code");
+            entity.Property(e => e.MethodName)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("method_name");
             entity.Property(e => e.Type)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -83,6 +84,29 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("fiber_type");
+        });
+
+        modelBuilder.Entity<Feeback>(entity =>
+        {
+            entity.ToTable("feeback");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.Assignee)
+                .HasMaxLength(50)
+                .HasColumnName("assignee");
+            entity.Property(e => e.CreateTime)
+                .HasColumnType("datetime")
+                .HasColumnName("create_time");
+            entity.Property(e => e.Message)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("message");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.Type)
+                .HasDefaultValue((byte)3)
+                .HasColumnName("type");
         });
 
         modelBuilder.Entity<Item>(entity =>
@@ -222,11 +246,44 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.UploadTime).HasColumnName("upload_time");
         });
 
+        modelBuilder.Entity<Permission>(entity =>
+        {
+            entity.HasKey(e => e.PermissionIndex);
+
+            entity.ToTable("permission");
+
+            entity.Property(e => e.PermissionIndex)
+                .ValueGeneratedNever()
+                .HasColumnName("permission_index");
+            entity.Property(e => e.Review)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasDefaultValue("false")
+                .HasColumnName("review");
+            entity.Property(e => e.ReviewPhysics)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasDefaultValue("false")
+                .HasColumnName("review_physics");
+            entity.Property(e => e.ReviewWet)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasDefaultValue("false")
+                .HasColumnName("review_wet");
+            entity.Property(e => e.Role)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValue("normal")
+                .HasColumnName("role");
+        });
+
         modelBuilder.Entity<Standard>(entity =>
         {
             entity.ToTable("standard");
 
-            entity.Property(e => e.StandardId).HasColumnName("standard_id");
+            entity.Property(e => e.StandardId)
+                .ValueGeneratedNever()
+                .HasColumnName("standard_id");
             entity.Property(e => e.ItemIndex).HasColumnName("item_index");
             entity.Property(e => e.StandardCode)
                 .HasMaxLength(255)
@@ -241,10 +298,20 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("user_id");
+            entity.Property(e => e.CreateTime)
+                .HasColumnType("datetime")
+                .HasColumnName("create_time");
             entity.Property(e => e.EmployeeId)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("employee_id");
+            entity.Property(e => e.LastLoginIp)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("last_login_ip");
+            entity.Property(e => e.LoginFailCount)
+                .HasDefaultValue(0)
+                .HasColumnName("login_fail_count");
             entity.Property(e => e.NickName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -252,25 +319,62 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.PassWord)
                 .HasColumnType("text")
                 .HasColumnName("pass_word");
+            entity.Property(e => e.PermissionIndex).HasColumnName("permission_index");
+            entity.Property(e => e.Status)
+                .HasDefaultValue((byte)1)
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedTime)
+                .HasColumnType("datetime")
+                .HasColumnName("updated_time");
             entity.Property(e => e.UserName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("user_name");
-            entity.Property(e => e.PermissionIndex).HasColumnName("permission_index");
+        });
+
+        modelBuilder.Entity<UserProfile>(entity =>
+        {
+            entity.HasKey(e => e.EmployeeId);
+
+            entity.ToTable("user_profile");
+
+            entity.Property(e => e.EmployeeId)
+                .HasMaxLength(10)
+                .IsFixedLength()
+                .HasColumnName("employee_id");
+            entity.Property(e => e.AvatarUrl)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("avatar_url");
+            entity.Property(e => e.Birth).HasColumnName("birth");
+            entity.Property(e => e.Email)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("email");
+            entity.Property(e => e.Gender)
+                .HasMaxLength(10)
+                .IsFixedLength()
+                .HasColumnName("gender");
+            entity.Property(e => e.IdCard)
+                .HasColumnType("text")
+                .HasColumnName("id_card");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("phone");
+            entity.Property(e => e.RealName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("real_name");
         });
 
         modelBuilder.Entity<WetParameterAatcc>(entity =>
         {
-            entity.HasKey(e => e.ParamId);
+            entity.HasKey(e => e.ParamId).HasName("PK_wet_parameter_aatcc_1");
 
             entity.ToTable("wet_parameter_aatcc");
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
-            entity.Property(e => e.ReportNumber)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .ValueGeneratedNever()
-                .HasColumnName("report_number");
             entity.Property(e => e.AfterWash).HasColumnName("after_wash");
             entity.Property(e => e.Bleach)
                 .HasMaxLength(50)
@@ -304,6 +408,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("program");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
             entity.Property(e => e.Sensitive)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -333,16 +441,11 @@ public partial class LabDbContextSec : DbContext
 
         modelBuilder.Entity<WetParameterIso>(entity =>
         {
-            entity.HasKey(e => e.ParamId);
+            entity.HasKey(e => e.ParamId).HasName("PK_wet_parameter_iso_1");
 
             entity.ToTable("wet_parameter_iso");
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
-            entity.Property(e => e.ReportNumber)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .ValueGeneratedNever()
-                .HasColumnName("report_number");
             entity.Property(e => e.AfterWash).HasColumnName("after_wash");
             entity.Property(e => e.Ballast)
                 .HasMaxLength(50)
@@ -372,6 +475,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("program");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
             entity.Property(e => e.Sensitive)
                 .HasMaxLength(10)
                 .IsUnicode(false)

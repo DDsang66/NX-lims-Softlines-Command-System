@@ -1,5 +1,4 @@
 ﻿using NX_lims_Softlines_Command_System.Infrastructure.Providers;
-using NX_lims_Softlines_Command_System.Models;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
@@ -26,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             try
             {
                 string menuName = input;
-                var Menu = await _db.Menu.FirstOrDefaultAsync(m => m.MenuName == menuName);
+                var Menu = await _db.Menus.FirstOrDefaultAsync(m => m.MenuName == menuName);
                 if (Menu == null) return null;
 
                 var properties = typeof(Menu).GetProperties();
@@ -42,9 +41,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 {
                     try
                     {
-                        int? itemID = _db.Standard.FirstOrDefault(s => s.StandardId == standard)!.ItemIndex;
-                        string? standardCore = _db.Standard.FirstOrDefault(s => s.StandardId == standard)!.StandardCode;
-                        var item = await _db.Item.FindAsync(itemID);
+                        int? itemID = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.ItemIndex;
+                        string? standardCore = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.StandardCode;
+                        var item = await _db.Items.FindAsync(itemID);
                         if (item != null)
                         {
                             checkLists.Add(new CheckListDto
@@ -80,7 +79,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             if (!new[] { "CF to Washing", "Appearance", "DS to Dry-clean", "Print Durability For JAKO","Heat Press Test For JAKO","CF to Hot Pressing" }
                  .Contains(itemName))
                 return default(T);
-            var Param = await _db.WetParameterISO
+            var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
             JakoParameterProvider wetParam = new JakoParameterProvider(_helper);
             if (Param != null)
@@ -113,7 +112,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     }
                 }
 
-                await _db.WetParameterISO.AddAsync(newParam);
+                await _db.WetParameterIsos.AddAsync(newParam);
                 await _db.SaveChangesAsync();
                 Param = newParam;
             }

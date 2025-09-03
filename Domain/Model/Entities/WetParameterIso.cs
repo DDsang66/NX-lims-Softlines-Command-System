@@ -1,15 +1,14 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Model.Interface;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
-public partial class WetParameterIso : IWetParam
+public partial class WetParameterIso: IWetParam
 {
-    [Key]
     public int ParamId { get; set; }
-    public string? ReportNumber { get; set; }
+
+    public string ReportNumber { get; set; } = null!;
 
     public string? StandardType { get; set; }
 

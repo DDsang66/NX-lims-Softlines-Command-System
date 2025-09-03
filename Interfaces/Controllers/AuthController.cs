@@ -5,7 +5,6 @@ using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Models;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
@@ -61,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpPost("register")]
         public IActionResult Register([FromBody] RegisterRequest req)
         {
-            var user = _db.User.FirstOrDefault(u => u.UserName == req.Email);
+            var user = _db.Users.FirstOrDefault(u => u.UserName == req.Email);
             if (user != null) return Unauthorized("账户已存在");
             try
             {
@@ -78,7 +77,10 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                     PassWord = hasPwd,
                     NickName = req.NickName,
                     EmployeeId = "Default",
-                    PermissionIndex = 1   //权限映表索引
+                    PermissionIndex = 1,   //权限映表索引
+                    CreateTime = DateTime.Now,
+                    Status = 1,         //启用
+                    LoginFailCount = 0
                 };
                 _db.Add(newUser);
                 _db.SaveChanges();
@@ -95,14 +97,27 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         private User? ValidateUser(string username, string pwd)
         {
             PasswordHasher ph = new PasswordHasher();
-            var user = _db.User.FirstOrDefault(u => u.UserName == username);
+            var user = _db.Users.FirstOrDefault(u => u.UserName == username && u.Status == 1);
             if (user == null) return null;
-            bool isPasswordCorrect = ph.VerifyHashedPassword(user.PassWord, pwd) == PasswordVerificationResult.Success;
+            bool isPasswordCorrect =
+                ph.VerifyHashedPassword(user.PassWord, pwd) == PasswordVerificationResult.Success;
+
             if (isPasswordCorrect)
             {
-                return user!;
+                user.LoginFailCount = 0;// 重置失败计数
+                user.UpdatedTime = DateTime.Now;
             }
-            else { return null; }
+            else
+            {
+                user.LoginFailCount += 1;
+                if (user.LoginFailCount >= 5)
+                    user.Status = 0;       // 锁定
+            }
+
+            
+            _db.SaveChanges();
+
+            return isPasswordCorrect ? user : null;
         }
     }
 }

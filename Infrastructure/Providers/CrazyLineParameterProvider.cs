@@ -1,5 +1,4 @@
-﻿using NX_lims_Softlines_Command_System.Models;
-using NX_lims_Softlines_Command_System.Application.DTO;
+﻿using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
