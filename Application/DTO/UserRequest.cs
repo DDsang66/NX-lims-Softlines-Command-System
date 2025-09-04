@@ -4,4 +4,6 @@
     public record TokenResponse(string AccessToken, string RefreshToken);
 
     public record RegisterRequest(string Email,string Password,string NickName);
+
+    public record PwdReset(string AuthenticInfo, string NewPassword);
 }

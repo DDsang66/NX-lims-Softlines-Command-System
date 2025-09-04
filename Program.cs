@@ -66,6 +66,7 @@ namespace NX_lims_Softlines_Command_System
                 options.AddPolicy("VueDev", policy =>
                 {
                     policy.WithOrigins("http://192.168.235.8:5173",// Vue 默认端口,上线时需要更换
+                                       "http://192.168.235.52:5173",
                                        "https://TheProductionDomain.com") // 线上域名
                           .AllowAnyHeader()
                           .AllowAnyMethod()

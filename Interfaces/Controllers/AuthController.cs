@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain.Model;
@@ -94,6 +93,32 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
         }
 
+        [HttpPost("pwdreset")]
+        public IActionResult pwdReset([FromBody] PwdReset req)
+        {
+            // 检查请求对象是否为null
+            if (req == null)
+            {
+                return BadRequest("Invalid request data."); // 返回400 Bad Request
+            }
+
+            // 检查请求中的必要字段是否为空
+            if (string.IsNullOrWhiteSpace(req.AuthenticInfo) || string.IsNullOrWhiteSpace(req.NewPassword))
+            {
+                return BadRequest("AuthenticInfo and NewPassword are required."); // 返回400 Bad Request
+            }
+
+            var user = _db.Users.FirstOrDefault(u => u.UserName == req.AuthenticInfo || u.NickName == req.AuthenticInfo || u.EmployeeId == req.AuthenticInfo);
+            if (user == null) return StatusCode(500, "User not found."); // 返回500 Internal Server Error
+
+            PasswordHasher ph = new PasswordHasher();
+            user.PassWord = ph.HashPassword(req.NewPassword);
+            _db.Update(user);
+            _db.SaveChanges();
+
+            return Ok();
+        }
+
         private User? ValidateUser(string username, string pwd)
         {
             PasswordHasher ph = new PasswordHasher();
@@ -113,8 +138,6 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 if (user.LoginFailCount >= 5)
                     user.Status = 0;       // 锁定
             }
-
-            
             _db.SaveChanges();
 
             return isPasswordCorrect ? user : null;
