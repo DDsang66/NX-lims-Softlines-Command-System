@@ -42,10 +42,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
                     SelectPrintExcel.ProcessExcelFile(path);//删除空白工作单
                     if (!File.Exists(path))
                         continue;
-                    //Process.Start(new ProcessStartInfo(path)
-                    //{
-                    //    UseShellExecute = true
-                    //});
 
                 }
             }

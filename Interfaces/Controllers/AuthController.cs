@@ -32,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             var response = new
             {
                 tokens = tokens,
-                reviewer = reviewer
+                user = reviewer
             };
             return Ok(response);
         }
@@ -75,13 +75,20 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                     UserName = req.Email,
                     PassWord = hasPwd,
                     NickName = req.NickName,
-                    EmployeeId = "Default",
+                    EmployeeId = req.EmployeeId,
                     PermissionIndex = 1,   //权限映表索引
                     CreateTime = DateTime.Now,
                     Status = 1,         //启用
                     LoginFailCount = 0
                 };
+
+                var newUserProfile = new UserProfile
+                {
+                    EmployeeId = req.EmployeeId,
+                    RealName = req.NickName,
+                };
                 _db.Add(newUser);
+                _db.Add(newUserProfile);
                 _db.SaveChanges();
                 return Ok();
             }
