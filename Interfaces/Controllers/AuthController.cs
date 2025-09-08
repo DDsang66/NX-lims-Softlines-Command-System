@@ -32,7 +32,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             var response = new
             {
                 tokens = tokens,
-                user = reviewer
+                user = reviewer,
+                id = user.UserId
             };
             return Ok(response);
         }

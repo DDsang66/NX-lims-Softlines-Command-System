@@ -96,7 +96,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 {
                     StandardType = "AATCC",
                     Sensitive = "N",
-                    ReportNumber = input.OrderNumber,
+                    ReportNumber = input.OrderNumber!,
                     ContactItem = itemName
                 };
                 Param = wetParam.CreateWetParameters(input);

@@ -84,7 +84,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             JakoParameterProvider wetParam = new JakoParameterProvider(_helper);
             if (Param != null)
             {
-                var updatedParam = wetParam.CreateWetParameters(input);
+                var updatedParam = await wetParam.CreateWetParameters(input);
                 updatedParam.ParamId = Param.ParamId;
                 _db.Entry(Param).CurrentValues.SetValues(updatedParam);
                 await _db.SaveChangesAsync();
@@ -99,7 +99,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     ReportNumber = input.OrderNumber!,
                     ContactItem = itemName
                 };
-                Param = wetParam.CreateWetParameters(input);
+                Param = await wetParam.CreateWetParameters(input);
                 foreach (var prop in typeof(WetParameterIso).GetProperties())
                 {
                     if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段

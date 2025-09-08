@@ -15,7 +15,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             _helper = helper;
         }
 
-        public WetParameterIso CreateWetParameters(ParamsInput p) => (p.ItemName,p.sampleDescription) switch
+        public async Task<WetParameterIso> CreateWetParameters(ParamsInput p) => (p.ItemName,p.sampleDescription) switch
         {
             ("CF to Washing",_) => new WetParameterIso
             {
@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = (p.sampleDescription!.Contains("Rain") || p.sampleDescription.Contains("Padding") || p.sampleDescription.Contains("Down Jackets")) == true ? (p.WashingProcedure!.Contains("4") ? "40" : "30") :"40",
                 AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 5,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton"? "1400 rpm, automatic time 1:50h"
-                : _helper.MaxComposition(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
+                :await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash"
             },
             ("DS to Dry-clean",_) => new WetParameterIso
@@ -77,6 +77,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.sampleDescription!.Contains("Dyed") == true ? "150" : "110",
+            },
+            ("CF to Sublimation in Storage", _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Temperature = p.sampleDescription!.Contains("Dyed") == true ? "90" : "70",
             },
             _ => new WetParameterIso
             {
