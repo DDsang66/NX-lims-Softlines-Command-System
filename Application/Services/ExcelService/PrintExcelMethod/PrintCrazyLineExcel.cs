@@ -588,6 +588,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["E4"] = (w, dto, reportNo) => w.Program!;
                     map["M5"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["K4"] = (w, dto, reportNo) => w.DryCondition!;
+
                     map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
 
                 }
@@ -600,6 +601,20 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["H7"] = (w, dto, reportNo) => w.Temperature!;
                     map["M7"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                }
+                if (dto.sampleDescription!.Contains("Fabric")) 
+                {
+                    map["L14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["AF14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["L25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["AF25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                }
+                else if (dto.sampleDescription!.Contains("Garment"))
+                {
+                    map["W9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["AB9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["AG11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["AL11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                 }
                 return map;
             },
