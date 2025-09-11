@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 
@@ -35,15 +36,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
             ExcelHelper.CompareAndMarkChanges(physicsTemplate, phyOut);
             // 本机打开（开发环境可选）
             var paths = new List<string> { wetOut, phyOut };
-            if (_env.IsDevelopment())
-            {
-                foreach (string path in paths)
-                {
-                    SelectPrintExcel.ProcessExcelFile(path);//删除空白工作单
-                    if (!File.Exists(path))
-                        continue;
 
-                }
+            foreach (string path in paths)
+            {
+                SelectPrintExcel.ProcessExcelFile(path);//删除空白工作单
+                if (!File.Exists(path))
+                    continue;
+
             }
             var existingPaths = new[] { wetOut, phyOut }.Where(File.Exists).ToList();
 

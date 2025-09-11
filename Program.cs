@@ -68,6 +68,8 @@ namespace NX_lims_Softlines_Command_System
                 {
                     policy.WithOrigins("http://192.168.235.8:5173",// Vue 默认端口,上线时需要更换
                                        "http://192.168.235.52:5173",
+                                       "http://192.168.235.8:82",
+                                       "http://192.168.235.8:81",
                                        "https://TheProductionDomain.com") // 线上域名
                           .AllowAnyHeader()
                           .AllowAnyMethod()
@@ -87,14 +89,20 @@ namespace NX_lims_Softlines_Command_System
 
 
             var app = builder.Build();
-            app.UseStaticFiles(); // 确保静态文件中间件已启用
+            app.UseStaticFiles(); 
+            // 确保静态文件中间件已启用
             // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            //if (app.Environment.IsDevelopment())
+            //{
+            //    app.UseSwagger();
+            //    app.UseSwaggerUI();
+            //}
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
             {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
+                c.RoutePrefix = "swagger";   // 默认就是 swagger
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+            });
 
             app.UseExceptionHandler(builder => builder.Run(async context =>
             {
