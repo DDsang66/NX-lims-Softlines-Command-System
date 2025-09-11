@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             => await HandleAsync(infoDto, data => _factory.CreateBuyer(data.buyer).ShowItem(data)!);
 
         /// <summary>
-        /// 买家要求确认接口，更新一个CheckList中的param
+        /// 买家要求确认接口，更新CheckList中的param
         /// </summary>
         [HttpPost("parameter")]
         public async Task<IActionResult> ShowParameter([FromBody] RequiredInfoDto infoDto)

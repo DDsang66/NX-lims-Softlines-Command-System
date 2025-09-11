@@ -11,6 +11,7 @@ using System.Reflection;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -93,6 +94,21 @@ namespace NX_lims_Softlines_Command_System
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
+
+
+            app.UseExceptionHandler(builder => builder.Run(async context =>
+            {
+                var ex = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+                if (ex is OperationCanceledException)
+                {
+                    context.Response.StatusCode = 499;
+                    await context.Response.WriteAsync("Client closed request");
+                    return;
+                }
+                // 其他异常继续原有处理
+            }));
+
+
             app.UseRouting();
             app.UseHttpsRedirection();
             app.UseCors("VueDev");

@@ -8,5 +8,7 @@
         public string? types { get; set; }
         public string? samples { get; set; }
         public bool? selected { get; set; }
+
+        public object? extra { get; set; }
     }
 }

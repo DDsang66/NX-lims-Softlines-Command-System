@@ -122,6 +122,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("RegularFabric(JAKO)", "Water Repellency-Spray Test", null, null)] = "Original & After wash",
             [("RegularFabric(JAKO)", "Spriality/Skewing", null, null)] = "Same as Appearance",
             [("RegularFabric(JAKO)", "CF to Chlorinated Water",null,null)] = "Confirmation with CS is required",
+            [("RegularGarment(JAKO)","Seam Strength", null, null)] = "Knit Structure Change Into Seam Bursting; Test Area:50cm²",
         };
 
         private static string? GetParameter(string menu, string item, string? lv,string? lt)

@@ -90,6 +90,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "Abrasion Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Seam Slippage" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Seam Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Bursting Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Tensile Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Extension and Recovery" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),

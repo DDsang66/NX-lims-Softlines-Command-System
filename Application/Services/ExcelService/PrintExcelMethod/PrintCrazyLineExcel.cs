@@ -676,7 +676,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
                 map["P1"] = (w, dto, reportNo) => reportNo;
-                map["A3"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Socks") == true ? "AATCC TM 179-2023, Method 1, Option 1" : "AATCC TM 179-2023, Method 2, Option 3";
+                map["A3"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Garment") == true ? "AATCC TM 179-2023, Method 2, Option 3" : "AATCC TM 179-2023, Method 1, Option 1";
                 map["C5"] = (w, dto, reportNo) => "3";
                 if (w.WashingProcedure!.Contains("Machine"))
                 {
