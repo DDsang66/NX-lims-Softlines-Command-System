@@ -42,22 +42,55 @@
             return stringMap?.ToArray() ?? new string[0];
 
         }
-        public static string[] STMap(string ItemName)
+        public static string[] SeamSlippageMap(string sampleDescription)
         {
-            List<string>? stringMap = null;
-            switch (ItemName)
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric"}
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
             {
-                case "Seam Slippage":
-                    stringMap = new List<string> { "A10", "A12"};
-                    break;
-                case "Tensile Strength":
-                    stringMap = new List<string> { "A36", "A38", "A40"};
-                    break;
-                default: break;
-            }
+                "Garment" => new List<string> { "D4", "D14"},
+                "Fabric" => new List<string> { "A10", "A12" },
+                _ => new List<string> { "A10", "A12" }
+            };
+
             return stringMap?.ToArray() ?? new string[0];
 
         }
+
+
+        public static string[] SeamStrengthMap(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Knit", "Garment" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "D23", "D33" },
+                "Knit" => new List<string> { "D5", "D15" },
+                _ => new List<string> { "D23", "D33" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+
+        }
+        public static string[] BurstingMap()
+        {
+            return new string[]
+            {
+                "A9", "A10", "A11"
+            };
+        }
+        public static string[] TensileMap()
+        {
+            return new string[]
+            {
+                "A36", "A38", "A40"
+            };
+        }
+
         public static string[] TearMap()
         {
             return new string[]
@@ -226,15 +259,12 @@
         public static string[] MapSpirality(string sampleDescription)
         {
             List<string> stringSpirality;
-            var matched = new[] { "Garment", "Fabric", "Socks", "Glaves", "Cap" }
+            var matched = new[] { "Garment", "Fabric"}
                               .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
             stringSpirality = matched switch
             {
                 "Garment" => new List<string> { "A26", "A27", "A28" },
                 "Fabric" => new List<string> { "A10", "A11", "A12" },
-                "Socks" => new List<string> { "A10", "A11", "A12" },
-                "Gloves" => new List<string> { "A10", "A11", "A12" },
-                "Cap" => new List<string> { "A10", "A11", "A12" },
                 _ => new List<string> { "A10", "A11", "A12" }
             };
             return stringSpirality?.ToArray() ?? new string[0];

@@ -5,6 +5,8 @@ using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
+using System.ComponentModel;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
@@ -33,6 +35,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     Parameter = row.parameters,
                     Type = row.types,
                     Sample = row.samples,
+                    Extra = row.extra,
                     MenuName = menu,
                     sampleDescription = sampleDescription,
                 });
@@ -61,15 +64,37 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 1) 模板 sheet
             if (TemplateSheetNames.TryGetValue(itemName, out var subDictionary))
             {
-                foreach (var kvp in subDictionary)
+                /* ---------- 只有 Seam Strength 需要多条件 ---------- */
+                if (itemName == "Seam Strength")
                 {
+                    bool hasGarment = dto.sampleDescription.Contains("Garment", StringComparison.OrdinalIgnoreCase);
+                    bool hasKnit = dto.sampleDescription.Contains("Knit", StringComparison.OrdinalIgnoreCase);
 
-                    if (kvp.Key == null ||
-                          kvp.Key != null && dto.sampleDescription!.Contains(kvp.Key))
+                    // 按优先级命中
+                    if (hasKnit && hasGarment &&
+                        subDictionary.TryGetValue("Knit", out tplName))   // 字典里放的是 Seam Bursting-G
                     {
-                        tplName = kvp.Value;
                         foundInSub = true;
-                        break;
+                    }
+                    else if (hasGarment &&
+                             subDictionary.TryGetValue("Garment", out tplName)) // Seam Slippage&Breakage-G
+                    {
+                        foundInSub = true;
+                    }
+                    /* 只命中 Knit 就不管，保持 foundInSub == false */
+                }
+                else
+                {
+                    /* ---------- 其余测试保持原单关键字逻辑 ---------- */
+                    foreach (var kvp in subDictionary)
+                    {
+                        if (string.IsNullOrEmpty(kvp.Key) ||
+                            dto.sampleDescription!.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                        {
+                            tplName = kvp.Value;
+                            foundInSub = true;
+                            break;
+                        }
                     }
                 }
             }
@@ -171,18 +196,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Perspiration"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Water"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Dry-clean"] = "CFtoPerspiration&Water&Dryclean",
-
             ["CF to Sublimation in Storage"] = "CFtoSublimation&Ironing",
             ["CF to Hot Pressing"] = "CFtoSublimation&Ironing",
-
             ["CF to Sea Water"] = "CFtoCl&Sea&Yellow",
             ["CF to Chlorinated Water"] = "CFtoCl&Sea&Yellow",
             ["Phenolic Yellowing"] = "CFtoCl&Sea&Yellow",
-
             ["Print Durability For JAKO"] = "Print Durability",
             ["Heat Press Test For JAKO"] = "Heat Pressing Test",
-            ["Spriality/Skewing"] = "Spirality",
-
             ["Weight"] = "Weight",
             ["Pilling Resistance"] = "Pilling Resistance",
             ["Snagging Resistance"] = "Abrasion&Snagging",
@@ -209,10 +229,25 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {"Gloves", "DStoDryclean-Acc" },
                 {"Cap", "DStoDryclean-Acc" },
             },
+            ["Spriality/Skewing"] = new Dictionary<string, string>
+            {
+                {"Fabric", "Spirality-F" },
+                {"Garment", "Spirality-G" },
+            },
             ["Seam Slippage"] = new Dictionary<string, string>
             {
                 {"Fabric", "Seam Slippage&Tensile" },
-                {"Garment", "Seam Slippage&Breakage" },
+                {"Garment", "Seam Slippage&Breakage-G" },
+            },
+            ["Bursting Strength"] = new Dictionary<string, string>
+            {
+                 {"Fabric","Bursting Strength"},
+                 {"Knit","Seam Bursting-G"}
+            },
+            ["Seam Strength"] = new Dictionary<string, string>
+            {
+                 {"Garment","Seam Slippage&Breakage-G"},
+                 {"Knit","Seam Bursting-G"}
             },
             ["Zipper Strength"] = new Dictionary<string, string>
             {
@@ -240,11 +275,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Heat Press Test For JAKO"] = (_, _) => ExcelJakoMapper.MapHeat(),
             ["Weight"] = (_, _) => ExcelJakoMapper.WeightMap(),
             ["Pilling Resistance"] = (_, _) => ExcelJakoMapper.PillingMap(),
-            ["Seam Slippage"] = (n, _) => ExcelJakoMapper.STMap(n),
+            ["Seam Slippage"] = (_, m) => ExcelJakoMapper.SeamSlippageMap(m),
+            ["Seam Strength"] = (_, m) => ExcelJakoMapper.SeamStrengthMap(m),
+            ["Bursting Strength"] = (_, _) => ExcelJakoMapper.BurstingMap(),
             ["Extension and Recovery"] = (_, _) => ExcelJakoMapper.ElasticMap(),
             ["Abrasion Resistance"] = (n, _) => ExcelJakoMapper.ASMap(n),
             ["Snagging Resistance"] = (n, _) => ExcelJakoMapper.ASMap(n),
-            ["Tensile Strength"] = (n, _) => ExcelJakoMapper.STMap(n),
+            ["Tensile Strength"] = (_, _) => ExcelJakoMapper.TensileMap(),
             ["Tear Strength"] = (_, _) => ExcelJakoMapper.TearMap(),
             ["Water Repellency-Spray Test"] = (_, _) => ExcelJakoMapper.WaterRepellencyMap(),
             ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelJakoMapper.HydrostaticMap(),
@@ -369,11 +406,22 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Spriality/Skewing"] = (w, dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["P1"] = (w, dto, reportNo) => reportNo;
+                map["C5"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
-                    map["P1"] = (w, dto, reportNo) => reportNo;
-                    map["A3"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Garment")==true?"ISO 16322-3:2021 Method 2,Option 3": "ISO 16322-3:2021 Method 1,Option 1";
-                    map["C5"] = (w, dto, reportNo) => dto.sampleDescription!;
+                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-2:2021 Method 1,Option 1";
+                    map["A37"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                    map["S35"] = (w, dto, reportNo) => w.Ballast!;
+                }
+                if (dto.sampleDescription!.Contains("Garment"))
+                {
+                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-3:2021 Method 1,Option 1";
+                    map["A34"] = (w, dto, reportNo) => w.WashingProcedure!;
+                    map["L33"] = (w, dto, reportNo) => w.Temperature!;
+                    map["T34"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["E35"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
+                    map["U35"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
                 }
                 return map;
             }
@@ -421,8 +469,153 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 if(dto.sampleDescription!.Contains("Garment"))
                 {
+                    map["J3"] = (dto, reportNo) => dto.Standard!;
+                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+                    if (layout.Contains("Shell")) 
+                    {
+                        map["Q4"] = (dto, reportNo) => "√";
+                        map["Q14"] = (dto, reportNo) => "√";
+                    }
+                    if (layout.Contains("Lining")) 
+                    {
+                        map["AF4"] = (dto, reportNo) => "√";
+                        map["AF14"] = (dto, reportNo) => "√";
+                    }
+                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+                    Dictionary<string, (string Cell, string Desc)> ComponentMap =
+                            new(StringComparer.OrdinalIgnoreCase)
+                            {
+                                ["Side"] = ("A5", "Side Seam"),
+                                ["Sleeve"] = ("A6", "Sleeve Seam"),
+                                ["Armhole"] = ("A7", "Armhole Seam"),
+                                ["Shoulder"] = ("A8", "Shoulder Seam"),
+                                ["Armprit"] = ("A9", "Armprit Seam"),
+                                ["Front Panel"] = ("A10", "Front Panel Seam"),
+                                ["Back Panel"] = ("A11", "Back Panel Seam"),
+                                ["OutSide"] = ("A15", "Out-Side Seam"),
+                                ["InSide"] = ("A16", "In-Side Seam"),
+                                ["Back Rise"] = ("A17", "Back Rise Seam"),
+                                ["Front Crotch"] = ("A18", "Front Crotch Seam"),
+                                ["Cross"] = ("A19", "Cross Seam"),
+                            };
+                    if (!string.IsNullOrEmpty(component))
+                    {
+                        foreach (var kv in ComponentMap)
+                        {
+                            if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
+                            {
+                                var (cell, desc) = kv.Value;
+                                map[cell] = (dto, reportNo) => desc;
+                            }
+                        }
+                    }
                 }
                 return map;
+            },
+            ["Seam Strength"] = (dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<CheckListDto, string, string>>();
+                map["M1"] = (dto, reportNo) => reportNo;
+                if (dto.sampleDescription!.Contains("Fabric"))
+                {
+                    map["A3"] = (dto, reportNo) => dto.Standard!;
+                }
+                if (dto.sampleDescription!.Contains("Garment")) 
+                {
+                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+                    if (dto.sampleDescription!.Contains("Knit"))
+                    {
+                        map["A3"] = (dto, reportNo) => "DIN EN ISO 13938-2:2020";
+                        if (layout.Contains("Shell") && !string.IsNullOrEmpty(layout))
+                        {
+                            map["Q5"] = (dto, reportNo) => "√";
+                            map["Q15"] = (dto, reportNo) => "√";
+                        }
+                        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout))
+                        {
+                            map["AF5"] = (dto, reportNo) => "√";
+                            map["AF15"] = (dto, reportNo) => "√";
+                        }
+                        Dictionary<string, (string Cell, string Desc)> ComponentMap =
+                            new(StringComparer.OrdinalIgnoreCase)
+                            {
+                                ["Side"] = ("A6", "Side Seam"),
+                                ["Sleeve"] = ("A7", "Sleeve Seam"),
+                                ["Armhole"] = ("A8", "Armhole Seam"),
+                                ["Shoulder"] = ("A9", "Shoulder Seam"),
+                                ["Armprit"] = ("A10", "Armprit Seam"),
+                                ["Front Panel"] = ("A11", "Front Panel Seam"),
+                                ["Back Panel"] = ("A12", "Back Panel Seam"),
+                                ["OutSide"] = ("A16", "Out-Side Seam"),
+                                ["InSide"] = ("A17", "In-Side Seam"),
+                                ["Back Rise"] = ("A18", "Back Rise Seam"),
+                                ["Front Crotch"] = ("A19", "Front Crotch Seam"),
+                                ["Cross"] = ("A20", "Cross Seam"),
+                            };
+                        if (!string.IsNullOrEmpty(component))
+                        {
+                            foreach (var kv in ComponentMap)
+                            {
+                                if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var (cell, desc) = kv.Value;
+                                    map[cell] = (dto, reportNo) => desc;
+                                }
+                            }
+                        }
+
+                    }
+                    else 
+                    {
+                        map["J22"] = (dto, reportNo) => dto.Standard!;
+                        if (layout.Contains("Shell") && !string.IsNullOrEmpty(layout))
+                        {
+                            map["Q23"] = (dto, reportNo) => "√";
+                            map["Q33"] = (dto, reportNo) => "√";
+                        }
+                        if (layout.Contains("Lining")&& !string.IsNullOrEmpty(layout))
+                        {
+                            map["AF23"] = (dto, reportNo) => "√";
+                            map["AF33"] = (dto, reportNo) => "√";
+                        }
+                        Dictionary<string, (string Cell, string Desc)> ComponentMap =
+                            new(StringComparer.OrdinalIgnoreCase)
+                            {
+                                ["Side"] = ("A24", "Side Seam"),
+                                ["Sleeve"] = ("A25", "Sleeve Seam"),
+                                ["Armhole"] = ("A26", "Armhole Seam"),
+                                ["Shoulder"] = ("A27", "Shoulder Seam"),
+                                ["Armprit"] = ("A28", "Armprit Seam"),
+                                ["Front Panel"] = ("A29", "Front Panel Seam"),
+                                ["Back Panel"] = ("A30", "Back Panel Seam"),
+                                ["OutSide"] = ("A34", "Out-Side Seam"),
+                                ["InSide"] = ("A35", "In-Side Seam"),
+                                ["Back Rise"] = ("A36", "Back Rise Seam"),
+                                ["Front Crotch"] = ("A37", "Front Crotch Seam"),
+                                ["Cross"] = ("A38", "Cross Seam"),
+                            };
+                        if (!string.IsNullOrEmpty(component))
+                        {
+                            foreach (var kv in ComponentMap)
+                            {
+                                if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var (cell, desc) = kv.Value;
+                                    map[cell] = (dto, reportNo) => desc;
+                                }
+                            }
+                        }
+                    }
+                    
+
+                }
+                return map;
+            },
+            ["Bursting Strength"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
+            {
+                ["M1"] = (dto, reportNo) => reportNo,
+                ["I3"] = (dto, reportNo) => dto.Standard!
             },
             ["Tensile Strength"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {

@@ -76,7 +76,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T :IWetParam, new()
         { 
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "Appearance", "DS to Dry-clean", "Print Durability For JAKO","Heat Press Test For JAKO","CF to Hot Pressing" }
+            if (!new[] { "CF to Washing", "Appearance", "DS to Dry-clean", "Print Durability For JAKO","Heat Press Test For JAKO","CF to Hot Pressing", "Spriality/Skewing" }
                  .Contains(itemName))
                 return default(T);
             var Param = await _db.WetParameterIsos

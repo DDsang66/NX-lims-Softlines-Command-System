@@ -17,5 +17,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? Method { get; set; }
 
         public string? sampleDescription { get; set; }
+
+        public object? Extra { get; set; }
     }
 }
