@@ -263,7 +263,7 @@
                               .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
             stringSpirality = matched switch
             {
-                "Garment" => new List<string> { "A26", "A27", "A28" },
+                "Garment" => new List<string> { "A29", "A30", "A31" },
                 "Fabric" => new List<string> { "A10", "A11", "A12" },
                 _ => new List<string> { "A10", "A11", "A12" }
             };

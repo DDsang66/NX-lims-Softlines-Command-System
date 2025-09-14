@@ -306,7 +306,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AZ1"] = (w, dto, reportNo) => reportNo;
                     map["A6"] = (w, dto, reportNo) => w.WashingProcedure!;
                     map["L5"] = (w, dto, reportNo) => w.Temperature!;
-                    map["T6"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["Y6"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["E7"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
                     map["U7"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
                 }
@@ -419,7 +419,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["A3"] = (w, dto, reportNo) =>"ISO 16322-3:2021 Method 1,Option 1";
                     map["A34"] = (w, dto, reportNo) => w.WashingProcedure!;
                     map["L33"] = (w, dto, reportNo) => w.Temperature!;
-                    map["T34"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["X34"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["E35"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
                     map["U35"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
                 }
