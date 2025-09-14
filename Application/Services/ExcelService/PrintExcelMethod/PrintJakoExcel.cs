@@ -410,13 +410,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["C5"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
-                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-2:2021 Method 1,Option 1";
+                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-2:2021 Method A,Option 1";
                     map["A37"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
                     map["S35"] = (w, dto, reportNo) => w.Ballast!;
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-3:2021 Method 1,Option 1";
+                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-3:2021 Method B";
                     map["A34"] = (w, dto, reportNo) => w.WashingProcedure!;
                     map["L33"] = (w, dto, reportNo) => w.Temperature!;
                     map["X34"] = (w, dto, reportNo) => w.DryProcedure!;
