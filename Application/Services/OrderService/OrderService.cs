@@ -3,10 +3,10 @@ using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
 {
-    public class OrderServic
+    public class OrderService
     {
-        private OrderRepo _or;
-        public OrderServic(OrderRepo or)
+        private readonly OrderRepo _or;
+        public OrderService(OrderRepo or)
         {
             _or = or;
         }

@@ -13,7 +13,7 @@
         public string? orderEntry { get; set; }
         public string? express { get; set; }
         public DateOnly? dueDate { get; set; }
-        public string? CS { get; set; }
+        public string? cs { get; set; }
         public string? group { get; set; }
         public DateTime? labIn { get; set; }
     }

@@ -44,8 +44,8 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("NX-limsLabCommandSys");
+    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //    => optionsBuilder.UseSqlServer("NX-limsLabCommandSys");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

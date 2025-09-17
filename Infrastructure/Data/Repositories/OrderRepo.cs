@@ -28,7 +28,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     ReportNumber = row.reportNum,
                     OrderEntryPerson = row.orderEntry,
                     Status = 1,
-                    CustomerService = row.CS,
+                    CustomerService = row.cs,
                     TestGroup = row.group,
                     Remark = order.remark,
                     ScheduleIndex = snowId

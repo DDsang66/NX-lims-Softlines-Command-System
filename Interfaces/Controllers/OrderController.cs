@@ -9,8 +9,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
     [Route("api/order")]
     public class OrderController : Controller
     {
-        private readonly OrderServic _os;
-        public OrderController(OrderServic os)
+        private readonly OrderService _os;
+        public OrderController(OrderService os)
         {
             _os = os;
         }
@@ -18,7 +18,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// 接收前端返回的Order表单
         /// </summary>
         [HttpPost("add")]
-        public IActionResult OrderAdd([FromForm] OrderDto dto)
+        public IActionResult OrderAdd([FromBody] OrderDto dto)
         {
             //调用OrderService进行处理
             //接收处理状态，status为1时表示成功

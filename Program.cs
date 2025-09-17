@@ -12,6 +12,8 @@ using NX_lims_Softlines_Command_System.Application.Services.AuthenticationServic
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Diagnostics;
+using NX_lims_Softlines_Command_System.Application.Services.OrderService;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -34,7 +36,8 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<FiberContentHelper>();
             builder.Services.AddScoped<IPrintExcelStrategyFactory, PrintExcelStrategyFactory>();
             builder.Services.AddScoped<ExcelHelper>();
-
+            builder.Services.AddScoped<OrderService>();
+            builder.Services.AddScoped<OrderRepo>();
 
             // 扫描所有实现 IPrintExcelStrategy 的非抽象类
             builder.Services.AddSingleton<JwtService>();
@@ -66,11 +69,11 @@ namespace NX_lims_Softlines_Command_System
             {
                 options.AddPolicy("VueDev", policy =>
                 {
-                    policy.WithOrigins("http://192.168.235.8:5173",// Vue 默认端口,上线时需要更换
+                    policy.WithOrigins("http://192.168.235.8:5173",
                                        "http://192.168.235.52:5173",
                                        "http://192.168.235.8:82",
                                        "http://192.168.235.8:81",
-                                       "https://TheProductionDomain.com") // 线上域名
+                                       "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
                           .AllowCredentials(); // 用 JWT/ Cookie 可保留
