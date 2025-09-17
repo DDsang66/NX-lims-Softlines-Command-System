@@ -571,7 +571,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Zipper Strength"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
             ["Resistance to Snapping of Snap Fasteners"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
             ["Resistance to Unsnapping of Snap Fasteners"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
-            ["Samll Parts"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
+            ["Small Parts"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
         };
 
         private static readonly Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>>> WetExtraMap = new()
@@ -702,23 +702,23 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Weight"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {
                 ["J1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => "ASTM D3776/D3776M-20 option C"
+                ["A3"] = (dto, reportNo) => dto.Standard!
             },
             ["Pilling Resistance"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {
                 ["M1"] = (dto, reportNo) => reportNo,
-                ["H3"] = (dto, reportNo) => "ASTM D3512/D3512M-22",
+                ["H3"] = (dto, reportNo) => dto.Standard!,
                 ["D4"] = (dto, reportNo) => "30"
             },
             ["Seam Slippage"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {
                 ["M1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => "ASTM D1683/D1683M-22"
+                ["A3"] = (dto, reportNo) => dto.Standard!
             },
             ["Snagging Resistance"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {
                 ["M1"] = (dto, reportNo) => reportNo,
-                ["J15"] = (dto, reportNo) => "ASTM D3939/D3939M-13(2017)",
+                ["J15"] = (dto, reportNo) => dto.Standard!,
                 ["C17"] = (dto, reportNo) => "600"
             },
             ["Small Parts"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
@@ -742,12 +742,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Resistance to Snapping of Snap Fasteners"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {
                 ["M1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => "ASTM D4846-96(2021)"
+                ["A3"] = (dto, reportNo) => dto.Standard!
             },
             ["Resistance to Unsnapping of Snap Fasteners"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {
                 ["M1"] = (dto, reportNo) => reportNo,
-                ["A26"] = (dto, reportNo) => "AATCC TS-013"
+                ["A26"] = (dto, reportNo) => dto.Standard!
             },
         };
 

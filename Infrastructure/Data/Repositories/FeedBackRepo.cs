@@ -33,7 +33,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 
         public async Task<object?> Get()
         {
-            var feedbacks = _db.Feebacks.Select(f=>f.Status == 0).ToArray();
+            var feedbacks = _db.Feedbacks.Select(f=>f.Status == 0).ToArray();
             return feedbacks;
         }
 

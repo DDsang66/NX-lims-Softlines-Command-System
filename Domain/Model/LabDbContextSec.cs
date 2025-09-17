@@ -7,6 +7,10 @@ namespace NX_lims_Softlines_Command_System.Domain.Model;
 
 public partial class LabDbContextSec : DbContext
 {
+    public LabDbContextSec()
+    {
+    }
+
     public LabDbContextSec(DbContextOptions<LabDbContextSec> options)
         : base(options)
     {
@@ -16,9 +20,15 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<Composition> Compositions { get; set; }
 
-    public virtual DbSet<Feeback> Feebacks { get; set; }
+    public virtual DbSet<CustomerService> CustomerServices { get; set; }
+
+    public virtual DbSet<Feedback> Feedbacks { get; set; }
 
     public virtual DbSet<Item> Items { get; set; }
+
+    public virtual DbSet<LabTestInfo> LabTestInfos { get; set; }
+
+    public virtual DbSet<LabTestSchedule> LabTestSchedules { get; set; }
 
     public virtual DbSet<Menu> Menus { get; set; }
 
@@ -33,6 +43,9 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseSqlServer("NX-limsLabCommandSys");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -86,9 +99,24 @@ public partial class LabDbContextSec : DbContext
                 .HasColumnName("fiber_type");
         });
 
-        modelBuilder.Entity<Feeback>(entity =>
+        modelBuilder.Entity<CustomerService>(entity =>
         {
-            entity.ToTable("feeback");
+            entity.ToTable("customer_service");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.CustomerService1)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("customer_service");
+        });
+
+        modelBuilder.Entity<Feedback>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_feeback");
+
+            entity.ToTable("feedback");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -103,7 +131,9 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("message");
-            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.Status)
+                .HasDefaultValue((byte)0)
+                .HasColumnName("status");
             entity.Property(e => e.Type)
                 .HasDefaultValue((byte)3)
                 .HasColumnName("type");
@@ -126,6 +156,71 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<LabTestInfo>(entity =>
+        {
+            entity.ToTable("lab_test_info");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.CustomerService)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("customer_service");
+            entity.Property(e => e.Describe)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("describe");
+            entity.Property(e => e.OrderEntryPerson)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("order_entry_person");
+            entity.Property(e => e.Remark)
+                .HasColumnType("text")
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.Reviewer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("reviewer");
+            entity.Property(e => e.ScheduleIndex).HasColumnName("schedule_index");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TestEngineer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("test_engineer");
+            entity.Property(e => e.TestGroup)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("test_group");
+            entity.Property(e => e.TestItemNum).HasColumnName("test_item_num");
+            entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
+        });
+
+        modelBuilder.Entity<LabTestSchedule>(entity =>
+        {
+            entity.HasKey(e => e.IdSchedule);
+
+            entity.ToTable("lab_test_schedule");
+
+            entity.Property(e => e.IdSchedule)
+                .ValueGeneratedNever()
+                .HasColumnName("id_schedule");
+            entity.Property(e => e.LabOutTime)
+                .HasColumnType("datetime")
+                .HasColumnName("lab_out_time");
+            entity.Property(e => e.OrderInTime)
+                .HasColumnType("datetime")
+                .HasColumnName("order_in_time");
+            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
+            entity.Property(e => e.ReviewFinishTime)
+                .HasColumnType("datetime")
+                .HasColumnName("review_finish_time");
         });
 
         modelBuilder.Entity<Menu>(entity =>
