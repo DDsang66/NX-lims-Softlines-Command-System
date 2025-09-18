@@ -69,10 +69,9 @@ namespace NX_lims_Softlines_Command_System
             {
                 options.AddPolicy("VueDev", policy =>
                 {
-                    policy.WithOrigins("http://192.168.235.8:5173",
-                                       "http://192.168.235.52:5173",
-                                       "http://192.168.235.8:82",
-                                       "http://192.168.235.8:81",
+                    policy.WithOrigins("http://localhost:5173",
+                                       "http://localhost:82",
+                                       "http://localhost:81",
                                        "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()

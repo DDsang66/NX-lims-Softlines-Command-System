@@ -23,7 +23,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         }
 
         /// <summary>
-        /// 套餐确认接口，返回一个CheckList
+        /// 套餐确认接口，返回CheckList
         /// </summary>
         [HttpPost("confirm")]
         public async Task<IActionResult> BuyerConfirm([FromBody] RequiredInfoDto infoDto)
@@ -41,15 +41,15 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             try
             {
                 if (string.IsNullOrEmpty(infoDto.buyer))
-                    return BadRequest(new { success = false, message = "Invalid buyer type" });
+                    return BadRequest(new {success = false, message = "Invalid buyer type" });
 
                 var result = await action(infoDto);
-                return Ok(new { success = true, data = result });
+                return Ok(new {success = true, data = result });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Internal Server Error" });
+                return StatusCode(500, new {success = false, message = "Internal Server Error" });
             }
         }
     }

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNet.Identity;
+﻿using Azure;
+using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
@@ -49,7 +50,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
                 var userId = token.Claims.First(c => c.Type == "uid").Value;
                 var newTokens = _jwt.GenerateTokens(userId);
-                return Ok(newTokens);
+                return Ok(new{ success = true,data = newTokens });
             }
             catch
             {
@@ -91,7 +92,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 _db.Add(newUser);
                 _db.Add(newUserProfile);
                 _db.SaveChanges();
-                return Ok();
+                return Ok(new { success = true});
             }
             catch
             {
@@ -124,7 +125,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             _db.Update(user);
             _db.SaveChanges();
 
-            return Ok();
+            return Ok(new { success = true });
         }
 
         private User? ValidateUser(string username, string pwd)

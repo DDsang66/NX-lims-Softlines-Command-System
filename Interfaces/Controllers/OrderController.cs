@@ -25,9 +25,9 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             bool answer = _os.AddOrder(dto);
             if (answer) 
             {
-                return Ok(new { status = 1, success = true, message = "Adding Succeed"});
+                return Ok(new {success = true, message = "Adding Succeed"});
             }
-            return Ok(new { status = 0, success = false, message = "Adding Failed" });
+            return Ok(new {success = false, message = "Adding Failed" });
         }
     }
 

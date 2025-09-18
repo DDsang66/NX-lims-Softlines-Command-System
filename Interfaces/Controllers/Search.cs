@@ -64,8 +64,11 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpGet("getCs")]
         public IActionResult getCs()
         {
-            var csList = _db.CustomerServices.Select(cs => cs.CustomerService1).Distinct().ToList();
-            return Ok(new {status = 1 ,success = true, message = "CS Load Succeed",data = csList});
+            var csList = _db.CustomerServices
+                .Select(cs => new { cs.Id, cs.CustomerService1 })
+                .Distinct()
+                .ToList();
+            return Ok(new {success = true, message = "CS Load Succeed",data = csList});
         }
     }
 }

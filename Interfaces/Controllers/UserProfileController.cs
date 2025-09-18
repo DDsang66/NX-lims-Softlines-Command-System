@@ -28,7 +28,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             _dbContextSec.UserProfiles.Update(profile);
             _dbContextSec.SaveChanges();
 
-            return Ok();
+            return Ok(new { success = true});
         }
 
         [HttpPost("render")]
@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 birth = profile.Birth
             };
 
-            return Ok(profileData);
+            return Ok(new { success = true ,data = profileData });
         }
 
 

@@ -22,7 +22,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         public async Task<IActionResult> Post([FromBody] FeedBackDto dto)
         {
             string? result =await _service.Post(dto);
-            return Ok();
+            return Ok(new {success=true});
         }
 
 
@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         public async Task<IActionResult> Get([FromBody] FeedBackDto dto)
         {
             var result = await _service.Get();
-            return Ok(result);
+            return Ok(new { success = true,data = result });
         }
     }
 }
