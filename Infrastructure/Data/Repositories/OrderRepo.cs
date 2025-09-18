@@ -22,13 +22,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             foreach (var row in rows)
             {
                 long snowId = snowflake.NextId();
+                var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == row.cs)!.CustomerService1;
                 var orderEntity = new LabTestInfo
                 {
                     Id = snowId,
                     ReportNumber = row.reportNum,
                     OrderEntryPerson = row.orderEntry,
                     Status = 1,
-                    CustomerService = row.cs,
+                    CustomerService = csName,
                     TestGroup = row.group,
                     Remark = order.remark,
                     ScheduleIndex = snowId
