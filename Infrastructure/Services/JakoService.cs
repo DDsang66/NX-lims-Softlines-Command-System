@@ -1,10 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Domain.Model.Interface;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
@@ -65,7 +64,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             sampleDescription = infoDto.sampleDescription
                         }, item);
                     string? param = await helper.CreateParameters(infoDto, item)!;
-                    dtos.Add(CreateResponse(item, wetParams ?? new WetParameterIso { ContactItem = item,ReportNumber = infoDto.reportNumber! }, param!));
+                    dtos.Add(CreateResponse(item, wetParams ?? new WetParameterIso { ContactItem = item, ReportNumber = infoDto.reportNumber! }, param!));
                 }
                 return dtos;
             }

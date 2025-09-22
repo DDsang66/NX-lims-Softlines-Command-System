@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
+using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.UserService;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
@@ -21,8 +21,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpPost("post")]
         public async Task<IActionResult> Post([FromBody] FeedBackDto dto)
         {
-            string? result =await _service.Post(dto);
-            return Ok(new {success=true});
+            string? result = await _service.Post(dto);
+            return Ok(new { success = true });
         }
 
 
@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         public async Task<IActionResult> Get([FromBody] FeedBackDto dto)
         {
             var result = await _service.Get();
-            return Ok(new { success = true,data = result });
+            return Ok(new { success = true, data = result });
         }
     }
 }

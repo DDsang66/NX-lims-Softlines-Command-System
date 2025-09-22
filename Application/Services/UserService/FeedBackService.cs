@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NX_lims_Softlines_Command_System.Infrastructure.Services;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
-using NX_lims_Softlines_Command_System.Infrastructure.Services;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.UserService
 {
@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.UserService
         }
         public async Task<object?> Get()
         {
-            try 
+            try
             {
                 var feedback = await _repo.Get();
                 return feedback;

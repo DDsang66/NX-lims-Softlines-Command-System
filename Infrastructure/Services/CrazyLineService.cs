@@ -5,7 +5,6 @@ using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
-
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
     public class CrazyLineService : IBuyerService
@@ -64,7 +63,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             ItemName = item
                         }, item);
                     string? param = await helper.CreateParameters(infoDto, item)!;
-                    dtos.Add(CreateResponse(item, wetParams ?? new WetParameterAatcc {ContactItem = item }, param!));
+                    dtos.Add(CreateResponse(item, wetParams ?? new WetParameterAatcc { ContactItem = item }, param!));
                 }
                 return dtos;
             }

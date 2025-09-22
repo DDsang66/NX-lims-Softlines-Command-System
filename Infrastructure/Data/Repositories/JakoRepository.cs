@@ -1,11 +1,12 @@
-﻿using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+﻿using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 {
 
@@ -20,7 +21,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             _helper = helper;
         }
 
-        public async Task<List<CheckListDto>?> GetCheckListAsync(dynamic input) 
+        public async Task<List<CheckListDto>?> GetCheckListAsync(dynamic input)
         {
             try
             {
@@ -73,12 +74,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             return null;
         }
 
-        public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T :IWetParam, new()
-        { 
+        public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
+        {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "Appearance", "DS to Dry-clean", "Print Durability For JAKO","Heat Press Test For JAKO","CF to Hot Pressing", "Spriality/Skewing" }
+            if (!new[] { "CF to Washing", "Appearance", "DS to Dry-clean", "Print Durability For JAKO", "Heat Press Test For JAKO", "CF to Hot Pressing", "Spriality/Skewing" }
                  .Contains(itemName))
-                return default(T);
+                return default;
             var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
             JakoParameterProvider wetParam = new JakoParameterProvider(_helper);

@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
-using System.Collections.Generic;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using NX_lims_Softlines_Command_System.Domain.Model;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
@@ -41,15 +36,15 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             try
             {
                 if (string.IsNullOrEmpty(infoDto.buyer))
-                    return BadRequest(new {success = false, message = "Invalid buyer type" });
+                    return BadRequest(new { success = false, message = "Invalid buyer type" });
 
                 var result = await action(infoDto);
-                return Ok(new {success = true, data = result });
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
-                return StatusCode(500, new {success = false, message = "Internal Server Error" });
+                return StatusCode(500, new { success = false, message = "Internal Server Error" });
             }
         }
     }

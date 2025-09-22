@@ -1,18 +1,17 @@
 using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.Application.Services.Factory;
-using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using NX_lims_Softlines_Command_System.Domain.Model;
-using NX_lims_Softlines_Command_System.Tools.Factory;
 using OfficeOpenXml;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Reflection;
+using Microsoft.AspNetCore.Diagnostics;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
+using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
-using Microsoft.AspNetCore.Diagnostics;
 using NX_lims_Softlines_Command_System.Application.Services.OrderService;
+using NX_lims_Softlines_Command_System.Domain.Model;
+using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 
 namespace NX_lims_Softlines_Command_System

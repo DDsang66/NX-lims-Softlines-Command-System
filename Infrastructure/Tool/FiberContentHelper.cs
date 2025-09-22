@@ -11,7 +11,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
     {
         private readonly LabDbContextSec _db;
 
-        public  FiberContentHelper(LabDbContextSec db)
+        public FiberContentHelper(LabDbContextSec db)
         {
             _db = db;
         }
@@ -58,7 +58,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         /// <summary>
         /// 找出Type对应的成分是否存在
         /// </summary>
-        public bool? IsCompositionExist(string Type,List<FiberDto> Composition) 
+        public bool? IsCompositionExist(string Type, List<FiberDto> Composition)
         {
             bool isExist = false;
             foreach (var item in Composition)

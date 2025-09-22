@@ -1,10 +1,10 @@
-﻿using NX_lims_Softlines_Command_System.Application.DTO;
-using OfficeOpenXml;
-using static NX_lims_Softlines_Command_System.Tools.Factory.PrintExcelStrategyFactory;
+﻿using OfficeOpenXml;
+using static NX_lims_Softlines_Command_System.Application.Services.Factory.PrintExcelStrategyFactory;
+using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper;
-using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {

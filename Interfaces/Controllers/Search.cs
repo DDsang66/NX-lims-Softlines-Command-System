@@ -68,7 +68,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 .Select(cs => new { cs.Id, cs.CustomerService1 })
                 .Distinct()
                 .ToList();
-            return Ok(new {success = true, message = "CS Load Succeed",data = csList});
+            return Ok(new { success = true, message = "CS Load Succeed", data = csList });
         }
     }
 }

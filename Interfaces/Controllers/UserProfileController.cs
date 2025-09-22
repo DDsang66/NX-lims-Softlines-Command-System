@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model;
-using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 {
@@ -19,7 +19,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpPost("edit")]
         public IActionResult Edit([FromBody] ProfileEdit dto)
         {
-            var profile = _dbContextSec.UserProfiles.FirstOrDefault(p => p.RealName == dto.RealName && p.EmployeeId ==dto.EmployeeId);
+            var profile = _dbContextSec.UserProfiles.FirstOrDefault(p => p.RealName == dto.RealName && p.EmployeeId == dto.EmployeeId);
             if (profile == null) return NotFound("Profile not found");
             profile.Phone = dto.Phone;
             profile.Email = dto.Email;
@@ -28,7 +28,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             _dbContextSec.UserProfiles.Update(profile);
             _dbContextSec.SaveChanges();
 
-            return Ok(new { success = true});
+            return Ok(new { success = true });
         }
 
         [HttpPost("render")]
@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 birth = profile.Birth
             };
 
-            return Ok(new { success = true ,data = profileData });
+            return Ok(new { success = true, data = profileData });
         }
 
 
@@ -86,7 +86,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             }
             return PhysicalFile(avatarPhysicalPath, contentType);
         }
-        
+
         [HttpPost("avatar/update")]
         public IActionResult UploadAvatar([FromForm] IFormFile avatar, [FromForm] string user)
         {
@@ -112,13 +112,13 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 _dbContextSec.Update(profile);
                 _dbContextSec.SaveChanges();
 
-            var avatarPhysicalPath = Path.Combine(Directory.GetCurrentDirectory(), profile.AvatarUrl);
+                var avatarPhysicalPath = Path.Combine(Directory.GetCurrentDirectory(), profile.AvatarUrl);
 
-            if (!System.IO.File.Exists(avatarPhysicalPath))
-            {
-                // 如果头像文件不存在，返回404
-                return NotFound();
-            }
+                if (!System.IO.File.Exists(avatarPhysicalPath))
+                {
+                    // 如果头像文件不存在，返回404
+                    return NotFound();
+                }
                 var contentType = "image/jpeg";
                 //返回上传后的头像二进制数据
                 return PhysicalFile(avatarPhysicalPath, contentType);

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
+using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.OrderService;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
@@ -23,15 +23,23 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             //调用OrderService进行处理
             //接收处理状态，status为1时表示成功
             bool answer = _os.AddOrder(dto);
-            if (answer) 
+            if (answer)
             {
-                return Ok(new {success = true, message = "Adding Succeed"});
+                return Ok(new { success = true, message = "Adding Succeed" });
             }
-            return Ok(new {success = false, message = "Adding Failed" });
+            return Ok(new { success = false, message = "Adding Failed" });
         }
+
+
+        /// <summary>
+        /// 接收前端的ueserid返回orderlist
+        /// </summary>
+        [HttpPost("getorder")]
+        public async Task<IActionResult> GetOrder([FromBody] string userId)
+        {
+            var result = await _os.GetOrderListAsync(userId);
+            return Ok(new { success = true, message = "Adding Succeed", data = result });
+        }
+
     }
-
-
-
-
 }

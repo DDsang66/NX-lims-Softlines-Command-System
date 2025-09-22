@@ -1,11 +1,12 @@
 ﻿using Azure;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNetCore.Mvc;
+
+using System.IdentityModel.Tokens.Jwt;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 {
@@ -32,7 +33,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             string reviewer = user.NickName!;
             var response = new
             {
-                tokens = tokens,
+                tokens,
                 user = reviewer,
                 id = user.UserId
             };
@@ -50,7 +51,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
                 var userId = token.Claims.First(c => c.Type == "uid").Value;
                 var newTokens = _jwt.GenerateTokens(userId);
-                return Ok(new{ success = true,data = newTokens });
+                return Ok(new { success = true, data = newTokens });
             }
             catch
             {
@@ -92,7 +93,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 _db.Add(newUser);
                 _db.Add(newUserProfile);
                 _db.SaveChanges();
-                return Ok(new { success = true});
+                return Ok(new { success = true });
             }
             catch
             {

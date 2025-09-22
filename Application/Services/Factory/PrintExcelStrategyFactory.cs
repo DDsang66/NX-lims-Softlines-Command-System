@@ -6,13 +6,13 @@ using System.Web;
 using System.IO;
 using OfficeOpenXml;
 using System.Configuration;
-using NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod;
 
-namespace NX_lims_Softlines_Command_System.Tools.Factory
+namespace NX_lims_Softlines_Command_System.Application.Services.Factory
 {
 
-    public sealed class PrintExcelStrategyFactory:IPrintExcelStrategyFactory
+    public sealed class PrintExcelStrategyFactory : IPrintExcelStrategyFactory
     {
         private readonly IServiceProvider _sp;
         public PrintExcelStrategyFactory(IServiceProvider sp) => _sp = sp;

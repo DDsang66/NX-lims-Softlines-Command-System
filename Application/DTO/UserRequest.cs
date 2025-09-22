@@ -3,7 +3,7 @@
     public record LoginRequest(string Email, string Password);
     public record TokenResponse(string AccessToken, string RefreshToken);
 
-    public record RegisterRequest(string Email,string Password,string NickName,string EmployeeId);
+    public record RegisterRequest(string Email, string Password, string NickName, string EmployeeId);
 
     public record PwdReset(string AuthenticInfo, string NewPassword);
 

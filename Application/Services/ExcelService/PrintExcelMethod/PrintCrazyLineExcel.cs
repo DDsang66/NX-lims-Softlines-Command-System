@@ -602,7 +602,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["M7"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
                 }
-                if (dto.sampleDescription!.Contains("Fabric")) 
+                if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["L14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["AF14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;

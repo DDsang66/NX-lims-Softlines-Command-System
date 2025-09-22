@@ -1,21 +1,21 @@
-﻿using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+﻿using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Domain;
-using NX_lims_Softlines_Command_System.Domain.Model.Interface;
-using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using NX_lims_Softlines_Command_System.Domain.Model.Interface;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 {
-    
+
     //与数据库交互
     public class CrazyLineRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public CrazyLineRepository(LabDbContextSec db,FiberContentHelper helper)
+        public CrazyLineRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -79,11 +79,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             // 只处理指定 item 类型
             if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean", "Spriality/Skewing" }
                  .Contains(itemName))
-                return default(T);
+                return default;
             var Param = await _db.WetParameterAatccs
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
             CrazyLineParameterProvider wetParam = new CrazyLineParameterProvider(_helper);
-            if (Param != null) {
+            if (Param != null)
+            {
                 var updatedParam = wetParam.CreateWetParameters(input);
                 updatedParam.ParamId = Param.ParamId;
                 _db.Entry(Param).CurrentValues.SetValues(updatedParam);

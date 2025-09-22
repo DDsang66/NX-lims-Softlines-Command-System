@@ -1,8 +1,7 @@
-﻿using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-
+using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 {
@@ -35,8 +34,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = p.WashingProcedure!.Contains("Cold") ? "85"
                 : p.WashingProcedure!.Contains("Warm") ? "105"
                 : "0",
-                Program = (p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm")) ? "ref 2A" : "",
-                SteelBallNum = (p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm")) ? 50 : 0
+                Program = p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm") ? "ref 2A" : "",
+                SteelBallNum = p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm") ? 50 : 0
             },
             ("DS to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
@@ -71,8 +70,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Sensitive = ((p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true) ||
-                                  (p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive") ? "Y" : "N" 
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                                  p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N"
             },
             ("Spriality/Skewing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
@@ -130,7 +129,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         }
 
 
-        private string? DryConditionHelper(string DryProcedure) 
+        private string? DryConditionHelper(string DryProcedure)
         {
             if (DryProcedure == null) return null;
             string program = "";
@@ -142,7 +141,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             return program;
         }
 
-        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto,string ItemName)
+        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName)
         {
 
             // 1. 计算最大值

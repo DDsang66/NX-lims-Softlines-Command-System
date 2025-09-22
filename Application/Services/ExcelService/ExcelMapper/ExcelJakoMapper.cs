@@ -32,7 +32,7 @@
             switch (ItemName)
             {
                 case "Abrasion Resistance":
-                    stringMap = new List<string> { "H8", "O8", "V8", "AC8"};
+                    stringMap = new List<string> { "H8", "O8", "V8", "AC8" };
                     break;
                 case "Snagging Resistance":
                     stringMap = new List<string> { "K25", "R25", "Y25", "AF25" };
@@ -45,12 +45,12 @@
         public static string[] SeamSlippageMap(string sampleDescription)
         {
             List<string> stringMap;
-            var matched = new[] { "Garment", "Fabric"}
+            var matched = new[] { "Garment", "Fabric" }
                   .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
-                "Garment" => new List<string> { "D4", "D14"},
+                "Garment" => new List<string> { "D4", "D14" },
                 "Fabric" => new List<string> { "A10", "A12" },
                 _ => new List<string> { "A10", "A12" }
             };
@@ -125,7 +125,7 @@
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
-                "Garment" => new List<string> { "G11","AU4", "AX15", "BG23" },
+                "Garment" => new List<string> { "G11", "AU4", "AX15", "BG23" },
                 "Fabric" => new List<string> { "AZ9", "AW13", "CK5", "CT13" },
                 "Socks" => new List<string> { "G10" },
                 "Gloves" => new List<string> { "G19" },
@@ -161,7 +161,7 @@
             switch (ItemName)
             {
                 case "CF to Sublimation in Storage":
-                    stringMap = new List<string> { "D5", "F5" ,"H5", "L5", "N5", "P5" };
+                    stringMap = new List<string> { "D5", "F5", "H5", "L5", "N5", "P5" };
                     break;
                 case "CF to Hot Pressing":
                     stringMap = new List<string> { "D16", "F16", "H16", "L16", "N16", "P16" };
@@ -217,7 +217,7 @@
             switch (ItemName)
             {
                 case "CF to Chlorinated Water":
-                    stringMap = new List<string> { "F5", "H5", "J5", "L5", "N5", "P5"};
+                    stringMap = new List<string> { "F5", "H5", "J5", "L5", "N5", "P5" };
                     break;
                 case "CF to Sea Water":
                     stringMap = new List<string> { "F11", "H11", "J11", "L11", "N11", "P11" };
@@ -259,7 +259,7 @@
         public static string[] MapSpirality(string sampleDescription)
         {
             List<string> stringSpirality;
-            var matched = new[] { "Garment", "Fabric"}
+            var matched = new[] { "Garment", "Fabric" }
                               .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
             stringSpirality = matched switch
             {

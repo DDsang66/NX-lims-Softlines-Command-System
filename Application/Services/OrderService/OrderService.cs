@@ -19,5 +19,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
             if (an) return true;
             else return false;
         }
+
+
+        public async Task<OrderOutput[]> GetOrderListAsync(string userId)
+        {
+            var result = await _or.GetOrderListAsync(userId);
+            return result;
+        }
     }
 }

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
-public partial class WetParameterAatcc:IWetParam
+public partial class WetParameterAatcc : IWetParam
 {
     public int ParamId { get; set; }
 

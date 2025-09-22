@@ -1,16 +1,16 @@
-﻿using NX_lims_Softlines_Command_System.Application.DTO;
-using OfficeOpenXml;
-using static NX_lims_Softlines_Command_System.Tools.Factory.PrintExcelStrategyFactory;
+﻿using OfficeOpenXml;
+using static NX_lims_Softlines_Command_System.Application.Services.Factory.PrintExcelStrategyFactory;
+using System.ComponentModel;
+using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper;
-using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
-using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
-using System.ComponentModel;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
-    public class PrintJakoExcel:IPrintExcelStrategy
+    public class PrintJakoExcel : IPrintExcelStrategy
     {
         private readonly LabDbContextSec _db;
         public PrintJakoExcel(LabDbContextSec db)
@@ -186,7 +186,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
             }
 
-        
+
         }
         private static readonly Dictionary<string, string> TemplateSheetNamesNormal = new()
         {
@@ -297,7 +297,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BC1"] = (w, dto, reportNo) => reportNo;
                     map["CM1"] = (w, dto, reportNo) => reportNo;
                     map["AR4"] = (w, dto, reportNo) => "EN ISO 5077:2007 / EN ISO 3759:2011 / EN ISO 6330:2021";
-                    map["AR12"] = (w, dto, reportNo) => w.SpecialCareInstruction??null;
+                    map["AR12"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
                     map["BF6"] = (w, dto, reportNo) => w.Ballast!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
@@ -410,13 +410,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["C5"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
-                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-2:2021 Method A,Option 1";
+                    map["A3"] = (w, dto, reportNo) => "ISO 16322-2:2021 Method A,Option 1";
                     map["A37"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
                     map["S35"] = (w, dto, reportNo) => w.Ballast!;
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    map["A3"] = (w, dto, reportNo) =>"ISO 16322-3:2021 Method B";
+                    map["A3"] = (w, dto, reportNo) => "ISO 16322-3:2021 Method B";
                     map["A34"] = (w, dto, reportNo) => w.WashingProcedure!;
                     map["L33"] = (w, dto, reportNo) => w.Temperature!;
                     map["X34"] = (w, dto, reportNo) => w.DryProcedure!;
@@ -465,18 +465,18 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["M1"] = (dto, reportNo) => reportNo;
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
-                    map["A3"] = (dto, reportNo) =>dto.Standard!;
+                    map["A3"] = (dto, reportNo) => dto.Standard!;
                 }
-                if(dto.sampleDescription!.Contains("Garment"))
+                if (dto.sampleDescription!.Contains("Garment"))
                 {
                     map["J3"] = (dto, reportNo) => dto.Standard!;
                     string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-                    if (layout.Contains("Shell")) 
+                    if (layout.Contains("Shell"))
                     {
                         map["Q4"] = (dto, reportNo) => "√";
                         map["Q14"] = (dto, reportNo) => "√";
                     }
-                    if (layout.Contains("Lining")) 
+                    if (layout.Contains("Lining"))
                     {
                         map["AF4"] = (dto, reportNo) => "√";
                         map["AF14"] = (dto, reportNo) => "√";
@@ -520,7 +520,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     map["A3"] = (dto, reportNo) => dto.Standard!;
                 }
-                if (dto.sampleDescription!.Contains("Garment")) 
+                if (dto.sampleDescription!.Contains("Garment"))
                 {
                     string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
                     string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
@@ -566,7 +566,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         }
 
                     }
-                    else 
+                    else
                     {
                         map["J22"] = (dto, reportNo) => dto.Standard!;
                         if (layout.Contains("Shell") && !string.IsNullOrEmpty(layout))
@@ -574,7 +574,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                             map["Q23"] = (dto, reportNo) => "√";
                             map["Q33"] = (dto, reportNo) => "√";
                         }
-                        if (layout.Contains("Lining")&& !string.IsNullOrEmpty(layout))
+                        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout))
                         {
                             map["AF23"] = (dto, reportNo) => "√";
                             map["AF33"] = (dto, reportNo) => "√";
@@ -607,7 +607,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                             }
                         }
                     }
-                    
+
 
                 }
                 return map;
@@ -659,14 +659,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string sampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
-            if (itemName == "Appearance"|| itemName == "Print Durability For JAKO")
+            if (itemName == "Appearance" || itemName == "Print Durability For JAKO")
             {
                 for (int i = 0; i < cellAddrs.Length; i++)
                 {
                     ws.Cells[cellAddrs[i]].Value = slice[0];
                 }
             }
-            else 
+            else
             {
                 for (int i = 0; i < slice.Length; i++)
                 {
