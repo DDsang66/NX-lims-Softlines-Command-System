@@ -100,25 +100,28 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                               s.ReportDueDate.Year == DateTime.Now.Year
                         select new OrderSummary
                         {
-                            reportNum = i.ReportNumber,
-                            dueDate = s.ReportDueDate,
-                            cs = i.CustomerService,
-                            testgroup = i.TestGroup,
+                            ReportNum = i.ReportNumber,
+                            DueDate = s.ReportDueDate,
+                            Cs = i.CustomerService,
+                            Testgroup = i.TestGroup,
                             ReviewFinish = s.ReviewFinishTime,
-                            orderEntry = i.OrderEntryPerson,
-                            labIn = s.OrderInTime,
+                            OrderEntry = i.OrderEntryPerson,
+                            LabIn = s.OrderInTime,
                             LabOut = s.LabOutTime,
-                            remark = i.Remark,
-                            status = i.Status == 1 ? "In Lab"
+                            Remark = i.Remark,
+                            Status = i.Status == 1 ? "In Lab"
                                     : i.Status == 2 ? "Review Finished"
                                     : "Completed",
-                            express = i.Express
+                            Express = i.Express,
+                            TestItemNum = i.TestItemNum ?? 0,
+                            TestSampleNum = i.TestSampleNum ?? 0
+
                         };
 
             var total = await query.CountAsync();
 
             var items = await query
-                .OrderBy(o => o.dueDate)
+                .OrderBy(o => o.DueDate)
                 .Skip((pageNum - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

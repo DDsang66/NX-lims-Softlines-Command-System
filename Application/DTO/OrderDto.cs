@@ -37,17 +37,19 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public class OrderSummary
     {
-        public string? reportNum { get; set; }
-        public string? orderEntry { get; set; }
-        public string? express { get; set; }
-        public string? cs { get; set; }
-        public string? testgroup { get; set; }
+        public string? ReportNum { get; set; }
+        public string? OrderEntry { get; set; }
+        public string? Express { get; set; }
+        public string? Cs { get; set; }
+        public string? Testgroup { get; set; }
         public DateTime? ReviewFinish { get; set; }
-        public DateOnly dueDate { get; set; }
-        public DateTime labIn { get; set; }
+        public DateOnly DueDate { get; set; }
+        public DateTime LabIn { get; set; }
         public DateTime? LabOut { get; set; }
-        public string? remark { get; set; }
-        public string? status { get; set; }
+        public int TestSampleNum{ get; set; }
+        public int TestItemNum { get; set; }
+        public string? Remark { get; set; }
+        public string? Status { get; set; }
     }
 
 
