@@ -2,6 +2,8 @@
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.OrderService;
+using DocumentFormat.OpenXml.Wordprocessing;
+
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 {
@@ -30,14 +32,23 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             return Ok(new { success = false, message = "Adding Failed" });
         }
 
-
         /// <summary>
         /// 接收前端的ueserid返回orderlist
         /// </summary>
-        [HttpPost("getorder")]
+        [HttpGet("getorder")]
         public async Task<IActionResult> GetOrder([FromBody] string userId)
         {
             var result = await _os.GetOrderListAsync(userId);
+            return Ok(new { success = true, message = "Adding Succeed", data = result });
+        }
+
+        /// <summary>
+        /// 当前月份的单量汇总
+        /// </summary>
+        [HttpGet("ordersummary")]
+        public async Task<IActionResult> OrderSummary(int pageNum,int pageSize,int Month)
+        {
+            var result = await _os.GetOrderSummaryAsync(pageNum,pageSize,Month);
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 

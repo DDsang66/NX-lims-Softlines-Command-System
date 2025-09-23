@@ -3,6 +3,10 @@ using NX_lims_Softlines_Command_System.Application.Services.AuthenticationServic
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Wordprocessing;
+using System.Drawing.Printing;
+
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 {
@@ -30,6 +34,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     ReportNumber = row.reportNum,
                     OrderEntryPerson = row.orderEntry,
                     Status = 1,
+                    Express = row.express,
                     CustomerService = csName,
                     TestGroup = row.group,
                     Remark = order.remark,
@@ -86,15 +91,57 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             return orders;
         }
 
+        public async Task<PageResult<OrderSummary>> GetCurrentMonthOrdersAsync(int pageNum, int pageSize,int Month)
+        {
+            var query = from i in _db.LabTestInfos
+                        join s in _db.LabTestSchedules
+                        on i.Id equals s.IdSchedule
+                        where s.ReportDueDate.Month == Month &&
+                              s.ReportDueDate.Year == DateTime.Now.Year
+                        select new OrderSummary
+                        {
+                            reportNum = i.ReportNumber,
+                            dueDate = s.ReportDueDate,
+                            cs = i.CustomerService,
+                            testgroup = i.TestGroup,
+                            ReviewFinish = s.ReviewFinishTime,
+                            orderEntry = i.OrderEntryPerson,
+                            labIn = s.OrderInTime,
+                            LabOut = s.LabOutTime,
+                            remark = i.Remark,
+                            status = i.Status == 1 ? "In Lab"
+                                    : i.Status == 2 ? "Review Finished"
+                                    : "Completed",
+                            express = i.Express
+                        };
+
+            var total = await query.CountAsync();
+
+            var items = await query
+                .OrderBy(o => o.dueDate)
+                .Skip((pageNum - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return new PageResult<OrderSummary>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = pageNum,
+                PageSize = pageSize
+            };
+        }
+
+
 
         private string? GetExpressName(DateOnly duedate, DateTime labindate)
         {
             string express = "-";
-            var days = (duedate.ToDateTime(new TimeOnly()) - labindate).TotalDays;
-            if (days <= 1) express = "Same Date";
-            else if (days > 1 && days <= 2) express = "Shuttle";
-            else if (days > 2 && days <= 3) express = "Express";
-            else if (days > 3) express = "Regular";
+            var days = (duedate.ToDateTime(new TimeOnly()) - labindate).TotalDays + 1;
+            if (days <= 2 && days > 0) express = "Same Day";
+            else if (days > 2 && days <= 3) express = "Shuttle";
+            else if (days > 3 && days <= 4) express = "Express";
+            else if (days > 4) express = "Regular";
             return express;
         }
     }

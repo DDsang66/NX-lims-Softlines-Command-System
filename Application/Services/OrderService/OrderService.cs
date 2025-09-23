@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.Application.DTO;
+﻿using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
@@ -24,6 +25,16 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
         public async Task<OrderOutput[]> GetOrderListAsync(string userId)
         {
             var result = await _or.GetOrderListAsync(userId);
+            return result;
+        }
+
+
+        public async Task<PageResult<OrderSummary>> GetOrderSummaryAsync(int pageNum, int pageSize,int Month)
+        {
+            if (pageNum <= 0) pageNum = 1;
+            if (pageSize <= 0) pageSize = 10;
+            if (Month <1||Month>12) Month = DateTime.Now.Month;
+            var result = await _or.GetCurrentMonthOrdersAsync(pageNum, pageSize,Month);
             return result;
         }
     }

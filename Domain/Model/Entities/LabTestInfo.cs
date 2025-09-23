@@ -27,6 +27,8 @@ public partial class LabTestInfo
 
     public string? Remark { get; set; }
 
+    public string? Express { get; set; }
+
     public string? Describe { get; set; }
 
     public long ScheduleIndex { get; set; }

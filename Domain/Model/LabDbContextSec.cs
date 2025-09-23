@@ -169,6 +169,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("customer_service");
+            entity.Property(e => e.Express)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("express");
             entity.Property(e => e.Describe)
                 .HasMaxLength(50)
                 .IsUnicode(false)
