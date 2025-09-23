@@ -36,7 +36,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// 接收前端的ueserid返回orderlist
         /// </summary>
         [HttpGet("getorder")]
-        public async Task<IActionResult> GetOrder([FromBody] string userId)
+        public async Task<IActionResult> GetOrder(string userId)
         {
             var result = await _os.GetOrderListAsync(userId);
             return Ok(new { success = true, message = "Adding Succeed", data = result });

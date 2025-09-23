@@ -63,22 +63,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<OrderOutput[]> GetOrderListAsync(string userId)
         {
             // 1. 先拿昵称（防御空引用）
-            var user = await _db.Users
-                                .Where(u => u.UserId == userId)
-                                .Select(u => u.NickName)
-                                .FirstOrDefaultAsync();
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.EmployeeId == userId);
             if (user == null) return Array.Empty<OrderOutput>();
 
             // 2. 异步查询并投射
             var orders = await (from o in _db.LabTestInfos
                                 join s in _db.LabTestSchedules
                                      on o.ScheduleIndex equals s.IdSchedule
-                                where o.OrderEntryPerson == user
+                                where o.OrderEntryPerson == user.NickName
                                 select new OrderOutput
                                 {
                                     reportNum = o.ReportNumber,
                                     orderEntry = o.OrderEntryPerson,
-                                    express = GetExpressName(s.ReportDueDate, s.OrderInTime),
+                                    express = o.Express,
                                     dueDate = s.ReportDueDate,
                                     cs = o.CustomerService,
                                     testgroup = o.TestGroup,
