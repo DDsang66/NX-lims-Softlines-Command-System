@@ -15,7 +15,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
 
         public bool AddOrder(OrderDto dto)
         {
-            if (dto == null || dto.rows == null || dto.rows.Count == 0) return false;
+            if (dto == null || dto.Rows == null || dto.Rows.Count == 0) return false;
             bool an = _or.AddOrder(dto);
             if (an) return true;
             else return false;

@@ -25,8 +25,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public bool AddOrder(OrderDto order)
         {
             if (order == null) return false;
-            var rows = order.rows;
-            var labTestInfo = _db.LabTestInfos.FirstOrDefault(i => i.ReportNumber == order.rows[0].reportNum);
+            var rows = order.Rows;
+            var labTestInfo = _db.LabTestInfos.FirstOrDefault(i => i.ReportNumber == order.Rows[0].ReportNum);
             if (labTestInfo != null) return false; // ReportNumber already exists
 
 
@@ -34,17 +34,17 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             foreach (var row in rows)
             {
                 long snowId = snowflake.NextId();
-                var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == row.cs)!.CustomerService1;
+                var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == row.Cs)!.CustomerService1;
                 var orderEntity = new LabTestInfo
                 {
                     Id = snowId,
-                    ReportNumber = row.reportNum,
-                    OrderEntryPerson = row.orderEntry,
+                    ReportNumber = row.ReportNum,
+                    OrderEntryPerson = row.OrderEntry,
                     Status = 1,
-                    Express = row.express,
+                    Express = row.Express,
                     CustomerService = csName,
-                    TestGroup = row.group,
-                    Remark = order.remark,
+                    TestGroup = row.Group,
+                    Remark = order.Remark,
                     ScheduleIndex = snowId,
                     LastUpdateTime = DateTime.Now,
                 };
@@ -52,8 +52,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 var orderschedule = new LabTestSchedule
                 {
                     IdSchedule = snowId,
-                    ReportDueDate = row.dueDate,
-                    OrderInTime = row.labIn,
+                    ReportDueDate = row.DueDate,
+                    OrderInTime = row.LabIn,
                 };
                 _db.LabTestInfos.Add(orderEntity);
                 _db.LabTestSchedules.Add(orderschedule);
@@ -158,18 +158,18 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 .GroupBy(x => new { x.ReportNumber, x.OrderEntryPerson, x.CustomerService, x.OrderInTime })
                 .Select(g => new OrderOutput
                 {
-                    reportNum = g.Key.ReportNumber,
-                    orderEntry = g.Key.OrderEntryPerson,
-                    cs = g.Key.CustomerService,
-                    labIn = g.Key.OrderInTime,
-                    testGroup = g.Select(x => new GroupOutput
+                    ReportNum = g.Key.ReportNumber,
+                    OrderEntry = g.Key.OrderEntryPerson,
+                    Cs = g.Key.CustomerService,
+                    LabIn = g.Key.OrderInTime,
+                    TestGroups = g.Select(x => new GroupOutput
                     {
-                        recodeId = x.Id,
-                        express = x.Express,
-                        group = x.TestGroup,
-                        remark = x.Remark,
-                        dueDate = x.ReportDueDate,
-                        status = x.Status
+                        RecodeId = x.Id,
+                        Express = x.Express,
+                        Group = x.TestGroup,
+                        Remark = x.Remark,
+                        DueDate = x.ReportDueDate,
+                        Status = x.Status
                     }).ToList()
                 })
                 .ToArray();
@@ -189,7 +189,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                             ReportNum = i.ReportNumber,
                             DueDate = s.ReportDueDate,
                             Cs = i.CustomerService,
-                            Testgroup = i.TestGroup,
+                            TestGroup = i.TestGroup,
                             ReviewFinish = s.ReviewFinishTime,
                             OrderEntry = i.OrderEntryPerson,
                             LabIn = s.OrderInTime,

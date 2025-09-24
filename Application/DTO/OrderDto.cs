@@ -4,40 +4,40 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 {
     public class OrderDto
     {
-        public List<OrderInput>? rows { get; set; }
-        public string? remark { get; set; }
-        public string? id { get; set; }
+        public List<OrderInput>? Rows { get; set; }
+        public string? Remark { get; set; }
+        public string? Id { get; set; }
     }
 
     public class OrderInput
     {
-        public string? reportNum { get; set; }
-        public string? orderEntry { get; set; }
-        public string? express { get; set; }
-        public DateOnly dueDate { get; set; }
-        public int? cs { get; set; }
-        public string? group { get; set; }
-        public DateTime labIn { get; set; }
+        public string? ReportNum { get; set; }
+        public string? OrderEntry { get; set; }
+        public string? Express { get; set; }
+        public DateOnly DueDate { get; set; }
+        public int? Cs { get; set; }
+        public string? Group { get; set; }
+        public DateTime LabIn { get; set; }
     }
 
 
     public class OrderOutput
     {
-        public string? reportNum { get; set; }
-        public string? orderEntry { get; set; }
-        public string? cs { get; set; }
-        public List<GroupOutput>? testGroup { get; set; } = new();
-        public DateTimeOffset labIn { get; set; }
+        public string? ReportNum { get; set; }
+        public string? OrderEntry { get; set; }
+        public string? Cs { get; set; }
+        public List<GroupOutput>? TestGroups { get; set; } = new();
+        public DateTimeOffset LabIn { get; set; }
     }
 
     public class GroupOutput
     {
-        public long? recodeId { get; set; }
-        public string? express { get; set; }
-        public string? group { get; set; }
-        public string? remark { get; set; }
-        public DateOnly dueDate { get; set; }
-        public string? status { get; set; }
+        public long? RecodeId { get; set; }
+        public string? Express { get; set; }
+        public string? Group { get; set; }
+        public string? Remark { get; set; }
+        public DateOnly DueDate { get; set; }
+        public string? Status { get; set; }
     }
     public class OrderSummary
     {
@@ -45,7 +45,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? OrderEntry { get; set; }
         public string? Express { get; set; }
         public string? Cs { get; set; }
-        public string? Testgroup { get; set; }
+        public string? TestGroup { get; set; }
         public DateTimeOffset? ReviewFinish { get; set; }
         public DateOnly DueDate { get; set; }
         public DateTimeOffset LabIn { get; set; }
