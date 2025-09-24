@@ -79,7 +79,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     //这里添加实际的订单更新逻辑
                     //例如：
                     var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o=>o.Id == order.id);
-                    var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.Id == order.id);
+                    var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == order.id);
                     if (existingOrderInfo == null|| existingOrderSchedule == null)
                     {
                         return false;
