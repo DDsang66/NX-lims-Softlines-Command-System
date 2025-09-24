@@ -37,5 +37,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
             var result = await _or.GetCurrentMonthOrdersAsync(pageNum, pageSize,Month);
             return result;
         }
+
+        public bool UpdateOrder(OrderUpdate dto)
+        {
+            bool an = _or.UpdateOrder(dto);
+            if (an) return true;
+            else return false;
+        }
+
+
     }
 }

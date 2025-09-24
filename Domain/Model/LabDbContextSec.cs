@@ -204,6 +204,9 @@ public partial class LabDbContextSec : DbContext
                 .HasColumnName("test_group");
             entity.Property(e => e.TestItemNum).HasColumnName("test_item_num");
             entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
+            entity.Property(e => e.LastUpdateTime)
+    .HasColumnType("datetime")
+    .HasColumnName("last_update_time");
         });
 
         modelBuilder.Entity<LabTestSchedule>(entity =>

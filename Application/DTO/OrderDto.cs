@@ -25,16 +25,20 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     {
         public string? reportNum { get; set; }
         public string? orderEntry { get; set; }
-        public string? express { get; set; }
-        public DateOnly dueDate { get; set; }
         public string? cs { get; set; }
-        public string? testGroup { get; set; }
+        public List<GroupOutput>? testGroup { get; set; } = new();
         public DateTimeOffset labIn { get; set; }
-        public string? remark { get; set; }
-        public string? status { get; set; }
     }
 
-
+    public class GroupOutput
+    {
+        public long? recodeId { get; set; }
+        public string? express { get; set; }
+        public string? group { get; set; }
+        public string? remark { get; set; }
+        public DateOnly dueDate { get; set; }
+        public string? status { get; set; }
+    }
     public class OrderSummary
     {
         public string? ReportNum { get; set; }
@@ -65,4 +69,25 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public bool HasPrevious => Page > 1;
         public bool HasNext => Page * PageSize < TotalCount;
     }
+
+
+
+
+    public class OrderUpdate
+    {
+        public long id { get; set; }
+        public string? reportNum { get; set; }
+        public string? orderEntry { get; set; }
+        public string? express { get; set; }
+        public DateOnly dueDate { get; set; }
+        public int? cs { get; set; }
+        public string? group { get; set; }
+        public DateTime labIn { get; set; }
+    }
+
+
+
+
+
+
 }

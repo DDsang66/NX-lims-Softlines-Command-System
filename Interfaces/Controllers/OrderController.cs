@@ -51,5 +51,20 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 
+
+        /// <summary>
+        /// 表单数据更新
+        /// </summary>
+        [HttpPost("update")]
+        public async Task<IActionResult> OrderUpdate([FromBody] OrderUpdate dto)
+        {
+            bool result = _os.UpdateOrder(dto);
+            if (result)
+            {
+                return Ok(new { success = true, message = "Update Succeed" });
+            }
+            return Ok(new { success = false, message = "Update Failed，Retry" });
+        }
+
     }
 }

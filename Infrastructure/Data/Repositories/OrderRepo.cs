@@ -6,6 +6,8 @@ using NX_lims_Softlines_Command_System.Domain.Model;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Wordprocessing;
 using System.Drawing.Printing;
+using DocumentFormat.OpenXml.Vml.Office;
+using System.Collections.Concurrent;
 
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
@@ -13,6 +15,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
     public class OrderRepo
     {
         private readonly LabDbContextSec _db;
+        private readonly ConcurrentDictionary<long, object> _orderLocks = new ConcurrentDictionary<long, object>();
         public OrderRepo(LabDbContextSec db)
         {
             _db = db;
@@ -42,7 +45,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     CustomerService = csName,
                     TestGroup = row.group,
                     Remark = order.remark,
-                    ScheduleIndex = snowId
+                    ScheduleIndex = snowId,
+                    LastUpdateTime = DateTime.Now,
                 };
 
                 var orderschedule = new LabTestSchedule
@@ -58,10 +62,41 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             return true;
         }
 
-        public bool UpdateOrder(OrderDto order)
+        public bool UpdateOrder(OrderUpdate order)
         {
+            // 参数校验
+            if (order == null)
+            {
+                throw new ArgumentNullException(nameof(order));
+            }
+            // 使用lock语句确保线程安全
+            // 获取或创建针对当前订单ID的锁对象
+            var orderLock = _orderLocks.GetOrAdd(order.id, _ => new object());
+            lock (orderLock)
+            {
+                try
+                {
+                    //这里添加实际的订单更新逻辑
+                    //例如：
+                    var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o=>o.Id == order.id);
+                    var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.Id == order.id);
+                    if (existingOrderInfo == null|| existingOrderSchedule == null)
+                    {
+                        return false;
+                    }
+                    //
+                    // existingOrder.Update(order);
+                    // _orderRepository.SaveChanges();
 
-            return true;
+                    return true;
+                }
+                catch
+                {
+                    // 记录异常日志
+                    // throw; // 根据业务需求决定是否重新抛出异常
+                    return false;
+                }
+            }
         }
 
         public async Task<OrderOutput[]> GetOrderListAsync(string userId)
@@ -71,24 +106,48 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             if (user == null) return Array.Empty<OrderOutput>();
 
             // 2. 异步查询并投射
-            var orders = await (from o in _db.LabTestInfos
-                                join s in _db.LabTestSchedules
-                                     on o.ScheduleIndex equals s.IdSchedule
-                                where o.OrderEntryPerson == user.NickName
-                                select new OrderOutput
-                                {
-                                    reportNum = o.ReportNumber,
-                                    orderEntry = o.OrderEntryPerson,
-                                    express = o.Express,
-                                    dueDate = s.ReportDueDate,
-                                    cs = o.CustomerService,
-                                    testGroup = o.TestGroup,
-                                    labIn = s.OrderInTime,
-                                    remark = o.Remark,
-                                    status = o.Status == 1 ? "In Lab"
-                                    : o.Status == 2 ? "Review Finished"
-                                    : "Completed"
-                                }).ToArrayAsync();   // 异步执行
+            var flat = await (
+                from o in _db.LabTestInfos
+                join s in _db.LabTestSchedules on o.ScheduleIndex equals s.IdSchedule
+                where o.OrderEntryPerson == user.NickName
+                select new
+                {
+                    o.Id,
+                    o.ReportNumber,
+                    o.OrderEntryPerson,
+                    o.CustomerService,
+                    s.OrderInTime,
+                    o.Express,
+                    o.TestGroup,
+                    o.Remark,
+                    s.ReportDueDate,
+                    Status = o.Status == 1 ? "In Lab"
+                                         : o.Status == 2 ? "Review Finished"
+                                         : "Completed"
+                })
+                .ToListAsync();
+
+            // 2. 分组投射
+            var orders = flat
+                .GroupBy(x => new { x.ReportNumber, x.OrderEntryPerson, x.CustomerService, x.OrderInTime })
+                .Select(g => new OrderOutput
+                {
+                    reportNum = g.Key.ReportNumber,
+                    orderEntry = g.Key.OrderEntryPerson,
+                    cs = g.Key.CustomerService,
+                    labIn = g.Key.OrderInTime,
+                    testGroup = g.Select(x => new GroupOutput
+                    {
+                        recodeId = x.Id,
+                        express = x.Express,
+                        group = x.TestGroup,
+                        remark = x.Remark,
+                        dueDate = x.ReportDueDate,
+                        status = x.Status
+                    }).ToList()
+                })
+                .ToArray();
+
             return orders;
         }
 
