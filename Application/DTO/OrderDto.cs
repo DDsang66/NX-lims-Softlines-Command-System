@@ -28,7 +28,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? express { get; set; }
         public DateOnly dueDate { get; set; }
         public string? cs { get; set; }
-        public string? testgroup { get; set; }
+        public string? testGroup { get; set; }
         public DateTime labIn { get; set; }
         public string? remark { get; set; }
         public string? status { get; set; }

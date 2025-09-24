@@ -63,7 +63,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<OrderOutput[]> GetOrderListAsync(string userId)
         {
             // 1. 先拿昵称（防御空引用）
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.EmployeeId == userId);
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user == null) return Array.Empty<OrderOutput>();
 
             // 2. 异步查询并投射
@@ -78,7 +78,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                     express = o.Express,
                                     dueDate = s.ReportDueDate,
                                     cs = o.CustomerService,
-                                    testgroup = o.TestGroup,
+                                    testGroup = o.TestGroup,
                                     labIn = s.OrderInTime,
                                     remark = o.Remark,
                                     status = o.Status == 1 ? "In Lab"
