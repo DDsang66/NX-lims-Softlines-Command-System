@@ -42,10 +42,10 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? Express { get; set; }
         public string? Cs { get; set; }
         public string? Testgroup { get; set; }
-        public DateTime? ReviewFinish { get; set; }
+        public DateTimeOffset? ReviewFinish { get; set; }
         public DateOnly DueDate { get; set; }
         public DateTimeOffset LabIn { get; set; }
-        public DateTime? LabOut { get; set; }
+        public DateTimeOffset? LabOut { get; set; }
         public int TestSampleNum{ get; set; }
         public int TestItemNum { get; set; }
         public string? Remark { get; set; }
