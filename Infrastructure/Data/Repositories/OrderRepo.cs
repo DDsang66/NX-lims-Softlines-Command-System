@@ -62,38 +62,64 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             return true;
         }
 
-        public bool UpdateOrder(OrderUpdate order)
+        public bool UpdateOrder(OrderUpdateDto order)
         {
-            // 参数校验
             if (order == null)
             {
                 throw new ArgumentNullException(nameof(order));
             }
-            // 使用lock语句确保线程安全
-            // 获取或创建针对当前订单ID的锁对象
-            var orderLock = _orderLocks.GetOrAdd(order.id, _ => new object());
+
+            var orderLock = _orderLocks.GetOrAdd(order.Id, _ => new object());
+
             lock (orderLock)
             {
                 try
                 {
-                    //这里添加实际的订单更新逻辑
-                    //例如：
-                    var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o=>o.Id == order.id);
-                    var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == order.id);
-                    if (existingOrderInfo == null|| existingOrderSchedule == null)
+                    // 获取现有订单信息
+                    var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o => o.Id == order.Id);
+                    var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == order.IdSchedule);
+
+                    if (existingOrderInfo == null || existingOrderSchedule == null)
                     {
                         return false;
                     }
-                    //
-                    // existingOrder.Update(order);
-                    // _orderRepository.SaveChanges();
 
+                    // 更新LabTestInfo - 只排除Id和IdSchedule
+                    UpdateEntity(existingOrderInfo, order,
+                        nameof(OrderUpdateDto.Id),
+                        nameof(OrderUpdateDto.IdSchedule));
+
+                    // 更新LabTestSchedule - 只排除Id和IdSchedule以及属于LabTestInfo的字段
+                    UpdateEntity(existingOrderSchedule, order,
+                        nameof(OrderUpdateDto.Id),
+                        nameof(OrderUpdateDto.IdSchedule),
+                        nameof(OrderUpdateDto.ReportNumber),
+                        nameof(OrderUpdateDto.Reviewer),
+                        nameof(OrderUpdateDto.TestEngineer),
+                        nameof(OrderUpdateDto.OrderEntryPerson),
+                        nameof(OrderUpdateDto.CustomerService),
+                        nameof(OrderUpdateDto.Status),
+                        nameof(OrderUpdateDto.TestGroup),
+                        nameof(OrderUpdateDto.TestSampleNum),
+                        nameof(OrderUpdateDto.TestItemNum),
+                        nameof(OrderUpdateDto.Remark),
+                        nameof(OrderUpdateDto.Express),
+                        nameof(OrderUpdateDto.Describe),
+                        nameof(OrderUpdateDto.ScheduleIndex));
+
+                    // 更新最后修改时间
+                    if (order.LastUpdateTime.HasValue)
+                    {
+                        existingOrderInfo.LastUpdateTime = order.LastUpdateTime.Value;
+                    }
+
+                    // 保存更改到数据库
+                    _db.SaveChanges();
                     return true;
                 }
-                catch
+                catch (Exception ex)
                 {
                     // 记录异常日志
-                    // throw; // 根据业务需求决定是否重新抛出异常
                     return false;
                 }
             }
@@ -207,5 +233,47 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             else if (days > 4) express = "Regular";
             return express;
         }
+
+
+        private void UpdateEntity<T>(T entity, OrderUpdateDto dto, params string[] excludeProperties)
+        {
+            var entityType = typeof(T);
+            var properties = entityType.GetProperties();
+
+            foreach (var property in properties)
+            {
+                // 跳过排除列表中的字段
+                if (excludeProperties.Contains(property.Name))
+                    continue;
+
+                // 获取DTO中对应的属性值
+                var dtoProperty = typeof(OrderUpdateDto).GetProperty(property.Name);
+                if (dtoProperty == null)
+                    continue;
+
+                var value = dtoProperty.GetValue(dto);
+                if (value == null)
+                    continue;
+
+                // 设置值到实体
+                if (property.CanWrite)
+                {
+                    // 特殊处理类型转换
+                    if (property.PropertyType == typeof(DateOnly) && value is DateTime dateTime)
+                    {
+                        property.SetValue(entity, DateOnly.FromDateTime(dateTime));
+                    }
+                    else if (property.PropertyType == typeof(DateTime?) && value is DateTime dateTimeValue)
+                    {
+                        property.SetValue(entity, (DateTime?)dateTimeValue);
+                    }
+                    else
+                    {
+                        property.SetValue(entity, value);
+                    }
+                }
+            }
+        }
+
     }
 }

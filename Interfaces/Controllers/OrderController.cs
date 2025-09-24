@@ -55,8 +55,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// <summary>
         /// 表单数据更新
         /// </summary>
-        [HttpPost("update")]
-        public async Task<IActionResult> OrderUpdate([FromBody] OrderUpdate dto)
+        [HttpPatch("update")]
+        public async Task<IActionResult> OrderUpdate([FromBody] OrderUpdateDto dto)
         {
             bool result = _os.UpdateOrder(dto);
             if (result)

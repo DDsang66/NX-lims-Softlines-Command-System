@@ -38,7 +38,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
             return result;
         }
 
-        public bool UpdateOrder(OrderUpdate dto)
+        public bool UpdateOrder(OrderUpdateDto dto)
         {
             bool an = _or.UpdateOrder(dto);
             if (an) return true;
