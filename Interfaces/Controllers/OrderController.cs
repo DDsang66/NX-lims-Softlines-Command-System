@@ -23,13 +23,12 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         public IActionResult OrderAdd([FromBody] OrderDto dto)
         {
             //调用OrderService进行处理
-            //接收处理状态，status为1时表示成功
             bool answer = _os.AddOrder(dto);
             if (answer)
             {
                 return Ok(new { success = true, message = "Adding Succeed" });
             }
-            return Ok(new { success = false, message = "Adding Failed" });
+            return Ok(new { success = false, message = "Adding failed，the reportNum is already exist" });
         }
 
         /// <summary>

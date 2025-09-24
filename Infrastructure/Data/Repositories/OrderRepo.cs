@@ -23,6 +23,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         {
             if (order == null) return false;
             var rows = order.rows;
+            var labTestInfo = _db.LabTestInfos.FirstOrDefault(i => i.ReportNumber == order.rows[0].reportNum);
+            if (labTestInfo != null) return false; // ReportNumber already exists
+
+
             var snowflake = new SnowflakeIdGenerator();
             foreach (var row in rows)
             {

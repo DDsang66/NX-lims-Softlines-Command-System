@@ -29,7 +29,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public DateOnly dueDate { get; set; }
         public string? cs { get; set; }
         public string? testGroup { get; set; }
-        public DateTime labIn { get; set; }
+        public DateTimeOffset labIn { get; set; }
         public string? remark { get; set; }
         public string? status { get; set; }
     }
@@ -44,7 +44,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? Testgroup { get; set; }
         public DateTime? ReviewFinish { get; set; }
         public DateOnly DueDate { get; set; }
-        public DateTime LabIn { get; set; }
+        public DateTimeOffset LabIn { get; set; }
         public DateTime? LabOut { get; set; }
         public int TestSampleNum{ get; set; }
         public int TestItemNum { get; set; }
