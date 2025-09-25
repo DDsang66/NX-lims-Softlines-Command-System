@@ -161,7 +161,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     ReportNum = g.Key.ReportNumber,
                     OrderEntry = g.Key.OrderEntryPerson,
                     Cs = g.Key.CustomerService,
-                    TestGroups = g.Select(x => new GroupOutput
+                    TestGroups = string.Join(",", g.Select(x => x.TestGroup).Distinct()),
+                    Groups = g.Select(x => new GroupOutput
                     {
                         RecodeId = x.Id,
                         Express = x.Express,

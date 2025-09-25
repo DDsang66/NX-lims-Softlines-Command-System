@@ -26,7 +26,8 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? ReportNum { get; set; }
         public string? OrderEntry { get; set; }
         public string? Cs { get; set; }
-        public List<GroupOutput>? TestGroups { get; set; } = new();
+        public string? TestGroups { get; set; }
+        public List<GroupOutput>? Groups { get; set; } = new();
     }
 
     public class GroupOutput
