@@ -24,7 +24,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = p.WashingProcedure.Contains("Cold") == true ? "88" : "105",
                 Program = p.WashingProcedure.Contains("Cold") == true ? "1B" : "1A",
                 SteelBallNum = 10,
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("CF to Washing", _, _) => new WetParameterAatcc
             {
@@ -45,7 +45,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("DS to Washing", _, _) => new WetParameterAatcc
             {
@@ -64,7 +64,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
@@ -81,7 +81,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("Spriality/Skewing", _, _) => new WetParameterAatcc
             {
@@ -100,7 +100,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             _ => new WetParameterAatcc
             {

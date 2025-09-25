@@ -205,7 +205,7 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.TestItemNum).HasColumnName("test_item_num");
             entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
             entity.Property(e => e.LastUpdateTime)
-    .HasColumnType("datetime")
+    .HasColumnType("datetimeoffset(7)")
     .HasColumnName("last_update_time");
         });
 
@@ -219,14 +219,14 @@ public partial class LabDbContextSec : DbContext
                 .ValueGeneratedNever()
                 .HasColumnName("id_schedule");
             entity.Property(e => e.LabOutTime)
-                .HasColumnType("datetime")
+                .HasColumnType("datetimeoffset(7)")
                 .HasColumnName("lab_out_time");
             entity.Property(e => e.OrderInTime)
-                .HasColumnType("datetime")
+                .HasColumnType("datetimeoffset(7)")
                 .HasColumnName("order_in_time");
             entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
             entity.Property(e => e.ReviewFinishTime)
-                .HasColumnType("datetime")
+                .HasColumnType("datetimeoffset(7)")
                 .HasColumnName("review_finish_time");
         });
 

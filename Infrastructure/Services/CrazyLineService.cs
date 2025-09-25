@@ -59,7 +59,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             FiberContent = infoDto.fiberComposition,
                             OrderNumber = infoDto.reportNumber,
                             DCProcedure = infoDto.dcProcedure,
-                            sampleDescription = infoDto.sampleDescription,
+                            SampleDescription = infoDto.sampleDescription,
                             ItemName = item
                         }, item);
                     string? param = await helper.CreateParameters(infoDto, item)!;

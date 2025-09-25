@@ -17,7 +17,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public DateOnly DueDate { get; set; }
         public int? Cs { get; set; }
         public string? Group { get; set; }
-        public DateTime LabIn { get; set; }
+        public DateTimeOffset LabIn { get; set; }
     }
 
 
@@ -27,7 +27,6 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? OrderEntry { get; set; }
         public string? Cs { get; set; }
         public List<GroupOutput>? TestGroups { get; set; } = new();
-        public DateTimeOffset LabIn { get; set; }
     }
 
     public class GroupOutput
@@ -36,6 +35,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? Express { get; set; }
         public string? Group { get; set; }
         public string? Remark { get; set; }
+        public string? LabIn { get; set; }
         public DateOnly DueDate { get; set; }
         public string? Status { get; set; }
     }
@@ -94,12 +94,12 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
         // LabTestSchedule表的字段
         public DateOnly? ReportDueDate { get; set; }
-        public DateTime? OrderInTime { get; set; }
-        public DateTime? ReviewFinishTime { get; set; }
-        public DateTime? LabOutTime { get; set; }
+        public DateTimeOffset? OrderInTime { get; set; }
+        public DateTimeOffset? ReviewFinishTime { get; set; }
+        public DateTimeOffset? LabOutTime { get; set; }
 
         // 通用字段
-        public DateTime? LastUpdateTime { get; set; }
+        public DateTimeOffset? LastUpdateTime { get; set; }
     }
 
 

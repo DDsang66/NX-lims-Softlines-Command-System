@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     TestGroup = row.Group,
                     Remark = order.Remark,
                     ScheduleIndex = snowId,
-                    LastUpdateTime = DateTime.Now,
+                    LastUpdateTime = DateTimeOffset.Now,
                 };
 
                 var orderschedule = new LabTestSchedule
@@ -155,19 +155,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 
             // 2. 分组投射
             var orders = flat
-                .GroupBy(x => new { x.ReportNumber, x.OrderEntryPerson, x.CustomerService, x.OrderInTime })
+                .GroupBy(x => new { x.ReportNumber, x.OrderEntryPerson, x.CustomerService })
                 .Select(g => new OrderOutput
                 {
                     ReportNum = g.Key.ReportNumber,
                     OrderEntry = g.Key.OrderEntryPerson,
                     Cs = g.Key.CustomerService,
-                    LabIn = g.Key.OrderInTime,
                     TestGroups = g.Select(x => new GroupOutput
                     {
                         RecodeId = x.Id,
                         Express = x.Express,
                         Group = x.TestGroup,
                         Remark = x.Remark,
+                        LabIn = x.OrderInTime.ToUniversalTime()
+                        .ToOffset(TimeSpan.FromHours(8))
+                        .ToString("yyyy-MM-dd HH:mm:ss"),
                         DueDate = x.ReportDueDate,
                         Status = x.Status
                     }).ToList()
@@ -263,9 +265,17 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     {
                         property.SetValue(entity, DateOnly.FromDateTime(dateTime));
                     }
-                    else if (property.PropertyType == typeof(DateTime?) && value is DateTime dateTimeValue)
+                    else if (property.PropertyType == typeof(DateTimeOffset) && value is DateTime dateTimeValue)
                     {
-                        property.SetValue(entity, (DateTime?)dateTimeValue);
+                        property.SetValue(entity, new DateTimeOffset(dateTimeValue));
+                    }
+                    else if (property.PropertyType == typeof(DateTimeOffset?) && value is DateTime dateTimeNullableValue)
+                    {
+                        property.SetValue(entity, (DateTimeOffset?)new DateTimeOffset(dateTimeNullableValue));
+                    }
+                    else if (property.PropertyType == typeof(DateTime?) && value is DateTime dateTimeValueNullable)
+                    {
+                        property.SetValue(entity, (DateTime?)dateTimeValueNullable);
                     }
                     else
                     {

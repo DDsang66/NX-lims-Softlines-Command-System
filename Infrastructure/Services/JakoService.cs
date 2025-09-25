@@ -61,7 +61,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             DCProcedure = infoDto.dcProcedure,
                             ItemName = item,
                             additionalRequire = infoDto.additionalRequire,
-                            sampleDescription = infoDto.sampleDescription
+                            SampleDescription = infoDto.sampleDescription
                         }, item);
                     string? param = await helper.CreateParameters(infoDto, item)!;
                     dtos.Add(CreateResponse(item, wetParams ?? new WetParameterIso { ContactItem = item, ReportNumber = infoDto.reportNumber! }, param!));

@@ -15,14 +15,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             _helper = helper;
         }
 
-        public async Task<WetParameterIso> CreateWetParameters(ParamsInput p) => (p.ItemName, p.sampleDescription) switch
+        public async Task<WetParameterIso> CreateWetParameters(ParamsInput p) => (p.ItemName, p.SampleDescription) switch
         {
             ("CF to Washing", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.sampleDescription!.Contains("Fabric") == true ? "40" : null,
-                Program = p.sampleDescription.Contains("Fabric") == true ? "A2S" : null,
+                Temperature = p.SampleDescription!.Contains("Fabric") == true ? "40" : null,
+                Program = p.SampleDescription.Contains("Fabric") == true ? "A2S" : null,
                 SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10
             },
             ("Appearance", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
@@ -32,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)"
@@ -42,9 +42,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
-                DryProcedure = (p.sampleDescription!.Contains("Rain") || p.sampleDescription.Contains("Padding") || p.sampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
-                Temperature = (p.sampleDescription!.Contains("Rain") || p.sampleDescription.Contains("Padding") || p.sampleDescription.Contains("Down Jackets")) == true ? p.WashingProcedure!.Contains("4") ? "40" : "30" : "40",
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                DryProcedure = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
+                Temperature = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.WashingProcedure!.Contains("4") ? "40" : "30" : "40",
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash"
@@ -56,7 +56,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)"
@@ -66,9 +66,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
-                DryProcedure = (p.sampleDescription!.Contains("Rain") || p.sampleDescription.Contains("Padding") || p.sampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
-                Temperature = (p.sampleDescription!.Contains("Rain") || p.sampleDescription.Contains("Padding") || p.sampleDescription.Contains("Down Jackets")) == true ? p.WashingProcedure!.Contains("4") ? "40" : "30" : "40",
-                AfterWash = p.sampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                DryProcedure = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
+                Temperature = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.WashingProcedure!.Contains("4") ? "40" : "30" : "40",
+                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash"
@@ -84,7 +84,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.sampleDescription!.Contains("Sublimation") == true ? "130" : "170",
+                Temperature = p.SampleDescription!.Contains("Sublimation") == true ? "130" : "170",
                 Program = "30",
             },
             ("Print Durability For JAKO", _) => new WetParameterIso
@@ -94,19 +94,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = "60",
                 Program = "1200 rpn, automatic time 1:20h",
                 DryProcedure = "Tumble Dry",
-                AfterWash = p.sampleDescription!.Contains("Repeat Order") == true ? 10 : 20
+                AfterWash = p.SampleDescription!.Contains("Repeat Order") == true ? 10 : 20
             },
             ("CF to Hot Pressing", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.sampleDescription!.Contains("Dyed") == true ? "150" : "110",
+                Temperature = p.SampleDescription!.Contains("Dyed") == true ? "150" : "110",
             },
             ("CF to Sublimation in Storage", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.sampleDescription!.Contains("Dyed") == true ? "90" : "70",
+                Temperature = p.SampleDescription!.Contains("Dyed") == true ? "90" : "70",
             },
             _ => new WetParameterIso
             {

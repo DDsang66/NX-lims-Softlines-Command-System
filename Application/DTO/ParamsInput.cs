@@ -12,7 +12,7 @@
         public string? Bleach { get; set; }
         public List<FiberDto>? FiberContent { get; set; }
         public string? additionalRequire { get; set; }
-        public string? sampleDescription { get; set; }
+        public string? SampleDescription { get; set; }
     }
 
 

@@ -32,5 +32,5 @@ public partial class LabTestInfo
     public string? Describe { get; set; }
 
     public long ScheduleIndex { get; set; }
-    public DateTime LastUpdateTime { get; set; }
+    public DateTimeOffset LastUpdateTime { get; set; }
 }

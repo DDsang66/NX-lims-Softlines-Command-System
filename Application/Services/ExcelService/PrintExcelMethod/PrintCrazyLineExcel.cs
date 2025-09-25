@@ -20,7 +20,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //string ordernumber = Dto.ReportNumber!;
             //string buyer = Dto.Buyer!;
             //string additionalRequired = Dto.AdditionalRequire!;
-            //string sampleDescription = Dto.SampleDescription!;
+            //string SampleDescription = Dto.SampleDescription!;
             //var selectedRows = Dto.SelectedRows!;
 
 
@@ -51,7 +51,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                    if (dwContext!.WashingProcedure.Contains("Machine"))
             //                    {
             //                        var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
-            //                        .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            //                        .FirstOrDefault(key => SampleDescription?.Contains(key) == true);
             //                        var worksheet_machine = matched switch
             //                        {
             //                            "Garment" => PackageWet.Workbook.Worksheets[6],
@@ -71,8 +71,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                        worksheet_machine.Cells["A6"].Value = dwContext.SCI ?? null;
 
             //                        string[] samples = Item.Sample!.Split(',');
-            //                        var cellAddresses = ExcelCrazyLineMapper.MapDStoWasingMachine(sampleDescription!);
-            //                        if (sampleDescription!.Contains("Fabric"))
+            //                        var cellAddresses = ExcelCrazyLineMapper.MapDStoWasingMachine(SampleDescription!);
+            //                        if (SampleDescription!.Contains("Fabric"))
             //                        {
             //                            for (int i = 0; i < samples.Length; i++)
             //                            {
@@ -97,7 +97,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                            [new[] { "Fabric" }] = 1,
             //                            [new[] { "Socks", "Gloves", "Cap" }] = 10
             //                        };
-            //                        var sheetIdx = mapSheet.First(kv => kv.Key.Any(k => sampleDescription?.Contains(k) == true)).Value;
+            //                        var sheetIdx = mapSheet.First(kv => kv.Key.Any(k => SampleDescription?.Contains(k) == true)).Value;
             //                        var ws = PackageWet.Workbook.Worksheets[sheetIdx];
 
             //                        // 行列映射表： cell  -> 值（动态列、标准号、公共值）
@@ -109,13 +109,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                        };
 
             //                        // 按类别覆盖差异值
-            //                        if (sampleDescription?.Contains("Garment") == true)
+            //                        if (SampleDescription?.Contains("Garment") == true)
             //                        {
             //                            mapData["M1"] = ordernumber;
             //                            mapData["A3"] = "AATCC TM 135-2018t/AATCC TS006";
             //                            mapData["J4"] = dwContext.DryProcedure; // 覆盖公共列
             //                        }
-            //                        else if (sampleDescription?.Contains("Fabric") == true)
+            //                        else if (SampleDescription?.Contains("Fabric") == true)
             //                        {
             //                            mapData["O1"] = ordernumber;
             //                            mapData["A3"] = "AATCC TM 135-2018t/AATCC TS006";
@@ -130,8 +130,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                        foreach (var kv in mapData)
             //                            ws.Cells[kv.Key].Value = kv.Value;
             //                        string[] samples = Item.Sample!.Split(',');
-            //                        var cellAddresses = ExcelCrazyLineMapper.MapDStoWasingHand(sampleDescription!);
-            //                        if (sampleDescription!.Contains("Fabric"))
+            //                        var cellAddresses = ExcelCrazyLineMapper.MapDStoWasingHand(SampleDescription!);
+            //                        if (SampleDescription!.Contains("Fabric"))
             //                        {
             //                            for (int i = 0; i < samples.Length; i++)
             //                            {
@@ -189,16 +189,16 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                        [new[] { "Fabric" }] = 2,
             //                        [new[] { "Socks", "Gloves", "Cap" }] = 11
             //                    };
-            //                    var sheetIdx = mapSheet.First(kv => kv.Key.Any(k => sampleDescription?.Contains(k) == true)).Value;
+            //                    var sheetIdx = mapSheet.First(kv => kv.Key.Any(k => SampleDescription?.Contains(k) == true)).Value;
             //                    var worksheet_DC = PackageWet.Workbook.Worksheets[sheetIdx];
             //                    var mapData = new Dictionary<string, object>{};
-            //                    if (sampleDescription?.Contains("Garment") == true)
+            //                    if (SampleDescription?.Contains("Garment") == true)
             //                    {
             //                        mapData["P1"] = ordernumber;
             //                        mapData["A3"] = "AATCC TM158 - 1978e10(2016)e";
             //                        mapData["H4"] = dcContext!.IsSensitive == "Y" ? "Sensitive" : "Normal";
             //                    }
-            //                    else if (sampleDescription?.Contains("Fabric") == true)
+            //                    else if (SampleDescription?.Contains("Fabric") == true)
             //                    {
             //                        mapData["M1"] = ordernumber;
             //                        mapData["A3"] = "AATCC TM158 - 1978e10(2016)e";
@@ -215,8 +215,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                    foreach (var kv in mapData)
             //                        worksheet_DC.Cells[kv.Key].Value = kv.Value;
             //                    string[] samples = Item.Sample!.Split(',');
-            //                    var cellAddresses = ExcelCrazyLineMapper.MapDStoDC(sampleDescription!);
-            //                    if (sampleDescription!.Contains("Fabric"))
+            //                    var cellAddresses = ExcelCrazyLineMapper.MapDStoDC(SampleDescription!);
+            //                    if (SampleDescription!.Contains("Fabric"))
             //                    {
             //                        for (int i = 0; i < samples.Length; i++)
             //                        {
@@ -306,11 +306,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //                else if (Item.ItemName == "Zipper Strength")
             //                {
             //                    var worksheet_Zipper = PackagePhy.Workbook.Worksheets[3];
-            //                    if (sampleDescription!.Contains("EN"))
+            //                    if (SampleDescription!.Contains("EN"))
             //                    {
             //                        worksheet_Zipper = PackagePhy.Workbook.Worksheets[4];
             //                        worksheet_Zipper.Cells["A3"].Value = "EN 16732:2025";
-            //                    }else if(sampleDescription!.Contains("ASTM"))
+            //                    }else if(SampleDescription!.Contains("ASTM"))
             //                    {
             //                        worksheet_Zipper = PackagePhy.Workbook.Worksheets[3];
             //                        worksheet_Zipper.Cells["A3"].Value = "ASTM D2061-07(2021)";

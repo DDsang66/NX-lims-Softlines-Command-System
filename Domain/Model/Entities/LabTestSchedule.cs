@@ -9,9 +9,9 @@ public partial class LabTestSchedule
 
     public DateOnly ReportDueDate { get; set; }
 
-    public DateTime OrderInTime { get; set; }
+    public DateTimeOffset OrderInTime { get; set; }
 
-    public DateTime? ReviewFinishTime { get; set; }
+    public DateTimeOffset? ReviewFinishTime { get; set; }
 
-    public DateTime? LabOutTime { get; set; }
+    public DateTimeOffset? LabOutTime { get; set; }
 }
