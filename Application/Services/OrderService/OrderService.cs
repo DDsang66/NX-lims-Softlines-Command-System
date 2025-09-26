@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 
@@ -29,14 +30,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
         }
 
 
-        public async Task<PageResult<OrderSummary>> GetOrderSummaryAsync(int pageNum, int pageSize,int Month)
+        public async Task<object> GetOrderSummaryAsync(OrderQueryParams dto)
         {
-            if (pageNum <= 0) pageNum = 1;
-            if (pageSize <= 0) pageSize = 10;
-            if (Month <1||Month>12) Month = DateTime.Now.Month;
-            var result = await _or.GetCurrentMonthOrdersAsync(pageNum, pageSize,Month);
+            var result = await _or.GetSummaryOrdersAsync(dto);
             return result;
         }
+
+
 
         public bool UpdateOrder(OrderUpdateDto dto)
         {

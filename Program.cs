@@ -13,6 +13,7 @@ using NX_lims_Softlines_Command_System.Application.Services.OrderService;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -37,6 +38,7 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<ExcelHelper>();
             builder.Services.AddScoped<OrderService>();
             builder.Services.AddScoped<OrderRepo>();
+            builder.Services.AddScoped<OrderQueryProvider>();
 
             // 扫描所有实现 IPrintExcelStrategy 的非抽象类
             builder.Services.AddSingleton<JwtService>();

@@ -35,9 +35,14 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public long? RecodeId { get; set; }
         public string? Express { get; set; }
         public string? Group { get; set; }
+        public int TestSampleNum { get; set; }
+        public int TestItemNum { get; set; }
         public string? Remark { get; set; }
-        public string? LabIn { get; set; }
+        public string? Reviewer { get; set; }
+        public DateTimeOffset? ReviewFinish { get; set; }
+        public DateTimeOffset? LabIn { get; set; }
         public DateOnly DueDate { get; set; }
+        public DateTimeOffset? LabOut { get; set; }
         public string? Status { get; set; }
     }
     public class OrderSummary
@@ -48,11 +53,12 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? Cs { get; set; }
         public string? TestGroup { get; set; }
         public DateTimeOffset? ReviewFinish { get; set; }
+        public string? Reviewer { get; set; }
         public DateOnly DueDate { get; set; }
         public DateTimeOffset LabIn { get; set; }
         public DateTimeOffset? LabOut { get; set; }
-        public int TestSampleNum{ get; set; }
-        public int TestItemNum { get; set; }
+        public int? TestSampleNum{ get; set; }
+        public int? TestItemNum { get; set; }
         public string? Remark { get; set; }
         public string? Status { get; set; }
     }
@@ -61,17 +67,21 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public sealed class PageResult<T>
     {
-        public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();
-        public int TotalCount { get; init; }
-        public int Page { get; init; }
-        public int PageSize { get; init; }
-
+        public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();//存放后端响应的数据
+        public int TotalCount { get; init; }//用于前端计算页面数量
+        public int Page { get; init; }//当前页码
+        public int PageSize { get; init; }//每页显示数量
         // 便捷只读属性
-        public bool HasPrevious => Page > 1;
-        public bool HasNext => Page * PageSize < TotalCount;
+        public bool HasPrevious => Page > 1;//判断是否有上一页
+        public bool HasNext => Page * PageSize < TotalCount;//判断是否有下一页
     }
 
-
+    public class OrderQueryParams
+    {
+        public Dictionary<string, object>? QueryParam { get; set; }  // 查询值
+        public int PageNum { get; set; }
+        public int PageSize { get; set; }
+    }
 
     public class OrderUpdateDto
     {

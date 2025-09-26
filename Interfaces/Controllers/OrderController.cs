@@ -42,12 +42,12 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         }
 
         /// <summary>
-        /// 当前月份的单量汇总
+        /// 当前月份的单量汇总,支持复杂查询
         /// </summary>
-        [HttpGet("ordersummary")]
-        public async Task<IActionResult> OrderSummary(int pageNum,int pageSize,int Month)
+        [HttpPost("ordersummary")]
+        public async Task<IActionResult> OrderSummary([FromBody] OrderQueryParams orderQueryParams)
         {
-            var result = await _os.GetOrderSummaryAsync(pageNum,pageSize,Month);
+            var result = await _os.GetOrderSummaryAsync(orderQueryParams);
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 

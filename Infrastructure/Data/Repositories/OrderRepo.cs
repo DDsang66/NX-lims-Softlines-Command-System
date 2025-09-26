@@ -8,6 +8,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using System.Drawing.Printing;
 using DocumentFormat.OpenXml.Vml.Office;
 using System.Collections.Concurrent;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
@@ -15,26 +16,43 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
     public class OrderRepo
     {
         private readonly LabDbContextSec _db;
+        private readonly OrderQueryProvider _orderQueryProvider;
         private readonly ConcurrentDictionary<long, object> _orderLocks = new ConcurrentDictionary<long, object>();
-        public OrderRepo(LabDbContextSec db)
+        public OrderRepo(LabDbContextSec db, OrderQueryProvider orderQueryProvider)
         {
             _db = db;
+            _orderQueryProvider = orderQueryProvider;
         }
 
-
+        /// <summary>
+        /// 表单数据添加
+        /// </summary>
         public bool AddOrder(OrderDto order)
         {
             if (order == null) return false;
             var rows = order.Rows;
-            var labTestInfo = _db.LabTestInfos.FirstOrDefault(i => i.ReportNumber == order.Rows[0].ReportNum);
-            if (labTestInfo != null) return false; // ReportNumber already exists
+            // 检查所有rows中的记录是否已存在
+            foreach (var row in rows)
+            {
+                var existingRecord = _db.LabTestInfos.FirstOrDefault(i =>
+                    i.ReportNumber == row.ReportNum &&
+                    i.TestGroup == row.Group);
 
+                if (existingRecord != null)
+                {
+                    // 记录具体的重复信息
+                    var duplicateInfo = $"重复记录: ReportNum={row.ReportNum}, Group={row.Group}";
+                    // 可以在这里添加日志记录
+                    return false;
+                }
+            }
 
             var snowflake = new SnowflakeIdGenerator();
             foreach (var row in rows)
             {
                 long snowId = snowflake.NextId();
                 var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == row.Cs)!.CustomerService1;
+                var currentTime = DateTimeOffset.Now;
                 var orderEntity = new LabTestInfo
                 {
                     Id = snowId,
@@ -46,7 +64,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     TestGroup = row.Group,
                     Remark = order.Remark,
                     ScheduleIndex = snowId,
-                    LastUpdateTime = DateTimeOffset.Now,
+                    LastUpdateTime = currentTime,
                 };
 
                 var orderschedule = new LabTestSchedule
@@ -62,6 +80,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             return true;
         }
 
+
+        /// <summary>
+        /// 表单数据更新
+        /// </summary>
         public bool UpdateOrder(OrderUpdateDto order)
         {
             if (order == null)
@@ -125,6 +147,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             }
         }
 
+
+        /// <summary>
+        /// 获取当前用户的订单列表
+        /// </summary>
         public async Task<OrderOutput[]> GetOrderListAsync(string userId)
         {
             // 1. 先拿昵称（防御空引用）
@@ -147,13 +173,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     o.TestGroup,
                     o.Remark,
                     s.ReportDueDate,
+                    o.LastUpdateTime,
                     Status = o.Status == 1 ? "In Lab"
                                          : o.Status == 2 ? "Review Finished"
                                          : "Completed"
                 })
                 .ToListAsync();
 
-            // 2. 分组投射
+            // 2. 分组投射,按订单时间排序
             var orders = flat
                 .GroupBy(x => new { x.ReportNumber, x.OrderEntryPerson, x.CustomerService })
                 .Select(g => new OrderOutput
@@ -168,62 +195,169 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                         Express = x.Express,
                         Group = x.TestGroup,
                         Remark = x.Remark,
-                        LabIn = x.OrderInTime.ToUniversalTime()
-                        .ToOffset(TimeSpan.FromHours(8))
-                        .ToString("yyyy-MM-dd HH:mm:ss"),
+                        LabIn = x.OrderInTime.ToUniversalTime(),
                         DueDate = x.ReportDueDate,
                         Status = x.Status
-                    }).ToList()
+                    }).OrderBy(x =>
+                        x.Group switch
+                        {
+                            "Physics" => 0,
+                            "Wet" => 1,
+                            "Fiber" => 2,
+                            "Flam" => 3,
+                            _ => 4  // 其他group排在最后
+                        })
+                    .ToList()
                 })
+                .OrderByDescending(o => flat.Where(f => f.ReportNumber == o.ReportNum)
+                .Max(f => f.LastUpdateTime))
                 .ToArray();
 
             return orders;
         }
 
-        public async Task<PageResult<OrderSummary>> GetCurrentMonthOrdersAsync(int pageNum, int pageSize,int Month)
+
+        /// <summary>
+        /// 根据样式和查询参数筛选summary格式的订单
+        /// </summary>
+        public async Task<object> GetSummaryOrdersAsync(OrderQueryParams dto)
         {
-            var query = from i in _db.LabTestInfos
-                        join s in _db.LabTestSchedules
-                        on i.Id equals s.IdSchedule
-                        where s.ReportDueDate.Month == Month &&
-                              s.ReportDueDate.Year == DateTime.Now.Year
-                        select new OrderSummary
-                        {
-                            ReportNum = i.ReportNumber,
-                            DueDate = s.ReportDueDate,
-                            Cs = i.CustomerService,
-                            TestGroup = i.TestGroup,
-                            ReviewFinish = s.ReviewFinishTime,
-                            OrderEntry = i.OrderEntryPerson,
-                            LabIn = s.OrderInTime,
-                            LabOut = s.LabOutTime,
-                            Remark = i.Remark,
-                            Status = i.Status == 1 ? "In Lab"
-                                    : i.Status == 2 ? "Review Finished"
-                                    : "Completed",
-                            Express = i.Express,
-                            TestItemNum = i.TestItemNum ?? 0,
-                            TestSampleNum = i.TestSampleNum ?? 0
+            // 获取查询条件
+            var queryParams = _orderQueryProvider.GetQueryParams(dto);
 
-                        };
+            // 分别查询两个表
+            var infoQuery = _orderQueryProvider.QueryLabTestInfo(queryParams,_db);
+            var scheduleQuery = _orderQueryProvider.QueryLabTestSchedule(queryParams, _db);
 
-            var total = await query.CountAsync();
+            // 获取共同的ID列表
+            var commonIds = infoQuery.Select(o => o.Id).ToList();
 
-            var items = await query
-                .OrderBy(o => o.DueDate)
-                .Skip((pageNum - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            // 根据共同的ID筛选两个表的数据
+            var filteredInfo = infoQuery.Where(o => commonIds.Contains(o.Id)).ToList();
+            var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule)).ToList();
 
-            return new PageResult<OrderSummary>
+            // 合并结果
+            var result = _orderQueryProvider.MergeResults(filteredInfo.AsQueryable(), filteredSchedule.AsQueryable());
+
+
+            // 应用分页
+            var pagedResult = result
+                .Skip((dto.PageNum - 1) * dto.PageSize)
+                .Take(dto.PageSize)
+                .ToList();
+            var TotalCount = commonIds.Count();
+
+            var styleType = queryParams.ContainsKey("group") ? queryParams["group"].ToString()!.ToLower() : null;
+            if (styleType == "all")
             {
-                Items = items,
-                TotalCount = total,
-                Page = pageNum,
-                PageSize = pageSize
-            };
-        }
+                // 按ReportNumber分组，然后处理每个分组
+                var groupedItems = pagedResult
+                    .GroupBy(item =>
+                    {
+                        var info = ((LabTestInfo)item.GetType().GetProperty("Info")!.GetValue(item)!);
+                        return info?.ReportNumber ?? string.Empty;
+                    })
+                    .Select(group => new
+                    {
+                        ReportNumber = group.Key,
+                        Items = group.ToList()
+                    });
 
+                var orderOutputResult = new PageResult<OrderOutput>
+                {
+                    Items = groupedItems.Select(g =>
+                    {
+                        var firstItem = g.Items[0];
+                        var firstInfo = (LabTestInfo)firstItem.GetType()!.GetProperty("Info")!.GetValue(firstItem)!;
+
+                        // 收集所有唯一的TestGroup
+                        var distinctGroups = g.Items.Select(item =>
+                        {
+                            var info = (LabTestInfo)item.GetType()!.GetProperty("Info")!.GetValue(item)!;
+                            var schedule = (LabTestSchedule)item.GetType()!.GetProperty("Schedule")!.GetValue(item)!;
+
+                            return new GroupOutput
+                            {
+                                RecodeId = info?.Id,
+                                Express = info?.Express ?? string.Empty,
+                                Group = info?.TestGroup ?? string.Empty,
+                                TestSampleNum = info?.TestSampleNum ?? 0,
+                                TestItemNum = info?.TestItemNum ?? 0,
+                                Remark = info?.Remark ?? string.Empty,
+                                Reviewer = info?.Reviewer ?? string.Empty,
+                                ReviewFinish = schedule?.ReviewFinishTime,
+                                LabIn = schedule?.LabOutTime ?? DateTimeOffset.Now,
+                                DueDate = schedule?.ReportDueDate ?? DateOnly.FromDateTime(DateTime.Today),
+                                LabOut = schedule?.LabOutTime,
+                                Status = info?.Status == 1 ? "In Lab"
+                                    : info?.Status == 2 ? "Review Finished"
+                                    : "Completed"
+                            };
+                        }).Distinct().ToList();
+
+                        return new OrderOutput
+                        {
+                            ReportNum = firstInfo?.ReportNumber ?? string.Empty,
+                            OrderEntry = firstInfo?.OrderEntryPerson ?? string.Empty,
+                            Cs = firstInfo?.CustomerService ?? string.Empty,
+                            TestGroups = string.Join(",", distinctGroups.Select(x => x.Group).Distinct()),
+                            Groups = distinctGroups.OrderBy(x =>
+                                x.Group switch
+                                {
+                                    "Physics" => 0,
+                                    "Wet" => 1,
+                                    "Fiber" => 2,
+                                    "Flam" => 3,
+                                    _ => 4  // 其他group排在最后
+                                }).ToList()
+                        };
+                    }).ToList(),
+                    TotalCount = TotalCount,
+                    Page = dto.PageNum,
+                    PageSize = dto.PageSize
+                };
+
+                return orderOutputResult;
+            }
+            else
+            {
+                //这里组合成PageResult<OrderSummary>类型
+                var orderSummaryResult = new PageResult<OrderSummary>
+                {
+                    Items = pagedResult.Select(item =>
+                    {
+                        var dynamicItem = item as dynamic;
+                        var info = dynamicItem.Info as LabTestInfo;
+                        var schedule = dynamicItem.Schedule as LabTestSchedule;
+
+                        return new OrderSummary
+                        {
+                            ReportNum = info?.ReportNumber ?? string.Empty,
+                            OrderEntry = info?.OrderEntryPerson ?? string.Empty,
+                            Express = info?.Express ?? string.Empty,
+                            Cs = info?.CustomerService ?? string.Empty,
+                            TestGroup = info?.TestGroup ?? string.Empty,
+                            ReviewFinish = schedule?.ReviewFinishTime,
+                            Reviewer = info?.Reviewer ?? string.Empty,
+                            DueDate = schedule?.ReportDueDate ?? DateOnly.FromDateTime(DateTime.Today),
+                            LabIn = schedule?.OrderInTime ?? DateTimeOffset.Now,
+                            LabOut = schedule?.LabOutTime,
+                            TestSampleNum = info?.TestSampleNum ?? 0,
+                            TestItemNum = info?.TestItemNum ?? 0,
+                            Remark = info?.Remark ?? string.Empty,
+                            Status = info?.Status == 1 ? "In Lab"
+                                         : info?.Status == 2 ? "Review Finished"
+                                         : "Completed"
+                        };
+                    }).ToList(),
+                    TotalCount = TotalCount,
+                    Page = dto.PageNum,
+                    PageSize = dto.PageSize
+                };
+                return orderSummaryResult;
+            }
+
+        }
 
 
         private string? GetExpressName(DateOnly duedate, DateTime labindate)
