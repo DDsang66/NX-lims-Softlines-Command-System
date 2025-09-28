@@ -7,9 +7,9 @@ public partial class LabTestSchedule
 {
     public long IdSchedule { get; set; }
 
-    public DateOnly ReportDueDate { get; set; }
+    public DateTimeOffset? ReportDueDate { get; set; }
 
-    public DateTimeOffset OrderInTime { get; set; }
+    public DateTimeOffset? OrderInTime { get; set; }
 
     public DateTimeOffset? ReviewFinishTime { get; set; }
 

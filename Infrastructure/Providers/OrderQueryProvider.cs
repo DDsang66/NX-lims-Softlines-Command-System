@@ -2,6 +2,7 @@
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using System.Linq.Expressions;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
@@ -94,13 +95,41 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             Dictionary<string, object> queryParams, 
             LabDbContextSec _db)
         {
+
+            //******************** 原始查询  ********************//
             var query = _db.LabTestSchedules.AsQueryable();
             // 获取时间相关参数
             if (queryParams == null || !queryParams.Any())
                 return query;
 
-            // 应用时间筛选
-            //query = ApplyTimeFilter(query, queryParams);
+            // 取出时间相关参数
+            var timeOpt = queryParams.ContainsKey("timeOpt") ? queryParams["timeOpt"]?.ToString() : null;
+            var timeType = queryParams.ContainsKey("timeType") ? queryParams["timeType"]?.ToString() : null;
+            var timeRange = queryParams.ContainsKey("timeRange") ? queryParams["timeRange"]:null;
+
+            // 如果任一参数为null，直接返回原始查询
+            if (string.IsNullOrEmpty(timeOpt) || string.IsNullOrEmpty(timeType) || timeRange == null)
+            {
+                return query;
+            }
+            //******************** 原始查询  ********************//
+
+            if (timeType.ToLower().Contains("range"))
+            {
+                //处理两个时间区间if (timeRange is List<DateTime> dateRange)
+                //转换timeRange为时间格式
+               return query = TimeRangeQueryHelper.ApplyTimeRangeFilter(query, timeRange, timeOpt, timeType);
+            }
+            else if (timeType.ToLower().Contains("s"))
+            { 
+                //处理多个时间节点的情况
+            }
+            else 
+            {
+                //处理单个时间节点的情况
+
+            }
+
 
             return query;
         }

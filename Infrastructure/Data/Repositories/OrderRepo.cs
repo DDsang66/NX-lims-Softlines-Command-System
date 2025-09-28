@@ -9,6 +9,7 @@ using System.Drawing.Printing;
 using DocumentFormat.OpenXml.Vml.Office;
 using System.Collections.Concurrent;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using DocumentFormat.OpenXml.Drawing;
 
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
@@ -45,6 +46,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     // 可以在这里添加日志记录
                     return false;
                 }
+
+                if (row.DueDate == null || row.LabIn == null) 
+                {
+                    // 记录具体的重复信息
+
+                    // 可以在这里添加日志记录
+                    return false;
+                }
             }
 
             var snowflake = new SnowflakeIdGenerator();
@@ -70,8 +79,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 var orderschedule = new LabTestSchedule
                 {
                     IdSchedule = snowId,
-                    ReportDueDate = row.DueDate,
-                    OrderInTime = row.LabIn,
+                    ReportDueDate = row.DueDate ?? DateTimeOffset.Now,
+                    OrderInTime = row.LabIn ?? DateTimeOffset.Now,
                 };
                 _db.LabTestInfos.Add(orderEntity);
                 _db.LabTestSchedules.Add(orderschedule);
@@ -176,7 +185,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     o.LastUpdateTime,
                     Status = o.Status == 1 ? "In Lab"
                                          : o.Status == 2 ? "Review Finished"
-                                         : "Completed"
+                                         : "Done"
                 })
                 .ToListAsync();
 
@@ -195,8 +204,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                         Express = x.Express,
                         Group = x.TestGroup,
                         Remark = x.Remark,
-                        LabIn = x.OrderInTime.ToUniversalTime(),
-                        DueDate = x.ReportDueDate,
+                        LabIn = x.OrderInTime?.ToUniversalTime(),
+                        DueDate = DateOnly.FromDateTime(x.ReportDueDate!.Value.DateTime),
                         Status = x.Status
                     }).OrderBy(x =>
                         x.Group switch
@@ -245,7 +254,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 .Skip((dto.PageNum - 1) * dto.PageSize)
                 .Take(dto.PageSize)
                 .ToList();
-            var TotalCount = commonIds.Count();
+            var TotalCountShown = commonIds.Count();
+            var TotalCountFold = filteredInfo.Select(o => o.ReportNumber).Distinct().Count();
 
             var styleType = queryParams.ContainsKey("group") ? queryParams["group"].ToString()!.ToLower() : null;
             if (styleType == "all")
@@ -287,7 +297,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                 Reviewer = info?.Reviewer ?? string.Empty,
                                 ReviewFinish = schedule?.ReviewFinishTime,
                                 LabIn = schedule?.LabOutTime ?? DateTimeOffset.Now,
-                                DueDate = schedule?.ReportDueDate ?? DateOnly.FromDateTime(DateTime.Today),
+                                DueDate = schedule?.ReportDueDate switch
+                                {
+                                    DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
+                                    _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
+                                },
                                 LabOut = schedule?.LabOutTime,
                                 Status = info?.Status == 1 ? "In Lab"
                                     : info?.Status == 2 ? "Review Finished"
@@ -312,7 +326,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                 }).ToList()
                         };
                     }).ToList(),
-                    TotalCount = TotalCount,
+                    TotalCount = TotalCountFold,  // 修改这里：计算groupedItems的个数而不是TotalCount,
                     Page = dto.PageNum,
                     PageSize = dto.PageSize
                 };
@@ -339,7 +353,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                             TestGroup = info?.TestGroup ?? string.Empty,
                             ReviewFinish = schedule?.ReviewFinishTime,
                             Reviewer = info?.Reviewer ?? string.Empty,
-                            DueDate = schedule?.ReportDueDate ?? DateOnly.FromDateTime(DateTime.Today),
+                            DueDate = schedule?.ReportDueDate switch
+                            {
+                                DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
+                                _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
+                            },
                             LabIn = schedule?.OrderInTime ?? DateTimeOffset.Now,
                             LabOut = schedule?.LabOutTime,
                             TestSampleNum = info?.TestSampleNum ?? 0,
@@ -350,7 +368,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                          : "Completed"
                         };
                     }).ToList(),
-                    TotalCount = TotalCount,
+                    TotalCount = TotalCountShown,
                     Page = dto.PageNum,
                     PageSize = dto.PageSize
                 };

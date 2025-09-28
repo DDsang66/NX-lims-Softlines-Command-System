@@ -14,10 +14,10 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? ReportNum { get; set; }
         public string? OrderEntry { get; set; }
         public string? Express { get; set; }
-        public DateOnly DueDate { get; set; }
+        public DateTimeOffset? DueDate { get; set; }
         public int? Cs { get; set; }
         public string? Group { get; set; }
-        public DateTimeOffset LabIn { get; set; }
+        public DateTimeOffset? LabIn { get; set; }
     }
 
 
@@ -55,7 +55,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public DateTimeOffset? ReviewFinish { get; set; }
         public string? Reviewer { get; set; }
         public DateOnly DueDate { get; set; }
-        public DateTimeOffset LabIn { get; set; }
+        public DateTimeOffset? LabIn { get; set; }
         public DateTimeOffset? LabOut { get; set; }
         public int? TestSampleNum{ get; set; }
         public int? TestItemNum { get; set; }
@@ -67,7 +67,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public sealed class PageResult<T>
     {
-        public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();//存放后端响应的数据
+        public IReadOnlyList<T> Items { get; init; } = Array.Empty<T>();//存放后端响应的数据，类型为泛型，根据前端的需求提供不同的格式
         public int TotalCount { get; init; }//用于前端计算页面数量
         public int Page { get; init; }//当前页码
         public int PageSize { get; init; }//每页显示数量
@@ -104,7 +104,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public long ScheduleIndex { get; set; }
 
         // LabTestSchedule表的字段
-        public DateOnly? ReportDueDate { get; set; }
+        public DateTimeOffset? ReportDueDate { get; set; }
         public DateTimeOffset? OrderInTime { get; set; }
         public DateTimeOffset? ReviewFinishTime { get; set; }
         public DateTimeOffset? LabOutTime { get; set; }

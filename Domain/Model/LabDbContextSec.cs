@@ -224,7 +224,9 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.OrderInTime)
                 .HasColumnType("datetimeoffset(7)")
                 .HasColumnName("order_in_time");
-            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
+            entity.Property(e => e.ReportDueDate)
+                .HasColumnType("datetimeoffset(7)")
+                .HasColumnName("report_due_date");
             entity.Property(e => e.ReviewFinishTime)
                 .HasColumnType("datetimeoffset(7)")
                 .HasColumnName("review_finish_time");
