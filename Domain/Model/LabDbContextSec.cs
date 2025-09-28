@@ -173,10 +173,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("express");
-            entity.Property(e => e.Describe)
-                .HasMaxLength(50)
+            entity.Property(e => e.IsDelete)
+                .HasMaxLength(5)
                 .IsUnicode(false)
-                .HasColumnName("describe");
+                .HasColumnName("is_delete");
             entity.Property(e => e.OrderEntryPerson)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -230,6 +230,10 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.ReviewFinishTime)
                 .HasColumnType("datetimeoffset(7)")
                 .HasColumnName("review_finish_time");
+            entity.Property(e => e.IsDelete)
+                .HasMaxLength(5)
+                .IsUnicode(false)
+                .HasColumnName("is_delete");
         });
 
         modelBuilder.Entity<Menu>(entity =>

@@ -37,7 +37,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             {
                 var existingRecord = _db.LabTestInfos.FirstOrDefault(i =>
                     i.ReportNumber == row.ReportNum &&
-                    i.TestGroup == row.Group);
+                    i.TestGroup == row.Group &&
+                    i.IsDelete == "N");
 
                 if (existingRecord != null)
                 {
@@ -74,6 +75,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     Remark = order.Remark,
                     ScheduleIndex = snowId,
                     LastUpdateTime = currentTime,
+                    IsDelete = "N"
                 };
 
                 var orderschedule = new LabTestSchedule
@@ -81,6 +83,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     IdSchedule = snowId,
                     ReportDueDate = row.DueDate ?? DateTimeOffset.Now,
                     OrderInTime = row.LabIn ?? DateTimeOffset.Now,
+                    IsDelete = "N"
                 };
                 _db.LabTestInfos.Add(orderEntity);
                 _db.LabTestSchedules.Add(orderschedule);
@@ -170,7 +173,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             var flat = await (
                 from o in _db.LabTestInfos
                 join s in _db.LabTestSchedules on o.ScheduleIndex equals s.IdSchedule
-                where o.OrderEntryPerson == user.NickName
+                where o.OrderEntryPerson == user.NickName && o.IsDelete == "N" && s.IsDelete == "N"
                 select new
                 {
                     o.Id,
@@ -185,7 +188,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     o.LastUpdateTime,
                     Status = o.Status == 1 ? "In Lab"
                                          : o.Status == 2 ? "Review Finished"
-                                         : "Done"
+                                         : "Test Done"
                 })
                 .ToListAsync();
 
@@ -200,7 +203,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     TestGroups = string.Join(",", g.Select(x => x.TestGroup).Distinct()),
                     Groups = g.Select(x => new GroupOutput
                     {
-                        RecodeId = x.Id,
+                        RecordId = x.Id,
                         Express = x.Express,
                         Group = x.TestGroup,
                         Remark = x.Remark,
@@ -242,137 +245,145 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             var commonIds = infoQuery.Select(o => o.Id).ToList();
 
             // 根据共同的ID筛选两个表的数据
-            var filteredInfo = infoQuery.Where(o => commonIds.Contains(o.Id)).ToList();
-            var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule)).ToList();
+            var filteredInfo = infoQuery.Where(o => commonIds.Contains(o.Id) && o.IsDelete == "N").ToList();
+            var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule) && o.IsDelete=="N").ToList();
 
             // 合并结果
             var result = _orderQueryProvider.MergeResults(filteredInfo.AsQueryable(), filteredSchedule.AsQueryable());
 
 
-            // 应用分页
-            var pagedResult = result
-                .Skip((dto.PageNum - 1) * dto.PageSize)
-                .Take(dto.PageSize)
-                .ToList();
-            var TotalCountShown = commonIds.Count();
-            var TotalCountFold = filteredInfo.Select(o => o.ReportNumber).Distinct().Count();
+            // 0. 取全量数据（一次落内存，后面要分组/映射）
+            var fullData = (from o in _db.LabTestInfos
+                            join s in _db.LabTestSchedules on o.Id equals s.IdSchedule
+                            select new { Info = o, Schedule = s })
+                           .AsNoTracking()
+                           .ToList();
 
-            var styleType = queryParams.ContainsKey("group") ? queryParams["group"].ToString()!.ToLower() : null;
+            // 1. 预计算两种总数
+            int totalCountAll = fullData.Count();                                          // 平铺模式
+            int totalCountFold = fullData.Select(x => x.Info.ReportNumber).Distinct().Count(); // 分组模式
+
+            // 2. 分页参数
+            int skip = (dto.PageNum - 1) * dto.PageSize;
+            int take = dto.PageSize;
+
+            // 3. 风格开关
+            string styleType = queryParams.ContainsKey("group")
+                ? queryParams["group"].ToString()!.ToLower()
+                : null;
+
+            /* ---------------------------------------------------- */
             if (styleType == "all")
             {
-                // 按ReportNumber分组，然后处理每个分组
-                var groupedItems = pagedResult
-                    .GroupBy(item =>
+                /* 分组模式 → OrderOutput */
+                var grouped = fullData
+                    .GroupBy(d => d.Info.ReportNumber ?? string.Empty)
+                    .Select(g =>
                     {
-                        var info = ((LabTestInfo)item.GetType().GetProperty("Info")!.GetValue(item)!);
-                        return info?.ReportNumber ?? string.Empty;
-                    })
-                    .Select(group => new
-                    {
-                        ReportNumber = group.Key,
-                        Items = group.ToList()
-                    });
+                        var first = g.First();
 
-                var orderOutputResult = new PageResult<OrderOutput>
-                {
-                    Items = groupedItems.Select(g =>
-                    {
-                        var firstItem = g.Items[0];
-                        var firstInfo = (LabTestInfo)firstItem.GetType()!.GetProperty("Info")!.GetValue(firstItem)!;
-
-                        // 收集所有唯一的TestGroup
-                        var distinctGroups = g.Items.Select(item =>
-                        {
-                            var info = (LabTestInfo)item.GetType()!.GetProperty("Info")!.GetValue(item)!;
-                            var schedule = (LabTestSchedule)item.GetType()!.GetProperty("Schedule")!.GetValue(item)!;
-
-                            return new GroupOutput
+                        // 构造 GroupOutput
+                        var distinctGroups = g
+                            .Select(d => new GroupOutput
                             {
-                                RecodeId = info?.Id,
-                                Express = info?.Express ?? string.Empty,
-                                Group = info?.TestGroup ?? string.Empty,
-                                TestSampleNum = info?.TestSampleNum ?? 0,
-                                TestItemNum = info?.TestItemNum ?? 0,
-                                Remark = info?.Remark ?? string.Empty,
-                                Reviewer = info?.Reviewer ?? string.Empty,
-                                ReviewFinish = schedule?.ReviewFinishTime,
-                                LabIn = schedule?.LabOutTime ?? DateTimeOffset.Now,
-                                DueDate = schedule?.ReportDueDate switch
+                                RecordId = d.Info.Id,
+                                Express = d.Info.Express ?? string.Empty,
+                                Group = d.Info.TestGroup ?? string.Empty,
+                                TestSampleNum = d.Info.TestSampleNum ?? 0,
+                                TestItemNum = d.Info.TestItemNum ?? 0,
+                                Remark = d.Info.Remark ?? string.Empty,
+                                Reviewer = d.Info.Reviewer ?? string.Empty,
+                                ReviewFinish = d.Schedule.ReviewFinishTime,
+                                LabIn = d.Schedule.OrderInTime ?? DateTimeOffset.Now,
+                                DueDate = d.Schedule.ReportDueDate switch
                                 {
                                     DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
                                     _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
                                 },
-                                LabOut = schedule?.LabOutTime,
-                                Status = info?.Status == 1 ? "In Lab"
-                                    : info?.Status == 2 ? "Review Finished"
-                                    : "Completed"
-                            };
-                        }).Distinct().ToList();
+                                LabOut = d.Schedule.LabOutTime,
+                                Status = d.Info.Status switch
+                                {
+                                    1 => "In Lab",
+                                    2 => "Review Finished",
+                                    _ => "Test Done"
+                                }
+                            })
+                            .Distinct()
+                            .OrderBy(x => x.Group switch
+                            {
+                                "Physics" => 0,
+                                "Wet" => 1,
+                                "Fiber" => 2,
+                                "Flam" => 3,
+                                _ => 4
+                            })
+                            .ToList();
 
                         return new OrderOutput
                         {
-                            ReportNum = firstInfo?.ReportNumber ?? string.Empty,
-                            OrderEntry = firstInfo?.OrderEntryPerson ?? string.Empty,
-                            Cs = firstInfo?.CustomerService ?? string.Empty,
-                            TestGroups = string.Join(",", distinctGroups.Select(x => x.Group).Distinct()),
-                            Groups = distinctGroups.OrderBy(x =>
-                                x.Group switch
-                                {
-                                    "Physics" => 0,
-                                    "Wet" => 1,
-                                    "Fiber" => 2,
-                                    "Flam" => 3,
-                                    _ => 4  // 其他group排在最后
-                                }).ToList()
+                            ReportNum = g.Key,
+                            OrderEntry = first.Info.OrderEntryPerson ?? string.Empty,
+                            Cs = first.Info.CustomerService ?? string.Empty,
+                            TestGroups = string.Join(",", distinctGroups.Select(dg => dg.Group).Distinct()),
+                            Groups = distinctGroups
                         };
-                    }).ToList(),
-                    TotalCount = TotalCountFold,  // 修改这里：计算groupedItems的个数而不是TotalCount,
+                    })
+                    .ToList();
+
+                // 4. 对最终 DTO 分页
+                var pageList = grouped.Skip(skip).Take(take).ToList();
+
+                return new PageResult<OrderOutput>
+                {
+                    Items = pageList,
+                    TotalCount = totalCountFold,
                     Page = dto.PageNum,
                     PageSize = dto.PageSize
                 };
-
-                return orderOutputResult;
             }
             else
             {
-                //这里组合成PageResult<OrderSummary>类型
-                var orderSummaryResult = new PageResult<OrderSummary>
-                {
-                    Items = pagedResult.Select(item =>
+                /* 平铺模式 → OrderSummary */
+                var flat = fullData
+                    .Select(d => new OrderSummary
                     {
-                        var dynamicItem = item as dynamic;
-                        var info = dynamicItem.Info as LabTestInfo;
-                        var schedule = dynamicItem.Schedule as LabTestSchedule;
-
-                        return new OrderSummary
+                        RecordId = d.Info.Id,
+                        ReportNum = d.Info.ReportNumber ?? string.Empty,
+                        OrderEntry = d.Info.OrderEntryPerson ?? string.Empty,
+                        Express = d.Info.Express ?? string.Empty,
+                        Cs = d.Info.CustomerService ?? string.Empty,
+                        TestGroup = d.Info.TestGroup ?? string.Empty,
+                        ReviewFinish = d.Schedule.ReviewFinishTime,
+                        Reviewer = d.Info.Reviewer ?? string.Empty,
+                        DueDate = d.Schedule.ReportDueDate switch
                         {
-                            ReportNum = info?.ReportNumber ?? string.Empty,
-                            OrderEntry = info?.OrderEntryPerson ?? string.Empty,
-                            Express = info?.Express ?? string.Empty,
-                            Cs = info?.CustomerService ?? string.Empty,
-                            TestGroup = info?.TestGroup ?? string.Empty,
-                            ReviewFinish = schedule?.ReviewFinishTime,
-                            Reviewer = info?.Reviewer ?? string.Empty,
-                            DueDate = schedule?.ReportDueDate switch
-                            {
-                                DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
-                                _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
-                            },
-                            LabIn = schedule?.OrderInTime ?? DateTimeOffset.Now,
-                            LabOut = schedule?.LabOutTime,
-                            TestSampleNum = info?.TestSampleNum ?? 0,
-                            TestItemNum = info?.TestItemNum ?? 0,
-                            Remark = info?.Remark ?? string.Empty,
-                            Status = info?.Status == 1 ? "In Lab"
-                                         : info?.Status == 2 ? "Review Finished"
-                                         : "Completed"
-                        };
-                    }).ToList(),
-                    TotalCount = TotalCountShown,
+                            DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
+                            _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
+                        },
+                        LabIn = d.Schedule.OrderInTime ?? DateTimeOffset.Now,
+                        LabOut = d.Schedule.LabOutTime,
+                        TestSampleNum = d.Info.TestSampleNum ?? 0,
+                        TestItemNum = d.Info.TestItemNum ?? 0,
+                        Remark = d.Info.Remark ?? string.Empty,
+                        Status = d.Info.Status switch
+                        {
+                            1 => "In Lab",
+                            2 => "Review Finished",
+                            _ => "Test Done"
+                        }
+                    })
+                    .ToList();
+
+                // 4. 对最终 DTO 分页
+                var pageList = flat.Skip(skip).Take(take).ToList();
+
+                return new PageResult<OrderSummary>
+                {
+                    Items = pageList,
+                    TotalCount = totalCountAll,
                     Page = dto.PageNum,
                     PageSize = dto.PageSize
                 };
-                return orderSummaryResult;
             }
 
         }

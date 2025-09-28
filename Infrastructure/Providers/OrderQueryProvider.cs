@@ -75,9 +75,27 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         break;
 
                     case "status":
-                        if (int.TryParse(param.Value?.ToString(), out int status))
+                        var statusMap = new Dictionary<string, int>
                         {
-                            query = query.Where(o => o.Status == status);
+                            { "In Lab", 1 },
+                            { "Review Finished", 2 },
+                            { "Test Done", 3 }
+                            };
+
+                        if (param.Value != null)
+                        {
+                            var statusStr = param.Value.ToString();
+
+                            // 尝试直接解析为数字
+                            if (int.TryParse(statusStr, out int status))
+                            {
+                                query = query.Where(o => o.Status == status);
+                            }
+                            // 尝试解析为字符串状态
+                            else if (statusMap.TryGetValue(statusStr, out int mappedStatus))
+                            {
+                                query = query.Where(o => o.Status == mappedStatus);
+                            }
                         }
                         break;
                 }
@@ -85,6 +103,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
             return query;
         }
+
 
         /// <summary>
         /// 查询 LabTestSchedule 表
@@ -132,7 +151,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         /// </summary>
         /// <param name="infoQuery">LabTestInfo 查询结果</param>
         /// <param name="scheduleQuery">LabTestSchedule 查询结果</param>
-        /// <returns>合并后的结果</returns>
+        /// <returns>对两表查询结果取交集</returns>
         public IQueryable<object> MergeResults(
             IQueryable<LabTestInfo> infoQuery,
             IQueryable<LabTestSchedule> scheduleQuery)

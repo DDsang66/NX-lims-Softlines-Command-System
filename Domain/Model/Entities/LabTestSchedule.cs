@@ -14,4 +14,6 @@ public partial class LabTestSchedule
     public DateTimeOffset? ReviewFinishTime { get; set; }
 
     public DateTimeOffset? LabOutTime { get; set; }
+
+    public string? IsDelete { get; set; }
 }

@@ -29,7 +29,7 @@ public partial class LabTestInfo
 
     public string? Express { get; set; }
 
-    public string? Describe { get; set; }
+    public string? IsDelete { get; set; }
 
     public long ScheduleIndex { get; set; }
     public DateTimeOffset LastUpdateTime { get; set; }

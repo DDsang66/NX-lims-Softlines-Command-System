@@ -32,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public class GroupOutput
     {
-        public long? RecodeId { get; set; }
+        public long? RecordId { get; set; }
         public string? Express { get; set; }
         public string? Group { get; set; }
         public int TestSampleNum { get; set; }
@@ -47,6 +47,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     }
     public class OrderSummary
     {
+        public long? RecordId { get; set; }
         public string? ReportNum { get; set; }
         public string? OrderEntry { get; set; }
         public string? Express { get; set; }

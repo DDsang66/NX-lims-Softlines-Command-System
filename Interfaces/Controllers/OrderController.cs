@@ -32,6 +32,29 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         }
 
         /// <summary>
+        /// 表单数据更新
+        /// </summary>
+        [HttpPatch("update")]
+        public async Task<IActionResult> OrderUpdate([FromBody] OrderUpdateDto dto)
+        {
+            bool result = _os.UpdateOrder(dto);
+            if (result)
+            {
+                return Ok(new { success = true, message = "Update Succeed" });
+            }
+            return Ok(new { success = false, message = "Update Failed，Retry" });
+        }
+
+        /// <summary>
+        /// 单列数据删除
+        /// </summary>
+        [HttpPatch("delete")]
+        public async Task<IActionResult> OrderDelete([FromBody]string recordId)
+        {
+            return Ok(new { success = false, message = "Update Failed，Retry" });
+        }
+
+        /// <summary>
         /// 接收前端的ueserid返回orderlist
         /// </summary>
         [HttpGet("getorder")]
@@ -51,20 +74,6 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 
-
-        /// <summary>
-        /// 表单数据更新
-        /// </summary>
-        [HttpPatch("update")]
-        public async Task<IActionResult> OrderUpdate([FromBody] OrderUpdateDto dto)
-        {
-            bool result = _os.UpdateOrder(dto);
-            if (result)
-            {
-                return Ok(new { success = true, message = "Update Succeed" });
-            }
-            return Ok(new { success = false, message = "Update Failed，Retry" });
-        }
 
     }
 }
