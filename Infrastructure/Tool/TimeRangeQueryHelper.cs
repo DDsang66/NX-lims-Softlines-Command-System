@@ -1,4 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using System.Linq;
+using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
@@ -88,27 +90,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
 
                 if (dates.Count == 2)
                 {
-                    DateTimeOffset? start = new DateTimeOffset(dates[0].DateTime.Date, TimeSpan.FromHours(8)); // 使用+8时区
-                    DateTimeOffset? end = new DateTimeOffset(dates[1].DateTime.Date.AddDays(1).AddSeconds(-1), TimeSpan.FromHours(8)); // 使用+8时区
+                    DateTimeOffset? start = dates[0].ToOffset(TimeSpan.FromHours(8)).Date; // 转换为东八区的日期
+                    DateTimeOffset? end = dates[1].ToOffset(TimeSpan.FromHours(8)).Date.AddDays(1); // 东八区下
 
+                    // 获取属性名称
+                    var propertyName = ((MemberExpression)dateProperty.Body).Member.Name;
 
-                    // 使用编译后的表达式获取属性
-                    var parameter = Expression.Parameter(typeof(LabTestSchedule),"x");
-                    var property = (MemberExpression)dateProperty.Body;
-
-                    // 创建比较表达式
-                    var startComparison = Expression.GreaterThanOrEqual(
-                                 property,
-                                 Expression.Constant(start, typeof(DateTimeOffset?)));
-
-                    var endComparison = Expression.LessThanOrEqual(
-                        property,
-                        Expression.Constant(end, typeof(DateTimeOffset?)));
-
-                    var combined = Expression.AndAlso(startComparison, endComparison);
-
-                    var lambda = Expression.Lambda<Func<LabTestSchedule, bool>>(combined, parameter);//未解决类型问题
-                    return query.Where(lambda);
+                    // 使用Dynamic LINQ构建查询
+                    return query.Where($"{propertyName} >= @0 && {propertyName} < @1", start, end);
                 }
             }
             else
@@ -134,7 +123,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
             Expression<Func<LabTestSchedule, DateTimeOffset?>> dateProperty,
             object timeRange)
         {
-            var timeRangeStr = timeRange.ToString();
+            var timeRangeStr = timeRange?.ToString();
+            if (string.IsNullOrEmpty(timeRangeStr))
+                return query;
+
             if (timeRangeStr.StartsWith("[") && timeRangeStr.EndsWith("]"))
             {
                 // 处理月份范围
@@ -143,19 +135,55 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
                     {
                         if (DateTimeOffset.TryParse(m.Trim('"'), out var date))
                         {
-                            return new { Year = date.Year, Month = date.Month };
+                            // 转换为东八区时间
+                            var beijingTime = date.ToOffset(TimeSpan.FromHours(8));
+                            return new { Year = beijingTime.Year, Month = beijingTime.Month };
                         }
                         return null;
                     })
                     .Where(m => m != null)
                     .ToList();
 
+                if (months.Count == 2)
+                {
+                    // 获取月份范围的开始和结束时间（东八区）
+                    var startMonth = months[0];
+                    var endMonth = months[1];
 
+                    // 开始时间：第一个月的1号 00:00:00 东八区
+                    DateTimeOffset start = new DateTimeOffset(startMonth.Year, startMonth.Month, 1, 0, 0, 0, TimeSpan.FromHours(8));
+
+                    // 结束时间：结束月份的下个月1号 00:00:00 东八区
+                    DateTimeOffset end = new DateTimeOffset(endMonth.Year, endMonth.Month, 1, 0, 0, 0, TimeSpan.FromHours(8))
+                        .AddMonths(1);
+
+                    // 获取属性名称
+                    var propertyName = ((MemberExpression)dateProperty.Body).Member.Name;
+
+                    // 使用Dynamic LINQ构建查询
+                    return query.Where($"{propertyName} >= @0 && {propertyName} < @1", start, end);
+                }
             }
             else
             {
                 // 处理单个月份
+                if (DateTimeOffset.TryParse(timeRangeStr, out var date))
+                {
+                    // 转换为东八区时间
+                    var beijingTime = date.ToOffset(TimeSpan.FromHours(8));
+                    var year = beijingTime.Year;
+                    var month = beijingTime.Month;
 
+                    // 月份的开始和结束时间（东八区）
+                    DateTimeOffset start = new DateTimeOffset(year, month, 1, 0, 0, 0, TimeSpan.FromHours(8));
+                    DateTimeOffset end = start.AddMonths(1); // 下个月1号 00:00:00
+
+                    // 获取属性名称
+                    var propertyName = ((MemberExpression)dateProperty.Body).Member.Name;
+
+                    // 使用Dynamic LINQ构建查询
+                    return query.Where($"{propertyName} >= @0 && {propertyName} < @1", start, end);
+                }
             }
 
             return query;
@@ -169,7 +197,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
             Expression<Func<LabTestSchedule, DateTimeOffset?>> dateProperty,
             object timeRange)
         {
-            var timeRangeStr = timeRange.ToString();
+            var timeRangeStr = timeRange?.ToString();
+            if (string.IsNullOrEmpty(timeRangeStr))
+                return query;
+
             if (timeRangeStr.StartsWith("[") && timeRangeStr.EndsWith("]"))
             {
                 // 处理年份范围
@@ -178,7 +209,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
                     {
                         if (DateTimeOffset.TryParse(y.Trim('"'), out var date))
                         {
-                            return date.Year;
+                            // 转换为东八区时间获取年份
+                            var beijingTime = date.ToOffset(TimeSpan.FromHours(8));
+                            return beijingTime.Year;
                         }
                         return (int?)null;
                     })
@@ -186,10 +219,44 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
                     .Select(y => y.Value)
                     .ToList();
 
+                if (years.Count == 2)
+                {
+                    var startYear = years[0];
+                    var endYear = years[1];
+
+                    // 开始时间：开始年份的1月1日 00:00:00 东八区
+                    DateTimeOffset start = new DateTimeOffset(startYear, 1, 1, 0, 0, 0, TimeSpan.FromHours(8));
+
+                    // 结束时间：结束年份的下一年1月1日 00:00:00 东八区
+                    DateTimeOffset end = new DateTimeOffset(endYear, 1, 1, 0, 0, 0, TimeSpan.FromHours(8))
+                        .AddYears(1);
+
+                    // 获取属性名称
+                    var propertyName = ((MemberExpression)dateProperty.Body).Member.Name;
+
+                    // 使用Dynamic LINQ构建查询
+                    return query.Where($"{propertyName} >= @0 && {propertyName} < @1", start, end);
+                }
             }
             else
             {
+                // 处理单个年份
+                if (DateTimeOffset.TryParse(timeRangeStr, out var date))
+                {
+                    // 转换为东八区时间获取年份
+                    var beijingTime = date.ToOffset(TimeSpan.FromHours(8));
+                    var year = beijingTime.Year;
 
+                    // 年份的开始和结束时间（东八区）
+                    DateTimeOffset start = new DateTimeOffset(year, 1, 1, 0, 0, 0, TimeSpan.FromHours(8));
+                    DateTimeOffset end = start.AddYears(1); // 下一年1月1日 00:00:00
+
+                    // 获取属性名称
+                    var propertyName = ((MemberExpression)dateProperty.Body).Member.Name;
+
+                    // 使用Dynamic LINQ构建查询
+                    return query.Where($"{propertyName} >= @0 && {propertyName} < @1", start, end);
+                }
             }
 
             return query;

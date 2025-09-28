@@ -148,11 +148,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             var infoList = infoQuery.ToList();
             var scheduleList = scheduleQuery.ToList();
 
-            var result = infoList.Select(info => new
-            {
-                Info = info,
-                Schedule = scheduleList.FirstOrDefault(s => s.IdSchedule == info.Id)
-            });
+            var result = from info in infoQuery
+                         join schedule in scheduleQuery on info.Id equals schedule.IdSchedule
+                         select new
+                         {
+                             Info = info,
+                             Schedule = schedule
+                         };
 
             return result.AsQueryable();
         }
