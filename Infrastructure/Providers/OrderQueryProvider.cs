@@ -152,22 +152,18 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         /// <param name="infoQuery">LabTestInfo 查询结果</param>
         /// <param name="scheduleQuery">LabTestSchedule 查询结果</param>
         /// <returns>对两表查询结果取交集</returns>
-        public IQueryable<object> MergeResults(
-            IQueryable<LabTestInfo> infoQuery,
-            IQueryable<LabTestSchedule> scheduleQuery)
+        public IQueryable<LabTestJoinDto> MergeResults(
+                IQueryable<LabTestInfo> infoQuery,
+                IQueryable<LabTestSchedule> scheduleQuery)
         {
-            var infoList = infoQuery.ToList();
-            var scheduleList = scheduleQuery.ToList();
-
-            var result = from info in infoQuery
-                         join schedule in scheduleQuery on info.Id equals schedule.IdSchedule
-                         select new
-                         {
-                             Info = info,
-                             Schedule = schedule
-                         };
-
-            return result.AsQueryable();
+            // 直接用 IQueryable 让 EF 翻译 SQL，不再 ToList()
+            return from info in infoQuery
+                   join schedule in scheduleQuery on info.Id equals schedule.IdSchedule
+                   select new LabTestJoinDto   // 强类型匿名对象 → DTO
+                   {
+                       Info = info,
+                       Schedule = schedule
+                   };
         }
 
 

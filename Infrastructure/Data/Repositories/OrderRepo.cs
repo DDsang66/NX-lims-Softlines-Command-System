@@ -249,15 +249,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule) && o.IsDelete=="N").ToList();
 
             // 合并结果
-            var result = _orderQueryProvider.MergeResults(filteredInfo.AsQueryable(), filteredSchedule.AsQueryable());
+            IQueryable<LabTestJoinDto> result = _orderQueryProvider.MergeResults(filteredInfo.AsQueryable(), filteredSchedule.AsQueryable());
 
 
             // 0. 取全量数据（一次落内存，后面要分组/映射）
-            var fullData = (from o in _db.LabTestInfos
-                            join s in _db.LabTestSchedules on o.Id equals s.IdSchedule
-                            select new { Info = o, Schedule = s })
-                           .AsNoTracking()
-                           .ToList();
+            var fullData = result.ToList();
 
             // 1. 预计算两种总数
             int totalCountAll = fullData.Count();                                          // 平铺模式

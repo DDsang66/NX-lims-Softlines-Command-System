@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace NX_lims_Softlines_Command_System.Application.DTO
 {
@@ -117,7 +118,11 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
 
 
-
+    public sealed class LabTestJoinDto
+    {
+        public LabTestInfo Info { get; init; }
+        public LabTestSchedule Schedule { get; init; }
+    }
 
 
 }
