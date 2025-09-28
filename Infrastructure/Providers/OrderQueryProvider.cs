@@ -116,22 +116,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
             if (timeType.ToLower().Contains("range"))
             {
-                //处理两个时间区间if (timeRange is List<DateTime> dateRange)
-                //转换timeRange为时间格式
+                //处理两个时间的区间
                return query = TimeRangeQueryHelper.ApplyTimeRangeFilter(query, timeRange, timeOpt, timeType);
-            }
-            else if (timeType.ToLower().Contains("s"))
-            { 
-                //处理多个时间节点的情况
             }
             else 
             {
-                //处理单个时间节点的情况
-
+                //处理单个时间节点或多个时间节点的情况
+                return query = TimeNodeQueryHelper.ApplyTimeNodeFilter(query, timeRange, timeOpt, timeType);
             }
-
-
-            return query;
         }
 
 
