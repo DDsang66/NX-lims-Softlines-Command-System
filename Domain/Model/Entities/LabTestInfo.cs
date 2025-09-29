@@ -29,8 +29,11 @@ public partial class LabTestInfo
 
     public string? Express { get; set; }
 
+    public DateTimeOffset? LastUpdateTime { get; set; }
+
     public string? IsDelete { get; set; }
 
     public long ScheduleIndex { get; set; }
-    public DateTimeOffset LastUpdateTime { get; set; }
+
+    public byte[] RowVersion { get; set; } = null!;
 }

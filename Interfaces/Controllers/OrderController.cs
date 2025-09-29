@@ -48,10 +48,15 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// <summary>
         /// 单列数据删除
         /// </summary>
-        [HttpPatch("delete")]
-        public async Task<IActionResult> OrderDelete([FromBody]string recordId)
+        [HttpPost("delete")]
+        public async Task<IActionResult> OrderDelete([FromBody] OrderDeleteRequest odr)
         {
-            return Ok(new { success = false, message = "Update Failed，Retry" });
+            bool result = _os.DeleteOrder(odr);
+            if (result)
+            {
+                return Ok(new { success = true, message = "Delete Succeed" });
+            }
+            return Ok(new { success = false, message = "Delete Failed" });
         }
 
         /// <summary>

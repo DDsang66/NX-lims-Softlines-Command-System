@@ -8,11 +8,11 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using System.Drawing.Printing;
 using DocumentFormat.OpenXml.Vml.Office;
 using System.Collections.Concurrent;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using DocumentFormat.OpenXml.Drawing;
+using Azure.Core;
 
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 {
     public class OrderRepo
     {
@@ -48,7 +48,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     return false;
                 }
 
-                if (row.DueDate == null || row.LabIn == null) 
+                if (row.DueDate == null || row.LabIn == null)
                 {
                     // 记录具体的重复信息
 
@@ -161,6 +161,69 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 
 
         /// <summary>
+        /// 表单数据软删除
+        /// </summary>
+        public bool DeleteOrder(OrderDeleteRequest order)
+        {
+            var user = _db.Users.FirstOrDefault(u => u.UserId == order.UserId);
+            if (user == null) return false;
+            try 
+            {
+                foreach (var item in order.Items)
+                {
+                    var orderLock = _orderLocks.GetOrAdd(long.Parse(item.RecordId), _ => new object());
+                    lock (orderLock)
+                    {
+                        long? recordId = long.Parse(item.RecordId);
+                        string reason = item.Reason;
+                        // 处理删除逻辑
+
+                        if (string.IsNullOrEmpty(reason) || recordId == null) continue;
+                        var orderEntity = _db.LabTestInfos.FirstOrDefault(o => o.Id == recordId);
+                        var scheduleEntity = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == recordId);
+                        if (orderEntity == null || scheduleEntity == null) continue;
+                        else
+                        {
+                            orderEntity!.IsDelete = "Y";
+                            scheduleEntity!.IsDelete = "Y";
+                        }
+                        //生成当前订单级删除历史
+                        var groupdeleteHistory = new AuditHistory
+                        {
+                            ChangeHistoryId = new SnowflakeIdGenerator().NextId(),
+                            ContactTable = "LabTestInfo & LabTestSchedule",
+                            ContactId = recordId,
+                            ReportNumber = orderEntity.ReportNumber,
+                            LastChangeTime = DateTimeOffset.Now,
+                        };
+                        //对当前动作进行日志记录
+                        var auditlog = new AuditChange
+                        {
+                            ChangeRecordId = new SnowflakeIdGenerator().NextId(),
+                            ChangeHistoryIndex = groupdeleteHistory.ChangeHistoryId,
+                            TableName = "LabTestInfo & LabTestSchedule",
+                            ChangePerson = user!.NickName,
+                            ChangeTime = DateTimeOffset.Now,
+                            Remark = reason,
+                            BatchIndex = "delete"
+                        };
+                        _db.AuditChanges.Add(auditlog);
+                        _db.AuditHistories.Add(groupdeleteHistory);
+                        _db.LabTestInfos.Update(orderEntity);
+                        _db.LabTestSchedules.Update(scheduleEntity);
+                        _db.SaveChanges();
+                    }
+                }
+                return true;
+            } 
+            catch (Exception ex)
+            { 
+                return false; 
+            }
+        }
+
+
+        /// <summary>
         /// 获取当前用户的订单列表
         /// </summary>
         public async Task<OrderOutput[]> GetOrderListAsync(string userId)
@@ -203,7 +266,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     TestGroups = string.Join(",", g.Select(x => x.TestGroup).Distinct()),
                     Groups = g.Select(x => new GroupOutput
                     {
-                        RecordId = x.Id,
+                        RecordId = x.Id.ToString(),
                         Express = x.Express,
                         Group = x.TestGroup,
                         Remark = x.Remark,
@@ -238,7 +301,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             var queryParams = _orderQueryProvider.GetQueryParams(dto);
 
             // 分别查询两个表
-            var infoQuery = _orderQueryProvider.QueryLabTestInfo(queryParams,_db);
+            var infoQuery = _orderQueryProvider.QueryLabTestInfo(queryParams, _db);
             var scheduleQuery = _orderQueryProvider.QueryLabTestSchedule(queryParams, _db);
 
             // 获取共同的ID列表
@@ -246,7 +309,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 
             // 根据共同的ID筛选两个表的数据
             var filteredInfo = infoQuery.Where(o => commonIds.Contains(o.Id) && o.IsDelete == "N").ToList();
-            var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule) && o.IsDelete=="N").ToList();
+            var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule) && o.IsDelete == "N").ToList();
 
             // 合并结果
             IQueryable<LabTestJoinDto> result = _orderQueryProvider.MergeResults(filteredInfo.AsQueryable(), filteredSchedule.AsQueryable());
@@ -266,7 +329,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             // 3. 风格开关
             string styleType = queryParams.ContainsKey("group")
                 ? queryParams["group"].ToString()!.ToLower()
-                : null;
+                : "else";
 
             /* ---------------------------------------------------- */
             if (styleType == "all")
@@ -282,7 +345,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                         var distinctGroups = g
                             .Select(d => new GroupOutput
                             {
-                                RecordId = d.Info.Id,
+                                RecordId = d.Info.Id.ToString(),
                                 Express = d.Info.Express ?? string.Empty,
                                 Group = d.Info.TestGroup ?? string.Empty,
                                 TestSampleNum = d.Info.TestSampleNum ?? 0,
@@ -343,7 +406,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 var flat = fullData
                     .Select(d => new OrderSummary
                     {
-                        RecordId = d.Info.Id,
+                        RecordId = d.Info.Id.ToString(),
                         ReportNum = d.Info.ReportNumber ?? string.Empty,
                         OrderEntry = d.Info.OrderEntryPerson ?? string.Empty,
                         Express = d.Info.Express ?? string.Empty,

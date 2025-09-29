@@ -18,6 +18,10 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<AdidasMethodItemMap> AdidasMethodItemMaps { get; set; }
 
+    public virtual DbSet<AuditChange> AuditChanges { get; set; }
+
+    public virtual DbSet<AuditHistory> AuditHistories { get; set; }
+
     public virtual DbSet<Composition> Compositions { get; set; }
 
     public virtual DbSet<CustomerService> CustomerServices { get; set; }
@@ -44,9 +48,6 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
 
-    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    //    => optionsBuilder.UseSqlServer("NX-limsLabCommandSys");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -70,6 +71,64 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<AuditChange>(entity =>
+        {
+            entity.HasKey(e => e.ChangeRecordId);
+
+            entity.ToTable("audit_change");
+
+            entity.Property(e => e.ChangeRecordId)
+                .ValueGeneratedNever()
+                .HasColumnName("change_record_id");
+            entity.Property(e => e.BatchIndex)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("batch_index");
+            entity.Property(e => e.ChangeHistoryIndex).HasColumnName("change_history_index");
+            entity.Property(e => e.ChangePerson)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("change_person");
+            entity.Property(e => e.ChangeTime).HasColumnName("change_time");
+            entity.Property(e => e.ColumnName)
+                .HasMaxLength(50)
+                .HasColumnName("column_name");
+            entity.Property(e => e.NewValue)
+                .HasMaxLength(50)
+                .HasColumnName("new_value");
+            entity.Property(e => e.OldValue)
+                .HasMaxLength(50)
+                .HasColumnName("old_value");
+            entity.Property(e => e.Remark)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("remark");
+            entity.Property(e => e.TableName)
+                .HasMaxLength(50)
+                .HasColumnName("table_name");
+        });
+
+        modelBuilder.Entity<AuditHistory>(entity =>
+        {
+            entity.HasKey(e => e.ChangeHistoryId);
+
+            entity.ToTable("audit_history");
+
+            entity.Property(e => e.ChangeHistoryId)
+                .ValueGeneratedNever()
+                .HasColumnName("change_history_id");
+            entity.Property(e => e.ContactId).HasColumnName("contact_id");
+            entity.Property(e => e.ContactTable)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_table");
+            entity.Property(e => e.LastChangeTime).HasColumnName("last_change_time");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
         });
 
         modelBuilder.Entity<Composition>(entity =>
@@ -177,6 +236,7 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(5)
                 .IsUnicode(false)
                 .HasColumnName("is_delete");
+            entity.Property(e => e.LastUpdateTime).HasColumnName("last_update_time");
             entity.Property(e => e.OrderEntryPerson)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -192,6 +252,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("reviewer");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken()
+                .HasColumnName("row_version");
             entity.Property(e => e.ScheduleIndex).HasColumnName("schedule_index");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TestEngineer)
@@ -204,9 +268,6 @@ public partial class LabDbContextSec : DbContext
                 .HasColumnName("test_group");
             entity.Property(e => e.TestItemNum).HasColumnName("test_item_num");
             entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
-            entity.Property(e => e.LastUpdateTime)
-    .HasColumnType("datetimeoffset(7)")
-    .HasColumnName("last_update_time");
         });
 
         modelBuilder.Entity<LabTestSchedule>(entity =>
@@ -218,22 +279,18 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.IdSchedule)
                 .ValueGeneratedNever()
                 .HasColumnName("id_schedule");
-            entity.Property(e => e.LabOutTime)
-                .HasColumnType("datetimeoffset(7)")
-                .HasColumnName("lab_out_time");
-            entity.Property(e => e.OrderInTime)
-                .HasColumnType("datetimeoffset(7)")
-                .HasColumnName("order_in_time");
-            entity.Property(e => e.ReportDueDate)
-                .HasColumnType("datetimeoffset(7)")
-                .HasColumnName("report_due_date");
-            entity.Property(e => e.ReviewFinishTime)
-                .HasColumnType("datetimeoffset(7)")
-                .HasColumnName("review_finish_time");
             entity.Property(e => e.IsDelete)
                 .HasMaxLength(5)
                 .IsUnicode(false)
                 .HasColumnName("is_delete");
+            entity.Property(e => e.LabOutTime).HasColumnName("lab_out_time");
+            entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
+            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
+            entity.Property(e => e.ReviewFinishTime).HasColumnName("review_finish_time");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken()
+                .HasColumnName("row_version");
         });
 
         modelBuilder.Entity<Menu>(entity =>

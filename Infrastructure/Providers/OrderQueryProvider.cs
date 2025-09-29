@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         string reportNumber = param.Value?.ToString() ?? "";
                         if (!string.IsNullOrEmpty(reportNumber))
                         {
-                            query = query.Where(o => o.ReportNumber.Contains(reportNumber));
+                            query = query.Where(o => o.ReportNumber!.Contains(reportNumber));
                         }
                         break;
 
@@ -54,7 +54,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         string express = param.Value?.ToString() ?? "";
                         if (!string.IsNullOrEmpty(express) && express != "All")
                         {
-                            query = query.Where(o => o.Express.Contains(express));
+                            query = query.Where(o => o.Express!.Contains(express));
                         }
                         break;
 
@@ -62,7 +62,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         string testGroup = param.Value?.ToString() ?? "";
                         if (!string.IsNullOrEmpty(testGroup) && testGroup != "All")
                         {
-                            query = query.Where(o => o.TestGroup.Contains(testGroup));
+                            query = query.Where(o => o.TestGroup!.Contains(testGroup));
                         }
                         break;
 
@@ -70,7 +70,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         string entryPerson = param.Value?.ToString() ?? "";
                         if (!string.IsNullOrEmpty(entryPerson))
                         {
-                            query = query.Where(o => o.OrderEntryPerson.Contains(entryPerson));
+                            query = query.Where(o => o.OrderEntryPerson!.Contains(entryPerson));
                         }
                         break;
 
@@ -92,7 +92,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                                 query = query.Where(o => o.Status == status);
                             }
                             // 尝试解析为字符串状态
-                            else if (statusMap.TryGetValue(statusStr, out int mappedStatus))
+                            else if (statusMap.TryGetValue(statusStr!, out int mappedStatus))
                             {
                                 query = query.Where(o => o.Status == mappedStatus);
                             }
@@ -165,8 +165,5 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                        Schedule = schedule
                    };
         }
-
-
-
     }
 }

@@ -1,7 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
 {
@@ -36,7 +36,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
             return result;
         }
 
-
+        public bool DeleteOrder(OrderDeleteRequest dto)
+        {
+            if(dto == null || dto.UserId == null) return false;
+            bool an = _or.DeleteOrder(dto);
+            if (an) return true;
+            else return false;
+        }
 
         public bool UpdateOrder(OrderUpdateDto dto)
         {
