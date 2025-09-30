@@ -279,10 +279,6 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.IdSchedule)
                 .ValueGeneratedNever()
                 .HasColumnName("id_schedule");
-            entity.Property(e => e.IsDelete)
-                .HasMaxLength(5)
-                .IsUnicode(false)
-                .HasColumnName("is_delete");
             entity.Property(e => e.LabOutTime).HasColumnName("lab_out_time");
             entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
             entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");

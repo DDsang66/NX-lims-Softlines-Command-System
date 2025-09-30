@@ -86,33 +86,30 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     }
 
     public class OrderUpdateDto
+    { 
+        public List<OrderUpdate>? Rows { get; set; }
+    }
+
+
+    public class OrderUpdate
     {
-        public long Id { get; set; }  // LabTestInfo的主键
-        public long IdSchedule { get; set; }  // LabTestSchedule的主键
+        public string? RecordId { get; set; }  // LabTestInfo的主键
 
         // LabTestInfo表的字段
-        public string? ReportNumber { get; set; }
         public string? Reviewer { get; set; }
         public string? TestEngineer { get; set; }
-        public string? OrderEntryPerson { get; set; }
-        public string? CustomerService { get; set; }
-        public byte? Status { get; set; }
+        public string? Status { get; set; }
         public string? TestGroup { get; set; }
         public int? TestSampleNum { get; set; }
         public int? TestItemNum { get; set; }
         public string? Remark { get; set; }
         public string? Express { get; set; }
-        public string? Describe { get; set; }
-        public long ScheduleIndex { get; set; }
 
         // LabTestSchedule表的字段
         public DateTimeOffset? ReportDueDate { get; set; }
         public DateTimeOffset? OrderInTime { get; set; }
         public DateTimeOffset? ReviewFinishTime { get; set; }
         public DateTimeOffset? LabOutTime { get; set; }
-
-        // 通用字段
-        public DateTimeOffset? LastUpdateTime { get; set; }
     }
 
 

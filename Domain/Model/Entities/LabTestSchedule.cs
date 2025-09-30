@@ -15,7 +15,5 @@ public partial class LabTestSchedule
 
     public DateTimeOffset? LabOutTime { get; set; }
 
-    public string? IsDelete { get; set; }
-
     public byte[] RowVersion { get; set; } = null!;
 }

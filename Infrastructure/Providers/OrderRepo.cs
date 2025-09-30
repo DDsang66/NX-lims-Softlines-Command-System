@@ -83,7 +83,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     IdSchedule = snowId,
                     ReportDueDate = row.DueDate ?? DateTimeOffset.Now,
                     OrderInTime = row.LabIn ?? DateTimeOffset.Now,
-                    IsDelete = "N"
                 };
                 _db.LabTestInfos.Add(orderEntity);
                 _db.LabTestSchedules.Add(orderschedule);
@@ -103,59 +102,62 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 throw new ArgumentNullException(nameof(order));
             }
 
-            var orderLock = _orderLocks.GetOrAdd(order.Id, _ => new object());
-
-            lock (orderLock)
+            if (order.Rows == null || order.Rows.Count == 0)
             {
-                try
+                return false; // 或者抛出异常，取决于你的需求
+            }
+            try
+            {
+                foreach (var item in order.Rows)
                 {
-                    // 获取现有订单信息
-                    var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o => o.Id == order.Id);
-                    var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == order.IdSchedule);
-
-                    if (existingOrderInfo == null || existingOrderSchedule == null)
+                    if (item.RecordId == null)
                     {
-                        return false;
+                        return false; // 或者抛出异常，取决于你的需求
                     }
+                    var orderLock = _orderLocks.GetOrAdd(long.Parse(item.RecordId), _ => new object());
 
-                    // 更新LabTestInfo - 只排除Id和IdSchedule
-                    UpdateEntity(existingOrderInfo, order,
-                        nameof(OrderUpdateDto.Id),
-                        nameof(OrderUpdateDto.IdSchedule));
-
-                    // 更新LabTestSchedule - 只排除Id和IdSchedule以及属于LabTestInfo的字段
-                    UpdateEntity(existingOrderSchedule, order,
-                        nameof(OrderUpdateDto.Id),
-                        nameof(OrderUpdateDto.IdSchedule),
-                        nameof(OrderUpdateDto.ReportNumber),
-                        nameof(OrderUpdateDto.Reviewer),
-                        nameof(OrderUpdateDto.TestEngineer),
-                        nameof(OrderUpdateDto.OrderEntryPerson),
-                        nameof(OrderUpdateDto.CustomerService),
-                        nameof(OrderUpdateDto.Status),
-                        nameof(OrderUpdateDto.TestGroup),
-                        nameof(OrderUpdateDto.TestSampleNum),
-                        nameof(OrderUpdateDto.TestItemNum),
-                        nameof(OrderUpdateDto.Remark),
-                        nameof(OrderUpdateDto.Express),
-                        nameof(OrderUpdateDto.Describe),
-                        nameof(OrderUpdateDto.ScheduleIndex));
-
-                    // 更新最后修改时间
-                    if (order.LastUpdateTime.HasValue)
+                    lock (orderLock)
                     {
-                        existingOrderInfo.LastUpdateTime = order.LastUpdateTime.Value;
-                    }
 
-                    // 保存更改到数据库
-                    _db.SaveChanges();
-                    return true;
+                        // 获取现有订单信息
+                        var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o => o.Id == long.Parse(item.RecordId) && o.IsDelete == "N");
+                        var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == long.Parse(item.RecordId));
+
+                        if (existingOrderInfo == null || existingOrderSchedule == null || existingOrderInfo.TestGroup != item.TestGroup)
+                        {
+                            return false;
+                        }
+
+                        //labtestinfo表
+                        existingOrderInfo.Reviewer = item.Reviewer;
+                        existingOrderInfo.Express = item.Express;
+                        existingOrderInfo.Remark = item.Remark;
+                        existingOrderInfo.LastUpdateTime = DateTimeOffset.Now;
+                        existingOrderInfo.TestItemNum = item.TestItemNum;
+                        existingOrderInfo.TestSampleNum = item.TestSampleNum;
+                        //labtestschedule表
+                        if (item.ReviewFinishTime != null)
+                        {
+                            existingOrderInfo.Status = 2;
+                            existingOrderSchedule.ReviewFinishTime = item.ReviewFinishTime;
+                        }
+                        if (item.LabOutTime != null)
+                        {
+                            existingOrderInfo.Status = 3;
+                            existingOrderSchedule.LabOutTime = item.LabOutTime;
+                        }
+                        _db.LabTestInfos.Update(existingOrderInfo);
+                        _db.LabTestSchedules.Update(existingOrderSchedule);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    // 记录异常日志
-                    return false;
-                }
+                // 保存更改到数据库
+                _db.SaveChanges();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // 记录异常日志
+                return false;
             }
         }
 
@@ -185,7 +187,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         else
                         {
                             orderEntity!.IsDelete = "Y";
-                            scheduleEntity!.IsDelete = "Y";
                         }
                         //生成当前订单级删除历史
                         var groupdeleteHistory = new AuditHistory
@@ -210,7 +211,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         _db.AuditChanges.Add(auditlog);
                         _db.AuditHistories.Add(groupdeleteHistory);
                         _db.LabTestInfos.Update(orderEntity);
-                        _db.LabTestSchedules.Update(scheduleEntity);
                         _db.SaveChanges();
                     }
                 }
@@ -236,7 +236,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             var flat = await (
                 from o in _db.LabTestInfos
                 join s in _db.LabTestSchedules on o.ScheduleIndex equals s.IdSchedule
-                where o.OrderEntryPerson == user.NickName && o.IsDelete == "N" && s.IsDelete == "N"
+                where o.OrderEntryPerson == user.NickName && o.IsDelete == "N"
                 select new
                 {
                     o.Id,
@@ -285,7 +285,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     .ToList()
                 })
                 .OrderByDescending(o => flat.Where(f => f.ReportNumber == o.ReportNum)
-                .Max(f => f.LastUpdateTime))
+                .Max(f => f.OrderInTime))
                 .ToArray();
 
             return orders;
@@ -309,7 +309,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
             // 根据共同的ID筛选两个表的数据
             var filteredInfo = infoQuery.Where(o => commonIds.Contains(o.Id) && o.IsDelete == "N").ToList();
-            var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule) && o.IsDelete == "N").ToList();
+            var filteredSchedule = scheduleQuery.Where(o => commonIds.Contains(o.IdSchedule)).ToList();
 
             // 合并结果
             IQueryable<LabTestJoinDto> result = _orderQueryProvider.MergeResults(filteredInfo.AsQueryable(), filteredSchedule.AsQueryable());
@@ -447,7 +447,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
         }
 
-
+        //加急计算逻辑
         private string? GetExpressName(DateOnly duedate, DateTime labindate)
         {
             string express = "-";
@@ -457,55 +457,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             else if (days > 3 && days <= 4) express = "Express";
             else if (days > 4) express = "Regular";
             return express;
-        }
-
-
-        private void UpdateEntity<T>(T entity, OrderUpdateDto dto, params string[] excludeProperties)
-        {
-            var entityType = typeof(T);
-            var properties = entityType.GetProperties();
-
-            foreach (var property in properties)
-            {
-                // 跳过排除列表中的字段
-                if (excludeProperties.Contains(property.Name))
-                    continue;
-
-                // 获取DTO中对应的属性值
-                var dtoProperty = typeof(OrderUpdateDto).GetProperty(property.Name);
-                if (dtoProperty == null)
-                    continue;
-
-                var value = dtoProperty.GetValue(dto);
-                if (value == null)
-                    continue;
-
-                // 设置值到实体
-                if (property.CanWrite)
-                {
-                    // 特殊处理类型转换
-                    if (property.PropertyType == typeof(DateOnly) && value is DateTime dateTime)
-                    {
-                        property.SetValue(entity, DateOnly.FromDateTime(dateTime));
-                    }
-                    else if (property.PropertyType == typeof(DateTimeOffset) && value is DateTime dateTimeValue)
-                    {
-                        property.SetValue(entity, new DateTimeOffset(dateTimeValue));
-                    }
-                    else if (property.PropertyType == typeof(DateTimeOffset?) && value is DateTime dateTimeNullableValue)
-                    {
-                        property.SetValue(entity, (DateTimeOffset?)new DateTimeOffset(dateTimeNullableValue));
-                    }
-                    else if (property.PropertyType == typeof(DateTime?) && value is DateTime dateTimeValueNullable)
-                    {
-                        property.SetValue(entity, (DateTime?)dateTimeValueNullable);
-                    }
-                    else
-                    {
-                        property.SetValue(entity, value);
-                    }
-                }
-            }
         }
 
     }
