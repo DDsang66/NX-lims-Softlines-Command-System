@@ -537,6 +537,47 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
         }
 
 
+        /// <summary>
+        /// 扇形图
+        /// </summary>
+        /// <param name="duedate"></param>
+        /// <param name="labindate"></param>
+        /// <returns></returns>
+        public async Task<OrderFanCardOutput> OrderfanCardAsync(DateTimeOffset time, string group, string timeType) 
+        {
+            var infoQuery = _orderCardQueryProvider.QueryGroupInfo(group, _db);
+            var commonIds = infoQuery.Select(o => o.Id).ToList();
+            var filteredInfo = infoQuery.Where(o => o.IsDelete == "N").ToList();
+
+            // 获取所有查询类型
+            var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut" };
+            var queries = queryTypes.ToDictionary(
+                type => type,
+                type => _orderCardQueryProvider.QuerySelect(time, timeType, type, _db)
+                    .Where(o => commonIds.Contains(o.IdSchedule))
+                    .ToList()
+            );
+            // 计算交集和去重计数的通用方法
+            Func<string, int> calculateCount = (type) =>
+            {
+                var query = queries[type];
+                var intersection = filteredInfo.Select(x => x.Id)
+                    .Intersect(query.Select(x => x.IdSchedule));
+
+                return group.ToLower() == "all"
+                    ? filteredInfo.Where(x => intersection.Contains(x.Id))
+                        .GroupBy(x => x.ReportNumber)
+                        .Select(g => g.FirstOrDefault())
+                        .Count()
+                    : intersection.Count();
+            };
+            return new OrderFanCardOutput {
+                Delay = calculateCount("delayLabOut"),
+                InAdvance = calculateCount("inAdvanceLabOut"),
+                Normal = calculateCount("needLabOut")-(calculateCount("delayLabOut")+calculateCount("inAdvanceLabOut"))
+            };
+        }
+
 
         //加急计算逻辑
         private string? GetExpressName(DateOnly duedate, DateTime labindate)

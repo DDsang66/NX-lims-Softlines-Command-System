@@ -139,9 +139,11 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public int? NumOfSample { get; set; }
     }
 
-    public class OrderRateOutput
+    public class OrderFanCardOutput
     {
-
+        public int? Delay { get; set; }
+        public int? InAdvance { get; set; }
+        public int? Normal { get; set; }
     }
 
 

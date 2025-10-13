@@ -96,9 +96,10 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// 当前月份的单量比例
         /// </summary>
         [HttpGet("fanChart")]
-        public async Task<IActionResult> OrderRate()
+        public async Task<IActionResult> OrderRate(DateTimeOffset time, string group, string timeType)
         {
-            return Ok();
+            var result = await _os.GetOrderFanChartListAsync(time, group, timeType);
+            return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
         /// <summary>
         /// 当前月份的单量对比

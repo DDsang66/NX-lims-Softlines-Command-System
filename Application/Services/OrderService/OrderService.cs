@@ -57,5 +57,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
             var result = await _or.OrderCardAsync(time,group,timeType);
             return result;
         }
+
+        public async Task<OrderFanCardOutput> GetOrderFanChartListAsync(DateTimeOffset time, string group, string timeType)
+        {
+            var result = await _or.OrderfanCardAsync(time, group, timeType);
+            return result;
+        }
     }
 }
