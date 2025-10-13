@@ -10,19 +10,27 @@ using DocumentFormat.OpenXml.Vml.Office;
 using System.Collections.Concurrent;
 using DocumentFormat.OpenXml.Drawing;
 using Azure.Core;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using DocumentFormat.OpenXml.Office2010.CustomUI;
+using Microsoft.VisualBasic;
 
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
+namespace NX_lims_Softlines_Command_System.Data.Repositories
 {
     public class OrderRepo
     {
         private readonly LabDbContextSec _db;
         private readonly OrderQueryProvider _orderQueryProvider;
+        private readonly OrderCardQueryProvider _orderCardQueryProvider;
         private readonly ConcurrentDictionary<long, object> _orderLocks = new ConcurrentDictionary<long, object>();
-        public OrderRepo(LabDbContextSec db, OrderQueryProvider orderQueryProvider)
+        public OrderRepo(
+            LabDbContextSec db,
+            OrderQueryProvider orderQueryProvider,
+            OrderCardQueryProvider orderCardQueryProvider)
         {
             _db = db;
             _orderQueryProvider = orderQueryProvider;
+            _orderCardQueryProvider = orderCardQueryProvider;
         }
 
         /// <summary>
@@ -169,7 +177,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         {
             var user = _db.Users.FirstOrDefault(u => u.UserId == order.UserId);
             if (user == null) return false;
-            try 
+            try
             {
                 foreach (var item in order.Items)
                 {
@@ -215,10 +223,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     }
                 }
                 return true;
-            } 
+            }
             catch (Exception ex)
-            { 
-                return false; 
+            {
+                return false;
             }
         }
 
@@ -447,6 +455,89 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
         }
 
+
+
+
+        /// <summary>
+        /// 订单报表参数筛选
+        /// </summary>
+        public async Task<OrderCardOutput> OrderCardAsync(DateTimeOffset time, string group, string timeType)
+        {
+            if (time == null) time = DateTimeOffset.Now;
+
+            // 获取基础查询数据
+            var infoQuery = _orderCardQueryProvider.QueryGroupInfo(group, _db);
+            var commonIds = infoQuery.Select(o => o.Id).ToList();
+            var filteredInfo = infoQuery.Where(o => o.IsDelete == "N").ToList();
+
+            // 获取所有查询类型
+            var queryTypes = new[] { "needLabOut", "actuallyLabOut", "delayLabOut", "inAdvanceLabOut" };
+            var queries = queryTypes.ToDictionary(
+                type => type,
+                type => _orderCardQueryProvider.QuerySelect(time, timeType, type, _db)
+                    .Where(o => commonIds.Contains(o.IdSchedule))
+                    .ToList()
+            );
+
+            // 计算交集和去重计数的通用方法
+            Func<string, int> calculateCount = (type) =>
+            {
+                var query = queries[type];
+                var intersection = filteredInfo.Select(x => x.Id)
+                    .Intersect(query.Select(x => x.IdSchedule));
+
+                return group.ToLower() == "all"
+                    ? filteredInfo.Where(x => intersection.Contains(x.Id))
+                        .GroupBy(x => x.ReportNumber)
+                        .Select(g => g.FirstOrDefault())
+                        .Count()
+                    : intersection.Count();
+            };
+
+            Func<string, int?> calculateNumOfSamples = (type) =>
+            {
+                var query = queries[type];
+                var intersection = filteredInfo.Select(x => x.Id)
+                    .Intersect(query.Select(x => x.IdSchedule));
+
+                // 获取交集对应的记录
+                var filteredRecords = filteredInfo.Where(x => intersection.Contains(x.Id)).ToList();
+
+                // 获取对应的 LabTestInfo 记录并累加 NumOfSample
+                var totalNumOfSamples = _db.LabTestInfos
+                    .Where(info => filteredRecords.Any(r => r.Id == info.ScheduleIndex))
+                    .Sum(info => info.TestSampleNum);
+
+                return totalNumOfSamples;
+            };
+
+            // 添加 x 和 filteredInfo 的交集计算
+            var x = _orderCardQueryProvider.QueryTimeInfo(time, timeType, "ReportDueDate", _db);
+            var xIntersection = filteredInfo.Select(f => f.Id)
+                .Intersect(x.Select(xItem => xItem.IdSchedule))
+                .ToList();
+
+            // 计算 x 和 filteredInfo 交集对应的 NumOfSample 总和
+            var xTotalNumOfSamples = _db.LabTestInfos
+                .Where(info => xIntersection.Contains(info.ScheduleIndex))
+                .Sum(info => info.TestSampleNum);
+
+
+            // 构建输出结果
+            var CardOutput = new OrderCardOutput
+            {
+                NeedLabOut = calculateCount("needLabOut"),
+                ActuallyLabOut = calculateCount("actuallyLabOut"),
+                DelayLabOut = calculateCount("delayLabOut"),
+                InAdvanceLabOut = calculateCount("inAdvanceLabOut"),
+                NumOfSample = xTotalNumOfSamples
+            };
+
+            return CardOutput;
+        }
+
+
+
         //加急计算逻辑
         private string? GetExpressName(DateOnly duedate, DateTime labindate)
         {
@@ -461,3 +552,4 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
     }
 }
+

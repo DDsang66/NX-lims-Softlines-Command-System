@@ -466,6 +466,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["A3"] = (dto, reportNo) => dto.Standard!;
+                    map["V3"] = (dto, reportNo) => "16N";
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
                 {

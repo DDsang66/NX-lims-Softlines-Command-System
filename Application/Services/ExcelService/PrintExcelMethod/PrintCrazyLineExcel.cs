@@ -582,7 +582,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (w.WashingProcedure!.Contains("Machine"))
                 {
                     map["P1"] = (w, dto, reportNo) => reportNo;
-                    map["A3"] = (w, dto, reportNo) => "AATCC TM 135-2018t";
                     map["A5"] = (w, dto, reportNo) => w.Cycle + " Cycle";
                     map["V4"] = (w, dto, reportNo) => w.Temperature!;
                     map["E4"] = (w, dto, reportNo) => w.Program!;
@@ -595,15 +594,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 else if (w.WashingProcedure.Contains("Hand"))
                 {
                     map["P1"] = (w, dto, reportNo) => reportNo;
-                    map["A3"] = (w, dto, reportNo) =>
-                    (dto.sampleDescription!.Contains("Socks") || dto.sampleDescription!.Contains("Gloves") || dto.sampleDescription!.Contains("Cap"))
-                    == true ? "AATCC TM 150-2018t/AATCC TS006" : "AATCC TM 135-2018t/AATCC TS006";
                     map["H7"] = (w, dto, reportNo) => w.Temperature!;
                     map["M7"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
                 }
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
+                    map["A3"] = (w, dto, reportNo) => "AATCC TM 135-2018t";
                     map["L14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["AF14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["L25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
@@ -611,6 +608,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
+                    map["A3"] = (w, dto, reportNo) =>"AATCC TM 150-2018t/AATCC TS006";
                     map["W9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["AB9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["AG11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;

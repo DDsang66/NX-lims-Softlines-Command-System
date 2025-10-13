@@ -1,7 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Data.Repositories;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
 {
@@ -52,5 +52,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
         }
 
 
+        public async Task<OrderCardOutput> GetOrderCardListAsync(DateTimeOffset time, string group, string timeType)
+        {
+            var result = await _or.OrderCardAsync(time,group,timeType);
+            return result;
+        }
     }
 }

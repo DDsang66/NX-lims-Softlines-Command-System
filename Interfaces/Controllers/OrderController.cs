@@ -80,5 +80,34 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         }
 
 
+
+
+        /// <summary>
+        /// 当前月份的单量报表
+        /// </summary>
+        [HttpGet("cards")]
+        public async Task<IActionResult> OrderReporting(DateTimeOffset time,string group,string timeType)
+        {
+            var result = await _os.GetOrderCardListAsync(time, group, timeType);
+            return Ok(new { success = true, message = "Adding Succeed", data = result });
+        }
+
+        /// <summary>
+        /// 当前月份的单量比例
+        /// </summary>
+        [HttpGet("fanChart")]
+        public async Task<IActionResult> OrderRate()
+        {
+            return Ok();
+        }
+        /// <summary>
+        /// 当前月份的单量对比
+        /// </summary>
+        [HttpGet("ordercompare")]
+        public async Task<IActionResult> OrderCompare()
+        {
+            return Ok();
+        }
+
     }
 }

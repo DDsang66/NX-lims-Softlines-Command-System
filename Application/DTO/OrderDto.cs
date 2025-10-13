@@ -127,4 +127,28 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     }
 
 
+
+
+
+    public class OrderCardOutput
+    {
+        public int? NeedLabOut { get; set; }
+        public int? ActuallyLabOut { get; set; }
+        public int? DelayLabOut { get; set; }
+        public int? InAdvanceLabOut { get; set; }
+        public int? NumOfSample { get; set; }
+    }
+
+    public class OrderRateOutput
+    {
+
+    }
+
+
+    public class OrderCompareOutput
+    {
+
+    }
+
+
 }
