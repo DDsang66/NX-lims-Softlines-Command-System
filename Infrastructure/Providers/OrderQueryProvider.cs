@@ -110,13 +110,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         /// </summary>
         /// <param name="queryParams">查询条件字典</param>
         /// <returns>符合条件的 LabTestSchedule 列表</returns>
-        public IQueryable<LabTestSchedule> QueryLabTestSchedule(
+        public IQueryable<LabTestInfo> QueryLabTestSchedule(
             Dictionary<string, object> queryParams, 
             LabDbContextSec _db)
         {
 
             //******************** 原始查询  ********************//
-            var query = _db.LabTestSchedules.AsQueryable();
+            var query = _db.LabTestInfos.AsQueryable();
             // 获取时间相关参数
             if (queryParams == null || !queryParams.Any())
                 return query;
@@ -154,11 +154,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         /// <returns>对两表查询结果取交集</returns>
         public IQueryable<LabTestJoinDto> MergeResults(
                 IQueryable<LabTestInfo> infoQuery,
-                IQueryable<LabTestSchedule> scheduleQuery)
+                IQueryable<LabTestInfo> scheduleQuery)
         {
             // 直接用 IQueryable 让 EF 翻译 SQL，不再 ToList()
             return from info in infoQuery
-                   join schedule in scheduleQuery on info.Id equals schedule.IdSchedule
+                   join schedule in scheduleQuery on info.Id equals schedule.Id
                    select new LabTestJoinDto   // 强类型匿名对象 → DTO
                    {
                        Info = info,

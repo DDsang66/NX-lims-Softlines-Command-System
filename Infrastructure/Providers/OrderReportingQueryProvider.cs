@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 {
-    public class OrderCardQueryProvider
+    public class OrderReportingQueryProvider
     {
         /// <summary>
         /// 查询 某个小组或单号的LabTestInfo 语句
@@ -40,11 +40,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         /// </summary>
         /// <param name="queryParams">查询条件</param>
         /// <returns>符合条件的查询语句</returns>
-        public IQueryable<LabTestSchedule> QueryTimeInfo(
+        public IQueryable<LabTestInfo> QueryTimeInfo(
             DateTimeOffset timeOffset, string timeType,string Property,
             LabDbContextSec _db)
         {
-            var query = _db.LabTestSchedules.AsQueryable();
+            var query = _db.LabTestInfos.AsQueryable();
             if (timeType.ToLower() == "date")
             {
                 switch (Property!.ToLower())
@@ -96,11 +96,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         /// </summary>
         /// <param name="queryParams">查询条件</param>
         /// <returns>符合条件的查询语句</returns>
-        public IQueryable<LabTestSchedule> QuerySelect(
+        public IQueryable<LabTestInfo> QuerySelect(
           DateTimeOffset timeOffset, string timeType, string DataType,
           LabDbContextSec _db)
         {
-            var query = _db.LabTestSchedules.AsQueryable();
+            var query = _db.LabTestInfos.AsQueryable();
             switch (DataType.ToLower()) 
             {
                 case "needlabout":
@@ -133,5 +133,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             }
             return query;
         }
+
+
     }
 }

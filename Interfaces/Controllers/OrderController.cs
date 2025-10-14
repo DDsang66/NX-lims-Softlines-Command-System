@@ -104,10 +104,15 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// <summary>
         /// 当前月份的单量对比
         /// </summary>
-        [HttpGet("ordercompare")]
-        public async Task<IActionResult> OrderCompare()
+        [HttpGet("lineChart")]
+        public async Task<IActionResult> OrderCompare(
+            [FromQuery] string group,
+            [FromQuery] string timeType,
+            [FromQuery] string Type,
+            [FromQuery] DateTimeOffset[] time)
         {
-            return Ok();
+            var result = await _os.GetOrderLineChartAsync(time,group,timeType,Type);
+            return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 
     }

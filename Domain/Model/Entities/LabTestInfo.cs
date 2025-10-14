@@ -32,6 +32,13 @@ public partial class LabTestInfo
     public DateTimeOffset? LastUpdateTime { get; set; }
 
     public string? IsDelete { get; set; }
+    public DateTimeOffset? ReportDueDate { get; set; }
+
+    public DateTimeOffset? OrderInTime { get; set; }
+
+    public DateTimeOffset? ReviewFinishTime { get; set; }
+
+    public DateTimeOffset? LabOutTime { get; set; }
 
     public long ScheduleIndex { get; set; }
 

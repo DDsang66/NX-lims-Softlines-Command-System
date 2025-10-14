@@ -15,8 +15,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         /// <param name="timeOpt">时间选项（如labin、labout等）</param>
         /// <param name="timeType">时间类型（day、month、year）</param>
         /// <returns>应用了时间筛选条件的查询</returns>
-        public static IQueryable<LabTestSchedule> ApplyTimeNodeFilter(
-            IQueryable<LabTestSchedule> query,
+        public static IQueryable<LabTestInfo> ApplyTimeNodeFilter(
+            IQueryable<LabTestInfo> query,
             object timeRange,
             string timeOpt,
             string timeType)
@@ -59,7 +59,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         /// <summary>
         /// 获取对应的时间属性表达式
         /// </summary>
-        private static Expression<Func<LabTestSchedule, DateTimeOffset?>> GetDateProperty(string timeOpt)
+        private static Expression<Func<LabTestInfo, DateTimeOffset?>> GetDateProperty(string timeOpt)
         {
             switch (timeOpt.ToLower())
             {
@@ -79,9 +79,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         /// <summary>
         /// 处理datetime筛选
         /// </summary>
-        private static IQueryable<LabTestSchedule> ApplyDateTimeFilter(
-            IQueryable<LabTestSchedule> query,
-            Expression<Func<LabTestSchedule, DateTimeOffset?>> dateProperty,
+        private static IQueryable<LabTestInfo> ApplyDateTimeFilter(
+            IQueryable<LabTestInfo> query,
+            Expression<Func<LabTestInfo, DateTimeOffset?>> dateProperty,
             object timeRange)
         {
             var timeRangeStr = timeRange?.ToString();
@@ -137,9 +137,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         /// <summary>
         /// 处理日期节点筛选（精确匹配日期）
         /// </summary>
-        private static IQueryable<LabTestSchedule> ApplyDayFilter(
-            IQueryable<LabTestSchedule> query,
-            Expression<Func<LabTestSchedule, DateTimeOffset?>> dateProperty,
+        private static IQueryable<LabTestInfo> ApplyDayFilter(
+            IQueryable<LabTestInfo> query,
+            Expression<Func<LabTestInfo, DateTimeOffset?>> dateProperty,
             object timeRange)
         {
             var timeRangeStr = timeRange?.ToString();
@@ -214,9 +214,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         /// <summary>
         /// 处理月份节点筛选（精确匹配月份）
         /// </summary>
-        private static IQueryable<LabTestSchedule> ApplyMonthFilter(
-            IQueryable<LabTestSchedule> query,
-            Expression<Func<LabTestSchedule, DateTimeOffset?>> dateProperty,
+        private static IQueryable<LabTestInfo> ApplyMonthFilter(
+            IQueryable<LabTestInfo> query,
+            Expression<Func<LabTestInfo, DateTimeOffset?>> dateProperty,
             object timeRange)
         {
             var timeRangeStr = timeRange?.ToString();
@@ -295,9 +295,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         /// <summary>
         /// 处理年份节点筛选（精确匹配年份）
         /// </summary>
-        private static IQueryable<LabTestSchedule> ApplyYearFilter(
-            IQueryable<LabTestSchedule> query,
-            Expression<Func<LabTestSchedule, DateTimeOffset?>> dateProperty,
+        private static IQueryable<LabTestInfo> ApplyYearFilter(
+            IQueryable<LabTestInfo> query,
+            Expression<Func<LabTestInfo, DateTimeOffset?>> dateProperty,
             object timeRange)
         {
             var timeRangeStr = timeRange?.ToString();

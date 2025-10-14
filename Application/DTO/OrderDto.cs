@@ -123,7 +123,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     public sealed class LabTestJoinDto
     {
         public LabTestInfo Info { get; init; }
-        public LabTestSchedule Schedule { get; init; }
+        public LabTestInfo Schedule { get; init; }
     }
 
 
@@ -147,9 +147,10 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     }
 
 
-    public class OrderCompareOutput
+    public class OrderLineCardOutput
     {
-
+        public string[]? PropertyName { get; set; }
+        public List<string[]>? PropertyValue { get; set; }
     }
 
 

@@ -54,13 +54,22 @@ namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
 
         public async Task<OrderCardOutput> GetOrderCardListAsync(DateTimeOffset time, string group, string timeType)
         {
-            var result = await _or.OrderCardAsync(time,group,timeType);
+            DateTimeOffset utcTime = time.ToUniversalTime();
+            var result = await _or.OrderCardAsync(utcTime, group,timeType);
             return result;
         }
 
         public async Task<OrderFanCardOutput> GetOrderFanChartListAsync(DateTimeOffset time, string group, string timeType)
         {
-            var result = await _or.OrderfanCardAsync(time, group, timeType);
+            DateTimeOffset utcTime = time.ToUniversalTime();
+            var result = await _or.OrderfanCardAsync(utcTime, group, timeType);
+            return result;
+        }
+
+        public async Task<OrderLineCardOutput> GetOrderLineChartAsync(DateTimeOffset[] time, string group, string timeType,string Type)
+        {
+            var utcTimeArray = time.Select(t => t.ToUniversalTime()).ToArray();
+            var result = await _or.OrderLineChartAsync(utcTimeArray, group, timeType,Type);
             return result;
         }
     }

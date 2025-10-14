@@ -39,7 +39,7 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<OrderService>();
             builder.Services.AddScoped<OrderRepo>();
             builder.Services.AddScoped<OrderQueryProvider>();
-            builder.Services.AddScoped<OrderCardQueryProvider>();
+            builder.Services.AddScoped<OrderReportingQueryProvider>();
 
             // 扫描所有实现 IPrintExcelStrategy 的非抽象类
             builder.Services.AddSingleton<JwtService>();

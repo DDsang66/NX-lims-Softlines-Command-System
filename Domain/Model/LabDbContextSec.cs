@@ -262,6 +262,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("test_engineer");
+            entity.Property(e => e.LabOutTime).HasColumnName("lab_out_time");
+            entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
+            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
+            entity.Property(e => e.ReviewFinishTime).HasColumnName("review_finish_time");
             entity.Property(e => e.TestGroup)
                 .HasMaxLength(10)
                 .IsUnicode(false)
