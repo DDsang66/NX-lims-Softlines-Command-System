@@ -96,6 +96,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "Air Permeability" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Water Repellency-Spray Test" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Spriality/Skewing" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "CF to Sublimation in Storage" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, null, null, null, null, null, null, null, "48h"),
             "CF to Chlorinated Water" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };

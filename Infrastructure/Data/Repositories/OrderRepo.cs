@@ -674,6 +674,16 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 // 获取当前月份的第一天和最后一天
                 var firstDayOfMonth = new DateTimeOffset(time[0].Year, time[0].Month, 1, 0, 0, 0, time[0].Offset);
                 var lastDayOfMonth = new DateTimeOffset(time[0].Year, time[0].Month, DateTime.DaysInMonth(time[0].Year, time[0].Month), 23, 59, 59, time[0].Offset);
+
+                // 创建1到31天的数组作为TimePropertyName
+                var dayNames = Enumerable.Range(1, 31).ToArray();
+
+                // 初始化TimePropertyValue，包含4个数组（result、delay、normal、inadvance）
+                var timePropertyValues = new List<int[]>
+                {
+                    new int[31]
+                };
+
                 switch (Type.ToLower())
                 {
                     case "all":
@@ -689,45 +699,92 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             .GroupBy(o => o.ReportDueDate!.Value.Date)
                             .Select(g => new
                             {
-                                Date = g.Key,
+                                Day = g.Key.Day - 1, // 转换为0-based索引
                                 Count = g.Count()
-                            })
-                            .OrderBy(x => x.Date)
-                            .ToList();
-                        return null;
-                    case "delay":
-                        var baseQuery = _orderReportingQueryProvider.QueryTimeInfo(time[0], timeType, "ReportDueDate", _db);
+                            }).ToList();
 
+                        foreach (var item in result)
+                        {
+                            timePropertyValues[0][item.Day] = item.Count;
+                        }
+
+                        break;
+                    case "delay":
                         // 添加delay条件
-                        var delayQuery = baseQuery.Where(o =>
+                        var delayQuery = filteredInfo.Where(o =>
                             !o.LabOutTime.HasValue ?
                                 o.ReportDueDate!.Value < DateTime.Now :
                                 o.LabOutTime.Value > o.ReportDueDate!.Value
-                        );
-
-                        // 获取当前月份的delay数据
-                        var delayData = delayQuery.Where(o =>
-                            o.ReportDueDate.HasValue &&
+                            && o.ReportDueDate.HasValue &&
                             o.ReportDueDate.Value >= firstDayOfMonth &&
                             o.ReportDueDate.Value <= lastDayOfMonth
                         ).ToList();
 
                         // 按日期分组统计
-                        var delay = delayData
+                        var delay = delayQuery
                             .GroupBy(o => o.ReportDueDate!.Value.Date)
                             .Select(g => new
                             {
-                                Date = g.Key,
+                                Day = g.Key.Day - 1,
                                 Count = g.Count()
-                            })
-                            .OrderBy(x => x.Date)
-                            .ToList();
+                            }).ToList();
+                        foreach (var item in delay)
+                        {
+                            timePropertyValues[0][item.Day] = item.Count;
+                        }
                         break;
                     case "normal":
+                        var normalQuery = filteredInfo.Where(
+                            o => o.LabOutTime.HasValue &&
+                            o.ReportDueDate.HasValue &&
+                            o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                            o.ReportDueDate.Value >= firstDayOfMonth &&
+                            o.ReportDueDate.Value <= lastDayOfMonth).ToList();
+
+                        var normal = normalQuery
+                            .GroupBy(o => o.ReportDueDate!.Value.Date)
+                            .Select(g => new
+                            {
+                                Day = g.Key.Day - 1,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in normal)
+                        {
+                            timePropertyValues[0][item.Day] = item.Count;
+                        }
+
                         break;
                     case "inadvance":
+                        var advanceQuery = filteredInfo.Where(
+                            o => o.LabOutTime.HasValue &&
+                            o.ReportDueDate.HasValue &&
+                            o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                            o.ReportDueDate.Value >= firstDayOfMonth &&
+                            o.ReportDueDate.Value <= lastDayOfMonth
+                        ).ToList();
+
+                        // 按日期分组统计
+                        var advance = advanceQuery
+                            .GroupBy(o => o.ReportDueDate!.Value.Date)
+                            .Select(g => new
+                            {
+                                Day = g.Key.Day - 1,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in advance)
+                        {
+                            timePropertyValues[0][item.Day] = item.Count;
+                        }
                         break;
                 }
+
+                return new OrderLineCardOutput
+                {
+                    TimePropertyName = dayNames,
+                    TimePropertyValue = timePropertyValues
+                };
             }
 
 

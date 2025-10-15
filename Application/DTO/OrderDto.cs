@@ -149,8 +149,8 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public class OrderLineCardOutput
     {
-        public string[]? PropertyName { get; set; }
-        public List<string[]>? PropertyValue { get; set; }
+        public int[]? TimePropertyName { get; set; }
+        public List<int[]>? TimePropertyValue { get; set; }
     }
 
 
