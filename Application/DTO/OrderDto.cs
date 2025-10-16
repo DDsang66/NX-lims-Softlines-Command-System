@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+﻿using DocumentFormat.OpenXml.Presentation;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using System.ComponentModel.DataAnnotations;
 
 namespace NX_lims_Softlines_Command_System.Application.DTO
@@ -150,8 +151,13 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     public class OrderLineCardOutput
     {
         public int[]? TimePropertyName { get; set; }
-        public List<int[]>? TimePropertyValue { get; set; }
+
+        public List<TimePropertyValue>? TimeProperty { get; set; }
     }
 
-
+    public class TimePropertyValue 
+    {
+        public string? TimeHead { get; set; }
+        public int[]? TimeValue { get; set; }
+    }
 }

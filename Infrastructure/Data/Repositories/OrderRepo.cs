@@ -678,11 +678,11 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 // 创建1到31天的数组作为TimePropertyName
                 var dayNames = Enumerable.Range(1, 31).ToArray();
 
-                // 初始化TimePropertyValue，包含4个数组（result、delay、normal、inadvance）
-                var timePropertyValues = new List<int[]>
-                {
-                    new int[31]
-                };
+                // 初始化TimeProperty，包含当前月份的统计结果
+                var timeProperty = new List<TimePropertyValue>();
+
+                // 初始化当前月份的统计结果数组
+                var monthlyValues = new int[31];
 
                 switch (Type.ToLower())
                 {
@@ -705,7 +705,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
 
                         foreach (var item in result)
                         {
-                            timePropertyValues[0][item.Day] = item.Count;
+                            monthlyValues[item.Day] = item.Count;
                         }
 
                         break;
@@ -730,7 +730,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             }).ToList();
                         foreach (var item in delay)
                         {
-                            timePropertyValues[0][item.Day] = item.Count;
+                            monthlyValues[item.Day] = item.Count;
                         }
                         break;
                     case "normal":
@@ -751,7 +751,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
 
                         foreach (var item in normal)
                         {
-                            timePropertyValues[0][item.Day] = item.Count;
+                            monthlyValues[item.Day] = item.Count;
                         }
 
                         break;
@@ -775,22 +775,549 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
 
                         foreach (var item in advance)
                         {
-                            timePropertyValues[0][item.Day] = item.Count;
+                            monthlyValues[item.Day] = item.Count;
                         }
                         break;
                 }
 
+                // 创建TimePropertyValue对象
+                var timePropertyValue = new TimePropertyValue
+                {
+                    TimeHead = $"{time[0].Month}月", // 月份名称
+                    TimeValue = monthlyValues // 当月的统计结果
+                };
+
+                // 添加到timeProperty列表
+                timeProperty.Add(timePropertyValue);
+
+                // 创建OrderLineCardOutput对象
                 return new OrderLineCardOutput
                 {
-                    TimePropertyName = dayNames,
-                    TimePropertyValue = timePropertyValues
+                    TimePropertyName = dayNames, // 日期名称
+                    TimeProperty = timeProperty // 当月的统计结果
+                };
+            }
+            else if (timeType.ToLower() == "year")
+            {
+                // 获取当前年份的第一天和最后一天
+                var firstDayOfYear = new DateTimeOffset(time[0].Year, 1, 1, 0, 0, 0, time[0].Offset);
+                var lastDayOfYear = new DateTimeOffset(time[0].Year, 12, 31, 23, 59, 59, time[0].Offset);
+
+                // 创建1到12月的数组作为TimePropertyName
+                var monthNames = Enumerable.Range(1, 12).ToArray();
+
+                // 初始化TimeProperty，包含当前年份的统计结果
+                var timeProperty = new List<TimePropertyValue>();
+
+                // 初始化当前年份的统计结果数组
+                var yearlyValues = new int[12];
+
+                switch (Type.ToLower())
+                {
+                    case "all":
+                        // 获取当前年份的所有数据
+                        var yearlyData = filteredInfo.Where(o =>
+                            o.ReportDueDate.HasValue &&
+                            o.ReportDueDate.Value >= firstDayOfYear &&
+                            o.ReportDueDate.Value <= lastDayOfYear
+                        ).ToList();
+
+                        // 按月份分组统计
+                        var result = yearlyData
+                            .GroupBy(o => o.ReportDueDate!.Value.Month - 1) // 转换为0-based索引
+                            .Select(g => new
+                            {
+                                Month = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in result)
+                        {
+                            yearlyValues[item.Month] = item.Count;
+                        }
+
+                        break;
+                    case "delay":
+                        // 添加delay条件
+                        var delayQuery = filteredInfo.Where(o =>
+                            !o.LabOutTime.HasValue ?
+                                o.ReportDueDate!.Value < DateTime.Now :
+                                o.LabOutTime.Value > o.ReportDueDate!.Value
+                            && o.ReportDueDate.HasValue &&
+                            o.ReportDueDate.Value >= firstDayOfYear &&
+                            o.ReportDueDate.Value <= lastDayOfYear
+                        ).ToList();
+
+                        // 按月份分组统计
+                        var delay = delayQuery
+                            .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
+                            .Select(g => new
+                            {
+                                Month = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+                        foreach (var item in delay)
+                        {
+                            yearlyValues[item.Month] = item.Count;
+                        }
+                        break;
+                    case "normal":
+                        var normalQuery = filteredInfo.Where(
+                            o => o.LabOutTime.HasValue &&
+                            o.ReportDueDate.HasValue &&
+                            o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                            o.ReportDueDate.Value >= firstDayOfYear &&
+                            o.ReportDueDate.Value <= lastDayOfYear).ToList();
+
+                        var normal = normalQuery
+                            .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
+                            .Select(g => new
+                            {
+                                Month = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in normal)
+                        {
+                            yearlyValues[item.Month] = item.Count;
+                        }
+
+                        break;
+                    case "inadvance":
+                        var advanceQuery = filteredInfo.Where(
+                            o => o.LabOutTime.HasValue &&
+                            o.ReportDueDate.HasValue &&
+                            o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                            o.ReportDueDate.Value >= firstDayOfYear &&
+                            o.ReportDueDate.Value <= lastDayOfYear
+                        ).ToList();
+
+                        // 按月份分组统计
+                        var advance = advanceQuery
+                            .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
+                            .Select(g => new
+                            {
+                                Month = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in advance)
+                        {
+                            yearlyValues[item.Month] = item.Count;
+                        }
+                        break;
+                }
+
+                // 创建TimePropertyValue对象
+                var timePropertyValue = new TimePropertyValue
+                {
+                    TimeHead = $"{time[0].Year}年", // 年份名称
+                    TimeValue = yearlyValues // 当年的统计结果
+                };
+
+                // 添加到timeProperty列表
+                timeProperty.Add(timePropertyValue);
+
+                // 创建OrderLineCardOutput对象
+                return new OrderLineCardOutput
+                {
+                    TimePropertyName = monthNames, // 月份名称
+                    TimeProperty = timeProperty // 当年的统计结果
+                };
+            }
+            else if (timeType.ToLower() == "allyear")
+            {
+                // 创建过去5年的数组作为TimePropertyName
+                var currentYear = DateTimeOffset.Now.Year;
+                var yearNames = Enumerable.Range(currentYear - 4, 5).ToArray();
+
+                // 初始化TimeProperty，包含每一年的统计结果
+                var timeProperty = new List<TimePropertyValue>();
+
+                // 初始化每一年的统计结果数组
+                var yearlyValues = new int[5];
+
+                switch (Type.ToLower())
+                {
+                    case "all":
+                        // 获取过去5年的所有数据
+                        var yearlyData = filteredInfo.Where(o =>
+                            o.ReportDueDate.HasValue &&
+                            o.ReportDueDate.Value.Year >= currentYear - 4 &&
+                            o.ReportDueDate.Value.Year <= currentYear
+                        ).ToList();
+
+                        // 按年份分组统计
+                        var result = yearlyData
+                            .GroupBy(o => o.ReportDueDate!.Value.Year)
+                            .Select(g => new
+                            {
+                                Year = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in result)
+                        {
+                            var index = item.Year - (currentYear - 4);
+                            if (index >= 0 && index < 5)
+                            {
+                                yearlyValues[index] = item.Count;
+                            }
+                        }
+
+                        break;
+                    case "delay":
+                        // 添加delay条件
+                        var delayQuery = filteredInfo.Where(o =>
+                            !o.LabOutTime.HasValue ?
+                                o.ReportDueDate!.Value < DateTime.Now :
+                                o.LabOutTime.Value > o.ReportDueDate!.Value
+                            && o.ReportDueDate.HasValue &&
+                            o.ReportDueDate.Value.Year >= currentYear - 4 &&
+                            o.ReportDueDate.Value.Year <= currentYear
+                        ).ToList();
+
+                        // 按年份分组统计
+                        var delay = delayQuery
+                            .GroupBy(o => o.ReportDueDate!.Value.Year)
+                            .Select(g => new
+                            {
+                                Year = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+                        foreach (var item in delay)
+                        {
+                            var index = item.Year - (currentYear - 4);
+                            if (index >= 0 && index < 5)
+                            {
+                                yearlyValues[index] = item.Count;
+                            }
+                        }
+                        break;
+                    case "normal":
+                        var normalQuery = filteredInfo.Where(
+                            o => o.LabOutTime.HasValue &&
+                            o.ReportDueDate.HasValue &&
+                            o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                            o.ReportDueDate.Value.Year >= currentYear - 4 &&
+                            o.ReportDueDate.Value.Year <= currentYear).ToList();
+
+                        var normal = normalQuery
+                            .GroupBy(o => o.ReportDueDate!.Value.Year)
+                            .Select(g => new
+                            {
+                                Year = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in normal)
+                        {
+                            var index = item.Year - (currentYear - 4);
+                            if (index >= 0 && index < 5)
+                            {
+                                yearlyValues[index] = item.Count;
+                            }
+                        }
+
+                        break;
+                    case "inadvance":
+                        var inadvanceQuery = filteredInfo.Where(o => o.LabOutTime.HasValue &&
+                            o.ReportDueDate.HasValue &&
+                            o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                            o.ReportDueDate.Value.Year >= currentYear - 4 &&
+                            o.ReportDueDate.Value.Year <= currentYear
+                        ).ToList();
+                        var inadvance = inadvanceQuery.GroupBy(o => o.ReportDueDate!.Value.Year)
+                            .Select(g => new
+                            {
+                                Year = g.Key,
+                                Count = g.Count()
+                            }).ToList();
+
+                        foreach (var item in inadvance)
+                        {
+                            var index = item.Year - (currentYear - 4);
+                            if (index >= 0 && index < 5)
+                            {
+                                yearlyValues[index] = item.Count;
+                            }
+                        }
+                        break;
+                }
+
+                // 创建TimePropertyValue对象
+                var timePropertyValue = new TimePropertyValue
+                {
+                    TimeHead = "过去5年", // 时间范围名称
+                    TimeValue = yearlyValues // 过去5年的统计结果
+                };
+
+                // 添加到timeProperty列表
+                timeProperty.Add(timePropertyValue);
+
+                // 创建OrderLineCardOutput对象
+                return new OrderLineCardOutput
+                {
+                    TimePropertyName = yearNames, // 年份名称
+                    TimeProperty = timeProperty // 过去5年的统计结果
+                };
+            }
+            else if (timeType.ToLower() == "months")
+            {
+                // 初始化TimeProperty，包含每个月的统计结果
+                var timeProperty = new List<TimePropertyValue>();
+
+                foreach (var t in time)
+                {
+                    // 获取当前月份的第一天和最后一天
+                    var firstDayOfMonth = new DateTimeOffset(t.Year, t.Month, 1, 0, 0, 0, t.Offset);
+                    var lastDayOfMonth = new DateTimeOffset(t.Year, t.Month, DateTime.DaysInMonth(t.Year, t.Month), 23, 59, 59, t.Offset);
+
+                    var monthlyValues = new int[31];
+
+                    switch (Type.ToLower())
+                    {
+                        case "all":
+                            // 获取当前月份的所有数据
+                            var monthlyData = filteredInfo.Where(o =>
+                                o.ReportDueDate.HasValue &&
+                                o.ReportDueDate.Value >= firstDayOfMonth &&
+                                o.ReportDueDate.Value <= lastDayOfMonth
+                            ).ToList();
+
+                            // 按日期分组统计
+                            var result = monthlyData
+                                .GroupBy(o => o.ReportDueDate!.Value.Date)
+                                .Select(g => new
+                                {
+                                    Day = g.Key.Day - 1, // 转换为0-based索引
+                                    Count = g.Count()
+                                }).ToList();
+
+                            foreach (var item in result)
+                            {
+                                monthlyValues[item.Day] = item.Count;
+                            }
+                            break;
+                        case "delay":
+                            // 添加delay条件
+                            var delayQuery = filteredInfo.Where(o =>
+                                !o.LabOutTime.HasValue ?
+                                    o.ReportDueDate!.Value < DateTime.Now :
+                                    o.LabOutTime.Value > o.ReportDueDate!.Value
+                                && o.ReportDueDate.HasValue &&
+                                o.ReportDueDate.Value >= firstDayOfMonth &&
+                                o.ReportDueDate.Value <= lastDayOfMonth
+                            ).ToList();
+
+                            // 按日期分组统计
+                            var delay = delayQuery
+                                .GroupBy(o => o.ReportDueDate!.Value.Date)
+                                .Select(g => new
+                                {
+                                    Day = g.Key.Day - 1,
+                                    Count = g.Count()
+                                }).ToList();
+                            foreach (var item in delay)
+                            {
+                                monthlyValues[item.Day] = item.Count;
+                            }
+                            break;
+                        case "normal":
+                            var normalQuery = filteredInfo.Where(
+                                o => o.LabOutTime.HasValue &&
+                                o.ReportDueDate.HasValue &&
+                                o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                                o.ReportDueDate.Value >= firstDayOfMonth &&
+                                o.ReportDueDate.Value <= lastDayOfMonth).ToList();
+
+                            var normal = normalQuery
+                                .GroupBy(o => o.ReportDueDate!.Value.Date)
+                                .Select(g => new
+                                {
+                                    Day = g.Key.Day - 1,
+                                    Count = g.Count()
+                                }).ToList();
+
+                            foreach (var item in normal)
+                            {
+                                monthlyValues[item.Day] = item.Count;
+                            }
+                            break;
+                        case "inadvance":
+                            var advanceQuery = filteredInfo.Where(
+                                o => o.LabOutTime.HasValue &&
+                                o.ReportDueDate.HasValue &&
+                                o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                                o.ReportDueDate.Value >= firstDayOfMonth &&
+                                o.ReportDueDate.Value <= lastDayOfMonth
+                            ).ToList();
+
+                            // 按日期分组统计
+                            var advance = advanceQuery
+                                .GroupBy(o => o.ReportDueDate!.Value.Date)
+                                .Select(g => new
+                                {
+                                    Day = g.Key.Day - 1,
+                                    Count = g.Count()
+                                }).ToList();
+
+                            foreach (var item in advance)
+                            {
+                                monthlyValues[item.Day] = item.Count;
+                            }
+                            break;
+                    }
+
+                    // 创建TimePropertyValue对象
+                    var timePropertyValue = new TimePropertyValue
+                    {
+                        TimeHead = $"{t.Month}月", // 月份名称
+                        TimeValue = monthlyValues // 当月的统计结果
+                    };
+
+                    // 添加到timeProperty列表
+                    timeProperty.Add(timePropertyValue);
+                }
+
+                // 创建OrderLineCardOutput对象
+                var dayNames = Enumerable.Range(1, 31).ToArray();
+                return new OrderLineCardOutput
+                {
+                    TimePropertyName = dayNames, // 日期名称
+                    TimeProperty = timeProperty // 每个月的统计结果
+                };
+            }
+            else if (timeType.ToLower() == "years")
+            {
+                // 初始化TimeProperty，包含每一年的统计结果
+                var timeProperty = new List<TimePropertyValue>();
+
+                foreach (var t in time)
+                {
+                    // 获取当前年份的第一天和最后一天
+                    var firstDayOfYear = new DateTimeOffset(t.Year, 1, 1, 0, 0, 0, t.Offset);
+                    var lastDayOfYear = new DateTimeOffset(t.Year, 12, 31, 23, 59, 59, t.Offset);
+
+                    var yearlyValues = new int[12];
+
+                    switch (Type.ToLower())
+                    {
+                        case "all":
+                            // 获取当前年份的所有数据
+                            var yearlyData = filteredInfo.Where(o =>
+                                o.ReportDueDate.HasValue &&
+                                o.ReportDueDate.Value >= firstDayOfYear &&
+                                o.ReportDueDate.Value <= lastDayOfYear
+                            ).ToList();
+
+                            // 按月份分组统计
+                            var result = yearlyData
+                                .GroupBy(o => o.ReportDueDate!.Value.Month - 1) // 转换为0-based索引
+                                .Select(g => new
+                                {
+                                    Month = g.Key,
+                                    Count = g.Count()
+                                }).ToList();
+
+                            foreach (var item in result)
+                            {
+                                yearlyValues[item.Month] = item.Count;
+                            }
+                            break;
+                        case "delay":
+                            // 添加delay条件
+                            var delayQuery = filteredInfo.Where(o =>
+                                !o.LabOutTime.HasValue ?
+                                    o.ReportDueDate!.Value < DateTime.Now :
+                                    o.LabOutTime.Value > o.ReportDueDate!.Value
+                                && o.ReportDueDate.HasValue &&
+                                o.ReportDueDate.Value >= firstDayOfYear &&
+                                o.ReportDueDate.Value <= lastDayOfYear
+                            ).ToList();
+
+                            // 按月份分组统计
+                            var delay = delayQuery
+                                .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
+                                .Select(g => new
+                                {
+                                    Month = g.Key,
+                                    Count = g.Count()
+                                }).ToList();
+                            foreach (var item in delay)
+                            {
+                                yearlyValues[item.Month] = item.Count;
+                            }
+                            break;
+                        case "normal":
+                            var normalQuery = filteredInfo.Where(
+                                o => o.LabOutTime.HasValue &&
+                                o.ReportDueDate.HasValue &&
+                                o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                                o.ReportDueDate.Value >= firstDayOfYear &&
+                                o.ReportDueDate.Value <= lastDayOfYear).ToList();
+
+                            var normal = normalQuery
+                                .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
+                                .Select(g => new
+                                {
+                                    Month = g.Key,
+                                    Count = g.Count()
+                                }).ToList();
+
+                            foreach (var item in normal)
+                            {
+                                yearlyValues[item.Month] = item.Count;
+                            }
+                            break;
+                        case "inadvance":
+                            var advanceQuery = filteredInfo.Where(
+                                o => o.LabOutTime.HasValue &&
+                                o.ReportDueDate.HasValue &&
+                                o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                                o.ReportDueDate.Value >= firstDayOfYear &&
+                                o.ReportDueDate.Value <= lastDayOfYear
+                            ).ToList();
+
+                            // 按月份分组统计
+                            var advance = advanceQuery
+                                .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
+                                .Select(g => new
+                                {
+                                    Month = g.Key,
+                                    Count = g.Count()
+                                }).ToList();
+
+                            foreach (var item in advance)
+                            {
+                                yearlyValues[item.Month] = item.Count;
+                            }
+                            break;
+                    }
+
+                    // 创建TimePropertyValue对象
+                    var timePropertyValue = new TimePropertyValue
+                    {
+                        TimeHead = $"{t.Year}年", // 年份名称
+                        TimeValue = yearlyValues // 当年的统计结果
+                    };
+
+                    // 添加到timeProperty列表
+                    timeProperty.Add(timePropertyValue);
+                }
+
+                // 创建OrderLineCardOutput对象
+                var monthNames = Enumerable.Range(1, 12).ToArray();
+                return new OrderLineCardOutput
+                {
+                    TimePropertyName = monthNames, // 月份名称
+                    TimeProperty = timeProperty // 每一年的统计结果
                 };
             }
 
 
             return null;
         }
-
 
 
         //加急计算逻辑

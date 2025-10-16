@@ -335,6 +335,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
                 ["D4"] = (w, dto, reportNo) => w.Temperature!,
                 ["G4"] = (w, dto, reportNo) => "48",
+                ["C7"] = (w, dto, reportNo) => w.Ballast!
             },
             ["CF to Hot Pressing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -359,6 +360,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A28"] = (w, dto, reportNo) => dto.Standard!,
+                ["B31"] = (w, dto, reportNo) =>"L - 4",
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -443,6 +445,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["M1"] = (dto, reportNo) => reportNo,
                 ["A3"] = (dto, reportNo) => dto.Standard!,
+                ["A5"] = (dto,reportNo)=> dto.sampleDescription!.Contains("Woven")?
+                "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.": 
+                "Knitted Fabric: method A---Stripe trials   Guage length=100mm  Speed =500mm/min.",
                 ["F7"] = (dto, reportNo) => "3",
                 ["N7"] = (dto, reportNo) => "5"
             },

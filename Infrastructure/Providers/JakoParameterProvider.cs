@@ -107,6 +107,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Dyed") == true ? "90" : "70",
+                Ballast = _helper.MaxComposition(p.FiberContent!)
             },
             _ => new WetParameterIso
             {

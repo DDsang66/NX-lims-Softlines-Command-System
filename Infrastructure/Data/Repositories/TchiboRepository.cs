@@ -74,9 +74,49 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
-            //return (T)(object)Param;//返回WetParameters类型的对象
-            return default;
+            // 只处理指定 item 类型
+            if (!new[] { "CF to Washing", "DS to Washing" }
+                 .Contains(itemName))
+                return default;
+            var Param = await _db.WetParameterIsos
+                              .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
+            TchiboParamProvider wetParam = new TchiboParamProvider(_helper);
+            if (Param != null)
+            {
+                var updatedParam = wetParam.CreateWetParameters(input);
+                updatedParam.ParamId = Param.ParamId;
+                _db.Entry(Param).CurrentValues.SetValues(updatedParam);
+                await _db.SaveChangesAsync();
+                Param = updatedParam;
+            }
+            else
+            {
+                var newParam = new WetParameterIso//没有找到对应的对象，随即构造一个
+                {
+                    StandardType = "ISO",
+                    Sensitive = "N",
+                    ReportNumber = input.OrderNumber,
+                    ContactItem = itemName
+                };
+                Param = wetParam.CreateWetParameters(input);
+                foreach (var prop in typeof(WetParameterIso).GetProperties())
+                {
+                    if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
+                    {
+                        var value = prop.GetValue(Param);
+                        if (value != null)
+                        {
+                            prop.SetValue(newParam, value);
+                        }
+                    }
+                }
+
+                await _db.WetParameterIsos.AddAsync(newParam);
+                await _db.SaveChangesAsync();
+                Param = newParam;
+            }
+            return (T)(object)Param;//返回WetParameters类型的对象
         }
 
-        }
+    }
 }

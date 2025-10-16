@@ -41,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         public async Task<object?> ShowParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
             var itemNames = infoDto.itemName;
-            MangoParameterProvider helper = new MangoParameterProvider(_helper);
+            TchiboParamProvider helper = new TchiboParamProvider(_helper);
             // 生成对应 DTO
             try
             {
