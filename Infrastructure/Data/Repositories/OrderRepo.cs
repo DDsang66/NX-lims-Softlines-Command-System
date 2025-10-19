@@ -519,24 +519,33 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     }
                 }
 
-                // 如果有任何一个 Id 是 delay，整体算作 delay
-                if (groupIds.Any(id => queryIds.Contains(id) && queries["delayLabOut"].Any(q => q.Id == id)))
+                if (type == "delayLabOut") 
                 {
-                    return "delayLabOut";
+                    // 如果有任何一个 Id 是 delay，整体算作 delay
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["delayLabOut"].Any(q => q.Id == id)))
+                    {
+                        return "delayLabOut";
+                    }
                 }
 
-                // 如果所有 Id 都是 inAdvance，整体算作 inAdvance
-                if (groupIds.All(id => queryIds.Contains(id) && queries["inAdvanceLabOut"].Any(q => q.Id == id)))
-                {
-                    return "inAdvanceLabOut";
+                if (type == "inAdvanceLabOut")
+                {               
+                    // 如果所有 Id 都是 inAdvance，整体算作 inAdvance
+                    if (groupIds.All(id => queryIds.Contains(id) && queries["inAdvanceLabOut"].Any(q => q.Id == id)))
+                    {
+                        return "inAdvanceLabOut";
+                    }
+                }
+                if( type == "needLabOut")
+                {            
+                    // 如果有任何一个 Id 是 needLabOut，整体算作 needLabOut
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["needLabOut"].Any(q => q.Id == id)))
+                    {
+                        return "needLabOut";
+                    }
                 }
 
-                // 如果有任何一个 Id 是 needLabOut，整体算作 needLabOut
-                if (groupIds.Any(id => queryIds.Contains(id) && queries["needLabOut"].Any(q => q.Id == id)))
-                {
-                    return "needLabOut";
-                }
-                else { return null; }
+                return null;
             }
 
             var TimeQuery = _orderReportingQueryProvider.QuerySelect(time, timeType, "needLabOut", _db).ToList();
@@ -591,7 +600,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                                                     .Select(g => new
                                                     {
                                                         ReportNumber = g.Key,
-                                                        Status = DetermineStatus(g, queryIds)
+                                                        Status = DetermineStatus(g, queryIds,type)
                                                     })
                                                     .ToList();
 
@@ -606,28 +615,47 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             };
 
             // 判断单号状态的方法
-            string DetermineStatus(IGrouping<string, LabTestInfo> group, HashSet<long> queryIds)
+            string DetermineStatus(IGrouping<string, LabTestInfo> group, HashSet<long> queryIds, string type)
             {
                 var groupIds = group.Select(g => g.Id).ToHashSet();
 
-                // 如果有任何一个 Id 是 delay，整体算作 delay
-                if (groupIds.Any(id => queryIds.Contains(id) && queries["delayLabOut"].Any(q => q.Id == id)))
+                // 特殊处理 ActuallyLabOut
+                if (type == "actuallyLabOut")
                 {
-                    return "delayLabOut";
+                    // 只有当所有 Id 都是 actuallyLabOut 时，单号才算作 actuallyLabOut
+                    if (groupIds.All(id => queryIds.Contains(id)))
+                    {
+                        return "actuallyLabOut";
+                    }
                 }
 
-                // 如果所有 Id 都是 inAdvance，整体算作 inAdvance
-                if (groupIds.All(id => queryIds.Contains(id) && queries["inAdvanceLabOut"].Any(q => q.Id == id)))
+                if (type == "delayLabOut")
                 {
-                    return "inAdvanceLabOut";
+                    // 如果有任何一个 Id 是 delay，整体算作 delay
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["delayLabOut"].Any(q => q.Id == id)))
+                    {
+                        return "delayLabOut";
+                    }
                 }
 
-                // 如果有任何一个 Id 是 needLabOut，整体算作 needLabOut
-                if (groupIds.Any(id => queryIds.Contains(id) && queries["needLabOut"].Any(q => q.Id == id)))
+                if (type == "inAdvanceLabOut")
                 {
-                    return "needLabOut";
+                    // 如果所有 Id 都是 inAdvance，整体算作 inAdvance
+                    if (groupIds.All(id => queryIds.Contains(id) && queries["inAdvanceLabOut"].Any(q => q.Id == id)))
+                    {
+                        return "inAdvanceLabOut";
+                    }
                 }
-                else { return null; }
+                if (type == "needLabOut")
+                {
+                    // 如果有任何一个 Id 是 needLabOut，整体算作 needLabOut
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["needLabOut"].Any(q => q.Id == id)))
+                    {
+                        return "needLabOut";
+                    }
+                }
+
+                return null;
             }
             return new OrderFanCardOutput {
                 Delay = calculateCount("delayLabOut"),
