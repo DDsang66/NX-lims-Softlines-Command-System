@@ -25,11 +25,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 return query;
             if (!string.IsNullOrEmpty(queryParams) && queryParams.ToLower() == "all")
             {
-                query = _db.LabTestInfos.AsQueryable();
+                query = query.Where(o => o.IsDelete == "N");
             }
             else if (!string.IsNullOrEmpty(queryParams) && queryParams.ToLower() != "all")
             {
-                query = query.Where(o => o.TestGroup!.Contains(queryParams));
+                query = query.Where(o => o.TestGroup!.Contains(queryParams) && o.IsDelete == "N");
             }
             return query;
         }
@@ -111,7 +111,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
                     query = baseQuery.Where(o => o.LabOutTime.HasValue &&
                                                            o.ReportDueDate.HasValue &&
-                                                           o.LabOutTime.Value < o.ReportDueDate.Value);
+                                                           o.LabOutTime.Value.Date < o.ReportDueDate.Value.Date);
                     break;
                 case "delaylabout":
                     baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
@@ -121,7 +121,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     query = baseQuery.Where(o =>
                         !o.LabOutTime.HasValue ?
                             o.ReportDueDate!.Value < DateTime.Now :
-                            o.LabOutTime.Value > o.ReportDueDate!.Value
+                            o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date
                     );
                     break;
                 case "inadvancelabout":

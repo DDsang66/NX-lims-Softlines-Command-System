@@ -35,7 +35,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
                 + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
-                + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)"
+                + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)",
+                SpecialCareInstruction = p.SampleDescription ?? null
             },
             ("Appearance", var add) when add?.Contains("Garment") == true => new WetParameterIso
             {
@@ -44,10 +45,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
                 Temperature = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.WashingProcedure!.Contains("4") ? "40" : "30" : "40",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
+                : p.SampleDescription!.Contains("5 Wash") ? 5
+                : p.SampleDescription!.Contains("10 Wash") ? 10 : 20,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
-                : "600 rpm 1h for mild wash"
+                : "600 rpm 1h for mild wash",
+                SpecialCareInstruction = p.SampleDescription??null
             },
             ("Spriality/Skewing", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
             {

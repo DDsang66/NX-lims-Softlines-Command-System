@@ -17,6 +17,8 @@
         public string? sci { get; set; }
         public string? ironProcedure { get; set; }
         public string? bleachProcedure { get; set; }
+
+        public string? detergent{ get; set; }
         public List<FiberDto>? fiberComposition { get; set; }
 
         public string? additionalRequire { get; set; }

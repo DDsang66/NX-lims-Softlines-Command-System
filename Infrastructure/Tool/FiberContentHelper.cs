@@ -15,6 +15,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         {
             _db = db;
         }
+        /// <summary>
+        /// 最大成分的名称
+        /// </summary>
         public string? MaxComposition(List<FiberDto> composition)
         {
             if (composition == null || composition.Count == 0)
@@ -26,6 +29,22 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
             var key = char.ToUpper(maxFiber!.Composition![0]) + maxFiber.Composition.Substring(1).ToLower();
             return key;
         }
+
+        /// <summary>
+        /// 给定成分名称的 rate
+        /// </summary>
+        public double? CompositionRate(List<FiberDto> composition,string compositionSelect)
+        {
+            if (composition == null || composition.Count == 0 || compositionSelect==null)
+                return null;
+
+            var totalRate = composition
+                .Where(j => compositionSelect.Contains(char.ToUpper(j!.Composition![0]) + j.Composition.Substring(1).ToLower()))
+                .Sum(j => j.Rate);
+
+            return totalRate;
+        }
+
 
 
         /// <summary>

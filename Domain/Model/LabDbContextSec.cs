@@ -32,8 +32,6 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<LabTestInfo> LabTestInfos { get; set; }
 
-    public virtual DbSet<LabTestSchedule> LabTestSchedules { get; set; }
-
     public virtual DbSet<Menu> Menus { get; set; }
 
     public virtual DbSet<Permission> Permissions { get; set; }
@@ -236,18 +234,22 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(5)
                 .IsUnicode(false)
                 .HasColumnName("is_delete");
+            entity.Property(e => e.LabOutTime).HasColumnName("lab_out_time");
             entity.Property(e => e.LastUpdateTime).HasColumnName("last_update_time");
             entity.Property(e => e.OrderEntryPerson)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("order_entry_person");
+            entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
             entity.Property(e => e.Remark)
                 .HasColumnType("text")
                 .HasColumnName("remark");
+            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
             entity.Property(e => e.ReportNumber)
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("report_number");
+            entity.Property(e => e.ReviewFinishTime).HasColumnName("review_finish_time");
             entity.Property(e => e.Reviewer)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -256,41 +258,17 @@ public partial class LabDbContextSec : DbContext
                 .IsRowVersion()
                 .IsConcurrencyToken()
                 .HasColumnName("row_version");
-            entity.Property(e => e.ScheduleIndex).HasColumnName("schedule_index");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TestEngineer)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("test_engineer");
-            entity.Property(e => e.LabOutTime).HasColumnName("lab_out_time");
-            entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
-            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
-            entity.Property(e => e.ReviewFinishTime).HasColumnName("review_finish_time");
             entity.Property(e => e.TestGroup)
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("test_group");
             entity.Property(e => e.TestItemNum).HasColumnName("test_item_num");
             entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
-        });
-
-        modelBuilder.Entity<LabTestSchedule>(entity =>
-        {
-            entity.HasKey(e => e.IdSchedule);
-
-            entity.ToTable("lab_test_schedule");
-
-            entity.Property(e => e.IdSchedule)
-                .ValueGeneratedNever()
-                .HasColumnName("id_schedule");
-            entity.Property(e => e.LabOutTime).HasColumnName("lab_out_time");
-            entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
-            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
-            entity.Property(e => e.ReviewFinishTime).HasColumnName("review_finish_time");
-            entity.Property(e => e.RowVersion)
-                .IsRowVersion()
-                .IsConcurrencyToken()
-                .HasColumnName("row_version");
         });
 
         modelBuilder.Entity<Menu>(entity =>
@@ -553,6 +531,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("cycle");
+            entity.Property(e => e.Detergent)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("detergent");
             entity.Property(e => e.DryCleanProcedure)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -624,6 +606,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("contact_item");
+            entity.Property(e => e.Detergent)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("detergent");
             entity.Property(e => e.DryCleanProcedure)
                 .HasMaxLength(50)
                 .IsUnicode(false)

@@ -26,6 +26,8 @@ public partial class WetParameterAatcc:IWetParam
 
     public string? Cycle { get; set; }
 
+    public string? Detergent { get; set; }
+
     public string? Program { get; set; }
 
     public string? DryCondition { get; set; }

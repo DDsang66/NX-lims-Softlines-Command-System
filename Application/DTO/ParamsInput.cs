@@ -10,6 +10,7 @@
         public string? Sci { get; set; }
         public string? Iron { get; set; }
         public string? Bleach { get; set; }
+        public string? Detergent { get; set; }
         public List<FiberDto>? FiberContent { get; set; }
         public string? additionalRequire { get; set; }
         public string? SampleDescription { get; set; }

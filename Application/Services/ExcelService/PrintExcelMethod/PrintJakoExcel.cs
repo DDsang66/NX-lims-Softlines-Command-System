@@ -309,6 +309,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["Y6"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["E7"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
                     map["U7"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
+                    map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction??null;
+                    map["W9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["AB9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["AG11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["AL11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["AR8"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["BD9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["BV16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    map["BA23"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
                 }
                 return map;
             },

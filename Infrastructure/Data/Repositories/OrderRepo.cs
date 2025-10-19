@@ -71,7 +71,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             {
                 long snowId = snowflake.NextId();
                 var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == row.Cs)!.CustomerService1;
-                var currentTime = DateTimeOffset.Now;
+                var currentTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                 var orderEntity = new LabTestInfo
                 {
                     Id = snowId,
@@ -82,21 +82,21 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     CustomerService = csName,
                     TestGroup = row.Group,
                     Remark = order.Remark,
-                    ScheduleIndex = snowId,
+                    //ScheduleIndex = snowId,
                     LastUpdateTime = currentTime,
-                    ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime(),
-                    OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime(),
+                    ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
+                    OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
                     IsDelete = "N"
                 };
 
-                var orderschedule = new LabTestSchedule
-                {
-                    IdSchedule = snowId,
-                    ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime(),
-                    OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime(),
-                };
+                //var orderschedule = new LabTestSchedule
+                //{
+                //    IdSchedule = snowId,
+                //    ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime(),
+                //    OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime(),
+                //};
                 _db.LabTestInfos.Add(orderEntity);
-                _db.LabTestSchedules.Add(orderschedule);
+                //_db.LabTestSchedules.Add(orderschedule);
             }
             _db.SaveChanges();
             return true;
@@ -132,9 +132,9 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
 
                         // 获取现有订单信息
                         var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o => o.Id == long.Parse(item.RecordId) && o.IsDelete == "N");
-                        var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == long.Parse(item.RecordId));
+                        //var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == long.Parse(item.RecordId));
 
-                        if (existingOrderInfo == null || existingOrderSchedule == null || existingOrderInfo.TestGroup != item.TestGroup)
+                        if (existingOrderInfo == null /*|| existingOrderSchedule == null */|| existingOrderInfo.TestGroup != item.TestGroup)
                         {
                             return false;
                         }
@@ -143,24 +143,24 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         existingOrderInfo.Reviewer = item.Reviewer;
                         existingOrderInfo.Express = item.Express;
                         existingOrderInfo.Remark = item.Remark;
-                        existingOrderInfo.LastUpdateTime = (DateTimeOffset.Now).ToUniversalTime();
+                        existingOrderInfo.LastUpdateTime = (DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                         existingOrderInfo.TestItemNum = item.TestItemNum;
                         existingOrderInfo.TestSampleNum = item.TestSampleNum;
                         //labtestschedule表
                         if (item.ReviewFinishTime != null)
                         {
                             existingOrderInfo.Status = 2;
-                            existingOrderInfo.ReviewFinishTime = (item.ReviewFinishTime.Value).ToUniversalTime();
-                            existingOrderSchedule.ReviewFinishTime = (item.ReviewFinishTime.Value).ToUniversalTime();
+                            existingOrderInfo.ReviewFinishTime = (item.ReviewFinishTime.Value).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                            //existingOrderSchedule.ReviewFinishTime = (item.ReviewFinishTime.Value).ToUniversalTime();
                         }
                         if (item.LabOutTime != null)
                         {
                             existingOrderInfo.Status = 3;
-                            existingOrderInfo.LabOutTime = (item.LabOutTime.Value).ToUniversalTime();
-                            existingOrderSchedule.LabOutTime = (item.LabOutTime.Value).ToUniversalTime();
+                            existingOrderInfo.LabOutTime = (item.LabOutTime.Value).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                            //existingOrderSchedule.LabOutTime = (item.LabOutTime.Value).ToUniversalTime();
                         }
                         _db.LabTestInfos.Update(existingOrderInfo);
-                        _db.LabTestSchedules.Update(existingOrderSchedule);
+                        //_db.LabTestSchedules.Update(existingOrderSchedule);
                     }
                 }
                 // 保存更改到数据库
@@ -195,8 +195,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
 
                         if (string.IsNullOrEmpty(reason) || recordId == null) continue;
                         var orderEntity = _db.LabTestInfos.FirstOrDefault(o => o.Id == recordId);
-                        var scheduleEntity = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == recordId);
-                        if (orderEntity == null || scheduleEntity == null) continue;
+                        //var scheduleEntity = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == recordId);
+                        if (orderEntity == null/* || scheduleEntity == null*/) continue;
                         else
                         {
                             orderEntity!.IsDelete = "Y";
@@ -205,7 +205,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var groupdeleteHistory = new AuditHistory
                         {
                             ChangeHistoryId = new SnowflakeIdGenerator().NextId(),
-                            ContactTable = "LabTestInfo & LabTestSchedule",
+                            ContactTable = "LabTestInfo",
                             ContactId = recordId,
                             ReportNumber = orderEntity.ReportNumber,
                             LastChangeTime = DateTimeOffset.Now,
@@ -215,7 +215,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         {
                             ChangeRecordId = new SnowflakeIdGenerator().NextId(),
                             ChangeHistoryIndex = groupdeleteHistory.ChangeHistoryId,
-                            TableName = "LabTestInfo & LabTestSchedule",
+                            TableName = "LabTestInfo",
                             ChangePerson = user!.NickName,
                             ChangeTime = DateTimeOffset.Now,
                             Remark = reason,
@@ -467,9 +467,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             if (time == null) time = DateTimeOffset.Now;
 
             // 获取基础查询数据
-            var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db);
-            var commonIds = infoQuery.Select(o => o.Id).ToList();
-            var filteredInfo = infoQuery.Where(o => o.IsDelete == "N").ToList();
+            var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db).ToList();
 
             // 获取所有查询类型
             var queryTypes = new[] { "needLabOut", "actuallyLabOut", "delayLabOut", "inAdvanceLabOut" };
@@ -483,12 +481,12 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             Func<string, int> calculateCount = (type) =>
             {
                 var query = queries[type];
-                var queryIds = query.Select(q => q.Id).ToHashSet(); // 提取 query 中的 Id 并去重
+                var queryIds = query.Select(q => q.Id).ToHashSet(); // 提取 query 中的 Id 并去重，提取字典中每个type的id并且去重
 
                 if (group.ToLower() == "all")
                 {
                     // 如果 group 是 "all"，则按 ReportNumber 分组并判断状态
-                    var reportNumbers = filteredInfo.GroupBy(fi => fi.ReportNumber)
+                    var reportNumbers = infoQuery.GroupBy(fi => fi.ReportNumber)
                                                     .Select(g => new
                                                     {
                                                         ReportNumber = g.Key,
@@ -501,7 +499,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 else
                 {
                     // 否则直接计算去重后的数量
-                    var intersection = filteredInfo.Where(fi => queryIds.Contains(fi.Id)).Select(fi => fi.Id).Distinct();
+                    var intersection = infoQuery.Where(fi => queryIds.Contains(fi.Id)).Select(fi => fi.Id).Distinct();
                     return intersection.Count();
                 }
             };
@@ -533,35 +531,19 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     return "inAdvanceLabOut";
                 }
 
-                // 其他情况算作 Normal
-                return "needLabOut";
+                // 如果有任何一个 Id 是 needLabOut，整体算作 needLabOut
+                if (groupIds.Any(id => queryIds.Contains(id) && queries["needLabOut"].Any(q => q.Id == id)))
+                {
+                    return "needLabOut";
+                }
+                else { return null; }
             }
 
-            Func<string, int?> calculateNumOfSamples = (type) =>
-            {
-                var query = queries[type];
-                var intersection = filteredInfo.Select(x => x.Id);
+            var TimeQuery = _orderReportingQueryProvider.QuerySelect(time, timeType, "needLabOut", _db).ToList();
+            var info = infoQuery.Where(x => TimeQuery.Any(y => x.Id == y.Id)).ToList();//取出时间与小组的交集
 
-                // 获取交集对应的记录
-                var filteredRecords = filteredInfo.Where(x => intersection.Contains(x.Id)).ToList();
-
-                // 获取对应的 LabTestInfo 记录并累加 NumOfSample
-                var totalNumOfSamples = _db.LabTestInfos
-                    .Where(info => filteredRecords.Any(r => r.Id == info.ScheduleIndex))
-                    .Sum(info => info.TestSampleNum);
-
-                return totalNumOfSamples;
-            };
-
-            // 添加 x 和 filteredInfo 的交集计算
-            var x = _orderReportingQueryProvider.QueryTimeInfo(time, timeType, "ReportDueDate", _db);
-            var xIntersection = filteredInfo.Select(f => f.Id)
-                .ToList();
-
-            // 计算 x 和 filteredInfo 交集对应的 NumOfSample 总和
-            var xTotalNumOfSamples = _db.LabTestInfos
-                .Where(info => xIntersection.Contains(info.ScheduleIndex))
-                .Sum(info => info.TestSampleNum);
+            // 计算 交集对应的 NumOfSample 总和
+            var xTotalNumOfSamples = info.Sum(item => item.TestSampleNum ?? 0);
 
 
             // 构建输出结果
@@ -586,9 +568,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
         /// <returns></returns>
         public async Task<OrderFanCardOutput> OrderfanCardAsync(DateTimeOffset time, string group, string timeType) 
         {
-            var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db);
-            var commonIds = infoQuery.Select(o => o.Id).ToList();
-            var filteredInfo = infoQuery.Where(o => o.IsDelete == "N").ToList();
+            var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db).ToList();
 
             // 获取所有查询类型
             var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut" };
@@ -607,7 +587,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 if (group.ToLower() == "all")
                 {
                     // 如果 group 是 "all"，则按 ReportNumber 分组并判断状态
-                    var reportNumbers = filteredInfo.GroupBy(fi => fi.ReportNumber)
+                    var reportNumbers = infoQuery.GroupBy(fi => fi.ReportNumber)
                                                     .Select(g => new
                                                     {
                                                         ReportNumber = g.Key,
@@ -620,7 +600,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 else
                 {
                     // 否则直接计算去重后的数量
-                    var intersection = filteredInfo.Where(fi => queryIds.Contains(fi.Id)).Select(fi => fi.Id).Distinct();
+                    var intersection = infoQuery.Where(fi => queryIds.Contains(fi.Id)).Select(fi => fi.Id).Distinct();
                     return intersection.Count();
                 }
             };
@@ -642,8 +622,12 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     return "inAdvanceLabOut";
                 }
 
-                // 其他情况算作 Normal
-                return "needLabOut";
+                // 如果有任何一个 Id 是 needLabOut，整体算作 needLabOut
+                if (groupIds.Any(id => queryIds.Contains(id) && queries["needLabOut"].Any(q => q.Id == id)))
+                {
+                    return "needLabOut";
+                }
+                else { return null; }
             }
             return new OrderFanCardOutput {
                 Delay = calculateCount("delayLabOut"),

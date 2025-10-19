@@ -32,6 +32,8 @@ public partial class WetParameterIso : IWetParam
 
     public string? SteelBallType { get; set; }
 
+    public string? Detergent { get; set; }
+
     public string? Ballast { get; set; }
 
     public int? AfterWash { get; set; }
