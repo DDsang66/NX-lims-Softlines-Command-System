@@ -75,6 +75,7 @@ namespace NX_lims_Softlines_Command_System
                                        "http://localhost:82",
                                        "http://localhost:81",
                                        "http://192.168.255.8:82",
+                                       "http://192.168.255.8:5051",
                                        "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
