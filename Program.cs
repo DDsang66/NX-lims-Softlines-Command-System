@@ -74,6 +74,7 @@ namespace NX_lims_Softlines_Command_System
                     policy.WithOrigins("http://localhost:5173",
                                        "http://localhost:82",
                                        "http://localhost:81",
+                                       "http://192.168.255.8:82",
                                        "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()

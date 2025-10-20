@@ -587,7 +587,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["E4"] = (w, dto, reportNo) => w.Program!;
                     map["M5"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["K4"] = (w, dto, reportNo) => w.DryCondition!;
-
                     map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
 
                 }
@@ -605,6 +604,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AF14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["L25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["AF25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["V5"] = (w, dto, reportNo) => w.Iron ?? "/";
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
@@ -613,6 +613,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AB9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["AG11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     map["AL11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                    map["V5"] = (w, dto, reportNo) => w.Iron ?? "/";
                 }
                 return map;
             },
@@ -640,7 +641,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["B4"] = (w, dto, reportNo) => w!.Program!,
                 ["F4"] = (w, dto, reportNo) => w!.Temperature!,
                 ["H5"] = (w, dto, reportNo) => w!.SteelBallNum.ToString()!,
-                ["J5"] = (w, dto, reportNo) => w!.WashingProcedure!.Contains("Hand Wash Cold") ? "Rubbow" : "Steel"
+                ["J5"] = (w, dto, reportNo) => w!.SteelBallType!,
+                ["I4"] = (w, dto, reportNo) => w!.Detergent!,
             },
             ["CF to Rubbing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
             {
@@ -684,6 +686,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["U32"] = (w, dto, reportNo) => w.Temperature!;
                     map["A33"] = (w, dto, reportNo) => w.Cycle!;
                     map["M33"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["V33"] = (w, dto, reportNo) => w.Iron ?? "/";
                 }
                 else if (w.WashingProcedure.Contains("Hand"))
                 {

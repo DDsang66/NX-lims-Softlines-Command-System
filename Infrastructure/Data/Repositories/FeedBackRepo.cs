@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Interfaces.Controllers;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model;
+using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
 {
@@ -17,23 +18,29 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             _db = db;
         }
 
-        public async Task<string?> Post(FeedBackDto input)
+        public async Task<bool?> Post(FeedBackDto input)
         {
-            if (input == null) return "Fail";
-            var feedback = new Feeback
+            if (input == null) return false;
+            var snowflake = new SnowflakeIdGenerator();
+            long snowId = snowflake.NextId();
+            var user = _db.Users.FirstOrDefault(u=>u.UserId == input.UserId!);
+            if (user == null) return false;
+            var feedback = new Feedback
             {
-                Status = 0,
-                Message = input.Message,
-                Type = 1,
-                CreateTime = DateTime.Now,
-                Assignee = input.Assignee,
+                Id = snowId,
+                Status = "In Process",
+                CreateTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
+                IsDone = "N",
+                Type = input.Type,
+                FeedbackDetail = input.FeedbackDetail,
+                Applicant = user.NickName
             };
-            return "Success";
+            return true;
         }
 
         public async Task<object?> Get()
         {
-            var feedbacks = _db.Feedbacks.Select(f => f.Status == 0).ToArray();
+            var feedbacks = _db.Feedbacks.ToArray();
             return feedbacks;
         }
 

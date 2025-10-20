@@ -7,13 +7,15 @@ public partial class Feedback
 {
     public long Id { get; set; }
 
-    public byte? Type { get; set; }
+    public string? Type { get; set; }
 
-    public string? Message { get; set; }
+    public string? FeedbackDetail { get; set; }
 
-    public byte? Status { get; set; }
+    public string? Status { get; set; }
 
-    public DateTime? CreateTime { get; set; }
+    public DateTimeOffset? CreateTime { get; set; }
 
-    public string? Assignee { get; set; }
+    public string? IsDone { get; set; }
+
+    public string? Applicant { get; set; }
 }

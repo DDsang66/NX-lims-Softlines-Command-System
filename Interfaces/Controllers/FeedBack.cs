@@ -21,13 +21,17 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpPost("post")]
         public async Task<IActionResult> Post([FromBody] FeedBackDto dto)
         {
-            string? result = await _service.Post(dto);
-            return Ok(new { success = true });
+            bool? result =await _service.Post(dto);
+            if (result == true) 
+            {
+                return Ok(new { success = true });
+            }
+            return Ok(new { success = false });
         }
 
 
         [HttpGet("get")]
-        public async Task<IActionResult> Get([FromBody] FeedBackDto dto)
+        public async Task<IActionResult> Get()
         {
             var result = await _service.Get();
             return Ok(new { success = true, data = result });

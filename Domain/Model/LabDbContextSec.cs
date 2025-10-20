@@ -46,6 +46,10 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=GUANGXDDCHEN\\SQLEXPRESS;Database=NX-lims Lab Command Sys;Trusted_Connection=True;TrustServerCertificate=True");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -178,21 +182,30 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
                 .HasColumnName("id");
-            entity.Property(e => e.Assignee)
+            entity.Property(e => e.Applicant)
                 .HasMaxLength(50)
-                .HasColumnName("assignee");
+                .IsUnicode(false)
+                .HasColumnName("applicant");
             entity.Property(e => e.CreateTime)
                 .HasColumnType("datetime")
                 .HasColumnName("create_time");
-            entity.Property(e => e.Message)
+            entity.Property(e => e.FeedbackDetail)
                 .HasMaxLength(255)
                 .IsUnicode(false)
-                .HasColumnName("message");
+                .HasColumnName("feedback_detail");
+            entity.Property(e => e.IsDone)
+                .HasMaxLength(5)
+                .IsUnicode(false)
+                .HasColumnName("is_done");
             entity.Property(e => e.Status)
-                .HasDefaultValue((byte)0)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValueSql("((0))")
                 .HasColumnName("status");
             entity.Property(e => e.Type)
-                .HasDefaultValue((byte)3)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValueSql("((3))")
                 .HasColumnName("type");
         });
 

@@ -2,10 +2,8 @@
 {
     public class FeedBackDto
     {
-        public string? Subject { get; set; }
-        public string? Message { get; set; }
-        public string? User { get; set; }
-        public string? Email { get; set; }
-        public string? Assignee { get; set; }
+        public string? Type { get; set; }
+        public string? FeedbackDetail { get; set; }
+        public string? UserId { get; set; }
     }
 }

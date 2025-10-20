@@ -13,11 +13,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.UserService
         {
             _repo = repo;
         }
-        public async Task<string?> Post([FromBody] FeedBackDto infoDto)
+        public async Task<bool?> Post([FromBody] FeedBackDto infoDto)
         {
             try
             {
-                string? res = await _repo.Post(infoDto);
+                bool? res = await _repo.Post(infoDto);
                 return res;
             }
             catch (Exception ex)
@@ -25,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.UserService
                 // 记录异常信息
                 Console.WriteLine($"Error in ShowItem: {ex.Message}");
                 // 返回一个空列表或抛出自定义异常
-                return null;
+                return false;
             }
         }
         public async Task<object?> Get()

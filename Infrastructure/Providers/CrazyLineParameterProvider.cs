@@ -23,7 +23,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure.Contains("Cold") == true ? "88" : "105",
                 Program = p.WashingProcedure.Contains("Cold") == true ? "1B" : "1A",
+                Detergent = "0.37",
                 SteelBallNum = 10,
+                SteelBallType = p.WashingProcedure.Contains("Cold") == true ? "Steel" : "Rubbow",
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
             },
             ("CF to Washing", _, _) => new WetParameterAatcc
@@ -35,7 +37,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : p.WashingProcedure!.Contains("Warm") ? "105"
                 : "0",
                 Program = p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm") ? "ref 2A" : "",
-                SteelBallNum = p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm") ? 50 : 0
+                Detergent = "0.15",
+                SteelBallNum = p.WashingProcedure!.Contains("Cold") || p.WashingProcedure!.Contains("Warm") ? 50 : 0,
+                SteelBallType = "Steel"
             },
             ("DS to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
@@ -46,7 +50,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
-                Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool Iron" : null
+                //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
+                SpecialCareInstruction = p.Sci ?? null
             },
             ("DS to Washing", _, _) => new WetParameterAatcc
             {
@@ -66,7 +71,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
-                Iron =  _helper.CompositionRate(p.FiberContent!,"Viscose") == 100 ? "Cool Iron" : null
+                //Iron =  _helper.CompositionRate(p.FiberContent!,"Viscose") == 100 ? "Cool" : null,
+                SpecialCareInstruction = p.Sci ?? null
             },
             ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
@@ -84,7 +90,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
-                Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool Iron" : null
+                //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
+                SpecialCareInstruction = p.Sci ?? null
             },
             ("Spriality/Skewing", _, _) => new WetParameterAatcc
             {
@@ -104,7 +111,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
-                Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool Iron" : null
+                //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
+                SpecialCareInstruction = p.Sci ?? null
             },
             _ => new WetParameterAatcc
             {
