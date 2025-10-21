@@ -33,9 +33,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
-                + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
-                + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null
             },
             ("Appearance", var add) when add?.Contains("Garment") == true => new WetParameterIso
@@ -62,9 +62,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
                 AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
-                + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
-                + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)"
             },
             ("Spriality/Skewing", var add) when add?.Contains("Garment") == true => new WetParameterIso
             {

@@ -120,7 +120,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     // 否则比较与 ReportDueDate
                     query = baseQuery.Where(o =>
                         !o.LabOutTime.HasValue ?
-                            o.ReportDueDate!.Value < DateTime.Now :
+                            o.ReportDueDate!.Value < DateTimeOffset.Now :
                             o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date
                     );
                     break;

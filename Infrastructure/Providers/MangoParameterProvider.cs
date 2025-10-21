@@ -42,9 +42,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)
-                + _helper.IsCompositionSourceExist("Vegetable", p.FiberContent!)
-                + _helper.IsCompositionSourceExist("Man-made", p.FiberContent!) >= 51 ? "Type I (100% cotton)" : "Type III (100% polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)>=51? "Type I (100% Cotton)"
+                :_helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >=51? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)"
             },
             ("DS to Dry-clean", _, _) => new WetParameterIso
             {
