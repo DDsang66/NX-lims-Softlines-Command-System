@@ -111,7 +111,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
                     query = baseQuery.Where(o => o.LabOutTime.HasValue &&
                                                            o.ReportDueDate.HasValue &&
-                                                           o.LabOutTime.Value.Date < o.ReportDueDate.Value.Date);
+                                                           o.LabOutTime.Value.Date < o.ReportDueDate.Value.Date.AddDays(1));
                     break;
                 case "delaylabout":
                     baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
@@ -120,15 +120,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     // 否则比较与 ReportDueDate
                     query = baseQuery.Where(o =>
                         !o.LabOutTime.HasValue ?
-                            o.ReportDueDate!.Value < DateTimeOffset.Now :
-                            o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date
+                            o.ReportDueDate!.Value < DateTimeOffset.Now:
+                            o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date.AddDays(1)
                     );
                     break;
                 case "inadvancelabout":
                     baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
                     query = baseQuery.Where(o => o.LabOutTime.HasValue &&
                                                            o.ReportDueDate.HasValue &&
-                                                           o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date);
+                                                           (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date ||
+                                                           o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date) );
                     break;
             }
             return query;

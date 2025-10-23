@@ -452,15 +452,26 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["F3"] = (dto, reportNo) => dto.Standard!,
                 ["D4"] = (dto, reportNo) => dto.Parameter!
             },
-            ["Extension and Recovery"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
+            ["Extension and Recovery"] = (dto, reportNo) =>
             {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => dto.Standard!,
-                ["A5"] = (dto,reportNo)=> dto.sampleDescription!.Contains("Woven")?
-                "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.": 
-                "Knitted Fabric: method A---Stripe trials   Guage length=100mm  Speed =500mm/min.",
-                ["F7"] = (dto, reportNo) => "3",
-                ["N7"] = (dto, reportNo) => "5"
+                 var map = new Dictionary<string, Func<CheckListDto, string, string>>();
+                map["M1"] = (dto, reportNo) => reportNo;
+                map["A3"] = (dto, reportNo) => dto.Standard!;
+                if (dto.sampleDescription!.Contains("Woven"))
+                {
+                    map["A5"] = (dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
+                    "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min"
+                    : "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
+                }
+                else if (dto.sampleDescription!.Contains("Knit"))
+                {
+                    map["A5"] = (dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
+                    "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
+                    "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
+                }
+                map["F7"] = (dto, reportNo) => "3";
+                map["N7"] = (dto, reportNo) => "5";
+                return map;
             },
             ["Abrasion Resistance"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {

@@ -48,7 +48,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
                 : p.SampleDescription!.Contains("5 Wash") ? 5
                 : p.SampleDescription!.Contains("3 Wash") ? 3
-                : p.SampleDescription!.Contains("10 Wash") ? 10 : 20,
+                : p.SampleDescription!.Contains("10 Wash") ? 10
+                : p.SampleDescription!.Contains("15 Wash") ? 15
+                : 20,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash",

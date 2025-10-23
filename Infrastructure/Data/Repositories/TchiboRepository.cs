@@ -53,7 +53,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                 Type = item.Type,
                                 Parameter = null
                             });
-
                         }
                     }
                     catch (Exception ex)
@@ -61,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                         System.Diagnostics.Debug.WriteLine($"Error processing standard {standard}: {ex.Message}");
                     }
                 }
-
+                checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
 
                 return checkLists;
             }
@@ -75,7 +74,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "Appearance" ,"CF to Sublimation in Storage", "CF to Hot Pressing" , "Absorbency" }
+            if (!new[] { "CF to Washing", "DS to Washing" ,"Appearance","CF to Sublimation in Storage", "CF to Hot Pressing" , "Absorbency" }
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos

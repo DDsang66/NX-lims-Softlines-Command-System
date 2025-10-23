@@ -63,7 +63,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                         System.Diagnostics.Debug.WriteLine($"Error processing standard {standard}: {ex.Message}");
                     }
                 }
-
+                checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
 
                 return checkLists;
             }

@@ -1241,7 +1241,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             // 添加delay条件
                             var delayQuery = filteredInfo.Where(o =>
                                 !o.LabOutTime.HasValue ?
-                                    o.ReportDueDate!.Value < DateTime.Now :
+                                    o.ReportDueDate!.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8)) < DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8)) :
                                     o.LabOutTime.Value > o.ReportDueDate!.Value
                                 && o.ReportDueDate.HasValue &&
                                 o.ReportDueDate.Value >= firstDayOfYear &&

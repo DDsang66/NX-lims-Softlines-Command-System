@@ -333,7 +333,15 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 else
                 {
                     string newSheetName = $"{tplName} ({idx + 1})";
-                    ws = pkg.Workbook.Worksheets.Copy(tplName, newSheetName);
+                    // 检查是否已经存在同名的 sheet
+                    if (pkg.Workbook.Worksheets.Any(ws => ws.Name == newSheetName))
+                    {
+                        ws = pkg.Workbook.Worksheets[newSheetName];
+                    }
+                    else
+                    {
+                        ws = pkg.Workbook.Worksheets.Copy(tplName, newSheetName);
+                    }
                 }
 
                 /* 计算当前 sheet 要写的样本区间 */

@@ -81,7 +81,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         private static ParamDto CreateResponse(string itemName, WetParameterIso p, string Param) => itemName switch
         {
             "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
-            "Appearance" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, p.Program, p.AfterWash, p.Bleach),
+            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, p.Program, p.AfterWash, p.Bleach),
             "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null),
             "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Air Permeability" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
@@ -97,6 +97,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "CF to Sweat" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "CF to Water" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Appearance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };
     }

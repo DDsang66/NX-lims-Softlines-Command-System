@@ -1,0 +1,216 @@
+﻿namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
+{
+    public static class ExcelTchiboMapper
+    {
+        #region WET
+        public static string[] MapAppearance()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "BA5", "BK13"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] MapDStoWashing(string sampleDescription)
+        {
+            List<string> stringMap=null;
+            if (sampleDescription.Contains("Fabric"))
+            {
+                stringMap = new List<string> { "AZ7", "BG7", "BN7", "BU7", "AW11", "BO11", "AW22", "BO22" };
+            }
+            else 
+            {
+                stringMap = new List<string> { "G9"};
+            }
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+        public static string[] MapCFtoWashing()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D7", "F7", "H7", "L7", "N7", "P7"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] MapCFtoRubbing()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D21", "F21", "H21", "L21", "N21", "P21"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] MapCFtoLight()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "C30","D30", "F30", "H30", "L30", "N30", "P30"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] MapCFtoPerspiration()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D5", "F5", "H5", "J5", "L5", "N5","D14", "F14", "H14", "J14", "L14", "N14"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+        public static string[] MapCFtoWater()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D26", "F26", "H26", "J26", "L26", "N26"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+        public static string[] MapCFtoSalivaSweat()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D4", "F4", "H4", "J4", "L4", "N4"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] MapCFtoSublimation()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "G5", "J5", "M5", "P5", "S5"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] MapCFtoHotPressing()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D16", "F16", "H16", "J16", "L16","N16","P16","R16","T16"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+        public static string[] MapCFtoCl()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D30", "G30", "J16", "M30", "P30", "S16"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        #endregion
+        //Physics
+        public static string[] MapWeight()
+        {
+            return new string[]
+            {
+                "A12", "A13", "A14", "A15","A16"
+            };
+        }
+
+        public static string[] MapYarnCount()
+        {
+            return new string[]
+            {
+                "D10"
+            };
+        }
+        public static string[] MapPilling()
+        {
+            return new string[]
+            {
+                "A8","A15"
+            };
+        }
+
+        public static string[] MapZipperStrength()
+        {
+            return new string[]
+            {
+                "D5"
+            };
+        }
+        public static string[] MapUnsnapping()
+        {
+            return new string[]
+            {
+                "D5"
+            };
+        }
+
+        public static string[] MapExtensionAndRecovery()
+        {
+            return new string[]
+            {
+                "D37"
+            };
+        }
+        public static string[] MapHydrostaticPressing()
+        {
+            return new string[]
+            {
+                "A12","A14","A20","A22","A28","A30","A36","A38"
+            };
+        }
+        public static string[] MapAirPermeability()
+        {
+            return new string[]
+            {
+                "D10"
+            };
+        }
+
+        public static string[] MapAbsorbency()
+        {
+            return new string[]
+            {
+                "A10","A11","A12","A13","A14","A15"
+            };
+        }
+
+        public static string[] MapAttachmentStrength()
+        {
+            return new string[]
+            {
+                "AC3"
+            };
+        }
+        public static string[] MapDensity()
+        {
+            return new string[]
+            {
+                "A10","A14"
+            };
+        }
+
+        public static string[] MapSeamSlippage(string sampleDescription)
+        {
+            List<string> stringMap = null;
+            if (sampleDescription.Contains("Fabric"))
+            {
+                stringMap = new List<string> { "A10", "A12"};
+            }
+            else
+            {
+                stringMap = new List<string> { "D3" };
+            }
+            return stringMap?.ToArray() ?? new string[0];
+        }
+    }
+}

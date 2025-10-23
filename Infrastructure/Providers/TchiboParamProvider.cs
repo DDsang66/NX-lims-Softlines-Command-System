@@ -1,4 +1,5 @@
 ﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Presentation;
 using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
@@ -47,9 +48,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 AfterWash = 10,
-                SpecialCareInstruction = p.SampleDescription ?? null
+                SpecialCareInstruction = p.Sci ?? null
             },
-            ("Appearance", _, _) => new WetParameterIso
+            ("DS to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -61,10 +62,29 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
                 : p.SampleDescription!.Contains("5 Wash") ? 5
-                : p.SampleDescription!.Contains("10 Wash") ? 10 : 20,
-                Program = "900rpm",
-                Bleach = GetDetergent(p.SampleDescription!, p.Detergent),
-                SpecialCareInstruction = p.SampleDescription ?? null
+                : p.SampleDescription!.Contains("3 Wash") ? 3
+                : p.SampleDescription!.Contains("10 Wash") ? 10 
+                : p.SampleDescription!.Contains("15 Wash") ? 15
+                : 20,
+                Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
+                SpecialCareInstruction = p.Sci ?? null
+            },
+            ("Appearance", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
+                : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
+                : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
+                : "Wollens procedure",
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                //AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
+                //: p.SampleDescription!.Contains("5 Wash") ? 5
+                //: p.SampleDescription!.Contains("10 Wash") ? 10 : 20,
+                AfterWash = 10,
+                Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
+                SpecialCareInstruction = p.Sci ?? null
             },
             ("CF to Sublimation in Storage", _, _) => new WetParameterIso
             {
@@ -101,6 +121,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 Limit = Limitation(ItemName, infoDto.sampleDescription!);
             }
+
+            if (ItemName == "Extension and Recovery") 
+            {
+                var content = _helper.CompositionRate(infoDto.fiberComposition!, "Elastane");
+                if (infoDto.sampleDescription!.Contains("Woven") ){ Limit = "Woven"; }
+                else if (infoDto.sampleDescription!.Contains("Knit"))
+                {
+                    if (content <= 5)
+                    { Limit = infoDto.sampleDescription.Contains("Strip")?"3": infoDto.sampleDescription.Contains("Loop")?"6":null; }
+                    else if(content<12&&content>5)
+                    {Limit = infoDto.sampleDescription.Contains("Strip") ? "4" : infoDto.sampleDescription.Contains("Loop") ? "8" : null;}
+                    else if(content>=12&&content<=20)
+                    {Limit = infoDto.sampleDescription.Contains("Strip") ? "5" : infoDto.sampleDescription.Contains("Loop") ? "10" : null;}
+                    else if (content >20)
+                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "7" : infoDto.sampleDescription.Contains("Loop") ? "14" : null; }
+                }
+            }
+
+
             string menuName = infoDto.menuName!;
             if (menuName == null) { return null; }
             // 2. 根据 Menu/Item 组合查表
@@ -111,16 +150,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         private static readonly Dictionary<(string Menu, string Item, string? Lv), string?> _map = new()
         {
             //CF to Water有一个五级
-            [("Regular(Tchibo)", "CF to Light", "L-5")] = "Limit: 5",
-            [("Regular(Tchibo)", "CF to Light", "L-4")] = "Limit: 4",
-            [("Regular(Tchibo)", "CF to Light", "L-3")] = "Limit: 3",
-            [("Regular(Tchibo)", "CF to Saliva", null)] = "Limit: 5",
-            [("Regular(Tchibo)", "CF to Sweat", null)] = "Limit: 5",
-            [("Regular(Tchibo)", "CF to Water", "L-5")] = "Limit: 5",
+            [("Regular(Tchibo)", "CF to Light", "L-5")] = "L-5",
+            [("Regular(Tchibo)", "CF to Light", "L-4")] = "L-4",
+            [("Regular(Tchibo)", "CF to Light", "L-3")] = "L-3",
+            [("Regular(Tchibo)", "CF to Saliva", null)] = "L-5",
+            [("Regular(Tchibo)", "CF to Sweat", null)] = "L-5",
+            [("Regular(Tchibo)", "CF to Water", "L-5")] = "L-5",
             [("Regular(Tchibo)", "Seam Slippage", null)] = "Load: 16N",
+            [("Regular(Tchibo)", "Appearance", null)] = "In house method",
             [("Regular(Tchibo)", "Pilling Resistance", null)] = "Cycle: 2000r",
             [("Regular(Tchibo)", "Air Permeability", null)] = "Area 20cm², P: 100Pa",
-            [("Regular(Tchibo)", "Extension and Recovery", null)] = "Load: 3daN,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "Woven")] = "Load: 30N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "3")] = "Load: 3N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "4")] = "Load: 4N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "5")] = "Load: 5N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "6")] = "Load: 6N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "7")] = "Load: 7N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "8")] = "Load: 8N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "10")] = "Load: 10N,Cycle: 5",
+            [("Regular(Tchibo)", "Extension and Recovery", "14")] = "Load: 14N,Cycle: 5",
         };
 
         private static string? GetParameter(string menu, string item, string? lv)

@@ -14,6 +14,7 @@ using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using NX_lims_Softlines_Command_System.Data.Repositories;
+using NX_lims_Softlines_Command_System.Application.Services.UserService;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -37,6 +38,7 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<IPrintExcelStrategyFactory, PrintExcelStrategyFactory>();
             builder.Services.AddScoped<ExcelHelper>();
             builder.Services.AddScoped<OrderService>();
+            builder.Services.AddScoped<FeedBackService>();
             builder.Services.AddScoped<OrderRepo>();
             builder.Services.AddScoped<OrderQueryProvider>();
             builder.Services.AddScoped<OrderReportingQueryProvider>();
