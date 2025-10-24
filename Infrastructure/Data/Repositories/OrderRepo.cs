@@ -72,6 +72,16 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 long snowId = snowflake.NextId();
                 var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == row.Cs)!.CustomerService1;
                 var currentTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                string? remark = null;
+                if (order.Remark != null && row.Remark != null)
+                {
+                     remark = order.Remark + " - " + row.Remark;
+                }
+                else 
+                {
+                    remark = string.IsNullOrEmpty(order.Remark) ? row.Remark: order.Remark;
+                }
+
                 var orderEntity = new LabTestInfo
                 {
                     Id = snowId,
@@ -81,7 +91,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     Express = row.Express,
                     CustomerService = csName,
                     TestGroup = row.Group,
-                    Remark = string.IsNullOrEmpty(order.Remark)?row.Remark:order.Remark,
+                    Remark =remark,
                     LastUpdateTime = currentTime,
                     ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
                     OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
