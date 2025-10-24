@@ -38,7 +38,7 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<IPrintExcelStrategyFactory, PrintExcelStrategyFactory>();
             builder.Services.AddScoped<ExcelHelper>();
             builder.Services.AddScoped<OrderService>();
-            builder.Services.AddScoped<FeedBackService>();
+            //builder.Services.AddScoped<FeedBackService>();
             builder.Services.AddScoped<OrderRepo>();
             builder.Services.AddScoped<OrderQueryProvider>();
             builder.Services.AddScoped<OrderReportingQueryProvider>();
