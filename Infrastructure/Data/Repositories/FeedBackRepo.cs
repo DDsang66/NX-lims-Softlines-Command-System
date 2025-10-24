@@ -38,10 +38,23 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             return true;
         }
 
-        public async Task<object?> Get()
+        public async Task<List<FeedBackDtoResponse>>Get()
         {
             var feedbacks = _db.Feedbacks.ToArray();
-            return feedbacks;
+            var List = new List<FeedBackDtoResponse>();
+            foreach (var feedback in feedbacks) 
+            {
+                var ResponseList = new FeedBackDtoResponse
+                {
+                    Type = feedback.Type,
+                    FeedbackDetail = feedback.FeedbackDetail,
+                    Applicant = feedback.Applicant,
+                    Status = feedback.Status,
+                    UpdateTime = feedback.CreateTime
+                };
+                if (ResponseList != null) List.Add(ResponseList);
+            }
+            return List;
         }
 
     }

@@ -7,7 +7,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     public class OrderDto
     {
         public List<OrderInput>? Rows { get; set; }
-        public string? Remark { get; set; }
+        public string? Remark { get; set; } 
         public string? Id { get; set; }
     }
 
@@ -20,6 +20,8 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public int? Cs { get; set; }
         public string? Group { get; set; }
         public DateTimeOffset? LabIn { get; set; }
+        public string? Remark { get; set; }
+        //新增Remark字段，为每个Group单独提供备注,类型为string
     }
 
 

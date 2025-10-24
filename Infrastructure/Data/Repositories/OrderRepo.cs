@@ -81,22 +81,13 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     Express = row.Express,
                     CustomerService = csName,
                     TestGroup = row.Group,
-                    Remark = order.Remark,
-                    //ScheduleIndex = snowId,
+                    Remark = string.IsNullOrEmpty(order.Remark)?row.Remark:order.Remark,
                     LastUpdateTime = currentTime,
                     ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
                     OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
                     IsDelete = "N"
                 };
-
-                //var orderschedule = new LabTestSchedule
-                //{
-                //    IdSchedule = snowId,
-                //    ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime(),
-                //    OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime(),
-                //};
                 _db.LabTestInfos.Add(orderEntity);
-                //_db.LabTestSchedules.Add(orderschedule);
             }
             _db.SaveChanges();
             return true;
