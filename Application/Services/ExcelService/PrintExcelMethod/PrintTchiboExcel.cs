@@ -525,8 +525,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Perspiration"] = 6,
             ["DS to Washing"] = 4,
         };
-
-
         private void WriteSamples(
             ExcelWorksheet ws,
             string[] slice,

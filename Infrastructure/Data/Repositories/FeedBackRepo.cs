@@ -25,17 +25,26 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             long snowId = snowflake.NextId();
             var user = _db.Users.FirstOrDefault(u=>u.UserId == input.UserId!);
             if (user == null) return false;
-            var feedback = new Feedback
+            try 
             {
-                Id = snowId,
-                Status = "In Process",
-                CreateTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
-                IsDone = "N",
-                Type = input.Type,
-                FeedbackDetail = input.FeedbackDetail,
-                Applicant = user.NickName
-            };
-            return true;
+                var feedback = new Feedback
+                {
+                    Id = snowId,
+                    Status = "In Process",
+                    CreateTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
+                    IsDone = "N",
+                    Type = input.Type,
+                    FeedbackDetail = input.FeedbackDetail,
+                    Applicant = user.NickName
+                };
+                _db.Feedbacks.Add(feedback);
+                await _db.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
         }
 
         public async Task<List<FeedBackDtoResponse>>Get()

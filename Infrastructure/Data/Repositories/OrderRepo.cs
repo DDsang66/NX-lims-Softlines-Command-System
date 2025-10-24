@@ -1344,7 +1344,6 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             else if (days > 4) express = "Regular";
             return express;
         }
-
     }
 }
 
