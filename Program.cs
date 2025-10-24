@@ -15,6 +15,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using NX_lims_Softlines_Command_System.Data.Repositories;
 using NX_lims_Softlines_Command_System.Application.Services.UserService;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -30,20 +31,17 @@ namespace NX_lims_Softlines_Command_System
             var licenseType = builder.Configuration.GetValue<string>("EPPlus:License");
             ExcelPackage.License.SetNonCommercialPersonal("GuangXv Chen");
             builder.Services.AddControllers();
-
-
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddScoped<IBuyerFactory, BuyerFactory>();
             builder.Services.AddScoped<FiberContentHelper>();
             builder.Services.AddScoped<IPrintExcelStrategyFactory, PrintExcelStrategyFactory>();
             builder.Services.AddScoped<ExcelHelper>();
             builder.Services.AddScoped<OrderService>();
-            //builder.Services.AddScoped<FeedBackService>();
+            builder.Services.AddScoped<FeedBackService>();
+            builder.Services.AddScoped<FeedBackRepo>();
             builder.Services.AddScoped<OrderRepo>();
             builder.Services.AddScoped<OrderQueryProvider>();
             builder.Services.AddScoped<OrderReportingQueryProvider>();
-
-            // 扫描所有实现 IPrintExcelStrategy 的非抽象类
             builder.Services.AddSingleton<JwtService>();
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -131,10 +129,7 @@ namespace NX_lims_Softlines_Command_System
             app.UseCors("VueDev");
             app.UseAuthentication();
             app.UseAuthorization();
-
-
             app.MapControllers();
-
             app.Run();
         }
     }

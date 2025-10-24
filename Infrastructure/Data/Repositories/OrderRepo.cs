@@ -248,7 +248,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             // 2. 异步查询并投射
             var flat = await (
                 from o in _db.LabTestInfos
-                where o.OrderEntryPerson == user.NickName && o.IsDelete == "N"
+                where o.OrderEntryPerson == user.NickName && o.IsDelete == "N" && o.OrderInTime!.Value.Date == DateTimeOffset.Now.Date
                 select new
                 {
                     o.Id,
