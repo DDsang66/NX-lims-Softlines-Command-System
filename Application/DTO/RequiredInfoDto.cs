@@ -1,4 +1,6 @@
-﻿namespace NX_lims_Softlines_Command_System.Application.DTO
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+
+namespace NX_lims_Softlines_Command_System.Application.DTO
 {
     public class RequiredInfoDto
     {
@@ -19,6 +21,7 @@
         public string? bleachProcedure { get; set; }
 
         public string? detergent{ get; set; }
+        public List<string>? afterWash { get; set; }
         public List<FiberDto>? fiberComposition { get; set; }
 
         public string? additionalRequire { get; set; }

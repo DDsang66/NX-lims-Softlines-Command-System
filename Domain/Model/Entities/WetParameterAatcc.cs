@@ -40,7 +40,7 @@ public partial class WetParameterAatcc:IWetParam
 
     public string? Sensitive { get; set; }
 
-    public int? AfterWash { get; set; }
+    public string? AfterWash { get; set; }
 
     public string? ContactItem { get; set; }
 }

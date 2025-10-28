@@ -12,7 +12,7 @@
         string? WashingProcedure,
         string? IsSensitive,
         string? Cycle,
-        int? AfterWash,
+        string? AfterWash,
         string? Param
         );
 }

@@ -58,6 +58,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             Bleach = infoDto.bleachProcedure,
                             FiberContent = infoDto.fiberComposition,
                             OrderNumber = infoDto.reportNumber,
+                            AfterWash = infoDto.afterWash,
                             DCProcedure = infoDto.dcProcedure,
                             SampleDescription = infoDto.sampleDescription,
                             ItemName = item

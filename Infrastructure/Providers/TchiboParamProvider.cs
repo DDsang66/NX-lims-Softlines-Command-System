@@ -47,7 +47,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
-                AfterWash = 10,
+                AfterWash = "10",
                 SpecialCareInstruction = p.Sci ?? null
             },
             ("DS to Washing", _, _) => new WetParameterIso
@@ -60,12 +60,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "Wollens procedure",
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
-                : p.SampleDescription!.Contains("5 Wash") ? 5
-                : p.SampleDescription!.Contains("3 Wash") ? 3
-                : p.SampleDescription!.Contains("10 Wash") ? 10 
-                : p.SampleDescription!.Contains("15 Wash") ? 15
-                : 20,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null
             },
@@ -82,9 +77,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 //AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
                 //: p.SampleDescription!.Contains("5 Wash") ? 5
                 //: p.SampleDescription!.Contains("10 Wash") ? 10 : 20,
-                AfterWash = 10,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
-                SpecialCareInstruction = p.Sci ?? null
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null
             },
             ("CF to Sublimation in Storage", _, _) => new WetParameterIso
             {

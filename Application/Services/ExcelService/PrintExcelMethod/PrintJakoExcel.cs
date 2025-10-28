@@ -310,16 +310,16 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["E7"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
                     map["U7"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
                     map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
-                    map["W9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["AB9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["AG11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["AL11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["AR8"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["BD16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["BV16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    map["BA23"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["W9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["AB9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["AG11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["AL11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["AR8"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["BD16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["BV16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
+                    //map["BA23"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
                 }
                 return map;
             },
@@ -420,7 +420,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
                 map["P1"] = (w, dto, reportNo) => reportNo;
-                map["C5"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
+                //map["C5"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["A3"] = (w, dto, reportNo) => "ISO 16322-2:2021 Method A,Option 1";

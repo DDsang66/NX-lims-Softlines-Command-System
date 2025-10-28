@@ -26,7 +26,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Detergent = "0.37",
                 SteelBallNum = 10,
                 SteelBallType = p.WashingProcedure.Contains("Cold") == true ? "Steel" : "Rubbow",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
             ("CF to Washing", _, _) => new WetParameterAatcc
             {
@@ -49,7 +49,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null
             },
@@ -70,7 +70,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 //Iron =  _helper.CompositionRate(p.FiberContent!,"Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null
             },
@@ -89,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null
             },
@@ -110,7 +110,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 3,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null
             },

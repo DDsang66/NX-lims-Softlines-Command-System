@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
@@ -61,6 +62,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             FiberContent = infoDto.fiberComposition,
                             OrderNumber = infoDto.reportNumber,
                             DCProcedure = infoDto.dcProcedure,
+                            AfterWash = infoDto.afterWash,
                             ItemName = item,
                             additionalRequire = infoDto.additionalRequire,
                             SampleDescription = infoDto.sampleDescription
@@ -80,8 +82,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         //返回前端需要的实体对象
         private static ParamDto CreateResponse(string itemName, WetParameterIso p, string Param) => itemName switch
         {
-            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
-            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, p.Program, p.AfterWash, p.Bleach),
+            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, p.Iron),
+            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, p.Program, p.AfterWash, p.Detergent),
             "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null),
             "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Air Permeability" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),

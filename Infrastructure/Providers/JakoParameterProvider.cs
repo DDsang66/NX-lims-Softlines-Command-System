@@ -32,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
@@ -45,12 +45,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
                 Temperature = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.WashingProcedure!.Contains("4") ? "40" : "30" : "40",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
-                : p.SampleDescription!.Contains("5 Wash") ? 5
-                : p.SampleDescription!.Contains("3 Wash") ? 3
-                : p.SampleDescription!.Contains("10 Wash") ? 10
-                : p.SampleDescription!.Contains("15 Wash") ? 15
-                : 20,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash",
@@ -63,7 +58,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
                 Temperature = "40",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)"
@@ -75,7 +70,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
                 Temperature = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.WashingProcedure!.Contains("4") ? "40" : "30" : "40",
-                AfterWash = p.SampleDescription!.Contains("1 Wash") == true ? 1 : 5,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash"
@@ -101,7 +96,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = "60",
                 Program = "1200 rpn, automatic time 1:20h",
                 DryProcedure = "Tumble Dry",
-                AfterWash = p.SampleDescription!.Contains("Repeat Order") == true ? 10 : 20
+                AfterWash = p.SampleDescription!.Contains("Repeat Order") == true ? "10" : "20"
             },
             ("CF to Hot Pressing", _) => new WetParameterIso
             {

@@ -34,8 +34,6 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<Menu> Menus { get; set; }
 
-    public virtual DbSet<Permission> Permissions { get; set; }
-
     public virtual DbSet<Standard> Standards { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -396,36 +394,6 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.UploadTime).HasColumnName("upload_time");
         });
 
-        modelBuilder.Entity<Permission>(entity =>
-        {
-            entity.HasKey(e => e.PermissionIndex);
-
-            entity.ToTable("permission");
-
-            entity.Property(e => e.PermissionIndex)
-                .ValueGeneratedNever()
-                .HasColumnName("permission_index");
-            entity.Property(e => e.Review)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasDefaultValue("false")
-                .HasColumnName("review");
-            entity.Property(e => e.ReviewPhysics)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasDefaultValue("false")
-                .HasColumnName("review_physics");
-            entity.Property(e => e.ReviewWet)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasDefaultValue("false")
-                .HasColumnName("review_wet");
-            entity.Property(e => e.Role)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasDefaultValue("normal")
-                .HasColumnName("role");
-        });
 
         modelBuilder.Entity<Standard>(entity =>
         {
@@ -469,7 +437,10 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.PassWord)
                 .HasColumnType("text")
                 .HasColumnName("pass_word");
-            entity.Property(e => e.PermissionIndex).HasColumnName("permission_index");
+            entity.Property(e => e.Role)
+            .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("role");
             entity.Property(e => e.Status)
                 .HasDefaultValue((byte)1)
                 .HasColumnName("status");
@@ -525,7 +496,10 @@ public partial class LabDbContextSec : DbContext
             entity.ToTable("wet_parameter_aatcc");
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
-            entity.Property(e => e.AfterWash).HasColumnName("after_wash");
+            entity.Property(e => e.AfterWash)
+            .HasMaxLength(100)
+            .IsUnicode(false)
+            .HasColumnName("after_wash");
             entity.Property(e => e.Bleach)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -600,7 +574,10 @@ public partial class LabDbContextSec : DbContext
             entity.ToTable("wet_parameter_iso");
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
-            entity.Property(e => e.AfterWash).HasColumnName("after_wash");
+            entity.Property(e => e.AfterWash)
+            .HasMaxLength(100)
+            .IsUnicode(false)
+            .HasColumnName("after_wash");
             entity.Property(e => e.Ballast)
                 .HasMaxLength(50)
                 .IsUnicode(false)

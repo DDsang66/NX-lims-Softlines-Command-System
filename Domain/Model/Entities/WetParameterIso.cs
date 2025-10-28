@@ -36,7 +36,7 @@ public partial class WetParameterIso:IWetParam
 
     public string? Ballast { get; set; }
 
-    public int? AfterWash { get; set; }
+    public string? AfterWash { get; set; }
 
     public string? Sensitive { get; set; }
 

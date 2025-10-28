@@ -35,7 +35,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             {
                 tokens,
                 user = reviewer,
-                id = user.UserId
+                id = user.UserId,
+                role = user.Role
             };
             return Ok(response);
         }
@@ -79,7 +80,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                     PassWord = hasPwd,
                     NickName = req.NickName,
                     EmployeeId = req.EmployeeId,
-                    PermissionIndex = 1,   //权限映表索引
+                    Role = "Visitor",   //角色为访客
                     CreateTime = DateTime.Now,
                     Status = 1,         //启用
                     LoginFailCount = 0

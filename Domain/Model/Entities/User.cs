@@ -15,7 +15,7 @@ public partial class User
 
     public string? EmployeeId { get; set; }
 
-    public int? PermissionIndex { get; set; }
+    public string? Role { get; set; }
 
     public byte? Status { get; set; }
 
