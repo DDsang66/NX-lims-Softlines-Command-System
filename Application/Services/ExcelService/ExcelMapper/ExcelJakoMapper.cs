@@ -263,12 +263,51 @@
                               .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
             stringSpirality = matched switch
             {
-                "Garment" => new List<string> { "A29", "A30", "A31" },
-                "Fabric" => new List<string> { "A10", "A11", "A12" },
-                _ => new List<string> { "A10", "A11", "A12" }
+                "Garment" => new List<string> { "A29"},
+                "Fabric" => new List<string> { "A10"},
+                _ => new List<string> { "A10" }
             };
             return stringSpirality?.ToArray() ?? new string[0];
         }
         #endregion
+
+
+
+
+
+        //AfterWash
+        public static string[] AppearanceAf(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "W9","AG11","AR8","BD16","BA23" },
+                "Fabric" => new List<string> { "AZ9", "AW13", "CK5", "CT13" },
+                "Socks" => new List<string> { "G10" },
+                "Gloves" => new List<string> { "G19" },
+                "Cap" => new List<string> { "G28" },
+                _ => new List<string> { "AZ9", "AW13", "CK5", "CT13" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+
+        public static string[] SpiralityAf(string sampleDescription)
+        {
+            List<string> stringSpirality;
+            var matched = new[] { "Garment", "Fabric" }
+                              .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            stringSpirality = matched switch
+            {
+                "Garment" => new List<string> { "C5" },
+                "Fabric" => new List<string> { "C5" },
+                _ => new List<string> { "C5" }
+            };
+            return stringSpirality?.ToArray() ?? new string[0];
+        }
     }
 }

@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
@@ -307,7 +308,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             PackagePhy.Save();
         }
 
-
         private void FillSheet(
             ExcelPackage pkg,
             string itemName,
@@ -320,10 +320,33 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.MenuName!);
+            string[]? AfterWashCellAddrs = null;
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            {
+                AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.MenuName!);
+            }
+
+
+
+            //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
+            int[]? afterWashMap = null;
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            {
+                var wp = _db.WetParameterIsos
+                                .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
+                if (wp == null) wp = new WetParameterIso();
+                string? afterWash = wp!.AfterWash;
+                string? iron = wp!.Iron;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!,iron);
+            }
+            //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
+
+
             int offset = OffsetRule.GetValueOrDefault(itemName, 0); // 获取偏移量，默认为0
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
-            int sheetCnt = (int)Math.Ceiling(samples.Length / (double)capacity);
+            int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
             for (int idx = 0; idx < sheetCnt; idx++)
             {
@@ -351,9 +374,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
                 /* 取本 sheet 对应的那段样本 */
                 string[] slice = samples.Skip(start).Take(count).ToArray();
-
+                int[]? afmap = null;
+                if (afterWashMap != null) afmap = afterWashMap.Skip(start).Take(count).ToArray();
                 /* 把这段样本写进去 */
-                WriteSamples(ws, slice, cellAddrs, itemName);
+                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName);
 
                 // 5) 其余参数
                 if (dto.Type == "Wet")
@@ -386,7 +410,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
             }
         }
-
 
         // 模板 sheet 名
         private static readonly Dictionary<string, string> TemplateSheetNames = new()
@@ -427,6 +450,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Abrasion Resistance"] = (n, _) => ExcelMangoMapper.GetASCellAddresses(n),
             ["Snagging Resistance"] = (n, _) => ExcelMangoMapper.GetASCellAddresses(n),
         };
+        //取洗涤遍数映射地址的函数
+        private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
+        {
+            ["DS to Washing"] = (_, _) => ExcelMangoMapper.DStoWashingAf(),
+            ["DS to Dry-clean"] = (_, _) => ExcelMangoMapper.DStoDCAf(),
+        };
+
+
 
         // 其余Wet固定/动态参数  →  (单元格, 取值Func)  
         private static readonly Dictionary<string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>> WetExtraMap = new()
@@ -556,10 +587,20 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private void WriteSamples(
             ExcelWorksheet ws,
             string[] slice,
+            int[]? afmap,
             string[] cellAddrs,
+            string[]? AfterWashCellAddrs,
             string itemName)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
+            if (afmap != null && afmap.Length > 0)
+            {
+                for (int i = 0; i < afmap.Length; i++) 
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[i];
+                }
+            }
+
             for (int i = 0; i < slice.Length; i++)
             {
                 // 写入样本数据到指定的单元格地址

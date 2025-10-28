@@ -36,7 +36,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
-                SpecialCareInstruction = p.Sci ?? null
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron =p.Iron ?? null,
             },
             ("Appearance", var add) when add?.Contains("Garment") == true => new WetParameterIso
             {
@@ -49,7 +50,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash",
-                SpecialCareInstruction = p.Sci ?? null
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null
             },
             ("Spriality/Skewing", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
             {

@@ -7,6 +7,7 @@ using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMa
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
@@ -115,14 +116,35 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
+            string[]? AfterWashCellAddrs = null;
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            {
+                AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.MenuName!);
+            }
+
+            //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
+            int[]? afterWashMap = null;
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            {
+                var wp = _db.WetParameterIsos
+                                .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
+                if (wp == null) wp = new WetParameterIso();
+                string? afterWash = wp!.AfterWash;
+                string? iron = wp!.Iron;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
+            }
+            //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
+
             int offset = 0;
             if (dto.sampleDescription!.Contains("Fabric"))
             {
                 offset = OffsetRule.GetValueOrDefault(itemName, 0);
             }// 获取偏移量，默认为0
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
-            int sheetCnt = (int)Math.Ceiling(samples.Length / (double)capacity);
+            if (itemName == "Appearance") { capacity = 1; }
+            int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
 
             List<ExcelWorksheet> sheets = new List<ExcelWorksheet>();
@@ -151,9 +173,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (count <= 0) continue;
                 /* 取本 sheet 对应的那段样本 */
                 string[] slice = samples.Skip(start).Take(count).ToArray();
-
+                int[]? afmap = null;
+                if (afterWashMap != null) afmap = afterWashMap.Skip(start).Take(count).ToArray();
                 /* 把这段样本写进去 */
-                WriteSamples(ws, slice, cellAddrs, itemName, dto.sampleDescription!);
+                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName,dto.sampleDescription);
 
                 // 5) 其余参数
                 if (dto.Type == "Wet")
@@ -287,6 +310,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelJakoMapper.HydrostaticMap(),
         };
 
+        //取洗涤遍数映射地址的函数
+        private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
+        {
+            ["Appearance"] = (_, m) => ExcelJakoMapper.AppearanceAf(m),
+            ["Spriality/Skewing"] = (_, m) => ExcelJakoMapper.SpiralityAf(m),
+        };
+
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> WetExtraMap = new()
         {
             ["Appearance"] = (w, dto, reportNo) =>
@@ -310,16 +340,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["E7"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
                     map["U7"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
                     map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
-                    //map["W9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["AB9"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["AG11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["AL11"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["AR8"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["BD16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["BM16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["BV16"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
-                    //map["BA23"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
                 }
                 return map;
             },
@@ -682,11 +702,29 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private void WriteSamples(
             ExcelWorksheet ws,
             string[] slice,
+            int[]? afmap,
             string[] cellAddrs,
+            string[]? AfterWashCellAddrs,
             string itemName,
-            string sampleDescription)
+            string SampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
+
+            if (afmap != null && afmap.Length > 0 && itemName == "Spriality/Skewing")
+            {
+                for (int i = 0; i < afmap.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[i];
+                }
+            }
+            else if (afmap != null && afmap.Length > 0 && (itemName == "Appearance"&& SampleDescription.Contains("Garment")))
+            {
+                for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
+                }
+            }
+
             if (itemName == "Appearance" || itemName == "Print Durability For JAKO")
             {
                 for (int i = 0; i < cellAddrs.Length; i++)

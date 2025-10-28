@@ -68,7 +68,6 @@
                 "D10"
             };
         }
-
         public static string[] GetWeightCellAddresses()
         {
             return new string[]
@@ -106,8 +105,6 @@
             }
             return stringST?.ToArray() ?? new string[0];
         }
-
-
         public static string[] GetASCellAddresses(string ItemName)
         {
             List<string>? stringST = null;
@@ -122,6 +119,27 @@
                 default: break;
             }
             return stringST?.ToArray() ?? new string[0];
+        }
+
+
+
+        //AfterWash
+        public static string[] DStoWashingAf() 
+        {
+            return new string[]
+            {
+                "AZ13","BR13","AZ24","BR24"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] DStoDCAf()
+        {
+            return new string[]
+            {
+                "AZ11","BR11","AZ22","BR22"
+                // 可以根据需要添加更多固定的单元格地址
+            };
         }
     }
 }

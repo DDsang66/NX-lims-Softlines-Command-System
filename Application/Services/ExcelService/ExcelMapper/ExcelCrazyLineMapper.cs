@@ -141,18 +141,67 @@
                               .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
             stringSpirality = matched switch
             {
-                "Garment" => new List<string> { "A26", "A27", "A28" },
-                "Fabric" => new List<string> { "A10", "A11", "A12" },
-                "Socks" => new List<string> { "A10", "A11", "A12" },
-                "Gloves" => new List<string> { "A10", "A11", "A12" },
-                "Cap" => new List<string> { "A10", "A11", "A12" },
-                _ => new List<string> { "A10", "A11", "A12" }
+                "Garment" => new List<string> { "A26" },
+                "Fabric" => new List<string> { "A10" },
+                "Socks" => new List<string> { "A10" },
+                "Gloves" => new List<string> { "A10"},
+                "Cap" => new List<string> { "A10"},
+                _ => new List<string> { "A10" }
             };
             return stringSpirality?.ToArray() ?? new string[0];
         }
 
         #endregion
 
+        //AfterWash
+
+        public static string[] DStoWashingAf(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "W9","AG11" },
+                "Fabric" => new List<string> { "L14", "AF14","L25", "AF25" },
+                "Socks" => new List<string> { "W9", "AG11" },
+                "Gloves" => new List<string> { "W18", "AG18" },
+                "Cap" => new List<string> { "W27", "AG27" },
+                _ => new List<string> { "L14", "AF14", "L25", "AF25" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+
+        public static string[] DStoDCAf(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "W6","AG8" },
+                "Fabric" => new List<string> { "J11", "AD11", "J22", "AD22" },
+                "Socks" => new List<string> { "W6", "AG8" },
+                "Gloves" => new List<string> { "W15", "AG15" },
+                "Cap" => new List<string> { "W24", "AG24" },
+                _ => new List<string> { "J11", "AD11", "J22", "AD22" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+
+        public static string[] SpiralityAf()
+        {
+            return new string[]
+            {
+                "C5"
+            };
+        }
 
     }
 }

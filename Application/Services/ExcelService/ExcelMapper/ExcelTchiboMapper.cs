@@ -212,5 +212,33 @@
             }
             return stringMap?.ToArray() ?? new string[0];
         }
+
+
+
+
+
+
+        //AfterWash
+        public static string[] DStoWashingAf(string sampleDescription)
+        {
+            List<string> stringMap = null;
+            if (sampleDescription.Contains("Fabric"))
+            {
+                stringMap = new List<string> { "AZ12", "BR12","AZ23","BR23" };
+            }
+            else
+            {
+                stringMap = new List<string> { "W7", "AG9" };
+            }
+            return stringMap?.ToArray() ?? new string[0];
+        }
+        public static string[] AppearanceAf()
+        {
+            return new string[]
+            {
+                "BG6","BE13"
+            };
+        }
+
     }
 }

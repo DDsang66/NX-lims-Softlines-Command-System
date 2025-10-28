@@ -48,7 +48,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 AfterWash = "10",
-                SpecialCareInstruction = p.Sci ?? null
+                SpecialCareInstruction = p.Sci ?? null,
+                Program = "900r"
             },
             ("DS to Washing", _, _) => new WetParameterIso
             {
@@ -62,7 +63,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
-                SpecialCareInstruction = p.Sci ?? null
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                Program = "900r"
             },
             ("Appearance", _, _) => new WetParameterIso
             {
@@ -74,9 +77,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "Wollens procedure",
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
-                //AfterWash = p.SampleDescription!.Contains("1 Wash") ? 1
-                //: p.SampleDescription!.Contains("5 Wash") ? 5
-                //: p.SampleDescription!.Contains("10 Wash") ? 10 : 20,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,
