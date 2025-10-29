@@ -21,6 +21,7 @@ public partial class WetParameterAatcc:IWetParam
     public string? SpecialCareInstruction { get; set; }
 
     public string? Iron { get; set; }
+    public string? IronMethod { get; set; }
 
     public string? Bleach { get; set; }
 

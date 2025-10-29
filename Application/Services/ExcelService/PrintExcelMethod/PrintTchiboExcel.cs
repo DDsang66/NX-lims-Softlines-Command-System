@@ -315,7 +315,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
-                ["BI13"] = (w, dto, reportNo) => w.Iron??"/",
+                ["BI13"] = (w, dto, reportNo) => w.IronMethod??"/",
                 ["BA38"] = (w, dto, reportNo) => w.Temperature!,
                 ["BH38"] = (w, dto, reportNo) => w.Detergent!,
                 ["AV39"] = (w, dto, reportNo) => w.WashingProcedure!,

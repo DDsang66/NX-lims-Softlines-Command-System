@@ -9,6 +9,7 @@
         public string? DCProcedure { get; set; }
         public string? Sci { get; set; }
         public string? Iron { get; set; }
+        public string? IronMethod { get; set; }
         public string? Bleach { get; set; }
         public string? Detergent { get; set; }
         public List<string>? AfterWash { get; set; }

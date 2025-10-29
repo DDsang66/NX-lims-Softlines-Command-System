@@ -18,6 +18,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? dcProcedure { get; set; }
         public string? sci { get; set; }
         public string? ironProcedure { get; set; }
+        public string? ironMethod { get; set; }
         public string? bleachProcedure { get; set; }
 
         public string? detergent{ get; set; }

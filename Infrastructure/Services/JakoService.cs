@@ -55,6 +55,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             DryProcedure = infoDto.dryProcedure,
                             Sci = infoDto.sci,
                             Iron = infoDto.ironProcedure,
+                            IronMethod = infoDto.ironMethod,
                             Bleach = infoDto.bleachProcedure,
                             FiberContent = infoDto.fiberComposition,
                             OrderNumber = infoDto.reportNumber,

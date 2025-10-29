@@ -644,7 +644,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     //map["AF14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     //map["L25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     //map["AF25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    map["V5"] = (w, dto, reportNo) => w.Iron ?? "/";
+                    map["V5"] = (w, dto, reportNo) => w.IronMethod ?? "/";
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {

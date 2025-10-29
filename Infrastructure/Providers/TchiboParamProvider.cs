@@ -49,6 +49,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "Type III (100% Polyester)",
                 AfterWash = "10",
                 SpecialCareInstruction = p.Sci ?? null,
+                IronMethod = p.IronMethod ?? null,
                 Program = "900r"
             },
             ("DS to Washing", _, _) => new WetParameterIso
@@ -65,6 +66,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
                 Program = "900r"
             },
             ("Appearance", _, _) => new WetParameterIso
@@ -80,7 +82,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,
-                Iron = p.Iron ?? null
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
             },
             ("CF to Sublimation in Storage", _, _) => new WetParameterIso
             {

@@ -532,6 +532,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("iron");
+            entity.Property(e => e.IronMethod)
+            .HasMaxLength(50)
+            .IsUnicode(false)
+            .HasColumnName("iron_method");
             entity.Property(e => e.Program)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -610,6 +614,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("program");
+            entity.Property(e => e.IronMethod)
+            .HasMaxLength(50)
+            .IsUnicode(false)
+            .HasColumnName("iron_method");
             entity.Property(e => e.ReportNumber)
                 .HasMaxLength(20)
                 .IsUnicode(false)
