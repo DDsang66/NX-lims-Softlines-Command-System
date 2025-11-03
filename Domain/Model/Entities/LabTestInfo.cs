@@ -41,5 +41,9 @@ public partial class LabTestInfo
 
     public DateTimeOffset? LabOutTime { get; set; }
 
+    public string? DelayType { get; set; }
+
+    public string? DelayReason { get; set; }
+
     public byte[] RowVersion { get; set; } = null!;
 }

@@ -107,6 +107,8 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public int? TestItemNum { get; set; }
         public string? Remark { get; set; }
         public string? Express { get; set; }
+        public string? DelayType { get; set; }
+        public string? DelayReason { get; set; }
 
         // LabTestSchedule表的字段
         public DateTimeOffset? ReportDueDate { get; set; }

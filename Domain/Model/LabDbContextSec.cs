@@ -34,6 +34,8 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<Menu> Menus { get; set; }
 
+    public virtual DbSet<PrimarkMenu> PrimarkMenus { get; set; }
+
     public virtual DbSet<Standard> Standards { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -43,6 +45,8 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
+
+ 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -178,26 +182,32 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.Applicant)
                 .HasMaxLength(50)
                 .IsUnicode(false)
+                .HasComment("申请人")
                 .HasColumnName("applicant");
             entity.Property(e => e.CreateTime)
+                .HasComment("提交时间")
                 .HasColumnName("create_time");
             entity.Property(e => e.FeedbackDetail)
                 .HasMaxLength(255)
                 .IsUnicode(false)
+                .HasComment("反馈详情")
                 .HasColumnName("feedback_detail");
             entity.Property(e => e.IsDone)
                 .HasMaxLength(5)
                 .IsUnicode(false)
+                .HasComment("是否解决")
                 .HasColumnName("is_done");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValueSql("((0))")
+                .HasComment("状态")
                 .HasColumnName("status");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasDefaultValueSql("((3))")
+                .HasComment("类型（建议、BUG）")
                 .HasColumnName("type");
         });
 
@@ -231,6 +241,14 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("customer_service");
+            entity.Property(e => e.DelayReason)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("delay_reason");
+            entity.Property(e => e.DelayType)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("delay_type");
             entity.Property(e => e.Express)
                 .HasMaxLength(10)
                 .IsUnicode(false)
@@ -394,6 +412,28 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.UploadTime).HasColumnName("upload_time");
         });
 
+        modelBuilder.Entity<PrimarkMenu>(entity =>
+        {
+            entity.HasKey(e => e.IdPrimark);
+
+            entity.ToTable("primark_menu");
+
+            entity.Property(e => e.IdPrimark)
+                .ValueGeneratedNever()
+                .HasColumnName("id_primark");
+            entity.Property(e => e.BuyerTable)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("buyer_table");
+            entity.Property(e => e.ItemName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("item_name");
+            entity.Property(e => e.StandardName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("standard_name");
+        });
 
         modelBuilder.Entity<Standard>(entity =>
         {
@@ -438,7 +478,7 @@ public partial class LabDbContextSec : DbContext
                 .HasColumnType("text")
                 .HasColumnName("pass_word");
             entity.Property(e => e.Role)
-            .HasMaxLength(50)
+                .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("role");
             entity.Property(e => e.Status)
@@ -497,9 +537,9 @@ public partial class LabDbContextSec : DbContext
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
             entity.Property(e => e.AfterWash)
-            .HasMaxLength(100)
-            .IsUnicode(false)
-            .HasColumnName("after_wash");
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("after_wash");
             entity.Property(e => e.Bleach)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -533,9 +573,9 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("iron");
             entity.Property(e => e.IronMethod)
-            .HasMaxLength(50)
-            .IsUnicode(false)
-            .HasColumnName("iron_method");
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("iron_method");
             entity.Property(e => e.Program)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -579,9 +619,9 @@ public partial class LabDbContextSec : DbContext
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
             entity.Property(e => e.AfterWash)
-            .HasMaxLength(100)
-            .IsUnicode(false)
-            .HasColumnName("after_wash");
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("after_wash");
             entity.Property(e => e.Ballast)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -610,14 +650,14 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("iron");
+            entity.Property(e => e.IronMethod)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("iron_method");
             entity.Property(e => e.Program)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("program");
-            entity.Property(e => e.IronMethod)
-            .HasMaxLength(50)
-            .IsUnicode(false)
-            .HasColumnName("iron_method");
             entity.Property(e => e.ReportNumber)
                 .HasMaxLength(20)
                 .IsUnicode(false)

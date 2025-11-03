@@ -33,6 +33,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                     return new JakoBuyer(new JakoService(new JakoRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "Tchibo":
                     return new TchiboBuyer(new TchiboService(new TchiboRepository(_dbContext, _fiberHelper), _fiberHelper));
+                case "Primark":
+                    return new PrimarkBuyer(new PrimarkService(new PrimarkRepository(_dbContext, _fiberHelper), _fiberHelper));
                 default:
                     throw new ArgumentException("Invalid buyer type");
             }

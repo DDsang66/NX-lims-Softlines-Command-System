@@ -25,6 +25,7 @@ public partial class WetParameterIso:IWetParam
     public string? Bleach { get; set; }
 
     public string? Iron { get; set; }
+
     public string? IronMethod { get; set; }
 
     public string? Temperature { get; set; }
