@@ -140,8 +140,9 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             return false;
                         }
 
+                        var reviewer = _db.Users.FirstOrDefault(u => u.UserId == item.ReviewerId)?.NickName;
                         //labtestinfo表
-                        existingOrderInfo.Reviewer = item.Reviewer;
+                        existingOrderInfo.Reviewer = reviewer;
                         existingOrderInfo.Express = item.Express;
                         existingOrderInfo.Remark = item.Remark;
                         existingOrderInfo.LastUpdateTime = (DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));

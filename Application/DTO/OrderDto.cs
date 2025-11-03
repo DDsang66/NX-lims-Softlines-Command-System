@@ -99,7 +99,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? RecordId { get; set; }  // LabTestInfo的主键
 
         // LabTestInfo表的字段
-        public string? Reviewer { get; set; }
+        public string? ReviewerId { get; set; }
         public string? TestEngineer { get; set; }
         public string? Status { get; set; }
         public string? TestGroup { get; set; }

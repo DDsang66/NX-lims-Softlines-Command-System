@@ -584,7 +584,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             }
             else if (itemName == "CF to Hot Pressing") 
             {
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < slice.Length; i++)
                 {
                     ws.Cells[cellAddrs[i]].Value = slice[i];
                     ws.Cells[cellAddrs[i+3]].Value = slice[i];
