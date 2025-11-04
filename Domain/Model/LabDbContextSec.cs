@@ -433,6 +433,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("standard_name");
+            entity.Property(e => e.Type)
+            .HasMaxLength(20)
+            .IsUnicode(false)
+            .HasColumnName("type");
         });
 
         modelBuilder.Entity<Standard>(entity =>

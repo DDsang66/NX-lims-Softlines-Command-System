@@ -43,6 +43,8 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public int TestItemNum { get; set; }
         public string? Remark { get; set; }
         public string? Reviewer { get; set; }
+        public string? DelayType { get; set; }
+        public string? DelayReason { get; set; }
         public DateTimeOffset? ReviewFinish { get; set; }
         public DateTimeOffset? LabIn { get; set; }
         public DateOnly DueDate { get; set; }
@@ -57,6 +59,8 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? Express { get; set; }
         public string? Cs { get; set; }
         public string? TestGroup { get; set; }
+        public string? DelayType { get; set; }
+        public string? DelayReason { get; set; }
         public DateTimeOffset? ReviewFinish { get; set; }
         public string? Reviewer { get; set; }
         public DateOnly DueDate { get; set; }

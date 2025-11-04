@@ -91,10 +91,12 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     Express = row.Express,
                     CustomerService = csName,
                     TestGroup = row.Group,
-                    Remark =remark,
+                    Remark = remark,
                     LastUpdateTime = currentTime,
                     ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
                     OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
+                    TestItemNum = 0,
+                    TestSampleNum = 0,
                     IsDelete = "N"
                 };
                 _db.LabTestInfos.Add(orderEntity);
@@ -148,8 +150,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         existingOrderInfo.LastUpdateTime = (DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                         existingOrderInfo.TestItemNum = item.TestItemNum;
                         existingOrderInfo.TestSampleNum = item.TestSampleNum;
-                        existingOrderInfo.DelayType = item.DelayType;
-                        existingOrderInfo.DelayReason = item.DelayReason;
+                        if(existingOrderInfo.DelayType==null)existingOrderInfo.DelayType = item.DelayType;
+                        if (existingOrderInfo.DelayReason == null) existingOrderInfo.DelayReason = item.DelayReason;
                         //labtestschedule表
                         if (item.ReviewFinishTime != null)
                         {
@@ -264,6 +266,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     o.TestGroup,
                     o.Remark,
                     o.ReportDueDate,
+                    o.DelayType,
+                    o.DelayReason,
                     o.LastUpdateTime,
                     Status = o.Status == 1 ? "In Lab"
                                          : o.Status == 2 ? "Review Finished"
@@ -286,6 +290,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         Express = x.Express,
                         Group = x.TestGroup,
                         Remark = x.Remark,
+                        DelayType = x.DelayType,
+                        DelayReason = x.DelayReason,
                         LabIn = x.OrderInTime?.ToUniversalTime(),
                         DueDate = DateOnly.FromDateTime(x.ReportDueDate!.Value.DateTime),
                         Status = x.Status
@@ -366,6 +372,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                                 Group = d.Info.TestGroup ?? string.Empty,
                                 TestSampleNum = d.Info.TestSampleNum ?? 0,
                                 TestItemNum = d.Info.TestItemNum ?? 0,
+                                DelayType = d.Info.DelayType ?? string.Empty,
+                                DelayReason = d.Info.DelayReason ?? string.Empty,
                                 Remark = d.Info.Remark ?? string.Empty,
                                 Reviewer = d.Info.Reviewer ?? string.Empty,
                                 ReviewFinish = d.Schedule.ReviewFinishTime,
@@ -439,6 +447,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         LabOut = d.Schedule.LabOutTime,
                         TestSampleNum = d.Info.TestSampleNum ?? 0,
                         TestItemNum = d.Info.TestItemNum ?? 0,
+                        DelayType = d.Info.DelayType ?? string.Empty,
+                        DelayReason = d.Info.DelayReason ?? string.Empty,
                         Remark = d.Info.Remark ?? string.Empty,
                         Status = d.Info.Status switch
                         {

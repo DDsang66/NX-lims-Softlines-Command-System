@@ -41,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                 MenuName = menuName,
                                 ItemName = m.ItemName,
                                 Standard = m.StandardName,
-                                Type = null,
+                                Type = m.Type,
                                 Parameter = null
                             });
 

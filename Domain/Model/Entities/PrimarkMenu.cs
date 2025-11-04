@@ -12,4 +12,5 @@ public partial class PrimarkMenu
     public string? StandardName { get; set; }
 
     public string? BuyerTable { get; set; }
+    public string? Type { get; set; }
 }
