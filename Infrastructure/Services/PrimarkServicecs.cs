@@ -41,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         public async Task<object?> ShowParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
             var itemNames = infoDto.itemName;
-            MangoParameterProvider helper = new MangoParameterProvider(_helper);
+            PrimarkParameterProvider helper = new PrimarkParameterProvider(_helper);
             // 生成对应 DTO
             try
             {
@@ -51,6 +51,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                     var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(
                         new ParamsInput
                         {
+                            MenuName = infoDto.menuName!,
                             WashingProcedure = infoDto.washingProcedure,
                             DryProcedure = infoDto.dryProcedure,
                             Sci = infoDto.sci,

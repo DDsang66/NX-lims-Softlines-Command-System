@@ -373,6 +373,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A12"] = (w, dto, reportNo) => dto.Standard!,
                 ["E13"] = (w, dto, reportNo) => w.Temperature!,
+                ["L13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "N/A" : null,
+
             },
             ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

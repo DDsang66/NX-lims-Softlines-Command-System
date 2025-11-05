@@ -653,7 +653,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     //map["AB9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     //map["AG11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
                     //map["AL11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    map["V5"] = (w, dto, reportNo) => w.Iron ?? "/";
+                    map["V5"] = (w, dto, reportNo) => w.IronMethod ?? "/";
                 }
                 return map;
             },
@@ -726,7 +726,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["U32"] = (w, dto, reportNo) => w.Temperature!;
                     map["A33"] = (w, dto, reportNo) => w.Cycle!;
                     map["M33"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["V33"] = (w, dto, reportNo) => w.Iron ?? "/";
+                    map["V33"] = (w, dto, reportNo) => w.IronMethod ?? "/";
                 }
                 else if (w.WashingProcedure.Contains("Hand"))
                 {

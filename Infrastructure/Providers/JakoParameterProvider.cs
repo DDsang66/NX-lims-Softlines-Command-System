@@ -105,6 +105,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Dyed") == true ? "150" : "110",
+                IronMethod = p.IronMethod??null
             },
             ("CF to Sublimation in Storage", _) => new WetParameterIso
             {

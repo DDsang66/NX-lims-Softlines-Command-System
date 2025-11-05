@@ -335,7 +335,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["H1"] = (w, dto, reportNo) => reportNo,
                 ["A12"] = (w, dto, reportNo) => dto.Standard!,
                 ["G13"] = (w, dto, reportNo) => w.Temperature!,
-                ["A14"] = (w, dto, reportNo) => w.Iron=="L-5"?"该项目号最高可给5级":null!
+                ["A14"] = (w, dto, reportNo) => w.Iron=="L-5"?"该项目号最高可给5级":null!,
+                ["R13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "N/A" : null,
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

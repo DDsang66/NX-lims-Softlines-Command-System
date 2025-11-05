@@ -53,6 +53,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
             },
             ("DS to Washing", _, _) => new WetParameterAatcc
             {
@@ -74,7 +75,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 //Iron =  _helper.CompositionRate(p.FiberContent!,"Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null,
-                Iron = p.Iron ?? null
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
             },
             ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
@@ -83,7 +85,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
-                Iron = p?.Iron ?? null
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
 
             },
             ("Spriality/Skewing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc

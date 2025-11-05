@@ -22,7 +22,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             ("CF to Washing", "4N" or "4M" or "4G" or "3N", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber,
+                ReportNumber = p.OrderNumber!,
                 Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
                 SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10
@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             ("CF to Washing", "4H" or "3M" or "3G" or "3H", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber,
+                ReportNumber = p.OrderNumber!,
                 Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
                 SteelBallNum = 0
@@ -38,7 +38,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             ("DS to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber,
+                ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
@@ -48,11 +48,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 SpecialCareInstruction = p.Sci ?? null,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
             },
             ("DS to Dry-clean", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber,
+                ReportNumber = p.OrderNumber!,
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
@@ -60,7 +61,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber
+                ReportNumber = p.OrderNumber!
             }
         };
 
