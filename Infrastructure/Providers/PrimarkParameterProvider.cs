@@ -105,7 +105,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 DryCleanProcedure = p.DCProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
-
+            ("Martindale Pilling", _, _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                SpecialCareInstruction = p.Sci,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                DryCleanProcedure = p.DCProcedure,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,

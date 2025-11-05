@@ -150,8 +150,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         existingOrderInfo.LastUpdateTime = (DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                         existingOrderInfo.TestItemNum = item.TestItemNum;
                         existingOrderInfo.TestSampleNum = item.TestSampleNum;
-                        if(existingOrderInfo.DelayType==null)existingOrderInfo.DelayType = item.DelayType;
-                        if (existingOrderInfo.DelayReason == null) existingOrderInfo.DelayReason = item.DelayReason;
+                        /*if(existingOrderInfo.DelayType==null)*/existingOrderInfo.DelayType = item.DelayType;
+                        /*if (existingOrderInfo.DelayReason == null) */existingOrderInfo.DelayReason = item.DelayReason;
                         //labtestschedule表
                         if (item.ReviewFinishTime != null)
                         {
