@@ -828,7 +828,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var advanceQuery = filteredInfo.Where(
                             o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
-                            o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                            (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date
+                            ||o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date)&&
                             o.ReportDueDate.Value >= firstDayOfMonth &&
                             o.ReportDueDate.Value <= lastDayOfMonth
                         ).ToList();
@@ -1003,7 +1004,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var advanceQuery = filteredInfo.Where(
                             o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
-                            o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                            (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date
+                            || o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date) &&
                             o.ReportDueDate.Value >= firstDayOfYear &&
                             o.ReportDueDate.Value <= lastDayOfYear
                         ).ToList();
@@ -1155,7 +1157,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     case "inadvance":
                         var inadvanceQuery = filteredInfo.Where(o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
-                            o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                            (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date
+                            || o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date) &&
                             o.ReportDueDate.Value.Year >= currentYear - 4 &&
                             o.ReportDueDate.Value.Year <= currentYear
                         ).ToList();
@@ -1280,7 +1283,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             var advanceQuery = filteredInfo.Where(
                                 o => o.LabOutTime.HasValue &&
                                 o.ReportDueDate.HasValue &&
-                                o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                               (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date
+                               || o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date) &&
                                 o.ReportDueDate.Value >= firstDayOfMonth &&
                                 o.ReportDueDate.Value <= lastDayOfMonth
                             ).ToList();
@@ -1406,7 +1410,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             var advanceQuery = filteredInfo.Where(
                                 o => o.LabOutTime.HasValue &&
                                 o.ReportDueDate.HasValue &&
-                                o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date &&
+                               (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date
+                               || o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date) &&
                                 o.ReportDueDate.Value >= firstDayOfYear &&
                                 o.ReportDueDate.Value <= lastDayOfYear
                             ).ToList();
