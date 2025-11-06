@@ -129,6 +129,17 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
                     query = baseQuery.Where(o => o.DelayType == "Internal");
                     break;
+                case "induedate":
+                    baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
+                    query = baseQuery.Where(o => o.LabOutTime.HasValue &&
+                                                           o.ReportDueDate.HasValue &&
+                                                           o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date);
+                    break;
+                case "unknown":
+                    baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
+                    query = baseQuery.Where(o => !o.LabOutTime.HasValue ||
+                                                           !o.ReportDueDate.HasValue);
+                    break;
             }
             return query;
         }

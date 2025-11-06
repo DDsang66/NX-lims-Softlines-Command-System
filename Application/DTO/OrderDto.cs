@@ -43,6 +43,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public int TestItemNum { get; set; }
         public string? Remark { get; set; }
         public string? Reviewer { get; set; }
+        public string? ReviewerId { get; set; }
         public string? DelayType { get; set; }
         public string? DelayReason { get; set; }
         public DateTimeOffset? ReviewFinish { get; set; }
@@ -63,6 +64,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? DelayReason { get; set; }
         public DateTimeOffset? ReviewFinish { get; set; }
         public string? Reviewer { get; set; }
+        public string? ReviewerId { get; set; }
         public DateOnly DueDate { get; set; }
         public DateTimeOffset? LabIn { get; set; }
         public DateTimeOffset? LabOut { get; set; }
@@ -151,9 +153,14 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public class OrderFanCardOutput
     {
+        //饼状图只有Delay、InAdvance、InDueDate、Unknown，和等于1
+        //Nomal，InternalReasonDelay在下方的表格渲染
         public int? Delay { get; set; }
         public int? InAdvance { get; set; }
         public int? Normal { get; set; }
+        public int? InDueDate { get; set; }
+        public int? Unknown { get; set; }
+        public int? InternalReasonDelay { get; set; }
     }
 
 

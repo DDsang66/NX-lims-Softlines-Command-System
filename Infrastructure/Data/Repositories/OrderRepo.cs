@@ -376,6 +376,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                                 DelayReason = d.Info.DelayReason ?? string.Empty,
                                 Remark = d.Info.Remark ?? string.Empty,
                                 Reviewer = d.Info.Reviewer ?? string.Empty,
+                                ReviewerId = _db.Users.FirstOrDefault(l => l.NickName == d.Info.Reviewer)?.UserId,
                                 ReviewFinish = d.Schedule.ReviewFinishTime,
                                 LabIn = d.Schedule.OrderInTime ?? DateTimeOffset.Now,
                                 DueDate = d.Schedule.ReportDueDate switch
@@ -438,6 +439,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         TestGroup = d.Info.TestGroup ?? string.Empty,
                         ReviewFinish = d.Schedule.ReviewFinishTime,
                         Reviewer = d.Info.Reviewer ?? string.Empty,
+                        ReviewerId = _db.Users.FirstOrDefault(l => l.NickName == d.Info.Reviewer)?.UserId,
                         DueDate = d.Schedule.ReportDueDate switch
                         {
                             DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
@@ -603,7 +605,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db).ToList();
 
             // 获取所有查询类型
-            var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut" };
+            var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut" ,"Unknow","InDuedate","internalReasonDelay"};
             var queries = queryTypes.ToDictionary(
                 type => type,
                 type => _orderReportingQueryProvider.QuerySelect(time, timeType, type, _db)
@@ -677,14 +679,40 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         return "needLabOut";
                     }
                 }
+                if (type == "Unknow")
+                {
+                    // 如果有任何一个 Id 是 Unknow，整体算作 Unknow
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["Unknow"].Any(q => q.Id == id)))
+                    {
+                        return "Unknow";
+                    }
+                }
+                if (type == "inDueDate")
+                {
+                    // 如果有任何一个 Id 是 inDueDate，整体算作 inDueDate
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["inDueDate"].Any(q => q.Id == id)))
+                    {
+                        return "inDueDate";
+                    }
+                }
+                if (type == "internalReasonDelay")
+                {
+                    // 如果有任何一个 Id 是 internalReasonDelay，整体算作 internalReasonDelay
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["internalReasonDelay"].Any(q => q.Id == id)))
+                    {
+                        return "internalReasonDelay";
+                    }
+                }
 
                 return null;
             }
             return new OrderFanCardOutput {
                 Delay = calculateCount("delayLabOut"),
                 InAdvance = calculateCount("inAdvanceLabOut"),
-                //InDueDate = calculateCount("needLabOut") - calculateCount("delayLabOut"),
-                Normal = calculateCount("needLabOut")-(calculateCount("delayLabOut")+calculateCount("inAdvanceLabOut"))
+                InDueDate = calculateCount("inDueDate"),
+                Unknown = calculateCount("Unknow"),
+                InternalReasonDelay = calculateCount("internalReasonDelay"),
+                Normal = calculateCount("InDueDate") +calculateCount("inAdvanceLabOut")
             };
         }
 
