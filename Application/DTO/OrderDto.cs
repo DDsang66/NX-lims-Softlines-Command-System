@@ -146,6 +146,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public int? DelayLabOut { get; set; }
         public int? InAdvanceLabOut { get; set; }
         public int? NumOfSample { get; set; }
+        public int? InternalReasonDelay { get; set; }
     }
 
     public class OrderFanCardOutput

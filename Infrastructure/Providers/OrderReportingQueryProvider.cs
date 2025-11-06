@@ -1,11 +1,5 @@
-﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
-using DocumentFormat.OpenXml.Office2010.CustomUI;
-using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Domain.Model;
+﻿using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using System.Linq.Expressions;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 {
@@ -101,7 +95,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
           LabDbContextSec _db)
         {
             var query = _db.LabTestInfos.AsQueryable();
-            switch (DataType.ToLower()) 
+            switch (DataType.ToLower())
             {
                 case "needlabout":
                     var baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
@@ -120,7 +114,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     // 否则比较与 ReportDueDate
                     query = baseQuery.Where(o =>
                         !o.LabOutTime.HasValue ?
-                            o.ReportDueDate!.Value < DateTimeOffset.Now:
+                            o.ReportDueDate!.Value.AddDays(1) < DateTimeOffset.Now :
                             o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date.AddDays(1)
                     );
                     break;
@@ -129,7 +123,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     query = baseQuery.Where(o => o.LabOutTime.HasValue &&
                                                            o.ReportDueDate.HasValue &&
                                                            (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date ||
-                                                           o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date) );
+                                                           o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date));
+                    break;
+                case "internalreasondelay":
+                    baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);
+                    query = baseQuery.Where(o => o.DelayType == "Internal");
                     break;
             }
             return query;

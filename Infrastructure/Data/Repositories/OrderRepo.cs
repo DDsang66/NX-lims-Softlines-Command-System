@@ -484,7 +484,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db).ToList();
 
             // 获取所有查询类型
-            var queryTypes = new[] { "needLabOut", "actuallyLabOut", "delayLabOut", "inAdvanceLabOut" };
+            var queryTypes = new[] { "needLabOut", "actuallyLabOut", "delayLabOut", "inAdvanceLabOut", "internalReasonDelay" };
             var queries = queryTypes.ToDictionary(
                 type => type,
                 type => _orderReportingQueryProvider.QuerySelect(time, timeType, type, _db)
@@ -559,6 +559,14 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     }
                 }
 
+                if (type == "internalReasonDelay")
+                { 
+                    // 如果有任何一个 Id 是 delay，整体算作 delay
+                    if (groupIds.Any(id => queryIds.Contains(id) && queries["internalReasonDelay"].Any(q => q.Id == id)))
+                    {
+                        return "internalReasonDelay";
+                    }
+                }
                 return null;
             }
 
@@ -576,6 +584,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 ActuallyLabOut = calculateCount("actuallyLabOut"),
                 DelayLabOut = calculateCount("delayLabOut"),
                 InAdvanceLabOut = calculateCount("inAdvanceLabOut"),
+                InternalReasonDelay = calculateCount("internalReasonDelay"),
                 NumOfSample = xTotalNumOfSamples
             };
 
@@ -674,6 +683,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             return new OrderFanCardOutput {
                 Delay = calculateCount("delayLabOut"),
                 InAdvance = calculateCount("inAdvanceLabOut"),
+                //InDueDate = calculateCount("needLabOut") - calculateCount("delayLabOut"),
                 Normal = calculateCount("needLabOut")-(calculateCount("delayLabOut")+calculateCount("inAdvanceLabOut"))
             };
         }
@@ -720,13 +730,22 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             o.ReportDueDate.Value <= lastDayOfMonth
                         ).ToList();
 
-                        // 按日期分组统计
+                        // 如果 group 为 "All", 按 ReportNumber 去重
+                        if (group.ToLower() == "all")
+                        {
+                            monthlyData = monthlyData
+                                .GroupBy(o => new { o.ReportNumber, o.ReportDueDate })
+                                .Select(g => g.First()) // 或者 g.ToList() 中的任意一条记录
+                                .ToList();
+                        }
+
+                        // 按日期分组统计，每个 reportnumber 在每个日期中只计数一次
                         var result = monthlyData
                             .GroupBy(o => o.ReportDueDate!.Value.Date)
                             .Select(g => new
                             {
-                                Day = g.Key.Day - 1, // 转换为0-based索引
-                                Count = g.Count()
+                                Day = g.Key.Day - 1,
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
 
                         foreach (var item in result)
@@ -738,22 +757,31 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     case "delay":
                         // 添加delay条件
                         var delayQuery = filteredInfo.Where(o =>
-                            !o.LabOutTime.HasValue ?
-                                o.ReportDueDate!.Value < DateTime.Now :
-                                o.LabOutTime.Value > o.ReportDueDate!.Value
+                            (!o.LabOutTime.HasValue ?
+                                o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
+                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
                             && o.ReportDueDate.HasValue &&
                             o.ReportDueDate.Value >= firstDayOfMonth &&
                             o.ReportDueDate.Value <= lastDayOfMonth
                         ).ToList();
+                        // 如果 group 为 "All"，对 delayQuery 按 ReportNumber 去重
+                        if (group.ToLower() == "all")
+                        {
+                            delayQuery = delayQuery
+                                .GroupBy(o => new { o.ReportNumber, o.ReportDueDate })
+                                .Select(g => g.First()) // 或者 g.ToList() 中的任意一条记录
+                                .ToList();
+                        }
 
-                        // 按日期分组统计
+                        // 按日期分组统计，每个 reportnumber 在每个日期中只计数一次
                         var delay = delayQuery
                             .GroupBy(o => o.ReportDueDate!.Value.Date)
                             .Select(g => new
                             {
                                 Day = g.Key.Day - 1,
-                                Count = g.Count()
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
+
                         foreach (var item in delay)
                         {
                             monthlyValues[item.Day] = item.Count;
@@ -763,16 +791,31 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var normalQuery = filteredInfo.Where(
                             o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
-                            o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                            (o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date ||o.LabOutTime<o.ReportDueDate.Value.Date)&&
                             o.ReportDueDate.Value >= firstDayOfMonth &&
                             o.ReportDueDate.Value <= lastDayOfMonth).ToList();
 
+                        // 如果 group 为 "All"，确保每个 reportnumber 的所有 group 都满足 normal 条件
+                        if (group.ToLower() == "all")
+                        {
+                            var reportNumbersWithAllGroupsnormal = normalQuery
+                                .GroupBy(o => o.ReportNumber)
+                                .Where(g => g.Count() == filteredInfo.Where(f => f.ReportNumber == g.Key).Select(f => f.TestGroup).Distinct().Count())
+                                .Select(g => g.Key)
+                                .ToList();
+
+                            normalQuery = normalQuery
+                                .Where(o => reportNumbersWithAllGroupsnormal.Contains(o.ReportNumber))
+                                .ToList();
+                        }
+
+                        // 按日期分组统计，每个 reportnumber 在每个日期中只计数一次
                         var normal = normalQuery
                             .GroupBy(o => o.ReportDueDate!.Value.Date)
                             .Select(g => new
                             {
                                 Day = g.Key.Day - 1,
-                                Count = g.Count()
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
 
                         foreach (var item in normal)
@@ -790,13 +833,27 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             o.ReportDueDate.Value <= lastDayOfMonth
                         ).ToList();
 
-                        // 按日期分组统计
+                        // 如果 group 为 "All"，确保每个 reportnumber 的所有 group 都满足 advance 条件
+                        if (group.ToLower() == "all")
+                        {
+                            var reportNumbersWithAllGroupsAdvance = advanceQuery
+                                .GroupBy(o => o.ReportNumber)
+                                .Where(g => g.Count() == filteredInfo.Where(f => f.ReportNumber == g.Key).Select(f => f.TestGroup).Distinct().Count())
+                                .Select(g => g.Key)
+                                .ToList();
+
+                            advanceQuery = advanceQuery
+                                .Where(o => reportNumbersWithAllGroupsAdvance.Contains(o.ReportNumber))
+                                .ToList();
+                        }
+
+                        // 按日期分组统计，每个 reportnumber 在每个日期中只计数一次
                         var advance = advanceQuery
                             .GroupBy(o => o.ReportDueDate!.Value.Date)
                             .Select(g => new
                             {
                                 Day = g.Key.Day - 1,
-                                Count = g.Count()
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
 
                         foreach (var item in advance)
@@ -848,13 +905,22 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             o.ReportDueDate.Value <= lastDayOfYear
                         ).ToList();
 
-                        // 按月份分组统计
+                        // 如果 group 为 "All", 按 ReportNumber 去重
+                        if (group.ToLower() == "all")
+                        {
+                            yearlyData = yearlyData
+                                .GroupBy(o => new { o.ReportNumber, o.ReportDueDate })
+                                .Select(g => g.First())
+                                .ToList();
+                        }
+
+                        // 按月份分组统计，每个 reportnumber 在每个月份中只计数一次
                         var result = yearlyData
                             .GroupBy(o => o.ReportDueDate!.Value.Month - 1) // 转换为0-based索引
                             .Select(g => new
                             {
                                 Month = g.Key,
-                                Count = g.Count()
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
 
                         foreach (var item in result)
@@ -866,21 +932,30 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     case "delay":
                         // 添加delay条件
                         var delayQuery = filteredInfo.Where(o =>
-                            !o.LabOutTime.HasValue ?
-                                o.ReportDueDate!.Value < DateTime.Now :
-                                o.LabOutTime.Value > o.ReportDueDate!.Value
+                            (!o.LabOutTime.HasValue ?
+                                o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
+                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
                             && o.ReportDueDate.HasValue &&
                             o.ReportDueDate.Value >= firstDayOfYear &&
                             o.ReportDueDate.Value <= lastDayOfYear
                         ).ToList();
 
-                        // 按月份分组统计
+                        // 如果 group 为 "All"，对 delayQuery 按 ReportNumber 去重
+                        if (group.ToLower() == "all")
+                        {
+                            delayQuery = delayQuery
+                                .GroupBy(o => new { o.ReportNumber, o.ReportDueDate })
+                                .Select(g => g.First())
+                                .ToList();
+                        }
+
+                        // 按月份分组统计，每个 reportnumber 在每个月份中只计数一次
                         var delay = delayQuery
                             .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
                             .Select(g => new
                             {
                                 Month = g.Key,
-                                Count = g.Count()
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
                         foreach (var item in delay)
                         {
@@ -891,16 +966,31 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var normalQuery = filteredInfo.Where(
                             o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
-                            o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                             (o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date || o.LabOutTime < o.ReportDueDate.Value.Date) &&
                             o.ReportDueDate.Value >= firstDayOfYear &&
                             o.ReportDueDate.Value <= lastDayOfYear).ToList();
 
+                        // 如果 group 为 "All"，确保每个 reportnumber 的所有 group 都满足 normal 条件
+                        if (group.ToLower() == "all")
+                        {
+                            var reportNumbersWithAllGroupsNormal = normalQuery
+                                .GroupBy(o => o.ReportNumber)
+                                .Where(g => g.Count() == filteredInfo.Where(f => f.ReportNumber == g.Key).Select(f => f.TestGroup).Distinct().Count())
+                                .Select(g => g.Key)
+                                .ToList();
+
+                            normalQuery = normalQuery
+                                .Where(o => reportNumbersWithAllGroupsNormal.Contains(o.ReportNumber))
+                                .ToList();
+                        }
+
+                        // 按月份分组统计，每个 reportnumber 在每个月份中只计数一次
                         var normal = normalQuery
                             .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
                             .Select(g => new
                             {
                                 Month = g.Key,
-                                Count = g.Count()
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
 
                         foreach (var item in normal)
@@ -918,14 +1008,30 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             o.ReportDueDate.Value <= lastDayOfYear
                         ).ToList();
 
-                        // 按月份分组统计
+
+                        // 如果 group 为 "All"，确保每个 reportnumber 的所有 group 都满足 advance 条件
+                        if (group.ToLower() == "all")
+                        {
+                            var reportNumbersWithAllGroupsAdvance = advanceQuery
+                                .GroupBy(o => o.ReportNumber)
+                                .Where(g => g.Count() == filteredInfo.Where(f => f.ReportNumber == g.Key).Select(f => f.TestGroup).Distinct().Count())
+                                .Select(g => g.Key)
+                                .ToList();
+
+                            advanceQuery = advanceQuery
+                                .Where(o => reportNumbersWithAllGroupsAdvance.Contains(o.ReportNumber))
+                                .ToList();
+                        }
+
+                        // 按月份分组统计，每个 reportnumber 在每个月份中只计数一次
                         var advance = advanceQuery
                             .GroupBy(o => o.ReportDueDate!.Value.Month - 1)
                             .Select(g => new
                             {
                                 Month = g.Key,
-                                Count = g.Count()
+                                Count = g.Select(o => o.ReportNumber).Distinct().Count()
                             }).ToList();
+
 
                         foreach (var item in advance)
                         {
@@ -995,9 +1101,9 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     case "delay":
                         // 添加delay条件
                         var delayQuery = filteredInfo.Where(o =>
-                            !o.LabOutTime.HasValue ?
-                                o.ReportDueDate!.Value < DateTime.Now :
-                                o.LabOutTime.Value > o.ReportDueDate!.Value
+                           (!o.LabOutTime.HasValue ?
+                                o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
+                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
                             && o.ReportDueDate.HasValue &&
                             o.ReportDueDate.Value.Year >= currentYear - 4 &&
                             o.ReportDueDate.Value.Year <= currentYear
@@ -1024,7 +1130,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var normalQuery = filteredInfo.Where(
                             o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
-                            o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                            (o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date || o.LabOutTime < o.ReportDueDate.Value.Date) &&
                             o.ReportDueDate.Value.Year >= currentYear - 4 &&
                             o.ReportDueDate.Value.Year <= currentYear).ToList();
 
@@ -1128,9 +1234,9 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         case "delay":
                             // 添加delay条件
                             var delayQuery = filteredInfo.Where(o =>
-                                !o.LabOutTime.HasValue ?
-                                    o.ReportDueDate!.Value < DateTime.Now :
-                                    o.LabOutTime.Value > o.ReportDueDate!.Value
+                                (!o.LabOutTime.HasValue ?
+                                    o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
+                                    o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
                                 && o.ReportDueDate.HasValue &&
                                 o.ReportDueDate.Value >= firstDayOfMonth &&
                                 o.ReportDueDate.Value <= lastDayOfMonth
@@ -1153,7 +1259,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             var normalQuery = filteredInfo.Where(
                                 o => o.LabOutTime.HasValue &&
                                 o.ReportDueDate.HasValue &&
-                                o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                                (o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date || o.LabOutTime < o.ReportDueDate.Value.Date) &&
                                 o.ReportDueDate.Value >= firstDayOfMonth &&
                                 o.ReportDueDate.Value <= lastDayOfMonth).ToList();
 
@@ -1254,9 +1360,9 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         case "delay":
                             // 添加delay条件
                             var delayQuery = filteredInfo.Where(o =>
-                                !o.LabOutTime.HasValue ?
-                                    o.ReportDueDate!.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8)) < DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8)) :
-                                    o.LabOutTime.Value > o.ReportDueDate!.Value
+                                (!o.LabOutTime.HasValue ?
+                                    o.ReportDueDate!.Value.AddDays(1) < DateTimeOffset.Now :
+                                    o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
                                 && o.ReportDueDate.HasValue &&
                                 o.ReportDueDate.Value >= firstDayOfYear &&
                                 o.ReportDueDate.Value <= lastDayOfYear
@@ -1279,7 +1385,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             var normalQuery = filteredInfo.Where(
                                 o => o.LabOutTime.HasValue &&
                                 o.ReportDueDate.HasValue &&
-                                o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date &&
+                                (o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date || o.LabOutTime < o.ReportDueDate.Value.Date) &&
                                 o.ReportDueDate.Value >= firstDayOfYear &&
                                 o.ReportDueDate.Value <= lastDayOfYear).ToList();
 
@@ -1340,8 +1446,6 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     TimeProperty = timeProperty // 每一年的统计结果
                 };
             }
-
-
             return null;
         }
 

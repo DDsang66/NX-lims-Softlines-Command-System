@@ -191,6 +191,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 DryProcedure = p.DryProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
+            ("Waterproof Claims Hydrostatic Head", _, _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = "4N",
+                Temperature = "40",
+                SpecialCareInstruction = p.Sci,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                DryProcedure = p.DryProcedure,
+                AfterWash = "After 1 Wash",
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -286,6 +301,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("N/A", "Tensile Strength", null)] = "N/A",
             [("40", "Unrecovered Elongation", null)] = "Load:40N",
             [("30", "Unrecovered Elongation", null)] = "Load:30N",
+            [(null, "Vertical Wicking of Textiles", null)] = "Minimum 2.5 inches per 10 minutes",
         };
 
         private static string? GetParameter(string? Condition, string item, string? lv)
