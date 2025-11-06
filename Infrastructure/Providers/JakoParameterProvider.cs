@@ -137,9 +137,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string Menu, string Item, string? Lv, string? Lt), string?> _map = new()
         {
-            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Vegetable")] = "Cycle: 3000r",
-            [("RegularFabric(JAKO)", "Pilling Resistance", "Polyester", "Synthetic")] = "Cycle: 7000r",
-            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Synthetic")] = "Cycle: 7000r",
+            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Vegetable")] = "Cycle: 3000 revs",
+            [("RegularFabric(JAKO)", "Pilling Resistance", "Polyester", "Synthetic")] = "Cycle: 7000 revs",
+            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Synthetic")] = "Cycle: 7000 revs",
             [("RegularFabric(JAKO)", "Pilling Resistance", null, null)] = null,
             [("RegularFabric(JAKO)", "Seam Slippage", null, null)] = "Load: 16N",
             [("RegularFabric(JAKO)", "CF to Light", null, null)] = "L-4",
@@ -147,8 +147,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("RegularFabric(JAKO)", "Tensile Strength", null, null)] = "Gauge: 75mm",
             [("RegularFabric(JAKO)", "Extension and Recovery", null, null)] = "Load: 3daN,Cycle: 5",
             [("RegularFabric(JAKO)", "Air Permeability", null, null)] = "Area 20cm², P: 100Pa",
-            [("RegularFabric(JAKO)", "Snagging Resistance", null, null)] = "Cycle: 600r",
-            [("RegularFabric(JAKO)", "Abrasion Resistance", null, null)] = "Load: 9KPa,Cycle: 30000r",
+            [("RegularFabric(JAKO)", "Snagging Resistance", null, null)] = "Cycle: 600 revs",
+            [("RegularFabric(JAKO)", "Abrasion Resistance", null, null)] = "Load: 9KPa,Cycle: 30000 revs",
             [("RegularFabric(JAKO)", "Water Repellency-Spray Test", null, null)] = "Original & After wash",
             [("RegularFabric(JAKO)", "Spriality/Skewing", null, null)] = "Same as Appearance",
             [("RegularFabric(JAKO)", "CF to Chlorinated Water", null, null)] = "Confirmation with CS is required",

@@ -70,5 +70,16 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 .ToList();
             return Ok(new { success = true, message = "CS Load Succeed", data = csList });
         }
+
+        [HttpGet("getUser")]
+        public IActionResult getUser()
+        {
+            var userList = _db.Users
+                .Select(cs => new { cs.UserId, cs.NickName })
+                .Distinct()
+                .ToList();
+            return Ok(new { success = true, message = "User Load Succeed", data = userList });
+        }
+
     }
 }

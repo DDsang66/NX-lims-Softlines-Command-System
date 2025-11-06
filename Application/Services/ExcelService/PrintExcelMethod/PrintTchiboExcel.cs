@@ -123,6 +123,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             offset = OffsetRule.GetValueOrDefault(itemName, 0);
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
             if (itemName == "CF to Hot Pressing") { capacity = 3; }// 特例处理，实际容量为3
+            if (itemName == "Appearance") { capacity = 1; }
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
 
@@ -552,9 +553,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string sampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
-            if (afmap != null && afmap.Length > 0 && itemName == "Appearance")
+            if (afmap != null && afmap.Length > 0 && AfterWashCellAddrs != null && AfterWashCellAddrs.Length > 0 && itemName == "Appearance")
             {
-                for (int i = 0; i < afmap.Length; i++)
+                for (int i = 0; i < AfterWashCellAddrs.Length; i++)
                 {
                     ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
                 }

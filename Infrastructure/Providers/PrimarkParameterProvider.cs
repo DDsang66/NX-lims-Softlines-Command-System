@@ -102,7 +102,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
-                DryCleanProcedure = p.DCProcedure,
+                DryProcedure = p.DryProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
             ("Martindale Pilling", _, _, _) => new WetParameterIso 
@@ -118,6 +118,77 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryCleanProcedure = p.DCProcedure,
+                AfterWash = "After 1 Wash",
+            },
+            ("Print / Motif / Flock Durability", _, _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DCProcedure,
+                Temperature = "40",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Detergent = "160 g ECE Detergent (with phosphate) (4g/L) and 40 g Sodium Perborate (1g/L)"
+            },
+            ("Print Durability", _, _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DCProcedure,
+                Temperature = "30",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Detergent = "160 g ECE Detergent (with phosphate) (4g/L) and 40 g Sodium Perborate (1g/L)"
+            },
+            ("Shower Resistant Claims Spray Rating", _, _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                SpecialCareInstruction = p.Sci,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                DryProcedure = p.DryProcedure,
+                AfterWash = "After 1 Wash",
+            },
+            ("Spirality", _, _, "PTC09"or"PTC10"or"PTC13"or"PTC14"or"PTC15"or"PTC15A"or"PTC29") => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                SpecialCareInstruction = p.Sci,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                DryProcedure = p.DryProcedure,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+            },
+            ("DS to Dry-clean", _, _,_) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                      p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
+            },
+            ("Stability to Washing", _, _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = "4N",
+                Temperature = "40",
+                SpecialCareInstruction = p.Sci,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                DryProcedure = p.DryProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
             _ => new WetParameterIso
@@ -134,6 +205,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             // 1. 计算最大值
             string? largestVarName = await _helper.MaxCompositionType(infoDto.fiberComposition!)!;
             string? Condition = null;
+            string? Condition1 = null;
             switch (ItemName) 
             {
                 case "Accelerotor":
@@ -162,16 +234,32 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     if (infoDto.sampleDescription!.Contains("Woven")) Condition = "Woven";
                     else if (infoDto.sampleDescription!.Contains("Knit")) Condition = "Knit";
                     else Condition = null;
+                    Condition1 = PillingHelper(infoDto.fiberComposition!,infoDto.sampleDescription,infoDto.menuName!);
+                    break;
+                case"Residual Elogation":
+                    Condition = ElogationHelper(infoDto.fiberComposition!, infoDto.sampleDescription!, infoDto.menuName!);
+                    break;
+                case "Tear Strength":
+                    if(!infoDto.sampleDescription!.Contains("Woven"))Condition = "N/A";
+                    bool isCelluloseExist = _helper.IsCompositionExist("Cellulose", infoDto.fiberComposition!);
+                    if (infoDto.sampleDescription!.Contains("Non-Stretch")&& ! isCelluloseExist) Condition = "N/A";
+                    break;
+                case "Tensile Strength":
+                    if(!(infoDto.sampleDescription!.Contains("Woven")||infoDto.sampleDescription.Contains("Non-Stretch"))) Condition = "N/A";
+                    break;
+                case "Unrecovered Elongation":
+                    if (infoDto.sampleDescription!.Contains("Jeans")) Condition = "40";
+                    else Condition = "30";
                     break;
             }
 
-            return GetParameter(Condition, ItemName, largestVarName);//返回一个string类型的Parameter
+            return GetParameter(Condition, ItemName, Condition1);//返回一个string类型的Parameter
         }
 
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string? Condition, string Item, string? Lv), string?> _map = new()
         {
-            [(null, "Abrasion of Knitted Footwear Garments - Modified Martindale",null)] = "Cycle: 8000r",
+            [(null, "Abrasion of Knitted Footwear Garments - Modified Martindale",null)] = "Cycle: 8000 revs",
             [("3min", "Accelerotor", null)] = "Time:3min,Cycle: 2000R.P.M",
             [("5min", "Accelerotor", null)] = "Time:5min,Cycle: 2000R.P.M",
             [(null, "Bursting Strength", null)] = "Diameter: 79.8mm,Square:50cm²",
@@ -185,8 +273,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [(null, "Colour Fastness to Water", null)] = "Multi-Fibre Type:LyoW",
             [(null, "Martindale Abrasion", null)] = "9KPa,Shade Change @ 5000",
             [("no change shade", "Martindale Abrasion", null)] = "9KPa",
-            [("Woven", "Martindale Abrasion", null)] = "Cycle:2000 revs",
-            [("Knit", "Martindale Abrasion", null)] = "Cycle:500 revs",
+            [("Woven", "Martindale Pilling", null)] = "Cycle:2000 revs",
+            [("Knit", "Martindale Pilling", null)] = "Cycle:500 revs",
+            [(null, "Nap Stability", null)] = "Cycle:4000 revs",
+            [("15", "Residual Elogation", null)] = "Load:15N",
+            [("20", "Residual Elogation", null)] = "Load:20N",
+            [("25", "Residual Elogation", null)] = "Load:25N",
+            [("30", "Residual Elogation", null)] = "Load:30N",
+            [("40", "Residual Elogation", null)] = "Load:40N",
+            [(null, "Residual Elongation SHAPEWEAR", null)] = "Load:36N",
+            [("N/A", "Tear Strength", null)] = "N/A",
+            [("N/A", "Tensile Strength", null)] = "N/A",
+            [("40", "Unrecovered Elongation", null)] = "Load:40N",
+            [("30", "Unrecovered Elongation", null)] = "Load:30N",
         };
 
         private static string? GetParameter(string? Condition, string item, string? lv)
@@ -244,5 +343,46 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             return Temperature;
         }
 
+        private string? PillingHelper(List<FiberDto> fiberComposition, string sampleDescription,string MenuName)
+        {
+            string? Result = null;
+            //仅适用于合成纤维，羊毛，晴纶，及其混纺物
+            //长丝不做
+            //抓绒只测试正面
+            return Result;
+        }
+
+        private string? ElogationHelper(List<FiberDto> fiberComposition, string sampleDescription, string MenuName)
+        {
+            string? Result = null;
+            if (MenuName == "PTC07" || MenuName == "PTC08") return Result = "20";
+            else if (MenuName == "PTC01" || MenuName == "PTC02" || MenuName == "PTC04")
+            {
+                if (sampleDescription.Contains("Jeans")) return Result = "40";
+                else return Result = "30";
+            }
+            else if (MenuName == "PTC18A" || MenuName == "PTC18B" || MenuName == "PTC19")
+            {
+                var rate = _helper.CompositionRate(fiberComposition, "Elastane");
+                if (!sampleDescription.Contains("Jersey")) return Result = "15";
+                if (rate.HasValue && rate < 5) return Result = "15";
+                if (rate.HasValue && 5 <= rate && rate < 11) return Result = "20";
+                if (rate.HasValue && rate >= 11) return Result = "25";
+            }
+            else if (MenuName == "PTC14" || MenuName == "PTC13")
+            {
+                var rate = _helper.CompositionRate(fiberComposition, "Elastane");
+                if (sampleDescription.Contains("Woven")) return Result = "30";
+                if (rate.HasValue && rate < 5) return Result = "15";
+                if (rate.HasValue && 5 <= rate && rate < 11) return Result = "20";
+                if (rate.HasValue && rate >= 11) return Result = "25";
+            }
+            else 
+            {
+                if (sampleDescription.Contains("Woven")) return Result = "30";
+                if (sampleDescription.Contains("Knit")) return Result = "20";
+            }
+            return Result;
+        }
     }
 }

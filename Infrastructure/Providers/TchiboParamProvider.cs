@@ -22,7 +22,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             ("CF to Washing", "4N" or "4M" or "4G" or "3N", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber,
+                ReportNumber = p.OrderNumber!,
                 Temperature = IsA1MProgram(p.SampleDescription!) ? "40" : p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = IsA1MProgram(p.SampleDescription!) ? "A1M" :
                 p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
@@ -31,7 +31,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             ("CF to Washing", "4H" or "3M" or "3G" or "3H", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber,
+                ReportNumber = p.OrderNumber!,
                 Temperature = IsA1MProgram(p.SampleDescription!) ? "40" : p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = IsA1MProgram(p.SampleDescription!) ? "A1M" :
                 p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
@@ -40,7 +40,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             ("Absorbency", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber,
+                ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
@@ -106,7 +106,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
-                ReportNumber = p.OrderNumber
+                ReportNumber = p.OrderNumber!
             }
         };
 
@@ -161,7 +161,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("Regular(Tchibo)", "CF to Water", "L-5")] = "L-5",
             [("Regular(Tchibo)", "Seam Slippage", null)] = "Load: 16N",
             [("Regular(Tchibo)", "Appearance", null)] = "In house method",
-            [("Regular(Tchibo)", "Pilling Resistance", null)] = "Cycle: 2000r",
+            [("Regular(Tchibo)", "Pilling Resistance", null)] = "Cycle: 2000 revs",
             [("Regular(Tchibo)", "Air Permeability", null)] = "Area 20cm², P: 100Pa",
             [("Regular(Tchibo)", "Extension and Recovery", "Woven")] = "Load: 30N,Cycle: 5",
             [("Regular(Tchibo)", "Extension and Recovery", "3")] = "Load: 3N,Cycle: 5",
