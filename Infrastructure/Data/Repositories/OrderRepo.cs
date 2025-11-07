@@ -605,7 +605,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
             var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db).ToList();
 
             // 获取所有查询类型
-            var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut" ,"Unknow","inDuedate","internalReasonDelay"};
+            var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut" ,"Unknow","inDueDate","internalReasonDelay"};
             var queries = queryTypes.ToDictionary(
                 type => type,
                 type => _orderReportingQueryProvider.QuerySelect(time, timeType, type, _db)
