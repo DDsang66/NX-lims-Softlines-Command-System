@@ -712,7 +712,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 InDueDate = calculateCount("inDueDate"),
                 Unknown = calculateCount("Unknow"),
                 InternalReasonDelay = calculateCount("internalReasonDelay"),
-                Normal = calculateCount("InDueDate") +calculateCount("inAdvanceLabOut")
+                Normal = calculateCount("inDueDate") +calculateCount("inAdvanceLabOut")
             };
         }
 
