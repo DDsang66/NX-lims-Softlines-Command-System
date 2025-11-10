@@ -113,10 +113,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     // 比较与当前时间
                     // 否则比较与 ReportDueDate
                     query = baseQuery.Where(o =>
-                        !o.LabOutTime.HasValue ?
+                        (!o.LabOutTime.HasValue ?
                             o.ReportDueDate!.Value.AddDays(1) < DateTimeOffset.Now :
-                            o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date.AddDays(1)
-                    );
+                            o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date.AddDays(1)) ||
+                            (o.DelayReason!=null || o.DelayType!=null)
+                            );
                     break;
                 case "inadvancelabout":
                     baseQuery = QueryTimeInfo(timeOffset, timeType, "ReportDueDate", _db);

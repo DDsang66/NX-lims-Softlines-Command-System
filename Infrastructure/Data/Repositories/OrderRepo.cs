@@ -137,7 +137,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o => o.Id == long.Parse(item.RecordId) && o.IsDelete == "N");
                         //var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == long.Parse(item.RecordId));
 
-                        if (existingOrderInfo == null /*|| existingOrderSchedule == null */|| existingOrderInfo.TestGroup != item.TestGroup)
+                        if (existingOrderInfo == null /*|| existingOrderSchedule == null *//*|| existingOrderInfo.TestGroup != item.TestGroup*/)
                         {
                             return false;
                         }
@@ -147,9 +147,12 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         existingOrderInfo.Reviewer = reviewer;
                         existingOrderInfo.Express = item.Express;
                         existingOrderInfo.Remark = item.Remark;
+                        existingOrderInfo.ReportDueDate = (item.ReportDueDate!.Value).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                        existingOrderInfo.Express = item.Express;
                         existingOrderInfo.LastUpdateTime = (DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                         existingOrderInfo.TestItemNum = item.TestItemNum;
                         existingOrderInfo.TestSampleNum = item.TestSampleNum;
+                        if(existingOrderInfo.TestGroup != item.TestGroup)existingOrderInfo.TestGroup = item.TestGroup;
                         /*if(existingOrderInfo.DelayType==null)*/existingOrderInfo.DelayType = item.DelayType;
                         /*if (existingOrderInfo.DelayReason == null) */existingOrderInfo.DelayReason = item.DelayReason;
                         //labtestschedule表
@@ -293,7 +296,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         DelayType = x.DelayType,
                         DelayReason = x.DelayReason,
                         LabIn = x.OrderInTime?.ToUniversalTime(),
-                        DueDate = DateOnly.FromDateTime(x.ReportDueDate!.Value.DateTime),
+                        DueDate = x.ReportDueDate?.ToUniversalTime(),
                         Status = x.Status
                     }).OrderBy(x =>
                         x.Group switch
@@ -379,11 +382,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                                 ReviewerId = _db.Users.FirstOrDefault(l => l.NickName == d.Info.Reviewer)?.UserId,
                                 ReviewFinish = d.Schedule.ReviewFinishTime,
                                 LabIn = d.Schedule.OrderInTime ?? DateTimeOffset.Now,
-                                DueDate = d.Schedule.ReportDueDate switch
-                                {
-                                    DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
-                                    _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
-                                },
+                                DueDate = d.Schedule.ReportDueDate,
                                 LabOut = d.Schedule.LabOutTime,
                                 Status = d.Info.Status switch
                                 {
@@ -440,11 +439,11 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         ReviewFinish = d.Schedule.ReviewFinishTime,
                         Reviewer = d.Info.Reviewer ?? string.Empty,
                         ReviewerId = _db.Users.FirstOrDefault(l => l.NickName == d.Info.Reviewer)?.UserId,
-                        DueDate = d.Schedule.ReportDueDate switch
-                        {
-                            DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
-                            _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
-                        },
+                        DueDate = d.Schedule.ReportDueDate,
+                        //switch{
+                        //    DateTimeOffset offset => DateOnly.FromDateTime(offset.DateTime.Date),
+                        //    _ => DateOnly.FromDateTime(DateTime.UtcNow.Date)
+                        //},
                         LabIn = d.Schedule.OrderInTime ?? DateTimeOffset.Now,
                         LabOut = d.Schedule.LabOutTime,
                         TestSampleNum = d.Info.TestSampleNum ?? 0,
@@ -787,7 +786,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var delayQuery = filteredInfo.Where(o =>
                             (!o.LabOutTime.HasValue ?
                                 o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
-                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
+                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1)) ||
+                            (o.DelayReason != null || o.DelayType != null)
                             && o.ReportDueDate.HasValue &&
                             o.ReportDueDate.Value >= firstDayOfMonth &&
                             o.ReportDueDate.Value <= lastDayOfMonth
@@ -963,7 +963,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var delayQuery = filteredInfo.Where(o =>
                             (!o.LabOutTime.HasValue ?
                                 o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
-                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
+                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1)) ||
+                            (o.DelayReason != null || o.DelayType != null)
                             && o.ReportDueDate.HasValue &&
                             o.ReportDueDate.Value >= firstDayOfYear &&
                             o.ReportDueDate.Value <= lastDayOfYear
@@ -1133,7 +1134,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var delayQuery = filteredInfo.Where(o =>
                            (!o.LabOutTime.HasValue ?
                                 o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
-                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
+                                o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1)) ||
+                            (o.DelayReason != null || o.DelayType != null)
                             && o.ReportDueDate.HasValue &&
                             o.ReportDueDate.Value.Year >= currentYear - 4 &&
                             o.ReportDueDate.Value.Year <= currentYear
@@ -1267,7 +1269,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             var delayQuery = filteredInfo.Where(o =>
                                 (!o.LabOutTime.HasValue ?
                                     o.ReportDueDate!.Value.AddDays(1) < DateTime.Now :
-                                    o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
+                                    o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1)) ||
+                            (o.DelayReason != null || o.DelayType != null)
                                 && o.ReportDueDate.HasValue &&
                                 o.ReportDueDate.Value >= firstDayOfMonth &&
                                 o.ReportDueDate.Value <= lastDayOfMonth
@@ -1394,7 +1397,8 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             var delayQuery = filteredInfo.Where(o =>
                                 (!o.LabOutTime.HasValue ?
                                     o.ReportDueDate!.Value.AddDays(1) < DateTimeOffset.Now :
-                                    o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1))
+                                    o.LabOutTime.Value > o.ReportDueDate!.Value.AddDays(1)) ||
+                            (o.DelayReason != null || o.DelayType != null)
                                 && o.ReportDueDate.HasValue &&
                                 o.ReportDueDate.Value >= firstDayOfYear &&
                                 o.ReportDueDate.Value <= lastDayOfYear

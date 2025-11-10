@@ -48,7 +48,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? DelayReason { get; set; }
         public DateTimeOffset? ReviewFinish { get; set; }
         public DateTimeOffset? LabIn { get; set; }
-        public DateOnly DueDate { get; set; }
+        public DateTimeOffset? DueDate { get; set; }
         public DateTimeOffset? LabOut { get; set; }
         public string? Status { get; set; }
     }
@@ -65,7 +65,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public DateTimeOffset? ReviewFinish { get; set; }
         public string? Reviewer { get; set; }
         public string? ReviewerId { get; set; }
-        public DateOnly DueDate { get; set; }
+        public DateTimeOffset? DueDate { get; set; }
         public DateTimeOffset? LabIn { get; set; }
         public DateTimeOffset? LabOut { get; set; }
         public int? TestSampleNum{ get; set; }

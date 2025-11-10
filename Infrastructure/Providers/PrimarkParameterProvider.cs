@@ -206,6 +206,18 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 DryProcedure = p.DryProcedure,
                 AfterWash = "After 1 Wash",
             },
+            ("Dimensional Stability", _, _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                Detergent = null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
