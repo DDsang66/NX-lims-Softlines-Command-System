@@ -143,8 +143,12 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         }
 
                         var reviewer = _db.Users.FirstOrDefault(u => u.UserId == item.ReviewerId)?.NickName;
+                        var cs = _db.CustomerServices.FirstOrDefault(u => u.Id == item.CsId)?.CustomerService1;
+                        var orderEntryPerson = _db.Users.FirstOrDefault(u => u.UserId == item.OrderEntryId)?.NickName;
                         //labtestinfo表
                         existingOrderInfo.Reviewer = reviewer;
+                        existingOrderInfo.CustomerService = cs;
+                        existingOrderInfo.OrderEntryPerson = orderEntryPerson;
                         existingOrderInfo.Express = item.Express;
                         existingOrderInfo.Remark = item.Remark;
                         existingOrderInfo.ReportDueDate = (item.ReportDueDate!.Value).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));

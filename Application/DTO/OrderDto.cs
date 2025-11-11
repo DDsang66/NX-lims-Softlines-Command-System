@@ -106,6 +106,8 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
         // LabTestInfo表的字段
         public string? ReviewerId { get; set; }
+        public int? CsId { get; set; }
+        public string? OrderEntryId { get; set; }
         public string? TestEngineer { get; set; }
         public string? Status { get; set; }
         public string? TestGroup { get; set; }
