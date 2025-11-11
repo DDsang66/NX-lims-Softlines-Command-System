@@ -230,10 +230,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "Type III (100% Polyester)",
                 Temperature = p.WashingProcedure!.Contains("3")?"30":"40",
                 WashingProcedure = p.WashingProcedure,
-                Detergent = null,
+                Detergent = DetergentHelper(p.Detergent,p.SampleDescription!,p.WashingProcedure),
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -427,6 +428,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 if (sampleDescription.Contains("Knit")) return Result = "20";
             }
             return Result;
+        }
+
+        private string? DetergentHelper(string? detergent, string sampleDescription, string WashingProcedure) 
+        {
+            if (string.IsNullOrEmpty(detergent) == false && detergent == "Mild Detergent") return "20g Mild Detergent";
+            if(sampleDescription.Contains("White")) return "20g 77%IEC(A) + 3%TAED + 20%Sodium Perborate";
+            if (WashingProcedure.Contains("H")) return "60mL PERWOLL liquid for hand wash(4H)";
+            return "20g 77%ECE(A)+ 3%TAED + 20%Sodium Perborate";
         }
     }
 }

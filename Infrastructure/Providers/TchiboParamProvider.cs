@@ -41,14 +41,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = p.WashingProcedure,
+                WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
+                : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
+                : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
+                : "Wollens procedure",
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
-                : "Type III (100% Polyester)",
-                AfterWash = "10",
+                AfterWash ="10",
+                Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
                 Program = "900r"
             },
@@ -82,6 +84,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,
+                Program = "900r",
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },

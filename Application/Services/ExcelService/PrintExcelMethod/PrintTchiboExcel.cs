@@ -514,14 +514,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             ["Absorbency"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
-                ["M1"] = (wp, dto, reportNo) => reportNo,
-                ["A3"] = (wp, dto, reportNo) => dto.Standard!,
                 ["A20"] = (wp, dto, reportNo) => "ISO 5077:2007 / ISO 3759:2011 / ISO 6330:2021",
-                ["G21"] = (wp, dto, reportNo) => w.WashingProcedure!,
-                ["AK21"] = (wp, dto, reportNo) => w.Temperature!,
-                ["Q22"] = (wp, dto, reportNo) => w.Ballast!,
-                ["S23"] = (wp, dto, reportNo) => w.DryProcedure!,
-                ["A24"] = (wp, dto, reportNo) => w.SpecialCareInstruction??null!
+                ["J21"] = (w, dto, reportNo) => w.Temperature!,
+                ["Q21"] = (w, dto, reportNo) => w.Detergent!,
+                ["E22"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["AC22"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["A23"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
+                ["Z23"] = (w, dto, reportNo) => w.Program!
             },
             ["Attachment Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
