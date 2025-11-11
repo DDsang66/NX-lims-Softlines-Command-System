@@ -410,7 +410,9 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         {
                             ReportNum = g.Key,
                             OrderEntry = first.Info.OrderEntryPerson ?? string.Empty,
+                            OrderEntryId = _db.Users.FirstOrDefault(l => l.NickName == first.Info.OrderEntryPerson)?.UserId,
                             Cs = first.Info.CustomerService ?? string.Empty,
+                            CsId = _db.CustomerServices.FirstOrDefault(l => l.CustomerService1 == first.Info.CustomerService)?.Id,
                             TestGroups = string.Join(",", distinctGroups.Select(dg => dg.Group).Distinct()),
                             Groups = distinctGroups
                         };
@@ -437,8 +439,10 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         RecordId = d.Info.Id.ToString(),
                         ReportNum = d.Info.ReportNumber ?? string.Empty,
                         OrderEntry = d.Info.OrderEntryPerson ?? string.Empty,
+                        OrderEntryId = _db.Users.FirstOrDefault(l => l.NickName == d.Info.OrderEntryPerson)?.UserId,
                         Express = d.Info.Express ?? string.Empty,
                         Cs = d.Info.CustomerService ?? string.Empty,
+                        CsId = _db.CustomerServices.FirstOrDefault(l => l.CustomerService1 == d.Info.CustomerService)?.Id,
                         TestGroup = d.Info.TestGroup ?? string.Empty,
                         ReviewFinish = d.Schedule.ReviewFinishTime,
                         Reviewer = d.Info.Reviewer ?? string.Empty,

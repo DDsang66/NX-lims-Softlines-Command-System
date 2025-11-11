@@ -29,7 +29,9 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     {
         public string? ReportNum { get; set; }
         public string? OrderEntry { get; set; }
+        public string? OrderEntryId { get; set; }
         public string? Cs { get; set; }
+        public int? CsId{ get; set; }
         public string? TestGroups { get; set; }
         public List<GroupOutput>? Groups { get; set; } = new();
     }
@@ -57,8 +59,10 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? RecordId { get; set; }
         public string? ReportNum { get; set; }
         public string? OrderEntry { get; set; }
+        public string? OrderEntryId { get; set; }
         public string? Express { get; set; }
         public string? Cs { get; set; }
+        public int? CsId { get; set; }
         public string? TestGroup { get; set; }
         public string? DelayType { get; set; }
         public string? DelayReason { get; set; }
