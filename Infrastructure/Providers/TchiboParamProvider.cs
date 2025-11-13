@@ -131,6 +131,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             if (ItemName == "Extension and Recovery") 
             {
                 var content = _helper.CompositionRate(infoDto.fiberComposition!, "Elastane");
+                if (content == 0) Limit = "N/A";
                 if (infoDto.sampleDescription!.Contains("Woven") ){ Limit = "Woven"; }
                 else if (infoDto.sampleDescription!.Contains("Knit"))
                 {
@@ -166,6 +167,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("Regular(Tchibo)", "Appearance", null)] = "In house method",
             [("Regular(Tchibo)", "Pilling Resistance", null)] = "Cycle: 2000 revs",
             [("Regular(Tchibo)", "Air Permeability", null)] = "Area 20cm², P: 100Pa",
+            [("Regular(Tchibo)", "Extension and Recovery", "N/A")] = "N/A",
             [("Regular(Tchibo)", "Extension and Recovery", "Woven")] = "Load: 30N,Cycle: 5",
             [("Regular(Tchibo)", "Extension and Recovery", "3")] = "Load: 3N,Cycle: 5",
             [("Regular(Tchibo)", "Extension and Recovery", "4")] = "Load: 4N,Cycle: 5",

@@ -66,12 +66,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" }
+            if (!new[] { "CF to Washing", "Absorbency", "Colour Fastness to Hot Pressing", 
+                "Dimensional and Bra Wire Casing Stability", "Martindale Pilling", "Print / Motif / Flock Durability",
+                "Print Durability","Shower Resistant Claims Spray Rating","Spirality","DS to Dry-clean",
+                "Stability to Washing","Waterproof Claims Hydrostatic Head","Dimensional Stability"}
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            MangoParameterProvider wetParam = new MangoParameterProvider(_helper);
+            PrimarkParameterProvider wetParam = new PrimarkParameterProvider(_helper);
             if (Param != null)
             {
                 var updatedParam = wetParam.CreateWetParameters(input);
@@ -86,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 {
                     StandardType = "ISO",
                     Sensitive = "N",
-                    ReportNumber = input.OrderNumber,
+                    ReportNumber = input.OrderNumber!,
                     ContactItem = itemName
                 };
                 Param = wetParam.CreateWetParameters(input);

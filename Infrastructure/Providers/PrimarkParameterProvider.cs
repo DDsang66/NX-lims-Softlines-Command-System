@@ -19,7 +19,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         //仅仅用于修改对应ItemName中的Parameter
         public WetParameterIso CreateWetParameters(ParamsInput p) => (p.ItemName, p.WashingProcedure, p.DCProcedure,p.MenuName) switch
         {
-            ("CF to Washing", "4H" or "3M" or "3G" or "3H", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
+            ("Colour Fastness to Washing", "4H" or "3M" or "3G" or "3H", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -28,7 +28,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 SteelBallNum = 0,
                 SpecialCareInstruction = (p.SampleDescription!.Contains("White")||p.SampleDescription.Contains("Cream")) == true ? "N/A" : null
             },
-            ("CF to Washing", "4N" or "4M" or "4G" or "3N", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
+            ("Colour Fastness to Washing", "4N" or "4M" or "4G" or "3N", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -37,7 +37,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10,
                 SpecialCareInstruction = (p.SampleDescription!.Contains("White") || p.SampleDescription.Contains("Cream")) == true ? "N/A" : null
             },
-            ("CF to Washing", _, _ , _) => new WetParameterIso
+            ("Colour Fastness to Washing", _, _ , _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -52,8 +52,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
-                Temperature =
-                p.WashingProcedure!.Contains("3") ? "80" : "105",
+                Temperature = p.WashingProcedure!.Contains("3") ? "80" : "105",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
@@ -124,7 +123,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                DryProcedure = p.DCProcedure,
+                DryProcedure = p.DryProcedure,
                 Temperature = "40",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = "160 g ECE Detergent (with phosphate) (4g/L) and 40 g Sodium Perborate (1g/L)"
@@ -133,7 +132,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                DryProcedure = p.DCProcedure,
+                DryProcedure = p.DryProcedure,
                 Temperature = "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = "160 g ECE Detergent (with phosphate) (4g/L) and 40 g Sodium Perborate (1g/L)"
@@ -231,10 +230,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = p.WashingProcedure!.Contains("3")?"30":"40",
                 WashingProcedure = p.WashingProcedure,
                 Detergent = DetergentHelper(p.Detergent,p.SampleDescription!,p.WashingProcedure),
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
-
+            ("Spirality", _, _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
+                WashingProcedure = p.WashingProcedure,
+                Detergent = DetergentHelper(p.Detergent, p.SampleDescription!, p.WashingProcedure),
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -303,7 +317,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string? Condition, string Item, string? Lv), string?> _map = new()
         {
-            [(null, "Abrasion of Knitted Footwear Garments - Modified Martindale",null)] = "Cycle: 8000 revs",
+            [(null, "Abrasion of Knitted Footwear Garments - Modified Martindale",null)] = "Load:12kPa, Cycle: 8000 revs",
             [("3min", "Accelerotor", null)] = "Time:3min,Cycle: 2000R.P.M",
             [("5min", "Accelerotor", null)] = "Time:5min,Cycle: 2000R.P.M",
             [(null, "Bursting Strength", null)] = "Diameter: 79.8mm,Square:50cm²",

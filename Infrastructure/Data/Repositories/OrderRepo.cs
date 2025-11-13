@@ -214,28 +214,19 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         {
                             orderEntity!.IsDelete = "Y";
                         }
-                        //生成当前订单级删除历史
-                        var groupdeleteHistory = new AuditHistory
-                        {
-                            ChangeHistoryId = new SnowflakeIdGenerator().NextId(),
-                            ContactTable = "LabTestInfo",
-                            ContactId = recordId,
-                            ReportNumber = orderEntity.ReportNumber,
-                            LastChangeTime = DateTimeOffset.Now,
-                        };
                         //对当前动作进行日志记录
                         var auditlog = new AuditChange
                         {
                             ChangeRecordId = new SnowflakeIdGenerator().NextId(),
-                            ChangeHistoryIndex = groupdeleteHistory.ChangeHistoryId,
-                            TableName = "LabTestInfo",
+                            ReportNumber = orderEntity.ReportNumber,
+                            ColumnName = "IsDelete",
+                            OldValue = "N",
+                            NewValue = "Y",
                             ChangePerson = user!.NickName,
                             ChangeTime = DateTimeOffset.Now,
                             Remark = reason,
-                            BatchIndex = "delete"
                         };
                         _db.AuditChanges.Add(auditlog);
-                        _db.AuditHistories.Add(groupdeleteHistory);
                         _db.LabTestInfos.Update(orderEntity);
                         _db.SaveChanges();
                     }

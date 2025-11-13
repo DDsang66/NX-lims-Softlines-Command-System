@@ -7,9 +7,9 @@ public partial class AuditChange
 {
     public long ChangeRecordId { get; set; }
 
-    public long? ChangeHistoryIndex { get; set; }
+    public string? ReportNumber { get; set; }
 
-    public string? TableName { get; set; }
+    public string? TestGroup { get; set; }
 
     public string? ColumnName { get; set; }
 
@@ -22,6 +22,4 @@ public partial class AuditChange
     public DateTimeOffset? ChangeTime { get; set; }
 
     public string? Remark { get; set; }
-
-    public string? BatchIndex { get; set; }
 }

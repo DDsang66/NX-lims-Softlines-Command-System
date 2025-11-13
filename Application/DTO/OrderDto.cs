@@ -143,7 +143,16 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public LabTestInfo Schedule { get; init; }
     }
 
-
+    public class ApplicantDto
+    {
+        public string? Applicant { get; set; }
+        public string? Reason { get; set; }
+        public string? ReportNumber { get; set; }
+        public string? TestGroup { get; set; }
+        public DateTimeOffset? ReportDueDate { get; set; }
+        public string? Express { get; set; }
+        public int? TestSampleNum { get; set; }
+    }
 
 
 
