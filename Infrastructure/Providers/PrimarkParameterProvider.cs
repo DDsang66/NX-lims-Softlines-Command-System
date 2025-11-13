@@ -334,6 +334,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("Woven", "Martindale Pilling", null)] = "Cycle:2000 revs",
             [("Knit", "Martindale Pilling", null)] = "Cycle:500 revs",
             [(null, "Nap Stability", null)] = "Cycle:4000 revs",
+            [("N/A", "Residual Elogation", null)] = "N/A",
             [("15", "Residual Elogation", null)] = "Load:15N",
             [("20", "Residual Elogation", null)] = "Load:20N",
             [("25", "Residual Elogation", null)] = "Load:25N",
@@ -345,7 +346,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("40", "Unrecovered Elongation", null)] = "Load:40N",
             [("30", "Unrecovered Elongation", null)] = "Load:30N",
             [(null, "Vertical Wicking of Textiles", null)] = "Minimum 2.5 inches per 10 minutes",
-        };
+            [(null, "Back Pocket Application Strength", null)] = "Lightweight <100gms 150N;  Medium weight 101gms to 199gms 175N; Heavyweight >200gms 200N ",
+            [(null, "Belt Loop Application Strength", null)] = "Lightweight <100gms 150N;  Medium weight 101gms to 199gms 175N; Heavyweight >200gms 200N ",
+            };
 
         private static string? GetParameter(string? Condition, string item, string? lv)
         {
@@ -413,7 +416,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
         private string? ElogationHelper(List<FiberDto> fiberComposition, string sampleDescription, string MenuName)
         {
-            string? Result = null;
+            string? Result = "N/A";
+            var rate = _helper.CompositionRate(fiberComposition, "Elastane");
+            if (rate == 0) return Result = "N/A";
             if (MenuName == "PTC07" || MenuName == "PTC08") return Result = "20";
             else if (MenuName == "PTC01" || MenuName == "PTC02" || MenuName == "PTC04")
             {
@@ -422,7 +427,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             }
             else if (MenuName == "PTC18A" || MenuName == "PTC18B" || MenuName == "PTC19")
             {
-                var rate = _helper.CompositionRate(fiberComposition, "Elastane");
                 if (!sampleDescription.Contains("Jersey")) return Result = "15";
                 if (rate.HasValue && rate < 5) return Result = "15";
                 if (rate.HasValue && 5 <= rate && rate < 11) return Result = "20";
@@ -430,7 +434,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             }
             else if (MenuName == "PTC14" || MenuName == "PTC13")
             {
-                var rate = _helper.CompositionRate(fiberComposition, "Elastane");
                 if (sampleDescription.Contains("Woven")) return Result = "30";
                 if (rate.HasValue && rate < 5) return Result = "15";
                 if (rate.HasValue && 5 <= rate && rate < 11) return Result = "20";
