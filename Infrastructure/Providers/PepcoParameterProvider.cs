@@ -101,7 +101,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             if (ItemName == "Air Permeability") 
             {
                 if (infoDto.sampleDescription!.Contains("WindProof")) Condition = "As Received";
-                else if (infoDto.sampleDescription.Contains("Windproof")) Condition = "After 3 Wash";
+                else if (infoDto.sampleDescription.Contains("Breathability")) Condition = "After 3 Wash";
                 else Condition = null;
             }
             return GetParameter(ItemName, Condition);//返回一个string类型的Parameter
@@ -118,8 +118,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("Air Permeability", null)] = "Please Select 'WindProof' or 'Breathability'",
             [("Wicking", null)] = "As Received",
             [("Absorbency", null)] = "As Received",
-            [("Water Repellency-Spray Test", null)] = "After 3 Wash",
+            [("Water Repellency-Spray Test", null)] = "Water-Resistant Test as Recevied; Water-Repllent Test After 3 Wash.",
             [("Seam Slippage", null)] = "The negative load depends on the basis weight",
+            [("Drying Rate of Fabrics", null)] = "As Received",
         };
 
         private static string? GetParameter(string item, string? lv)

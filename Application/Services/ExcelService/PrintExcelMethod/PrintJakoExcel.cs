@@ -117,7 +117,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || (itemName == "Appearance"&&dto.sampleDescription!.Contains("Garment") )|| itemName == "Spriality/Skewing")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.MenuName!);
             }
@@ -125,7 +125,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || (itemName == "Appearance" && dto.sampleDescription!.Contains("Garment")) || itemName == "Spriality/Skewing")
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);

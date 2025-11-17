@@ -323,6 +323,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["AV39"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["BT39"] = (w, dto, reportNo) => w.DryProcedure!,
                 ["AR40"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
+                ["BX40"] = (w, dto, reportNo) => w.Program!,
             },
             ["CF to Sublimation in Storage"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -448,6 +449,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 map["L7"] = (wp, dto, reportNo) => "5";
                 return map;
+            },
+            ["Water Resistance-Hydrostatic Pressure"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["M1"] = (wp, dto, reportNo) => reportNo,
+                ["A3"] = (wp, dto, reportNo) => dto.Standard!,
             },
             ["Water Resistance-Hydrostatic Pressure"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

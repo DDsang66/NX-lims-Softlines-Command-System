@@ -329,8 +329,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("N/A", "Colour Fastness to Water", null)] = "N/A",
             [(null, "Colour Fastness to Washing", null)] = "Multi-Fibre Type:LyoW",
             [(null, "Colour Fastness to Water", null)] = "Multi-Fibre Type:LyoW",
-            [(null, "Martindale Abrasion", null)] = "9KPa,Shade Change @ 5000",
-            [("no change shade", "Martindale Abrasion", null)] = "9KPa",
+            [(null, "Martindale Abrasion", null)] = "9KPa,Shade Change @ 5000 {<100g/m²：10000 revs；101~199g/m²：15000 revs；>2000g/m²：20000 revs}",
+            [("no change shade", "Martindale Abrasion", null)] = "9KPa；{<200g/m²：10000 revs；201~270g/m²：15000 revs；271~390g/m²：18000 revs；>390g/m²：20000 revs}",
             [("Woven", "Martindale Pilling", null)] = "Cycle:2000 revs",
             [("Knit", "Martindale Pilling", null)] = "Cycle:500 revs",
             [(null, "Nap Stability", null)] = "Cycle:4000 revs",
@@ -346,8 +346,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("40", "Unrecovered Elongation", null)] = "Load:40N",
             [("30", "Unrecovered Elongation", null)] = "Load:30N",
             [(null, "Vertical Wicking of Textiles", null)] = "Minimum 2.5 inches per 10 minutes",
-            [(null, "Back Pocket Application Strength", null)] = "Lightweight <100gms 150N;  Medium weight 101gms to 199gms 175N; Heavyweight >200gms 200N ",
-            [(null, "Belt Loop Application Strength", null)] = "Lightweight <100gms 150N;  Medium weight 101gms to 199gms 175N; Heavyweight >200gms 200N ",
+            [(null, "Back Pocket Application Strength", null)] = "{Lightweight <100gms：150N;  Medium weight 101~199gms：175N; Heavyweight >200gms：200N }",
+            [(null, "Belt Loop Application Strength", null)] = "{Lightweight <100gms：150N;  Medium weight 101~199gms：175N; Heavyweight >200gms：200N }",
             };
 
         private static string? GetParameter(string? Condition, string item, string? lv)
