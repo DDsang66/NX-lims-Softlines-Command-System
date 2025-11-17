@@ -318,12 +318,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
                 ["BI13"] = (w, dto, reportNo) => w.IronMethod??"/",
-                ["BA38"] = (w, dto, reportNo) => w.Temperature!,
-                ["BH38"] = (w, dto, reportNo) => w.Detergent!,
-                ["AV39"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["BT39"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AR40"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
-                ["BX40"] = (w, dto, reportNo) => w.Program!,
+                ["BA37"] = (w, dto, reportNo) => w.Temperature!,
+                ["BH37"] = (w, dto, reportNo) => w.Detergent!,
+                ["AV38"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["BT38"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["AR39"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
+                ["BX39"] = (w, dto, reportNo) => w.Program!,
             },
             ["CF to Sublimation in Storage"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -368,8 +368,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A25"] = (w, dto, reportNo) => dto.Standard!,
-                ["F25"] = (w, dto, reportNo) => dto.Parameter=="L-5" ? "该项目号最高可给5级" : null!,
+                ["A27"] = (w, dto, reportNo) => dto.Standard!,
+                ["G26"] = (w, dto, reportNo) => dto.Parameter=="L-5" ? "该项目号最高可给5级" : null!,
             },
             ["CF to Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
