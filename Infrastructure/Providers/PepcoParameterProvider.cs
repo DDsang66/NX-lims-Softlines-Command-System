@@ -65,6 +65,51 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("Air Permeability", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+    : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+    : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Water Repellency-Spray Test", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+: _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+: "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Water Resistance-Hydrostatic Pressure", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+: _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+: "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
             ("Print Durability", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,

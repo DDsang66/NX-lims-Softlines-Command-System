@@ -255,7 +255,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Appearance"] = (_, _) => ExcelTchiboMapper.MapAppearance(),
             ["Weight"] = (_, _) => ExcelTchiboMapper.MapWeight(),
             ["Yarn Count"] = (_, _) => ExcelTchiboMapper.MapYarnCount(),
-            ["Pilling Resistance"] = (_, _) => ExcelTchiboMapper.MapPilling(),
+            ["Pilling Resistance"] = (_, m) => ExcelTchiboMapper.MapPilling(m),
             ["Zipper Strength"] = (_, _) => ExcelTchiboMapper.MapZipperStrength(),
             ["Resistance to Unsnapping of Snap Fasteners"] = (_, _) => ExcelTchiboMapper.MapUnsnapping(),
             ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelTchiboMapper.MapHydrostaticPressing(),
@@ -403,11 +403,21 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["M1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
             },
-            ["Pilling Resistance"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Pilling Resistance"] = (w,dto, reportNo) =>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["F3"] = (w, dto, reportNo) => dto.Standard!,
-                ["D4"] = (w, dto, reportNo) => dto.Parameter!,
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                if (dto.sampleDescription!.Contains("Woven"))
+                {
+                    map["M1"] = (wp, dto, reportNo) => reportNo;
+                    map["F13"] = (w,dto, reportNo) => "DIN EN ISO 12945-2:2021,";
+                    map["D14"] = (w,dto, reportNo) => dto.Parameter!;
+                }
+                else if (dto.sampleDescription!.Contains("Knit"))
+                {
+                    map["M1"] = (w,dto, reportNo) => reportNo;
+                    map["F3"] = (w,dto, reportNo) => "DIN EN ISO 12945-1:2021";
+                }
+                return map;
             },
             ["Zipper Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -522,6 +532,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             ["Absorbency"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
+                ["M1"] = (wp, dto, reportNo) => reportNo,
+                ["A3"] = (wp, dto, reportNo) => dto.Standard!,
                 ["A20"] = (wp, dto, reportNo) => "ISO 5077:2007 / ISO 3759:2011 / ISO 6330:2021",
                 ["J21"] = (w, dto, reportNo) => w.Temperature!,
                 ["Q21"] = (w, dto, reportNo) => w.Detergent!,

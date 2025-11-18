@@ -9,15 +9,12 @@ using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System.ComponentModel;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
-
-
-
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
-    public sealed class PrintPrimarkExcel : IPrintExcelStrategy
+    public sealed class PrintKikExcel : IPrintExcelStrategy
     {
         private readonly LabDbContextSec _db;
-        public PrintPrimarkExcel(LabDbContextSec db)
+        public PrintKikExcel(LabDbContextSec db)
         {
             _db = db;
         }
@@ -224,6 +221,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Absorbency"] = "Absorbency",
             ["Attachment Strength"] = "Attachment Strength",
             ["Density"] = "Density",
+
+            ["Spirality/Skewing"] = "Spirality",
+            ["Determinaion fo Size"] = "Determinaion fo Size",
             ["Appearance"] = "AppearanceAfterWashing",
             ["CF to Washing"] = "CFtoWashing&Rubbing&Light",
             ["CF to Rubbing"] = "CFtoWashing&Rubbing&Light",
@@ -232,16 +232,30 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Water"] = "CFtoPerspiration&Water",
             ["CF to Saliva"] = "CFtoSaliva&Sweat",
             ["CF to Sweat"] = "CFtoSaliva&Sweat",
-            ["CF to Sublimation in Storage"] = "CFtoSublimation&HotPressing&Cl",
-            ["CF to Hot Pressing"] = "CFtoSublimation&HotPressing&Cl",
-            ["CF to Chlorinated Water"] = "CFtoSublimation&HotPressing&Cl",
+            ["CF to Sea Water"] = "CFtoSeaWater&Cl",
+            ["CF to Chlorinated Water"] = "CFtoSeaWater&Cl",
+            ["Determination of the Fastening of Components"]= "Determination of FC",
         };
         private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
         {
             ["DS to Washing"] = new Dictionary<string, string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment","DStoWashing-G"},
+                {"Bra", "DStoWashing&DC-BSS" },
+                {"Body/Allover suit", "DStoWashing&DC-BSS" },
+                {"Slip", "DStoWashing&DC-BSS" },
+                {"Shirt","DStoWashing&DC-STPSD"},
+                {"Pullover","DStoWashing&DC-STPSD"},
+                {"Top","DStoWashing&DC-STPSD"},
+                {"Undershirt","DStoWashing&DC-STPSD"},
+                {"Pants","DStoWashing&DC-STPSD"},
+                {"Skirt","DStoWashing&DC-STPSD"},
+                {"Dress","DStoWashing&DC-STPSD"},
+                {"Baby-body suits","DStoWashing&DC-BBPSC"},
+                {"Bib overall","DStoWashing&DC-BBPSC"},
+                {"Panty pants","DStoWashing&DC-BBPSC"},
+                {"Tights","DStoWashing&DC-BBPSC"},
+                {"Socks","DStoWashing&DC-BBPSC"},
+                {"Caps","DStoWashing&DC-BBPSC"},
             },
             ["Seam Slippage"] = new Dictionary<string, string>
             {
@@ -284,65 +298,38 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         };
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> WetExtraMap = new()
         {
-
-            ["DS to Washing"] = (w, dto, reportNo) =>
+            ["DS to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                if (dto.sampleDescription!.Contains("Fabric"))
-                {
-                    map["BC1"] = (w, dto, reportNo) => reportNo;
-                    map["AR3"] = (w, dto, reportNo) => dto.Standard!;
-                    map["BA4"] = (w, dto, reportNo) => w.Temperature!;
-                    map["BH4"] = (w, dto, reportNo) => w.Detergent!;
-                    map["AV5"] = (w, dto, reportNo) => w.WashingProcedure!;
-                    map["BP5"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["AR6"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
-                    map["BJ6"] = (w, dto, reportNo) => w.Program!;
-                }
-                else if (dto.sampleDescription!.Contains("Garment"))
-                {
-                    map["P1"] = (w, dto, reportNo) => reportNo;
-                    map["A3"] = (w, dto, reportNo) => dto.Standard!;
-                    map["L4"] = (w, dto, reportNo) => w.Temperature!;
-                    map["S4"] = (w, dto, reportNo) => w.Detergent!;
-                    map["A5"] = (w, dto, reportNo) => w.WashingProcedure!;
-                    map["Y5"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["A6"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
-                    map["W6"] = (w, dto, reportNo) => w.Program!;
-                }
-                return map;
+                ["P1"] = (w, dto, reportNo) => reportNo,
+                ["L4"] = (w, dto, reportNo) => w.Temperature!,
+                ["J5"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["AG5"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["A6"] = (w, dto, reportNo) => w.IronMethod??"/ Iron",
+                ["N6"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-",
+                ["W8"] = (w, dto, reportNo) => "1",
+                ["AG108"] = (w, dto, reportNo) => "1",
             },
             ["Appearance"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
-                ["AR4"] = (w, dto, reportNo) => dto.Standard!,
-                ["BI13"] = (w, dto, reportNo) => w.IronMethod ?? "/",
-                ["BA38"] = (w, dto, reportNo) => w.Temperature!,
-                ["BH38"] = (w, dto, reportNo) => w.Detergent!,
-                ["AV39"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["BT39"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AR40"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
-            },
-            ["CF to Sublimation in Storage"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["H1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["D4"] = (w, dto, reportNo) => w.Temperature!,
-                ["G4"] = (w, dto, reportNo) => "48",
-                ["D7"] = (w, dto, reportNo) => w.Ballast!
-            },
-            ["CF to Hot Pressing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["H1"] = (w, dto, reportNo) => reportNo,
-                ["A12"] = (w, dto, reportNo) => dto.Standard!,
-                ["G13"] = (w, dto, reportNo) => w.Temperature!,
-                ["A14"] = (w, dto, reportNo) => w.Iron == "L-5" ? "该项目号最高可给5级" : null!,
-                ["R13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "N/A" : null,
+                ["BG6"] = (w, dto, reportNo) => "1",
+                ["BE13"] = (w, dto, reportNo) => "1",
+                ["BI13"] = (w, dto, reportNo) => w.IronMethod ?? "/ Iron",
+                ["BA37"] = (w, dto, reportNo) => w.Temperature!,
+                ["BE38"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["AU39"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["BD39"] = (w, dto, reportNo) => w.IronMethod ?? "/ Iron",
+                ["AR40"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-",
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
-                ["H1"] = (w, dto, reportNo) => reportNo,
-                ["A27"] = (w, dto, reportNo) => dto.Standard!
+                ["D1"] = (w, dto, reportNo) => reportNo,
+                ["A17"] = (w, dto, reportNo) => dto.Standard!
+            },
+            ["CF to Sea Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["D1"] = (w, dto, reportNo) => reportNo,
+                ["A3"] = (w, dto, reportNo) => dto.Standard!,
             },
             ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -366,8 +353,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A25"] = (w, dto, reportNo) => dto.Standard!,
-                ["F25"] = (w, dto, reportNo) => dto.Parameter == "L-5" ? "该项目号最高可给5级" : null!,
+                ["A27"] = (w, dto, reportNo) => dto.Standard!,
             },
             ["CF to Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -378,17 +364,36 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["H15"] = (w, dto, reportNo) => dto.Parameter == "L-5" ? "该项目号最高可给5级" : null!,
                 ["G3"] = (w, dto, reportNo) => "√"
             },
             ["CF to Sweat"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["H15"] = (w, dto, reportNo) => dto.Parameter == "L-5" ? "该项目号最高可给5级" : null!,
                 ["J3"] = (w, dto, reportNo) => "√"
             },
+            ["Spirality/Skewing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["BC1"] = (w, dto, reportNo) => reportNo,
+                ["AT6"] = (w, dto, reportNo) => "1",
+                ["BQ24"] = (w, dto, reportNo) => w.Temperature!,
+                ["BH27"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["BM28"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["BV28"] = (w, dto, reportNo) => w.IronMethod ?? "/ Iron",
+                ["BH29"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-",
+            },
+            ["Determinaion fo Size"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["BC1"] = (w, dto, reportNo) => reportNo,
+            },
+            ["Determination of FC"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["BC1"] = (w, dto, reportNo) => reportNo,
+                ["AR4"] = (w, dto, reportNo) => dto.Standard!,
+                ["AT8"] = (w, dto, reportNo) =>"1",
+            },
         };
+
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> PhyExtraMap = new()
         {
             ["Weight"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>

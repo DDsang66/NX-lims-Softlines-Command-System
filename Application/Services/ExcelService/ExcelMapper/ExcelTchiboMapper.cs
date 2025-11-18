@@ -131,12 +131,18 @@
                 "D10"
             };
         }
-        public static string[] MapPilling()
+        public static string[] MapPilling(string sampleDescription)
         {
-            return new string[]
+            List<string> stringMap = null;
+            if (sampleDescription.Contains("Knit"))
             {
-                "A8","A15"
-            };
+                stringMap = new List<string> { "A8", "A9","A10" };
+            }
+            else
+            {
+                stringMap = new List<string> { "A18","A25" };
+            }
+            return stringMap?.ToArray() ?? new string[0];
         }
 
         public static string[] MapZipperStrength()
@@ -172,7 +178,7 @@
         {
             return new string[]
             {
-                "D10"
+                "I10","O10","U10","AA10","AG10"
             };
         }
 

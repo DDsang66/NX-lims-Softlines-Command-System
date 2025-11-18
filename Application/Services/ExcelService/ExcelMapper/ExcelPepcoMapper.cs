@@ -1,0 +1,179 @@
+﻿namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
+{
+    public static class ExcelPepcoMapper
+    {
+        //WET
+
+        public static string[] MapAppearance()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "BA5", "BM13"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+        public static string[] MappPrintDurability()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "BA4", "BT12"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+        public static string[] MapDStoWashing(string sampleDescription)
+        {
+            List<string> stringMap = null;
+            if (sampleDescription.Contains("Fabric"))
+            {
+                stringMap = new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" };
+            }
+            else
+            {
+                stringMap = new List<string> { "G10" };
+            }
+            return stringMap?.ToArray() ?? new string[0];
+        }
+        public static string[] MapWRL(string ItemName)
+        {
+            List<string>? map = null;
+            switch (ItemName)
+            {
+                case "CF to Washing":
+                    map = new List<string> { "D7", "F7", "H7", "L7", "N7","P7" };
+                    break;
+                case "CF to Rubbing":
+                    map = new List<string> { "D21", "F21", "H21", "L21", "N21", "P21" };
+                    break;
+                case "CF to Light":
+                    map = new List<string> { "C30","D30", "F30", "H30", "L30", "N30", "P30" };
+                    break;
+                default: break;
+            }
+            return map?.ToArray() ?? new string[0];
+        }
+
+        public static string[] MapPW(string ItemName)
+        {
+            List<string>? map = null;
+            switch (ItemName)
+            {
+                case "CF to Water":
+                    map = new List<string> { "D26", "F26", "H26", "J26", "L26", "N26" };
+                    break;
+                case "CF to Perspiration":
+                    map = new List<string> { "D5", "F5", "H5", "J5", "L5", "N5", "D14", "F14", "H14", "J14", "L14", "N14" };
+                    break;
+                default: break;
+            }
+            return map?.ToArray() ?? new string[0];
+        }
+        //Physics
+        public static string[] MapAttachment()
+        {
+            return new string[]
+            {
+                "AC3"
+            };
+        }
+        public static string[] MapPilling()
+        {
+            return new string[]
+            {
+                "A8", "A15"
+            };
+        }
+        public static string[] MapRepellency(string SampleDescription)
+        {
+            List<string>? map = null;
+            if (SampleDescription.Contains("Repellent"))
+            {
+                map = new List<string>
+                {
+                    "A15","A16","A17"
+                };
+            }
+            else
+            {
+                map = new List<string>
+                {
+                    "A8","A9","A10"
+                };
+            }
+            return map?.ToArray() ?? new string[0];
+        }
+
+        public static string[] MapHydroatatic()
+        {
+            return new string[]
+            {
+                "A10", "A12","A18","A20"
+            };
+        }
+        public static string[] MapDryRate()
+        {
+            return new string[]
+            {
+                 "D12","D19","D26"
+            };
+        }
+
+        public static string[] MapWicking()
+        {
+            return new string[]
+            {
+                 "A9", "A13","A17","A21"
+            };
+        }
+        public static string[] MapAir()
+        {
+            return new string[]
+            {
+                "I10","O10","U10","AA10","AG10"
+            };
+        }
+
+        public static string[] MapSeamSlippage(string sampleDescription)
+        {
+            List<string> stringMap = null;
+            if (sampleDescription.Contains("Fabric"))
+            {
+                stringMap = new List<string> { "A12", "A14" };
+            }
+            else
+            {
+                stringMap = new List<string> { "D5" };
+            }
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+        public static string[] MapAbsorbency()
+        {
+            return new string[]
+            {
+                "A10","A11","A12","A13","A14","A15"
+            };
+        }
+      
+        
+        //AfterWash
+        public static string[] DStoWashingAf() 
+        {
+            return new string[]
+            {
+                "AZ13","BR13","AZ24","BR24"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+
+        public static string[] DStoDCAf()
+        {
+            return new string[]
+            {
+                "AZ11","BR11","AZ22","BR22"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+    }
+}

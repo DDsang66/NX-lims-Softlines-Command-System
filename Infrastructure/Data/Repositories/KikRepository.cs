@@ -45,8 +45,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                         int? itemID = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.ItemIndex;
                         string? standardCore = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.StandardCode;
                         var item = await _db.Items.FindAsync(itemID);
-                        var Type = item!.Type;
-                        if(standardCore== "DIN CEN/TS 17394-4:2021") Type = "Wet";
                         if (item != null)
                         {
                             checkLists.Add(new CheckListDto
@@ -54,7 +52,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                 MenuName = menuName,
                                 ItemName = item.ItemName,
                                 Standard = standardCore,
-                                Type = Type,
+                                Type = item.Type,
                                 Parameter = null
                             });
 
