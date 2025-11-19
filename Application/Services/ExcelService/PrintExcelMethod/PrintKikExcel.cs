@@ -96,7 +96,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
@@ -105,7 +105,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS")
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -119,7 +119,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             int offset = 0; // 假设没有偏移
             offset = OffsetRule.GetValueOrDefault(itemName, 0);
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
-            if (itemName == "CF to Hot Pressing") { capacity = 3; }// 特例处理，实际容量为3
             if (itemName == "Appearance") { capacity = 1; }
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
@@ -211,19 +210,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private static readonly Dictionary<string, string> TemplateSheetNamesNormal = new()
         {
             ["Weight"] = "Weight",
+            ["Piece Weight"] = "Weight",
             ["Yarn Count"] = "Yarn Count",
             ["Pilling Resistance"] = "Pilling Resistance",
-            ["Zipper Strength"] = "Zipper Strength-EN 16732",
-            ["Resistance to Unsnapping of Snap Fasteners"] = "Resistance to Unsnapping",
-            ["Water Resistance-Hydrostatic Pressure"] = "Hydroatatic Test",
-            ["Extension and Recovery"] = "Stretch&Recovery of Elastic",
+            ["Zipper Strength"] = "Zipper Strength",
+            ["Water Resistance-Hydrostatic Pressure"] = "Hydroatatic",
             ["Air Permeability"] = "Air Permeability",
-            ["Absorbency"] = "Absorbency",
             ["Attachment Strength"] = "Attachment Strength",
             ["Density"] = "Density",
 
             ["Spirality/Skewing"] = "Spirality",
-            ["Determinaion fo Size"] = "Determinaion fo Size",
+            ["Determination of Size"] = "Determination of Size",
             ["Appearance"] = "AppearanceAfterWashing",
             ["CF to Washing"] = "CFtoWashing&Rubbing&Light",
             ["CF to Rubbing"] = "CFtoWashing&Rubbing&Light",
@@ -257,38 +254,33 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {"Socks","DStoWashing&DC-BBPSC"},
                 {"Caps","DStoWashing&DC-BBPSC"},
             },
-            ["Seam Slippage"] = new Dictionary<string, string>
-            {
-                {"Fabric", "Seam Slippage" },
-                {"Garment","Seam Slippage-G"},
-            },
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()
         {
-            ["Appearance"] = (_, _) => ExcelTchiboMapper.MapAppearance(),
-            ["Weight"] = (_, _) => ExcelTchiboMapper.MapWeight(),
-            ["Yarn Count"] = (_, _) => ExcelTchiboMapper.MapYarnCount(),
-            ["Pilling Resistance"] = (_, m) => ExcelTchiboMapper.MapPilling(m),
-            ["Zipper Strength"] = (_, _) => ExcelTchiboMapper.MapZipperStrength(),
-            ["Resistance to Unsnapping of Snap Fasteners"] = (_, _) => ExcelTchiboMapper.MapUnsnapping(),
-            ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelTchiboMapper.MapHydrostaticPressing(),
-            ["Extension and Recovery"] = (_, _) => ExcelTchiboMapper.MapExtensionAndRecovery(),
-            ["Air Permeability"] = (_, _) => ExcelTchiboMapper.MapAirPermeability(),
-            ["Absorbency"] = (_, _) => ExcelTchiboMapper.MapAbsorbency(),
-            ["Attachment Strength"] = (_, _) => ExcelTchiboMapper.MapAttachmentStrength(),
-            ["Density"] = (_, _) => ExcelTchiboMapper.MapDensity(),
-            ["CF to Washing"] = (_, _) => ExcelTchiboMapper.MapCFtoWashing(),
-            ["CF to Rubbing"] = (_, _) => ExcelTchiboMapper.MapCFtoRubbing(),
-            ["CF to Light"] = (_, _) => ExcelTchiboMapper.MapCFtoLight(),
-            ["CF to Perspiration"] = (_, _) => ExcelTchiboMapper.MapCFtoPerspiration(),
-            ["CF to Water"] = (_, _) => ExcelTchiboMapper.MapCFtoWater(),
-            ["CF to Saliva"] = (_, _) => ExcelTchiboMapper.MapCFtoSalivaSweat(),
-            ["CF to Sweat"] = (_, _) => ExcelTchiboMapper.MapCFtoSalivaSweat(),
-            ["CF to Sublimation in Storage"] = (_, _) => ExcelTchiboMapper.MapCFtoSublimation(),
-            ["CF to Hot Pressing"] = (_, _) => ExcelTchiboMapper.MapCFtoHotPressing(),
-            ["CF to Chlorinated Water"] = (_, _) => ExcelTchiboMapper.MapCFtoCl(),
-            ["DS to Washing"] = (_, m) => ExcelTchiboMapper.MapDStoWashing(m),
-            ["Seam Slippage"] = (_, m) => ExcelTchiboMapper.MapSeamSlippage(m)
+            ["Weight"] = (_, _) => ExcelKikMapper.MapWeight(),
+            ["Piece Weight"] = (_, _) => ExcelKikMapper.MapWeight(),
+            ["Yarn Count"] = (_, _) => ExcelKikMapper.MapYarnCount(),
+            ["Pilling Resistance"] = (_, _) => ExcelKikMapper.MapPilling(),
+            ["Zipper Strength"] = (_, _) => ExcelKikMapper.MapZipper(),
+            ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelKikMapper.MapHydroatatic(),
+            ["Air Permeability"] = (_, _) => ExcelKikMapper.MapAir(),
+            ["Attachment Strength"] = (_, _) => ExcelKikMapper.MapAttachment(),
+            ["Density"] = (_, _) => ExcelKikMapper.MapDensity(),
+
+            ["Spirality/Skewing"] = (_, _) => ExcelKikMapper.MappSpirality(),
+            ["Determination of Size"] = (_, _) => ExcelKikMapper.DeterminationOfSize(),
+            ["Appearance"] = (_, _) => ExcelKikMapper.MapAppearance(),
+            ["CF to Washing"] = (n, _) => ExcelKikMapper.MapWRL(n),
+            ["CF to Rubbing"] = (n, _) => ExcelKikMapper.MapWRL(n),
+            ["CF to Light"] = (n, _) => ExcelKikMapper.MapWRL(n),
+            ["CF to Perspiration"] = (n, _) => ExcelKikMapper.MapWRL(n),
+            ["CF to Water"] = (n, _) => ExcelKikMapper.MapWRL(n),
+            ["CF to Saliva"] = (_, _) => ExcelKikMapper.MapCFtoSalivaSweat(),
+            ["CF to Sweat"] = (_, _) => ExcelKikMapper.MapCFtoSalivaSweat(),
+            ["CF to Sea Water"] = (n, _) => ExcelKikMapper.MapSC(n),
+            ["CF to Chlorinated Water"] = (n, _) => ExcelKikMapper.MapSC(n),
+            ["DS to Washing"] = (_, m) => ExcelKikMapper.MapDStoWashing(m),
+            ["Determination of the Fastening of Components"] = (_, _) => ExcelKikMapper.MapDeterminationToFc(),
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
@@ -304,7 +296,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["L4"] = (w, dto, reportNo) => w.Temperature!,
                 ["J5"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["AG5"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["A6"] = (w, dto, reportNo) => w.IronMethod??"/ Iron",
+                ["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
                 ["N6"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-",
                 ["W8"] = (w, dto, reportNo) => "1",
                 ["AG108"] = (w, dto, reportNo) => "1",
@@ -314,12 +306,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["BG6"] = (w, dto, reportNo) => "1",
                 ["BE13"] = (w, dto, reportNo) => "1",
-                ["BI13"] = (w, dto, reportNo) => w.IronMethod ?? "/ Iron",
+                ["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
                 ["BA37"] = (w, dto, reportNo) => w.Temperature!,
                 ["BE38"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["AU39"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["BD39"] = (w, dto, reportNo) => w.IronMethod ?? "/ Iron",
-                ["AR40"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-",
+                ["BD39"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["AR40"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -376,17 +368,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AT6"] = (w, dto, reportNo) => "1",
-                ["BQ24"] = (w, dto, reportNo) => w.Temperature!,
+                ["BR24"] = (w, dto, reportNo) => w.Temperature!,
                 ["BH27"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["BM28"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["BV28"] = (w, dto, reportNo) => w.IronMethod ?? "/ Iron",
-                ["BH29"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-",
+                ["BV28"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BH29"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
             },
-            ["Determinaion fo Size"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Determination of Size"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
             },
-            ["Determination of FC"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Determination of the Fastening of Components"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
@@ -400,6 +392,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["J1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
+            },
+            ["Piece Weight"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["J1"] = (w, dto, reportNo) => reportNo,
+                ["A3"] = (w, dto, reportNo) => dto.Standard!,
+                ["P3"] = (w, dto, reportNo) => "条重",
             },
             ["Yarn Count"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -417,96 +415,36 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["M1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
             },
-            ["Resistance to Unsnapping of Snap Fasteners"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Extension and Recovery"] = (w, dto, reportNo) =>
+            ["Water Resistance-Hydrostatic Pressure"] = (w, dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+
                 map["M1"] = (wp, dto, reportNo) => reportNo;
                 map["A3"] = (wp, dto, reportNo) => dto.Standard!;
-                if (dto.sampleDescription!.Contains("Woven"))
+                if (dto.Parameter!.Contains("1500"))
                 {
-                    map["F7"] = (wp, dto, reportNo) => "30";
-                    map["A5"] = (wp, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min"
-                    : "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
+                    map["E7"] = (wp, dto, reportNo) => "1500";
+                    map["E15"] = (wp, dto, reportNo) => "1500";
                 }
-                else if (dto.sampleDescription!.Contains("Knit"))
+                else if (dto.Parameter!.Contains("3000"))
                 {
-                    map["A5"] = (wp, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
-                    "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
-                    map["F7"] = (wp, dto, reportNo) =>
-                    dto.sampleDescription!.Contains("3") ? "3"
-                    : dto.sampleDescription!.Contains("4") ? "4"
-                    : dto.sampleDescription!.Contains("5") ? "5"
-                    : dto.sampleDescription!.Contains("6") ? "6"
-                    : dto.sampleDescription!.Contains("7") ? "7"
-                    : dto.sampleDescription!.Contains("8") ? "8"
-                    : dto.sampleDescription!.Contains("10") ? "10"
-                    : "14";
+                    map["E7"] = (wp, dto, reportNo) => "3000";
+                    map["E15"] = (wp, dto, reportNo) => "3000";
                 }
-                map["L7"] = (wp, dto, reportNo) => "5";
-                return map;
-            },
-            ["Water Resistance-Hydrostatic Pressure"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (wp, dto, reportNo) => reportNo,
-                ["A3"] = (wp, dto, reportNo) => dto.Standard!,
-            },
-            ["Seam Slippage"] = (w, dto, reportNo) =>
-            {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (wp, dto, reportNo) => reportNo;
-                if (dto.sampleDescription!.Contains("Fabric"))
+                else if (dto.Parameter!.Contains("800"))
                 {
-                    map["A3"] = (wp, dto, reportNo) => dto.Standard!;
+                    map["E7"] = (wp, dto, reportNo) => "800";
+                    map["E15"] = (wp, dto, reportNo) => "800";
                 }
-                if (dto.sampleDescription!.Contains("Garment"))
+                else if (dto.Parameter!.Contains("0"))
                 {
-                    map["J3"] = (wp, dto, reportNo) => dto.Standard!;
-                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-                    if (layout.Contains("Shell"))
-                    {
-                        map["Q4"] = (wp, dto, reportNo) => "√";
-                        map["Q14"] = (wp, dto, reportNo) => "√";
-                    }
-                    if (layout.Contains("Lining"))
-                    {
-                        map["AF4"] = (wp, dto, reportNo) => "√";
-                        map["AF14"] = (wp, dto, reportNo) => "√";
-                    }
-                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                    Dictionary<string, (string Cell, string Desc)> ComponentMap =
-                            new(StringComparer.OrdinalIgnoreCase)
-                            {
-                                ["Side"] = ("A5", "Side Seam"),
-                                ["Sleeve"] = ("A6", "Sleeve Seam"),
-                                ["Armhole"] = ("A7", "Armhole Seam"),
-                                ["Shoulder"] = ("A8", "Shoulder Seam"),
-                                ["Armprit"] = ("A9", "Armprit Seam"),
-                                ["Front Panel"] = ("A10", "Front Panel Seam"),
-                                ["Back Panel"] = ("A11", "Back Panel Seam"),
-                                ["OutSide"] = ("A15", "Out-Side Seam"),
-                                ["InSide"] = ("A16", "In-Side Seam"),
-                                ["Back Rise"] = ("A17", "Back Rise Seam"),
-                                ["Front Crotch"] = ("A18", "Front Crotch Seam"),
-                                ["Cross"] = ("A19", "Cross Seam"),
-                            };
-                    if (!string.IsNullOrEmpty(component))
-                    {
-                        foreach (var kv in ComponentMap)
-                        {
-                            if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
-                            {
-                                var (cell, desc) = kv.Value;
-                                map[cell] = (wp, dto, reportNo) => desc;
-                            }
-                        }
-                    }
+                    map["E7"] = (wp, dto, reportNo) => "0";
+                    map["E15"] = (wp, dto, reportNo) => "0";
+                }
+                else
+                {
+                    map["E7"] = (wp, dto, reportNo) => "N/A";
+                    map["E15"] = (wp, dto, reportNo) => "N/A";
                 }
                 return map;
             },
@@ -516,16 +454,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A3"] = (wp, dto, reportNo) => dto.Standard!,
                 ["F5"] = (wp, dto, reportNo) => "20",
                 ["E6"] = (wp, dto, reportNo) => "100",
-            },
-            ["Absorbency"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["A20"] = (wp, dto, reportNo) => "ISO 5077:2007 / ISO 3759:2011 / ISO 6330:2021",
-                ["J21"] = (w, dto, reportNo) => w.Temperature!,
-                ["Q21"] = (w, dto, reportNo) => w.Detergent!,
-                ["E22"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["AC22"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["A23"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
-                ["Z23"] = (w, dto, reportNo) => w.Program!
             },
             ["Attachment Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -545,7 +473,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private static readonly Dictionary<string, int> OffsetRule = new()
         {
             ["CF to Perspiration"] = 6,
-            ["DS to Washing"] = 4,
         };
         private void WriteSamples(
             ExcelWorksheet ws,
@@ -557,44 +484,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string sampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
-            if (afmap != null && afmap.Length > 0 && AfterWashCellAddrs != null && AfterWashCellAddrs.Length > 0 && itemName == "Appearance")
-            {
-                for (int i = 0; i < AfterWashCellAddrs.Length; i++)
-                {
-                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
-                }
-            }
-            else if (afmap != null && afmap.Length > 0 && itemName == "DS to Washing" && sampleDescription.Contains("Garment"))
-            {
-                for (int i = 0; i < afmap.Length; i++)
-                {
-                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
-                }
-            }
-            else if (afmap != null && afmap.Length > 0)
-            {
-                for (int i = 0; i < afmap.Length; i++)
-                {
-                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[i];
-                }
-            }
-
-
-
             if (itemName == "Appearance")
             {
                 for (int i = 0; i < cellAddrs.Length; i++)
                 {
                     ws.Cells[cellAddrs[i]].Value = slice[0];
-                }
-            }
-            else if (itemName == "CF to Hot Pressing")
-            {
-                for (int i = 0; i < slice.Length; i++)
-                {
-                    ws.Cells[cellAddrs[i]].Value = slice[i];
-                    ws.Cells[cellAddrs[i + 3]].Value = slice[i];
-                    ws.Cells[cellAddrs[i + 6]].Value = slice[i];
                 }
             }
             else

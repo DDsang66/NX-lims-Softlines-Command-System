@@ -437,7 +437,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.MenuName!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.MenuName!);
             }
@@ -447,7 +447,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
             {
                 var wp = _db.WetParameterAatccs
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -549,7 +549,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Seam Slippage"] = "Seam Slippage",
             ["Pilling Resistance"] = "Pilling&Snagging",
             ["Snagging Resistance"] = "Pilling&Snagging",
-            ["Spriality/Skewing"] = "Spirality",
+            ["Spirality/Skewing"] = "Spirality",
             ["Small Parts"] = "Small Part",
             ["Resistance to Snapping of Snap Fasteners"] = "Snapping & Unsnapping",
             ["Resistance to Unsnapping of Snap Fasteners"] = "Snapping & Unsnapping",
@@ -570,7 +570,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {"Fabric", "DStoDryclean-F" },
                 {"Garment", "DStoDryclean-G" },
             },
-            ["Spriality/Skewing"] = new Dictionary<string, string>
+            ["Spirality/Skewing"] = new Dictionary<string, string>
             {
                 {"Fabric", "Spirality" },
                 {"Garment","Spirality"}
@@ -594,7 +594,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Perspiration"] = (n, _) => ExcelCrazyLineMapper.MapPWD(n),
             ["CF to Water"] = (n, _) => ExcelCrazyLineMapper.MapPWD(n),
             ["CF to Dry-clean"] = (n, _) => ExcelCrazyLineMapper.MapPWD(n),
-            ["Spriality/Skewing"] = (_, m) => ExcelCrazyLineMapper.MapSpirality(m),
+            ["Spirality/Skewing"] = (_, m) => ExcelCrazyLineMapper.MapSpirality(m),
             ["Weight"] = (_, _) => ExcelCrazyLineMapper.MapWeight(),
             ["Pilling Resistance"] = (n, _) => ExcelCrazyLineMapper.MapPS(n),
             ["Seam Slippage"] = (_, _) => ExcelCrazyLineMapper.MapSeamSlippage(),
@@ -610,7 +610,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             ["DS to Washing"] = (_, m) => ExcelCrazyLineMapper.DStoWashingAf(m),
             ["DS to Dry-clean"] = (_, m) => ExcelCrazyLineMapper.DStoDCAf(m),
-            ["Spriality/Skewing"] = (_, _) => ExcelCrazyLineMapper.SpiralityAf(),
+            ["Spirality/Skewing"] = (_, _) => ExcelCrazyLineMapper.SpiralityAf(),
         };
 
 
@@ -712,7 +712,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A37"] = (w, dto, reportNo) => "AATCC TM132-2004e3(2013)e3",
             },
-            ["Spriality/Skewing"] = (w, dto, reportNo) =>
+            ["Spirality/Skewing"] = (w, dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
                 map["P1"] = (w, dto, reportNo) => reportNo;

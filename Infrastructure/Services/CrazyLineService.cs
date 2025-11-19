@@ -84,7 +84,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Spriality/Skewing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", null, null, null, p.SpecialCareInstruction, p.DryProcedure, null, null, p.Cycle, null, p.Iron),
+            "Spirality/Skewing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", null, null, null, p.SpecialCareInstruction, p.DryProcedure, null, null, p.Cycle, null, p.Iron),
             _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };
 

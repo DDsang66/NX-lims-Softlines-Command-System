@@ -99,7 +99,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
@@ -108,7 +108,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -297,7 +297,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["BH4"] = (w, dto, reportNo) => w.Detergent!;
                        map["AV5"] = (w, dto, reportNo) => w.WashingProcedure!;
                        map["BP5"] = (w, dto, reportNo) => w.DryProcedure!;
-                       map["AR6"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                       map["AR6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                        map["BJ6"] = (w, dto, reportNo) => w.Program!;
                    }
                    else if (dto.sampleDescription!.Contains("Garment"))
@@ -308,7 +308,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["S4"] = (w, dto, reportNo) => w.Detergent!;
                        map["A5"] = (w, dto, reportNo) => w.WashingProcedure!;
                        map["Y5"] = (w, dto, reportNo) => w.DryProcedure!;
-                       map["A6"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                       map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                        map["W6"] = (w, dto, reportNo) => w.Program!;
                    }
                    return map;
@@ -317,12 +317,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
-                ["BI13"] = (w, dto, reportNo) => w.IronMethod??"/",
+                ["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
                 ["BA37"] = (w, dto, reportNo) => w.Temperature!,
                 ["BH37"] = (w, dto, reportNo) => w.Detergent!,
                 ["AV38"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["BT38"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AR39"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
+                ["AR39"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
                 ["BX39"] = (w, dto, reportNo) => w.Program!,
             },
             ["CF to Sublimation in Storage"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
@@ -339,7 +339,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A12"] = (w, dto, reportNo) => dto.Standard!,
                 ["G13"] = (w, dto, reportNo) => w.Temperature!,
                 ["A14"] = (w, dto, reportNo) => w.Iron=="L-5"?"该项目号最高可给5级":null!,
-                ["R13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "N/A" : null,
+                ["R13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod)==true ? "N/A" : "",
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -434,7 +434,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
                 map["M1"] = (wp, dto, reportNo) => reportNo;
                 map["A3"] = (wp, dto, reportNo) => dto.Standard!;
-                map["AC7"] = (wp, dto, reportNo) => dto.Parameter!.Contains("N/A")?"N/A":null;
+                map["AC7"] = (wp, dto, reportNo) => dto.Parameter!.Contains("N/A")?"N/A":"";
                 if (dto.sampleDescription!.Contains("Woven") && !dto.Parameter!.Contains("N/A"))
                 {
                     map["F7"] = (wp, dto, reportNo) => "30";
@@ -539,7 +539,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["Q21"] = (w, dto, reportNo) => w.Detergent!,
                 ["E22"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["AC22"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["A23"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null,
+                ["A23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
                 ["Z23"] = (w, dto, reportNo) => w.Program!
             },
             ["Attachment Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>

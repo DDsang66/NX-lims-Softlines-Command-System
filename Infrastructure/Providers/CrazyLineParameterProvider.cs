@@ -89,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 IronMethod = p.IronMethod ?? null,
 
             },
-            ("Spriality/Skewing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            ("Spirality/Skewing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -101,7 +101,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null,
             },
-            ("Spriality/Skewing", _, _) => new WetParameterAatcc
+            ("Spirality/Skewing", _, _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -177,12 +177,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("Knit(CrazyLine)", "Pilling Resistance")] = "Time: 30min",
             [("Knit(CrazyLine)", "CF to Light")] = "Light: 20 AFU",
             [("Knit(CrazyLine)", "Snagging Resistance")] = "Cycle: 600 Revolutions",
-            [("Knit(CrazyLine)", "Spriality/Skewing")] = "Same as DS to Washing",
+            [("Knit(CrazyLine)", "Spirality/Skewing")] = "Same as DS to Washing",
 
             [("Woven(CrazyLine)", "Snagging Resistance")] = "Cycle: 600 Revolutions",
             [("Woven(CrazyLine)", "CF to Light")] = "Light: 20 AFU",
             [("Woven(CrazyLine)", "Pilling Resistance")] = "Time: 30min",
-            [("Woven(CrazyLine)", "Spriality/Skewing")] = "Same as DS to Washing",
+            [("Woven(CrazyLine)", "Spirality/Skewing")] = "Same as DS to Washing",
         };
 
         private static string? GetParameter(string menu, string item)

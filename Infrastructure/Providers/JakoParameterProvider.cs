@@ -55,7 +55,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null
             },
-            ("Spriality/Skewing", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
+            ("Spirality/Skewing", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -67,7 +67,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)"
             },
-            ("Spriality/Skewing", var add) when add?.Contains("Garment") == true => new WetParameterIso
+            ("Spirality/Skewing", var add) when add?.Contains("Garment") == true => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -152,7 +152,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("RegularFabric(JAKO)", "Snagging Resistance", null, null)] = "Cycle: 600 revs",
             [("RegularFabric(JAKO)", "Abrasion Resistance", null, null)] = "Load: 9KPa,Cycle: 30000 revs",
             [("RegularFabric(JAKO)", "Water Repellency-Spray Test", null, null)] = "Original & After wash",
-            [("RegularFabric(JAKO)", "Spriality/Skewing", null, null)] = "Same as Appearance",
+            [("RegularFabric(JAKO)", "Spirality/Skewing", null, null)] = "Same as Appearance",
             [("RegularFabric(JAKO)", "CF to Chlorinated Water", null, null)] = "Confirmation with CS is required",
             [("RegularGarment(JAKO)", "Seam Strength", null, null)] = "Knit Structure Change Into Seam Bursting; Test Area:50cm²",
         };

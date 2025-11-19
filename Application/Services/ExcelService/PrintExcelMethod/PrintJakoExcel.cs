@@ -117,7 +117,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || (itemName == "Appearance"&&dto.sampleDescription!.Contains("Garment") )|| itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || (itemName == "Appearance"&&dto.sampleDescription!.Contains("Garment") )|| itemName == "Spirality/Skewing")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.MenuName!);
             }
@@ -125,7 +125,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || (itemName == "Appearance" && dto.sampleDescription!.Contains("Garment")) || itemName == "Spriality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || (itemName == "Appearance" && dto.sampleDescription!.Contains("Garment")) || itemName == "Spirality/Skewing")
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -252,7 +252,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {"Gloves", "DStoDryclean-Acc" },
                 {"Cap", "DStoDryclean-Acc" },
             },
-            ["Spriality/Skewing"] = new Dictionary<string, string>
+            ["Spirality/Skewing"] = new Dictionary<string, string>
             {
                 {"Fabric", "Spirality-F" },
                 {"Garment", "Spirality-G" },
@@ -288,7 +288,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Perspiration"] = (n, _) => ExcelJakoMapper.MapPWD(n),
             ["CF to Water"] = (n, _) => ExcelJakoMapper.MapPWD(n),
             ["CF to Dry-clean"] = (n, _) => ExcelJakoMapper.MapPWD(n),
-            ["Spriality/Skewing"] = (_, m) => ExcelJakoMapper.MapSpirality(m),
+            ["Spirality/Skewing"] = (_, m) => ExcelJakoMapper.MapSpirality(m),
             ["CF to Sublimation in Storage"] = (n, _) => ExcelJakoMapper.MapSI(n),
             ["CF to Hot Pressing"] = (n, _) => ExcelJakoMapper.MapSI(n),
             ["CF to Sea Water"] = (n, _) => ExcelJakoMapper.MapCSY(n),
@@ -314,7 +314,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
         {
             ["Appearance"] = (_, m) => ExcelJakoMapper.AppearanceAf(m),
-            ["Spriality/Skewing"] = (_, m) => ExcelJakoMapper.SpiralityAf(m),
+            ["Spirality/Skewing"] = (_, m) => ExcelJakoMapper.SpiralityAf(m),
         };
 
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> WetExtraMap = new()
@@ -327,7 +327,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BC1"] = (w, dto, reportNo) => reportNo;
                     map["CM1"] = (w, dto, reportNo) => reportNo;
                     map["AR4"] = (w, dto, reportNo) => "EN ISO 5077:2007 / EN ISO 3759:2011 / EN ISO 6330:2021";
-                    map["AR12"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                    map["AR12"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                     map["BF6"] = (w, dto, reportNo) => w.Ballast!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
@@ -339,7 +339,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["Y6"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["E7"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
                     map["U7"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
-                    map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                    map["A8"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
@@ -438,7 +438,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["D33"] = (w, dto, reportNo) => w.Temperature!,
                 ["G33"] = (w, dto, reportNo) => dto.Sample!
             },
-            ["Spriality/Skewing"] = (w, dto, reportNo) =>
+            ["Spirality/Skewing"] = (w, dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
                 map["P1"] = (w, dto, reportNo) => reportNo;
@@ -446,7 +446,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["A3"] = (w, dto, reportNo) => "ISO 16322-2:2021 Method A,Option 1";
-                    map["A37"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                    map["A37"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                     map["S35"] = (w, dto, reportNo) => w.Ballast!;
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
@@ -712,7 +712,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
 
-            if (afmap != null && afmap.Length > 0 && itemName == "Spriality/Skewing")
+            if (afmap != null && afmap.Length > 0 && itemName == "Spirality/Skewing")
             {
                 for (int i = 0; i < afmap.Length; i++)
                 {

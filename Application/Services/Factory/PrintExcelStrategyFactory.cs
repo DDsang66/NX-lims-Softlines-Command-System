@@ -27,7 +27,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                 "Tchibo" => _sp.GetRequiredService<PrintTchiboExcel>(),
                 "Primark" => _sp.GetRequiredService<PrintPrimarkExcel>(),
                 "Pepco" => _sp.GetRequiredService<PrintPepcoExcel>(),
-                "Kik" => _sp.GetRequiredService<PrintPrimarkExcel>(),
+                "Kik" => _sp.GetRequiredService<PrintKikExcel>(),
                 _ => throw new ArgumentException($"Unknown buyer: {buyer}")
             };
     }

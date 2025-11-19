@@ -91,7 +91,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                       p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
             },
-            ("Spriality/Skewing",_,_) => new WetParameterIso 
+            ("Spirality/Skewing", _,_) => new WetParameterIso 
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -159,9 +159,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("Water Resistance-Hydrostatic Pressure", "0")] = "0",
             [("CF to Chlorinated Water", null)] = "50mg/L",
             [("Pilling Resistance", null)] = "Articles with anti-pilling finishing:\r\n2000 cycles: Grade 3-4\r\nWoven fabric, Knitted fabric (incl. tights, leggings):\r\n1000 cycles: Grade 3-4\r\nCoarse knit (</= 12 gauge):\r\n 500 cycles: Grade 2-3\r\n",
-            [("Pilling Resistance","500")]= "500 revs: Grade 2-3",
-            [("Pilling Resistance","1000")]= "1000 revs: Grade 3-4",
-            [("Pilling Resistance", "2000")] = "2000 revs: Grade 3-4",
+            [("Pilling Resistance","500")]= "500 revs",
+            [("Pilling Resistance","1000")]= "1000 revs",
+            [("Pilling Resistance", "2000")] = "2000 revs",
         };
 
         private static string? GetParameter(string item, string? lv)
