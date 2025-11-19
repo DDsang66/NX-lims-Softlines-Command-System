@@ -56,7 +56,15 @@
                 // 可以根据需要添加更多固定的单元格地址
             };
         }
-
+        public static string[] MapCFtoSeaWater()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D37","F37", "H37", "L37", "N37", "P37"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
         public static string[] MapCFtoPerspiration()
         {
             // 定义固定的单元格地址映射

@@ -226,9 +226,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Attachment Strength"]= "Attachment Strength",
             ["Density"] = "Density",
             ["Appearance"] = "AppearanceAfterWashing",
-            ["CF to Washing"] = "CFtoWashing&Rubbing&Light",
-            ["CF to Rubbing"] = "CFtoWashing&Rubbing&Light",
-            ["CF to Light"] = "CFtoWashing&Rubbing&Light",
+            ["CF to Washing"] = "CFtoWRLS",
+            ["CF to Rubbing"] = "CFtoWRLS",
+            ["CF to Light"] = "CFtoWRLS",
+            ["CF to Sea Water"] = "CFtoWRLS",
             ["CF to Perspiration"] = "CFtoPerspiration&Water",
             ["CF to Water"] = "CFtoPerspiration&Water",
             ["CF to Saliva"] = "CFtoSaliva&Sweat",
@@ -267,6 +268,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Washing"] = (_, _) => ExcelTchiboMapper.MapCFtoWashing(),
             ["CF to Rubbing"] = (_, _) => ExcelTchiboMapper.MapCFtoRubbing(),
             ["CF to Light"] = (_, _) => ExcelTchiboMapper.MapCFtoLight(),
+            ["CF to Sea Water"] = (_, _) => ExcelTchiboMapper.MapCFtoSeaWater(),
             ["CF to Perspiration"] = (_, _) => ExcelTchiboMapper.MapCFtoPerspiration(),
             ["CF to Water"] = (_, _) => ExcelTchiboMapper.MapCFtoWater(),
             ["CF to Saliva"] = (_, _) => ExcelTchiboMapper.MapCFtoSalivaSweat(),
@@ -389,6 +391,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
                 ["H15"] = (w, dto, reportNo) => dto.Parameter == "L-5" ? "该项目号最高可给5级" : null!,
                 ["J3"] = (w, dto, reportNo) => "√"
+            },
+            ["CF to Sea Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["D1"] = (w, dto, reportNo) => reportNo,
+                ["A36"] = (w, dto, reportNo) => dto.Standard!,
             },
         };
         private static readonly Dictionary<string, Func<WetParameterIso,CheckListDto, string, Dictionary<string, Func<WetParameterIso,CheckListDto, string, string>>>> PhyExtraMap = new()
