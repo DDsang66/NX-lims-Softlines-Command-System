@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             var (wetOut, phyOut) = await helper.Helper(dto);
             var files = new[] { wetOut, phyOut }.Where(System.IO.File.Exists).ToList();
             if (!files.Any())
-                return BadRequest("无可下载的文件");
+                return StatusCode( 500 ,new { success = false, message = "无可下载的文件" });
 
             var zipPath = Path.Combine(_env.WebRootPath, "ExcelModel/SavingExcel",
                                        $"Report_{Guid.NewGuid():N}.zip");
@@ -42,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             }
 
             if (!System.IO.File.Exists(zipPath))
-                return BadRequest("生成的 ZIP 文件不存在");
+                return StatusCode(500, new { success = false, message = "生成的 ZIP 文件不存在" });
 
             // 读取文件到内存流
             var memoryStream = new MemoryStream();
@@ -53,7 +53,6 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             memoryStream.Position = 0;
 
             var fileSize = memoryStream.Length;
-            Console.WriteLine($"Generated ZIP file size: {fileSize} bytes");
             // 返回文件流
             var contentType = "application/zip";
             string? filename = null;
@@ -62,7 +61,20 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             Response.Headers["Content-Disposition"] = $"attachment; filename=\"{"DataSheet_"}+{dto.ReportNumber}\"";
 
             Console.WriteLine($"Content-Disposition: attachment; filename=\"{"DataSheet_"}+{dto.ReportNumber}\"");
-            return File(memoryStream, contentType, filename);
+            var fileBytes = memoryStream.ToArray();
+            var base64String = Convert.ToBase64String(fileBytes);
+            //return File(memoryStream, contentType, filename);
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    file = base64String,
+                    contentType,
+                    filename
+                },
+                message = "返回成功"
+            });
         }
     }
 }

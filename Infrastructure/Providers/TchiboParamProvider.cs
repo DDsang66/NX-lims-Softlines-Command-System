@@ -54,6 +54,23 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 IronMethod = p.IronMethod ?? null,
                 Program = "900r"
             },
+            ("Water Repellency-Spray Test", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
+                : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
+                : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
+                : "Wollens procedure",
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Program = "900r"
+            },
             ("DS to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,

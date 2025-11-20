@@ -182,6 +182,16 @@
                 "A12","A14","A20","A22","A28","A30","A36","A38"
             };
         }
+
+        public static string[] MapRepellency()
+        {
+            List<string>? map = null;
+                map = new List<string>
+                {
+                    "A15","A16","A17","A8","A9","A10"
+                }; 
+            return map?.ToArray() ?? new string[0];
+        }
         public static string[] MapAirPermeability()
         {
             return new string[]

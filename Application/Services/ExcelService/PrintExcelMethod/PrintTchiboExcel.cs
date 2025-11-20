@@ -220,6 +220,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Zipper Strength"] = "Zipper Strength-EN 16732",
             ["Resistance to Unsnapping of Snap Fasteners"] = "Resistance to Unsnapping",
             ["Water Resistance-Hydrostatic Pressure"] = "Hydroatatic Test",
+            ["Water Repellency-Spray Test"] = "Water Repellency",
             ["Extension and Recovery"] = "Stretch&Recovery of Elastic",
             ["Air Permeability"] = "Air Permeability",
             ["Absorbency"] = "Absorbency",
@@ -260,6 +261,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Zipper Strength"] = (_, _) => ExcelTchiboMapper.MapZipperStrength(),
             ["Resistance to Unsnapping of Snap Fasteners"] = (_, _) => ExcelTchiboMapper.MapUnsnapping(),
             ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelTchiboMapper.MapHydrostaticPressing(),
+            ["Water Repellency-Spray Test"] = (_, _) => ExcelTchiboMapper.MapRepellency(),
             ["Extension and Recovery"] = (_, _) => ExcelTchiboMapper.MapExtensionAndRecovery(),
             ["Air Permeability"] = (_, _) => ExcelTchiboMapper.MapAirPermeability(),
             ["Absorbency"] = (_, _) => ExcelTchiboMapper.MapAbsorbency(),
@@ -472,10 +474,18 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["M1"] = (wp, dto, reportNo) => reportNo,
                 ["A3"] = (wp, dto, reportNo) => dto.Standard!,
             },
-            ["Water Resistance-Hydrostatic Pressure"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Water Repellency-Spray Test"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["M1"] = (wp, dto, reportNo) => reportNo,
                 ["A3"] = (wp, dto, reportNo) => dto.Standard!,
+                ["K20"] = (w, dto, reportNo) => w.Temperature!,
+                ["R20"] = (w, dto, reportNo) => w.Detergent!,
+                ["L21"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["A22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["N22"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["A23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
+                ["C5"] = (w, dto, reportNo) => w.AfterWash!.Contains("3 Wash") ? "3" : "5",
+                ["C12"] = (w, dto, reportNo) => w.AfterWash!.Contains("3 Wash") ? "3" : "5"
             },
             ["Seam Slippage"] = (w, dto, reportNo) =>
             {
