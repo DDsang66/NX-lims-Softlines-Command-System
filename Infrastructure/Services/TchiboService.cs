@@ -27,13 +27,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             if (checkLists == null) return null;
 
             var groupedCheckLists = checkLists
-                .GroupBy(cl => cl.ItemName)
-                .Select(group => new
+                .Select(cl => new
                 {
-                    ItemName = group.Key,
-                    Standards = group.Select(cl => cl.Standard).Distinct().ToList(),
-                    Types = group.Select(cl => cl.Type).Distinct().ToList(),
-                    Parameters = group.Select(cl => cl.Parameter).Distinct().ToList()
+                    ItemName = cl.ItemName,
+                    Standards = cl.Standard != null ? new List<string> { cl.Standard } : new List<string>(),
+                    Types = cl.Type != null ? new List<string> { cl.Type } : new List<string>(),
+                    Parameters = cl.Parameter != null ? new List<string> { cl.Parameter } : new List<string> { "-" }
                 })
                 .ToList();
 

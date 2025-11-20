@@ -415,13 +415,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Pilling Resistance"] = (w,dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                if (dto.sampleDescription!.Contains("Woven"))
+                if (dto.Standard!.Contains("12945-2"))
                 {
                     map["M1"] = (wp, dto, reportNo) => reportNo;
                     map["F13"] = (w,dto, reportNo) => "DIN EN ISO 12945-2:2021,";
                     map["D14"] = (w,dto, reportNo) => dto.Parameter!;
                 }
-                else if (dto.sampleDescription!.Contains("Knit"))
+                else if (dto.Standard!.Contains("12945-1"))
                 {
                     map["M1"] = (w,dto, reportNo) => reportNo;
                     map["F3"] = (w,dto, reportNo) => "DIN EN ISO 12945-1:2021";
