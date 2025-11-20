@@ -30,6 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Application\Services\Global\" />
     <Folder Include="Domain\Services\" />
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="wwwroot\Avatar\" />

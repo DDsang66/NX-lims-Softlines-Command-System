@@ -61,20 +61,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             Response.Headers["Content-Disposition"] = $"attachment; filename=\"{"DataSheet_"}+{dto.ReportNumber}\"";
 
             Console.WriteLine($"Content-Disposition: attachment; filename=\"{"DataSheet_"}+{dto.ReportNumber}\"");
-            var fileBytes = memoryStream.ToArray();
-            var base64String = Convert.ToBase64String(fileBytes);
-            //return File(memoryStream, contentType, filename);
-            return Ok(new
-            {
-                success = true,
-                data = new
-                {
-                    file = base64String,
-                    contentType,
-                    filename
-                },
-                message = "返回成功"
-            });
+            return File(memoryStream, contentType, filename);
         }
     }
 }

@@ -47,7 +47,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
             var existingPaths = new[] { wetOut, phyOut }.Where(File.Exists).ToList();
 
             if (!existingPaths.Any())
-                throw new FileNotFoundException("未生成任何 Excel 文件，请检查模板或数据。");
+                throw new Exception("未生成任何 Excel 文件，请检查模板或数据。");
 
             return (existingPaths.FirstOrDefault(p => p == wetOut),
                     existingPaths.FirstOrDefault(p => p == phyOut));
