@@ -70,7 +70,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             OrderNumber = infoDto.reportNumber,
                             DCProcedure = infoDto.dcProcedure,
                             AfterWash = infoDto.afterWash,
-                            ItemName = item
+                            ItemName = item,
                         }, item);
                     string? param = await helper.CreateParameters(infoDto, item)!;
                     dtos.Add(CreateResponse(item, wetParams ?? new WetParameterIso { ContactItem = item }, param!));

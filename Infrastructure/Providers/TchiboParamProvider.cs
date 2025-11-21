@@ -146,8 +146,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             }
             else if (ItemName == "Pilling Resistance")
             {
-                if (infoDto.sampleDescription!.Contains("Woven")) Limit = "Woven";
-                else if (infoDto.sampleDescription.Contains("Knit")) Limit = "Knit";
+                if (infoDto.standard!.Contains("12945-2")) Limit = "Woven";
+                else if (infoDto.standard.Contains("12945-1")) Limit = "Knit";
                 else Limit = "Woven";
             }
             if (ItemName == "Extension and Recovery") 

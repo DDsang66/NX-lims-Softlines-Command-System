@@ -25,14 +25,20 @@
         public static string[] MapDStoWashing(string sampleDescription)
         {
             List<string> stringMap = null;
-            if (sampleDescription.Contains("Fabric"))
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+            .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
             {
-                stringMap = new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" };
-            }
-            else
-            {
-                stringMap = new List<string> { "G10" };
-            }
+                "Garment" => new List<string> { "G10" },
+                "Fabric" => new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" },
+                "Socks" => new List<string> { "F10" },
+                "Gloves" => new List<string> { "F19" },
+                "Cap" => new List<string> { "F28" },
+                _ => new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" }
+            };
+
+
             return stringMap?.ToArray() ?? new string[0];
         }
         public static string[] MapWRL(string ItemName)

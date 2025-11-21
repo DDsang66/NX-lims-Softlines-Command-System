@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             var (wetOut, phyOut) = await helper.Helper(dto);
             var files = new[] { wetOut, phyOut }.Where(System.IO.File.Exists).ToList();
             if (!files.Any())
-                return StatusCode( 500 ,new { success = false, message = "无可下载的文件" });
+                return StatusCode(500, new { success = false, message = "无可下载的文件" });
 
             var zipPath = Path.Combine(_env.WebRootPath, "ExcelModel/SavingExcel",
                                        $"Report_{Guid.NewGuid():N}.zip");
@@ -54,14 +54,47 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
             var fileSize = memoryStream.Length;
             // 返回文件流
-            var contentType = "application/zip";
-            string? filename = null;
             // 注册回调，在响应完成后删除文件
             Response.RegisterForDispose(new DeleteFileOnDispose(zipPath));
-            Response.Headers["Content-Disposition"] = $"attachment; filename=\"{"DataSheet_"}+{dto.ReportNumber}\"";
-
-            Console.WriteLine($"Content-Disposition: attachment; filename=\"{"DataSheet_"}+{dto.ReportNumber}\"");
-            return File(memoryStream, contentType, filename);
+            //Response.Headers["Content-Disposition"] = $"attachment; filename=\"{"DataSheet_"}+{dto.ReportNumber}\"";
+            var filename = $"DataSheet_{dto.ReportNumber}.zip";   // 不要加号
+            return File(memoryStream, "application/zip", filename);
         }
+
+        #region
+        //[HttpPost("showExcel")]
+        //public async Task<IActionResult> ShowExcel([FromBody] ExcelSubmitDto dto)
+        //{
+        //    // 1. 并行生成两份 Excel（内存流）
+        //    var helper = new ReceiveDataHelper(_excel, _env, _factory);
+        //    var (wetStream, phyStream) = await helper.GenerateAsync(dto); // 返回 MemoryStream
+
+        //    if (wetStream == null && phyStream == null)
+        //        return StatusCode(500, new { success = false, message = "无可下载的文件" });
+
+        //    // 2. 内存里直接打 Zip（无临时文件）
+        //    var zipStream = new MemoryStream();
+        //    using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+        //    {
+        //        if (wetStream != null)
+        //        {
+        //            wetStream.Position = 0;
+        //            var entry = archive.CreateEntry("WetReport.xlsx", CompressionLevel.Optimal);
+        //            using var entryStream = entry.Open();
+        //            await wetStream.CopyToAsync(entryStream);
+        //        }
+        //        if (phyStream != null)
+        //        {
+        //            phyStream.Position = 0;
+        //            var entry = archive.CreateEntry("PhyReport.xlsx", CompressionLevel.Optimal);
+        //            using var entryStream = entry.Open();
+        //            await phyStream.CopyToAsync(entryStream);
+        //        }
+        //    }
+
+        //    zipStream.Position = 0;
+        //    return File(zipStream, "application/zip", $"DataSheet_{dto.ReportNumber}.zip");
+        //}
+        #endregion
     }
 }
