@@ -37,9 +37,9 @@
             else if (sampleDescription.Contains("Dress")) stringMap = new List<string> { "D37" };
             else if (sampleDescription.Contains("Baby-body suits")) stringMap = new List<string> { "D12" };
             else if (sampleDescription.Contains("Bib overall")) stringMap = new List<string> { "D19" };
-            else if (sampleDescription.Contains("Panty pants")) stringMap = new List<string> { "D26" };
-            else if (sampleDescription.Contains("Tights")) stringMap = new List<string> { "D26" };
-            else if (sampleDescription.Contains("Socks")) stringMap = new List<string> { "D33" };
+            else if (sampleDescription.Contains("Panty pants")) stringMap = new List<string> { "D33" };
+            else if (sampleDescription.Contains("Tights")) stringMap = new List<string> { "D33" };
+            else if (sampleDescription.Contains("Socks")) stringMap = new List<string> { "D26" };
             else if (sampleDescription.Contains("Caps")) stringMap = new List<string> { "D43" };
             return stringMap?.ToArray() ?? new string[0];
         }
