@@ -40,13 +40,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 
         public async Task<object?> ShowParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
-            var itemNames = infoDto.itemName;
+            var items = infoDto.items;
             MangoParameterProvider helper = new MangoParameterProvider(_helper);
             // 生成对应 DTO
             try
             {
                 var dtos = new List<object>();
-                foreach (var item in itemNames!)
+                foreach (var item in items!)
                 {
                     var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(
                         new ParamsInput
@@ -61,10 +61,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             OrderNumber = infoDto.reportNumber,
                             DCProcedure = infoDto.dcProcedure,
                             AfterWash = infoDto.afterWash,
-                            ItemName = item
-                        }, item);
-                    string? param = await helper.CreateParameters(infoDto, item)!;
-                    dtos.Add(CreateResponse(item, wetParams ?? new WetParameterIso { ContactItem = item }, param!));
+                            ItemName = item.itemName
+                        }, item.itemName!);
+                    string? param = await helper.CreateParameters(infoDto, item.itemName!)!;
+                    dtos.Add(CreateResponse(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName! }, param!));
                 }
                 return dtos;
             }

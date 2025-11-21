@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace NX_lims_Softlines_Command_System.Application.DTO
 {
@@ -11,8 +12,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? menuName { get; set; }
         public string? remark { get; set; }
         public string? extraItem { get; set; }
-        public string? standard { get; set; }
-        public List<string>? itemName { get; set; }
+        public List<Items>? items { get; set; }
         public string? washingProcedure { get; set; }
         public string? dryProcedure { get; set; }
         public string? dcProcedure { get; set; }
@@ -27,6 +27,11 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
         public string? additionalRequire { get; set; }
 
+        public class Items 
+        {
+            public string? itemName { get; set; }
+            public string? standards { get; set; }
+        }
         public string? sampleDescription { get; set; }
     }
 }

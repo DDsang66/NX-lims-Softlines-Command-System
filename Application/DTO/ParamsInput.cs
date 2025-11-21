@@ -4,6 +4,7 @@
     {
         public string? MenuName { get; set; }
         public string? ItemName { get; set; }
+        public string? Standard { get; set; }
         public string? OrderNumber { get; set; }
         public string? WashingProcedure { get; set; }
         public string? DryProcedure { get; set; }

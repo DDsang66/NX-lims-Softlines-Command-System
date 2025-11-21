@@ -131,7 +131,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         };
 
 
-        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName)
+        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName,string Standard)
         {
 
             // 1. 计算最大值
@@ -146,8 +146,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             }
             else if (ItemName == "Pilling Resistance")
             {
-                if (infoDto.standard!.Contains("12945-2")) Limit = "Woven";
-                else if (infoDto.standard.Contains("12945-1")) Limit = "Knit";
+                if (Standard!.Contains("12945-2")) Limit = "Woven";
+                else if (Standard.Contains("12945-1")) Limit = "Knit";
                 else Limit = "Woven";
             }
             if (ItemName == "Extension and Recovery") 
