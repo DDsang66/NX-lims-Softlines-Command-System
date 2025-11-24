@@ -292,9 +292,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BR6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                     map["AR7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) == true ? "-" : w.SpecialCareInstruction;
                     map["AZ13"] = (w, dto, reportNo) => "1";
-                    map["BR13"] = (w, dto, reportNo) => "1";
-                    map["AZ24"] = (w, dto, reportNo) => "1";
-                    map["BR24"] = (w, dto, reportNo) => "1";
+                    //map["BR13"] = (w, dto, reportNo) => "1";
+                    //map["AZ24"] = (w, dto, reportNo) => "1";
+                    //map["BR24"] = (w, dto, reportNo) => "1";
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
@@ -307,9 +307,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AE6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                     map["A7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) == true ? "-":w.SpecialCareInstruction;
                     map["W8"] = (w, dto, reportNo) => "1";
-                    map["AB8"] = (w, dto, reportNo) => "1";
+                    //map["AB8"] = (w, dto, reportNo) => "1";
                     map["AG10"] = (w, dto, reportNo) => "1";
-                    map["AL10"] = (w, dto, reportNo) => "1";
+                    //map["AL10"] = (w, dto, reportNo) => "1";
                 }
                 else
                 {
@@ -406,15 +406,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
                 map["M1"] = (wp, dto, reportNo) => reportNo;
                 map["A3"] = (wp, dto, reportNo) => dto.Standard!;
-                if (dto.sampleDescription!.Contains("Repellent")) 
-                {
-                    map["AJ20"] = (w, dto, reportNo) => w.Temperature!;
-                    map["P21"] = (w, dto, reportNo) => w.Ballast!;
-                    map["G20"] = (w, dto, reportNo) => w.WashingProcedure!;
-                    map["S22"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["AB22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
-                    map["A23"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-";
-                }
+                map["AJ20"] = (w, dto, reportNo) => w.Temperature!;
+                map["P21"] = (w, dto, reportNo) => w.Ballast!;
+                map["G20"] = (w, dto, reportNo) => w.WashingProcedure!;
+                map["S22"] = (w, dto, reportNo) => w.DryProcedure!;
+                map["AB22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                map["A23"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-";
+
                 return map;
             },
             ["Seam Slippage"] = (w, dto, reportNo) =>
@@ -521,6 +519,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Perspiration"] = 6,
             ["DS to Washing"] = 4,
             ["Water Resistance-Hydrostatic Pressure"] = 2,
+            ["Water Repellency-Spray Test"] = 3,
         };
         private void WriteSamples(
             ExcelWorksheet ws,

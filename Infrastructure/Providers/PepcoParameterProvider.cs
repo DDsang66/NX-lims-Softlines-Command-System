@@ -114,7 +114,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = p.WashingProcedure,
+                WashingProcedure = "4N",
                 Temperature = "40",
                 Detergent = "160g ECE Detergent+40g Sodium Perborate",
                 DryProcedure = p.DryProcedure,

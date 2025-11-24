@@ -419,7 +419,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     map["M1"] = (wp, dto, reportNo) => reportNo;
                     map["F13"] = (w,dto, reportNo) => "DIN EN ISO 12945-2:2021,";
-                    map["D14"] = (w,dto, reportNo) => dto.Parameter!;
+                    map["D14"] = (w,dto, reportNo) => "2000 revs"!;
                 }
                 else if (dto.Standard!.Contains("12945-1"))
                 {

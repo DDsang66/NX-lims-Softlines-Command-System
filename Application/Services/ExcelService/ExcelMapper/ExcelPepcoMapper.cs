@@ -93,20 +93,25 @@
         public static string[] MapRepellency(string SampleDescription)
         {
             List<string>? map = null;
-            if (SampleDescription.Contains("Repellent"))
-            {
-                map = new List<string>
+            //if (SampleDescription.Contains("Repellent"))
+            //{
+            //    map = new List<string>
+            //    {
+            //        "A15","A16","A17"
+            //    };
+            //}
+            //else
+            //{
+            //    map = new List<string>
+            //    {
+            //        "A8","A9","A10"
+            //    };
+            //}
+            map = new List<string>
                 {
-                    "A15","A16","A17"
+                    "A15","A16","A17","A8","A9","A10"
                 };
-            }
-            else
-            {
-                map = new List<string>
-                {
-                    "A8","A9","A10"
-                };
-            }
+
             return map?.ToArray() ?? new string[0];
         }
 

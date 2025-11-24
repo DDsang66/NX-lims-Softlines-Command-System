@@ -110,6 +110,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "Vertical Wicking of Textiles" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Back Pocket Application Strength" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Belt Loop Application Strength" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
+            "Colour Fastness to Non Chlorine Bleach" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
+            "Colour Fastness to Chlorine Bleach" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };
     }

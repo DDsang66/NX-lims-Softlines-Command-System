@@ -230,7 +230,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Temperature = p.WashingProcedure!.Contains("3")?"30":"40",
                 WashingProcedure = p.WashingProcedure,
                 Detergent = DetergentHelper(p.Detergent,p.SampleDescription!,p.WashingProcedure),
-                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
@@ -270,6 +269,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     if (infoDto.sampleDescription!.Contains("Velvet")) Condition = "3min";
                     else if (infoDto.sampleDescription!.Contains("Corurcy") || infoDto.sampleDescription.Contains("Velour")) Condition = "5min";
                     else Condition = null; 
+                    break;
+                case "Colour Fastness to Non Chlorine Bleach":
+                    Condition = BleachHelper(infoDto.fiberComposition!);
+                    break;
+                case "Colour Fastness to Chlorine Bleach":
+                    Condition = BleachHelper(infoDto.fiberComposition!);
                     break;
                 case "Colour Fastness to Chlorinated Water":
                     if (infoDto.sampleDescription!.Contains("Swimwear")) Condition = "50";
@@ -323,6 +328,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [(null, "Bursting Strength", null)] = "Diameter: 79.8mm,Square:50cm²",
             [("20", "Colour Fastness to Chlorinated Water", null)] = "20mg/L",
             [("50", "Colour Fastness to Chlorinated Water", null)] = "50mg/L",
+            [("N/A", "Colour Fastness to Non Chlorine Bleach", null)] = "N/A",
+            [("N/A", "Colour Fastness to Chlorine Bleach", null)] = "N/A",
             [(null, "Colour Fastness to Dry Cleaning", null)] = "Multi-Fibre Type:SDC",
             [("L-3", "Colour Fastness to Light", null)] = "L-3",
             [("L-4", "Colour Fastness to Light", null)] = "L-4",
@@ -414,7 +421,17 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             return Result;
         }
 
-        private string? ElogationHelper(List<FiberDto> fiberComposition, string sampleDescription, string MenuName)
+        private string? BleachHelper(List<FiberDto> fiberComposition)
+        {
+            string? Result = "Else";
+            var rateE = _helper.CompositionRate(fiberComposition, "Elastane");
+            var rateW = _helper.CompositionRate(fiberComposition, "Wool");
+            var rateS = _helper.CompositionRate(fiberComposition, "Silk");
+            if (rateE > 0 || rateW > 0|| rateS > 0) return Result = "N/A";
+            else return Result;
+        }
+
+            private string? ElogationHelper(List<FiberDto> fiberComposition, string sampleDescription, string MenuName)
         {
             string? Result = "N/A";
             var rate = _helper.CompositionRate(fiberComposition, "Elastane");
@@ -453,6 +470,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             if(sampleDescription.Contains("White")) return "20g 77%IEC(A) + 3%TAED + 20%Sodium Perborate";
             if (WashingProcedure.Contains("H")) return "60mL PERWOLL liquid for hand wash(4H)";
             return "20g 77%ECE(A)+ 3%TAED + 20%Sodium Perborate";
+        }
+
+        private string? AfterWashingHelper(string? AfterWashing) 
+        {
+            var Result = AfterWashing?.Any() == true ? string.Join(",", AfterWashing) : null;
+            return Result;
         }
     }
 }
