@@ -275,11 +275,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             var result = string.Empty;
             if (detergent == "Wool Detergent")
             {
-                result = "20mL Wool Detergent";
+                result = "20mL Woolite Detergent";
             }
             else if (detergent == "Mild Detergent")
             {
-                result = "20mL Mild Detergent";
+                result = "20mL Coral Detergent";
             }
             else if (string.IsNullOrEmpty(detergent))
             {
