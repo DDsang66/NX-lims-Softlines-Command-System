@@ -61,10 +61,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             switch (standard) 
             {
                 case "AATCC TM124-2018te":
-                    stringMap = new List<string> { "AX7", "BG7", "BP7", "AX14", "BG14", "BP14" };
+                    stringMap = new List<string> { "AX7", "AX14" };
                     break;
                 case "ISO7769:2009":
-                    stringMap = new List<string> { "AX26", "BG26", "BP26" };
+                    stringMap = new List<string> { "AX26" };
                     break;
             }
             return stringMap?.ToArray() ?? new string[0];
@@ -99,6 +99,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             }
             return stringMap?.ToArray() ?? new string[0];
         }
+
+
 
         public static string[] MapDurability()
         {
@@ -265,6 +267,29 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
                 "AT8"
                 // 可以根据需要添加更多固定的单元格地址
             };
+        }
+        public static string[] AppearanceAf()
+        {
+            return new string[]
+            {
+                "BJ5","BC11","CP4"
+                // 可以根据需要添加更多固定的单元格地址
+            };
+        }
+        public static string[] EasyCareAf(string? standard)
+        {
+            // 定义固定的单元格地址映射
+            List<string>? stringMap = null;
+            switch (standard)
+            {
+                case "AATCC TM124-2018te":
+                    stringMap = new List<string> { "AT6", "AT13" };
+                    break;
+                case "ISO7769:2009":
+                    stringMap = new List<string> { "AT25" };
+                    break;
+            }
+            return stringMap?.ToArray() ?? new string[0];
         }
     }
 }

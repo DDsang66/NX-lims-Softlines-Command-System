@@ -265,6 +265,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("Easycare/Non-Iron", _, _, _) => new WetParameterIso 
+            {
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+            },
+            ("Appearance-Common", _, _, _) => new WetParameterIso 
+            {
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,

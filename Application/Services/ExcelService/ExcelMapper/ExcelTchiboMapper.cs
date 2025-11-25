@@ -188,7 +188,7 @@
             List<string>? map = null;
                 map = new List<string>
                 {
-                    "A15","A16","A17","A8","A9","A10"
+                   "A8","A9","A10", "A15","A16","A17"
                 }; 
             return map?.ToArray() ?? new string[0];
         }
