@@ -49,7 +49,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 Console.WriteLine($"{dto.ItemName} -> {dto.Type}");
                 var pkg = dto.Type == "Wet" ? PackageWet : PackagePhy;
-                if (TemplateSheetNames.ContainsKey((dto.ItemName!,dto.Standard!,dto.MenuName!)) || TemplateSheetNamesNormal.ContainsKey(dto.ItemName!))
+                if (TemplateSheetNames.ContainsKey(dto.ItemName!)|| TemplateSheetNamesNormal.ContainsKey(dto.ItemName!))
                     FillSheet(pkg, dto.ItemName!, dto, reportNumber);
             }
             PackageWet.Save();
@@ -66,7 +66,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string? tplName = null;
             bool foundInSub = false;
             // 1) 模板 sheet
-            if (TemplateSheetNames.TryGetValue((itemName!, dto.Standard!, dto.MenuName!), out var subDictionary))
+            if (TemplateSheetNames.TryGetValue(itemName!, out var subDictionary))
             {
                 /* ---------- 其余测试保持原单关键字逻辑 ---------- */
                 foreach (var kvp in subDictionary)
@@ -97,9 +97,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<-------------------------------------------------------------------------------------->
 
             // 2) 计算需要几张 sheet
-            var cellAddrs = CellMapper[itemName](itemName, dto.Standard,dto.sampleDescription!);
+            var cellAddrs = CellMapper[itemName](itemName, dto.Standard!,dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "Dimensional Stability" ||
+                itemName == "Stability to Dry Cleaning" || 
+                itemName == "Security of Attachment(Wash)"||
+                (itemName == "Appearance" && dto.Standard != "PM01") ||
+                (itemName == "Spirality" && dto.Standard != "PM01"))
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName,dto.sampleDescription!);
             }
@@ -107,12 +111,21 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
-
-
-
+            if (itemName == "Spirality" && dto.Standard == "PM01")
+            {
+                samples = dto.Sample!
+                    .Split(',')
+                    .Select(s => s.Trim())
+                    .SelectMany(s => new[] { $"{s} - 5 Wash", $"{s} - 23 Wash", $"{s} - 32 Wash", $"{s} - 45 Wash" })
+                    .ToArray();
+            }
 
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "Dimensional Stability" ||
+                itemName == "Stability to Dry Cleaning" || 
+                itemName == "Security of Attachment(Wash)" ||
+                (itemName == "Appearance"&&dto.Standard!="PM01") ||
+                (itemName == "Spirality" && dto.Standard != "PM01"))
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -121,19 +134,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
                 if (itemName == "Dimensional Stability")
                 {
-                    afterWash = dto.Sample!
+                    afterWash = string.Join(", ", dto.Sample!
                         .Split(',')
                         .Select(s => s.Trim())
-                        .SelectMany(s => new[] { $"{s} - 5 Wash", $"{s} - 23 Wash", $"{s} - 32 Wash", $"{s} - 45 Wash" })
-                        .ToString();
-                }
-                if (itemName == "Spirality"&&dto.Standard== "PM01")
-                {
-                    samples = dto.Sample!
-                        .Split(',')
-                        .Select(s => s.Trim())
-                        .SelectMany(s => new[] { $"{s} - 5 Wash", $"{s} - 23 Wash", $"{s} - 32 Wash", $"{s} - 45 Wash" })
-                        .ToArray();
+                        .SelectMany(s => new[] { $"{s}-5 Wash-23 Wash-32 Wash-45 Wash" }));
                 }
                 string? iron = wp!.Iron;
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
@@ -143,8 +147,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             int offset = 0; // 假设没有偏移
             offset = OffsetRule.GetValueOrDefault(itemName, 0);
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
-            if (itemName == "CF to Hot Pressing") { capacity = 3; }// 特例处理，实际容量为3
+            if (itemName == "Colour Fastness to Hot Pressing") { capacity = 3; }// 特例处理，实际容量为3
             if (itemName == "Appearance") { capacity = 1; }
+            if (itemName == "Dimensional Stability"&& !dto.sampleDescription!.Contains("Fabric")) { capacity = 1; }
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
 
@@ -186,7 +191,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 int[]? afmap = null;
                 if (afterWashMap != null) afmap = afterWashMap.Skip(start).Take(count).ToArray();
                 /* 把这段样本写进去,如果有水洗遍数，那么也把水洗遍数写进去 */
-                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName, dto.sampleDescription);
+                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName, dto.sampleDescription!,dto.Standard!);
                 //这里是分割样本的逻辑<-------------------------------------------------------------------------------------->
                 // 5) 其余参数
                 if (dto.Type == "Wet")
@@ -295,53 +300,46 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Colour Change and Staining"] = "Appearance-PM01",
         };
 
-        private static readonly Dictionary<(string, string, string), Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
         {
-            [("Seam Slippage","","")] = new Dictionary<string, string>
+            [("Seam Slippage")] = new Dictionary<string, string>
             {
                 {"Fabric", "Seam Slippage&Strength" },
                 {"Garment","Seam Slippage&Strength-G"},
             },
-            [("Seam Strength", "", "")] = new Dictionary<string, string>
+            [("Seam Strength")] = new Dictionary<string, string>
             {
                 {"Fabric", "Seam Slippage&Strength" },
                 {"Garment","Seam Slippage&Strength-G"},
             },
-            [("Bursting Strength", "", "")] = new Dictionary<string, string>
+            [("Bursting Strength")] = new Dictionary<string, string>
             {
                 {"Fabric", "Bursting Strength" },
                 {"Garment","Bursting Strength-G"},
             },
-            [("Physical & Mechanical", "EN 71-1:2014+A1:2018 8.4", "")] = new Dictionary<string, string>
-            {
-                {"", "Attachment Strength" },
-            },
-            [("Physical & Mechanical", "ASTM F963-23", "")] = new Dictionary<string, string>
-            {
-                {"", "ASTM F963-23" },
-            },
-            [("Torque & Tension", "16 CFR 150.51-53", "")] = new Dictionary<string, string>
-            {
-                {"", "Torque&Tension" },
-            },
-            [("Torque & Tension", "EN 71-1:2024+A1:2018", "")] = new Dictionary<string, string>
-            {
-                {"", "Attachment Strength" },
-            },
-            [("Spirality", "ISO 16322-2:2021,Method C", "")] = new Dictionary<string, string>
-            {
-                {"", "Spirality-F" },
-            },
-            [("Spirality", "", "")] = new Dictionary<string, string>
+            //[("Physical & Mechanical", "EN 71-1:2014+A1:2018 8.4", "")] = new Dictionary<string, string>
+            //{
+            //    {"", "Attachment Strength" },
+            //},
+            //[("Physical & Mechanical", "ASTM F963-23", "")] = new Dictionary<string, string>
+            //{
+            //    {"", "ASTM F963-23" },
+            //},
+            //[("Torque & Tension", "16 CFR 150.51-53", "")] = new Dictionary<string, string>
+            //{
+            //    {"", "Torque&Tension" },
+            //},
+            //[("Torque & Tension", "EN 71-1:2024+A1:2018", "")] = new Dictionary<string, string>
+            //{
+            //    {"", "Attachment Strength" },
+            //},
+
+            [("Spirality")] = new Dictionary<string, string>
             {
                 {"Fabric", "Spirality-F" },
                 {"Garment", "Spirality-G" },
             },
-            [("Spirality", "PM01", "")] = new Dictionary<string, string>
-            {
-                {"", "Spirality-G" },
-            },
-            [("Dimensional Stability", "","")] = new Dictionary<string, string>
+            [("Dimensional Stability")] = new Dictionary<string, string>
             {
                 {"Fabric", "DStoWashing-F" },
                 {"Garment", "DStoWashing-G" },
@@ -349,7 +347,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {"Gloves", "DStoWashing-Acc" },
                 {"Cap", "DStoWashing-Acc" },
             },
-            [("Stability to Washing","","")] = new Dictionary<string, string>
+            [("Stability to Washing")] = new Dictionary<string, string>
             {
                 {"Fabric", "DStoWashing-F" },
                 {"Garment", "DStoWashing-G" },
@@ -371,7 +369,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Colour Fastness to PVC Migration"] = (n, m, l) => ExcelPrimarkMapper.MapSeaWaterPVC(n),
             ["Colour Fastness to Rubbing"] = (n, m, l) => ExcelPrimarkMapper.MapWRLW(n),
             ["Colour Fastness to Saliva"] = (n, m, l) => ExcelPrimarkMapper.MapCFtoSalivaSweat(),
-            ["Colour Fastness to Saliva and Perspiration"] = (n, m, l) => ExcelPrimarkMapper.MapAppearance(m),
+            ["Colour Fastness to Saliva and Perspiration"] = (n, m, l) => ExcelPrimarkMapper.MapCFtoSalivaSweat(),
             ["Colour Fastness to Sea Water"] = (n, m, l) => ExcelPrimarkMapper.MapSeaWaterPVC(n),
             ["Colour Fastness to Washing"] = (n, m, l) => ExcelPrimarkMapper.MapWRLW(n),
             ["Colour Fastness to Water"] = (n, m, l) => ExcelPrimarkMapper.MapWRLW(n),
@@ -413,6 +411,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A29"] = (w, dto, reportNo) => dto.Standard!,
+                ["L30"] = (w, dto, reportNo) => dto.Parameter == "N/A" ? "N/A" : "-",
             },
             ["Colour Fastness to Dry Cleaning"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -435,7 +434,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A29"] = (w, dto, reportNo) => dto.Standard!,
-                ["L30"] = (w, dto, reportNo) => string.IsNullOrEmpty(dto.Parameter) ? "N/A" : "-",
+                ["L30"] = (w, dto, reportNo) =>dto.Parameter == "N/A"? "N/A" : "-",
             },
             ["Colour Fastness to Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -610,10 +609,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
         private static readonly Dictionary<string, int> OffsetRule = new()
         {
-            ["CF to Perspiration"] = 6,
+            ["Colour Fastness to Perspiration"] = 6,
             ["Dimensional Stability"] = 4,
             ["Stability to Washing"] = 4,
             ["Stability to Dry Cleaning"] = 4,
+            ["Colour Fastness to Non Chlorine Bleach"] = 6,
         };
         private void WriteSamples(
             ExcelWorksheet ws,
@@ -622,17 +622,48 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string[] cellAddrs,
             string[]? AfterWashCellAddrs,
             string itemName,
-            string sampleDescription)
+            string sampleDescription,
+            string standard)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
-            if (itemName == "Appearance")
+            if ((itemName == "Dimensional Stability"||itemName == "Stability to Washing") && !sampleDescription.Contains("Fabric")) offset = 0;
+            if (afmap != null && afmap.Length > 0 
+                && AfterWashCellAddrs != null 
+                && AfterWashCellAddrs.Length > 0 
+                && itemName == "Appearance"
+                &&standard  != "PM01")
+            {
+                for (int i = 0; i < AfterWashCellAddrs.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
+                }
+            }
+            else if (afmap != null && afmap.Length > 0 
+                && (itemName == "Stability to Washing" || itemName == "Dimensional Stability")
+                && sampleDescription.Contains("Garment"))
+            {
+                for (int i = 0; i < afmap.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
+                }
+            }
+            else if (afmap != null && afmap.Length > 0)
+            {
+                for (int i = 0; i < afmap.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[i];
+                }
+            }
+
+
+            if (itemName == "Appearance"||itemName== "Dimensional and Bra Wire Casing Stability")
             {
                 for (int i = 0; i < cellAddrs.Length; i++)
                 {
                     ws.Cells[cellAddrs[i]].Value = slice[0];
                 }
             }
-            else if (itemName == "CF to Hot Pressing")
+            else if (itemName == "Colour Fastness to Hot Pressing")
             {
                 for (int i = 0; i < slice.Length; i++)
                 {

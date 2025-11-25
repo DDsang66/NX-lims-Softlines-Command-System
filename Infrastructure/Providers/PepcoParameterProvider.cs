@@ -114,10 +114,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = "4N",
-                Temperature = "40",
-                Detergent = "160g ECE Detergent+40g Sodium Perborate",
+                WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Detergent = "160g ECE Detergent+40g Sodium Perborate",
                 SpecialCareInstruction = p.Sci ?? null,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,

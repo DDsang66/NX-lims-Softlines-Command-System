@@ -571,7 +571,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("detergent");
             entity.Property(e => e.DryCleanProcedure)
-                .HasMaxLength(50)
+                .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("dry_clean_procedure");
             entity.Property(e => e.DryCondition)
@@ -653,7 +653,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("detergent");
             entity.Property(e => e.DryCleanProcedure)
-                .HasMaxLength(50)
+                .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("dry_clean_procedure");
             entity.Property(e => e.DryProcedure)

@@ -93,6 +93,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "Stability to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, p.AfterWash, null),
             "Waterproof Claims Hydrostatic Head" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, p.AfterWash, null),
             "Dimensional Stability" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, p.AfterWash, null),
+            "Stability to Dry Cleaning" => new(p.ContactItem!, p.ReportNumber,null, null, null, null, null, null, null, p.Sensitive, null, p.AfterWash, null),
             "Abrasion of Knitted Footwear Garments - Modified Martindale" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Accelerotor" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Bursting Strength" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),

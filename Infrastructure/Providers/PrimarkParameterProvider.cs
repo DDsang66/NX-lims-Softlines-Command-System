@@ -167,7 +167,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 DryProcedure = p.DryProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
-            ("DS to Dry-clean", _, _,_) => new WetParameterIso
+            ("Stability to Dry Cleaning", _, _,_) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -218,6 +218,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Detergent = null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
+                AfterWash = "5,23,32,45"
             },
             ("Dimensional Stability", _, _, _) => new WetParameterIso
             {
@@ -232,8 +233,24 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Detergent = DetergentHelper(p.Detergent,p.SampleDescription!,p.WashingProcedure),
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
+                AfterWash = "5,23,32,45"
             },
             ("Spirality", _, _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
+                WashingProcedure = p.WashingProcedure,
+                Detergent = DetergentHelper(p.Detergent, p.SampleDescription!, p.WashingProcedure),
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Security of Attachment(Wash)",_,_,_) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -330,6 +347,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("50", "Colour Fastness to Chlorinated Water", null)] = "50mg/L",
             [("N/A", "Colour Fastness to Non Chlorine Bleach", null)] = "N/A",
             [("N/A", "Colour Fastness to Chlorine Bleach", null)] = "N/A",
+            [("Else", "Colour Fastness to Non Chlorine Bleach", null)] = "-",
+            [("Else", "Colour Fastness to Chlorine Bleach", null)] = "-",
             [(null, "Colour Fastness to Dry Cleaning", null)] = "Multi-Fibre Type:SDC",
             [("L-3", "Colour Fastness to Light", null)] = "L-3",
             [("L-4", "Colour Fastness to Light", null)] = "L-4",

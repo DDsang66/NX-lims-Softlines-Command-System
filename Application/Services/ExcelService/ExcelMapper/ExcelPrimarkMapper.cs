@@ -27,7 +27,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-              "AW5"
+              "AW5","BN4"
             };
         }
         public static string[] MapStabilityToDryClean()
