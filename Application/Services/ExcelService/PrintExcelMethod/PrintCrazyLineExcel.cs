@@ -627,7 +627,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["E4"] = (w, dto, reportNo) => w.Program!;
                     map["M5"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["K4"] = (w, dto, reportNo) => w.DryCondition!;
-                    map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                    map["A8"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
 
                 }
                 else if (w.WashingProcedure.Contains("Hand"))
@@ -635,25 +635,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["P1"] = (w, dto, reportNo) => reportNo;
                     map["H7"] = (w, dto, reportNo) => w.Temperature!;
                     map["M7"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["A8"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? null;
+                    map["A8"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["A3"] = (w, dto, reportNo) => "AATCC TM 135-2018t";
-                    //map["L14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    //map["AF14"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    //map["L25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    //map["AF25"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    map["V5"] = (w, dto, reportNo) => w.IronMethod ?? "/";
+                    map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
                     map["A3"] = (w, dto, reportNo) =>"AATCC TM 150-2018t/AATCC TS006";
-                    //map["W9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    //map["AB9"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    //map["AG11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    //map["AL11"] = (w, dto, reportNo) => w.AfterWash.ToString()!;
-                    map["V5"] = (w, dto, reportNo) => w.IronMethod ?? "/";
+                    map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 return map;
             },
@@ -717,7 +709,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
                 map["P1"] = (w, dto, reportNo) => reportNo;
                 map["A3"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Garment") == true ? "AATCC TM 179-2023, Method 2, Option 3" : "AATCC TM 179-2023, Method 1, Option 1";
-                //map["C5"] = (w, dto, reportNo) => w.AfterWash!.ToString()!;
                 if (w.WashingProcedure!.Contains("Machine"))
                 {
                     map["O31"] = (w, dto, reportNo) => "AATCC TM 179-2023";
@@ -726,7 +717,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["U32"] = (w, dto, reportNo) => w.Temperature!;
                     map["A33"] = (w, dto, reportNo) => w.Cycle!;
                     map["M33"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["V33"] = (w, dto, reportNo) => w.IronMethod ?? "/";
+                    map["V33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 else if (w.WashingProcedure.Contains("Hand"))
                 {
