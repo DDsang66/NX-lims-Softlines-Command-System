@@ -334,10 +334,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     else Condition = null;
                     break;
                 case "Martindale Pilling":
-                    if (infoDto.sampleDescription!.Contains("Woven")) Condition = "Woven";
-                    else if (infoDto.sampleDescription!.Contains("Knit")) Condition = "Knit";
-                    else Condition = null;
-                    Condition1 = PillingHelper(infoDto.fiberComposition!,infoDto.sampleDescription,infoDto.menuName!);
+                    Condition1 = PillingHelper(infoDto.fiberComposition!, infoDto.sampleDescription!, infoDto.menuName!);
+                    if (Condition1 != "N/A") 
+                    {
+                        if (infoDto.menuName == "PTC01") Condition = "2000";
+                        else if (infoDto.menuName == "PTC07" || infoDto.menuName == "PTC08" || infoDto.menuName == "PTC09" || infoDto.menuName == "PTC10" || infoDto.menuName == "PTC11" || infoDto.menuName == "PTC12")
+                            Condition = "500";
+                        else 
+                        {
+                            if(infoDto.sampleDescription!.Contains("Woven")) Condition = "2000";
+                            else if(infoDto.sampleDescription!.Contains("Knit")) Condition = "500";
+                            else Condition = null;
+                        } ;
+                    }
                     break;
                 case"Residual Elogation":
                     Condition = ElogationHelper(infoDto.fiberComposition!, infoDto.sampleDescription!, infoDto.menuName!);
@@ -382,8 +391,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [(null, "Colour Fastness to Water", null)] = "Multi-Fibre Type:LyoW",
             [(null, "Martindale Abrasion", null)] = "9KPa,Shade Change @ 5000 {<100g/m²：10000 rubs；101~199g/m²：15000 rubs；>2000g/m²：20000 rubs}",
             [("no change shade", "Martindale Abrasion", null)] = "9KPa；{<200g/m²：10000 rubs；201~270g/m²：15000 rubs；271~390g/m²：18000 rubs；>390g/m²：20000 rubs}",
-            [("Woven", "Martindale Pilling", null)] = "Cycle:2000 revs",
-            [("Knit", "Martindale Pilling", null)] = "Cycle:500 revs",
+            [("2000", "Martindale Pilling", null)] = "Cycle:2000 revs",
+            [("500", "Martindale Pilling", null)] = "Cycle:500 revs",
+            [(null, "Martindale Pilling", "N/A")] = "N/A",
             [(null, "Nap Stability", null)] = "Cycle:4000 revs",
             [("N/A", "Residual Elogation", null)] = "N/A",
             [("15", "Residual Elogation", null)] = "Load:15N",
@@ -463,6 +473,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             //仅适用于合成纤维，羊毛，晴纶，及其混纺物
             //长丝不做
             //抓绒只测试正面
+            var rateS = _helper.CompositionRate(fiberComposition, "Silk");
+            if (rateS > 0) return Result = "N/A";
+            var rateW = _helper.CompositionRate(fiberComposition, "Wool");
+            var rateQ = _helper.CompositionRate(fiberComposition, "Acrylic");
+            if (rateW == 0 && rateQ == 0 && _helper.IsCompositionSourceExist("Synthetic", fiberComposition)==0) return Result = "N/A";
             return Result;
         }
 
