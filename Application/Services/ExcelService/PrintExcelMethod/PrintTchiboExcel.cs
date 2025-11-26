@@ -544,8 +544,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["M1"] = (wp, dto, reportNo) => reportNo,
                 ["A3"] = (wp, dto, reportNo) => dto.Standard!,
-                ["F5"] = (wp, dto, reportNo) => "20",
-                ["E6"] = (wp, dto, reportNo) => "100",
+                ["F5"] = (wp, dto, reportNo) => "100",
+                ["E6"] = (wp, dto, reportNo) => "20",
             },
             ["Absorbency"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

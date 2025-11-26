@@ -469,8 +469,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
                 map["M1"] = (wp, dto, reportNo) => reportNo;
                 map["A3"] = (wp, dto, reportNo) => dto.Standard!;
-                map["F5"] = (wp, dto, reportNo) => "20";
-                map["E6"] = (wp, dto, reportNo) => "100";
+                map["F5"] = (wp, dto, reportNo) => "100";
+                map["E6"] = (wp, dto, reportNo) => "20";
                 if (dto.sampleDescription!.Contains("Breathability"))
                 {
                     map["AJ31"] = (w, dto, reportNo) => w.Temperature!;

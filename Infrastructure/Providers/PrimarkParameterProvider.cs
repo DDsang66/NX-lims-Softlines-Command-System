@@ -363,6 +363,27 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                     if (infoDto.sampleDescription!.Contains("Jeans")) Condition = "40";
                     else Condition = "30";
                     break;
+                case "Waterproof Claims Hydrostatic Head":
+                    if (infoDto.sampleDescription!.Contains("WaterProof"))
+                    {
+                        Condition = "1600";
+                    } 
+                    else if (infoDto.sampleDescription!.Contains("Repellent"))
+                    {
+                        Condition = "1000";
+                    }
+                    if (infoDto.menuName!.Contains("PTC37")) 
+                    {
+                        if (infoDto.sampleDescription!.Contains("Fabric"))
+                        {
+                            Condition = "10000";
+                        }
+                        else if (infoDto.sampleDescription!.Contains("Seam"))
+                        {
+                            Condition = "8000";
+                        }
+                    }
+                    break;
             }
 
             return GetParameter(Condition, ItemName, Condition1);//返回一个string类型的Parameter
@@ -371,11 +392,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string? Condition, string Item, string? Lv), string?> _map = new()
         {
-            [(null, "Abrasion of Knitted Footwear Garments - Modified Martindale",null)] = "Load:12kPa, Cycle: 8000 revs",
+            [(null, "Abrasion of Knitted Footwear Garments - Modified Martindale", null)] = "Load:12kPa, Cycle: 8000 revs",
             [("3min", "Accelerotor", null)] = "Time:3min,Cycle: 2000R.P.M",
             [("5min", "Accelerotor", null)] = "Time:5min,Cycle: 2000R.P.M",
             [(null, "Accelerotor", null)] = "Time:5min,Cycle: 2000R.P.M",
-            [(null,"Quick Dry",null)] = "≤20 minutes or ≥ 0.6mL/h",
+            [(null, "Quick Dry", null)] = "≤20 minutes or ≥ 0.6mL/h",
             [(null, "Bursting Strength", null)] = "Diameter: 79.8mm,Square:50cm²",
             [("20", "Colour Fastness to Chlorinated Water", null)] = "20mg/L",
             [("50", "Colour Fastness to Chlorinated Water", null)] = "50mg/L",
@@ -410,7 +431,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [(null, "Vertical Wicking of Textiles", null)] = "Minimum 2.5 inches per 10 minutes",
             [(null, "Back Pocket Application Strength", null)] = "{Lightweight <100gms：150N;  Medium weight 101~199gms：175N; Heavyweight >200gms：200N }",
             [(null, "Belt Loop Application Strength", null)] = "{Lightweight <100gms：150N;  Medium weight 101~199gms：175N; Heavyweight >200gms：200N }",
-            };
+            [("1600", "Waterproof Claims Hydrostatic Head", null)] = "1600mmH2O",
+            [("1000", "Waterproof Claims Hydrostatic Head", null)] = "1000mmH2O",
+            [("8000", "Waterproof Claims Hydrostatic Head", null)] = "8000mmH2O",
+            [("10000", "Waterproof Claims Hydrostatic Head", null)] = "10000mmH2O"
+        };
 
         private static string? GetParameter(string? Condition, string item, string? lv)
         {

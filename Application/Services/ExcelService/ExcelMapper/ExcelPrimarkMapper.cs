@@ -223,7 +223,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         }
         #endregion
 
-        #region
+        #region PHY
         public static string[] MapWeight()
         {
             return new string[]
@@ -254,7 +254,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                "A10", "A12","A18","A20"//可能有洗前洗后
+                "A11", "A13","A18","A20"//可能有洗前洗后
             };
         }
         public static string[] MapPeelBond()
@@ -407,7 +407,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             }
             return stringMap?.ToArray() ?? new string[0];
         }
-        public static string[] MapSlippageStrength(string sampleDescription)
+        public static string[] MapSlippageStrength(string itemName,string sampleDescription)
         {
             List<string> stringMap = null;
             if (sampleDescription.Contains("Fabric"))
@@ -416,7 +416,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             }
             else
             {
-                stringMap = new List<string> { "D3" };
+                if(itemName == "Seam Slippage")stringMap = new List<string> { "D3" };
+                else if (itemName == "Seam Strength") stringMap = new List<string> { "D18" };
+                else stringMap = new List<string> { "D3" };
             }
             return stringMap?.ToArray() ?? new string[0];
         }
