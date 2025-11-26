@@ -271,10 +271,6 @@
         }
         #endregion
 
-
-
-
-
         //AfterWash
         public static string[] AppearanceAf(string sampleDescription)
         {

@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10,
                 SpecialCareInstruction = (p.SampleDescription!.Contains("White") || p.SampleDescription.Contains("Cream")) == true ? "N/A" : null
             },
-            ("Absorbency", "3H"or "4H", _ , _) => new WetParameterIso
+            ("Absorbency of Textiles", "3H"or "4H", _ , _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -58,7 +58,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
-            ("Absorbency", _ , _ , _) => new WetParameterIso
+            ("Absorbency of Textiles", _ , _ , _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -66,13 +66,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature =
-                p.WashingProcedure!.Contains("Cold") ? "80"
-                : p.WashingProcedure.Contains("Warm") ? "105"
-                : p.WashingProcedure.Contains("Hot") ? "120"
+                p.WashingProcedure!.Contains("3") ? "80"
+                : p.WashingProcedure.Contains("4") ? "105"
+                : p.WashingProcedure.Contains("5") ? "120"
                 : "140",
-                Bleach = p.WashingProcedure!.Contains("Normal") ? "Normal"
-                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
-                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                Bleach = p.WashingProcedure!.Contains("N") ? "Normal"
+                : p.WashingProcedure.Contains("G") ? "Gentle"
+                : p.WashingProcedure.Contains("M") ? "Permanent Press"
                 : "",
                 //Cycle，程度暂时用Bleach字段代替
                 DryCleanProcedure = DryConditionHelper(p.DryProcedure!),
@@ -81,6 +81,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
+            },
+            ("Wind Resistant Claims Air Permeability", _, _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                SpecialCareInstruction = p.Sci,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                DryCleanProcedure = p.DCProcedure,
+                AfterWash = "After 1 Wash",
             },
             ("Colour Fastness to Hot Pressing", _, _, _) => new WetParameterIso
             {
@@ -116,7 +131,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
-                DryCleanProcedure = p.DCProcedure,
+                DryProcedure = p.DryProcedure,
                 AfterWash = "After 1 Wash",
             },
             ("Print / Motif / Flock Durability", _, _, _) => new WetParameterIso 
