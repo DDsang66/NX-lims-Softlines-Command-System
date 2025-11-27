@@ -489,53 +489,54 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             ["Seam Slippage"] = (w, dto, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso,CheckListDto, string, string>>();
-                map["M1"] = (wp,dto, reportNo) => reportNo;
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
-                    map["A3"] = (wp, dto, reportNo) => dto.Standard!;
+                    map["A3"] = (w, dto, reportNo) => dto.Standard!;
                 }
-                if (dto.sampleDescription!.Contains("Garment"))
+                else if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    map["J3"] = (wp,dto, reportNo) => dto.Standard!;
-                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-                    if (layout.Contains("Shell"))
-                    {
-                        map["Q4"] = (wp, dto, reportNo) => "√";
-                        map["Q14"] = (wp,dto, reportNo) => "√";
-                    }
-                    if (layout.Contains("Lining"))
-                    {
-                        map["AF4"] = (wp, dto, reportNo) => "√";
-                        map["AF14"] = (wp,dto, reportNo) => "√";
-                    }
                     string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                    Dictionary<string, (string Cell, string Desc)> ComponentMap =
-                            new(StringComparer.OrdinalIgnoreCase)
-                            {
-                                ["Side"] = ("A5", "Side Seam"),
-                                ["Sleeve"] = ("A6", "Sleeve Seam"),
-                                ["Armhole"] = ("A7", "Armhole Seam"),
-                                ["Shoulder"] = ("A8", "Shoulder Seam"),
-                                ["Armprit"] = ("A9", "Armprit Seam"),
-                                ["Front Panel"] = ("A10", "Front Panel Seam"),
-                                ["Back Panel"] = ("A11", "Back Panel Seam"),
-                                ["OutSide"] = ("A15", "Out-Side Seam"),
-                                ["InSide"] = ("A16", "In-Side Seam"),
-                                ["Back Rise"] = ("A17", "Back Rise Seam"),
-                                ["Front Crotch"] = ("A18", "Front Crotch Seam"),
-                                ["Cross"] = ("A19", "Cross Seam"),
-                            };
-                    if (!string.IsNullOrEmpty(component))
+                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+                    map["J3"] = (w, dto, reportNo) => dto.Standard!;
+                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (w, dto, reportNo) => "√";
+                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (w, dto, reportNo) => "√";
+
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
-                        foreach (var kv in ComponentMap)
-                        {
-                            if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
-                            {
-                                var (cell, desc) = kv.Value;
-                                map[cell] = (wp, dto, reportNo) => desc;
-                            }
-                        }
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+                    // 2. 固定顺序的单元格列表
+                    var cellOrder = new List<string>{
+                        "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
+                    };
+                    var selectedParts = (component ?? "")
+                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(k => descMap.ContainsKey(k))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    // 4. 按顺序依次填，发完为止
+                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+                    {
+                        string part = selectedParts[i];
+                        string cell = cellOrder[i];
+                        string desc = descMap[part];
+                        map[cell] = (w, dto, reportNo) => desc;
                     }
                 }
                 return map;

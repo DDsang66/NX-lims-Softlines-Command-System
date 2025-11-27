@@ -265,7 +265,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Bursting Strength"] = new Dictionary<string, string>
             {
                  {"Fabric","Bursting Strength"},
-                 {"Knit","Seam Bursting-G"}
+                 {"Garment","Seam Bursting-G"}
             },
             ["Seam Strength"] = new Dictionary<string, string>
             {
@@ -515,157 +515,197 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["A3"] = (dto, reportNo) => dto.Standard!;
-                    map["V3"] = (dto, reportNo) => "16N";
                 }
-                if (dto.sampleDescription!.Contains("Garment"))
+                else if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    map["J3"] = (dto, reportNo) => dto.Standard!;
-                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-                    if (layout.Contains("Shell"))
-                    {
-                        map["Q4"] = (dto, reportNo) => "√";
-                        map["Q14"] = (dto, reportNo) => "√";
-                    }
-                    if (layout.Contains("Lining"))
-                    {
-                        map["AF4"] = (dto, reportNo) => "√";
-                        map["AF14"] = (dto, reportNo) => "√";
-                    }
                     string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                    Dictionary<string, (string Cell, string Desc)> ComponentMap =
-                            new(StringComparer.OrdinalIgnoreCase)
-                            {
-                                ["Side"] = ("A5", "Side Seam"),
-                                ["Sleeve"] = ("A6", "Sleeve Seam"),
-                                ["Armhole"] = ("A7", "Armhole Seam"),
-                                ["Shoulder"] = ("A8", "Shoulder Seam"),
-                                ["Armprit"] = ("A9", "Armprit Seam"),
-                                ["Front Panel"] = ("A10", "Front Panel Seam"),
-                                ["Back Panel"] = ("A11", "Back Panel Seam"),
-                                ["OutSide"] = ("A15", "Out-Side Seam"),
-                                ["InSide"] = ("A16", "In-Side Seam"),
-                                ["Back Rise"] = ("A17", "Back Rise Seam"),
-                                ["Front Crotch"] = ("A18", "Front Crotch Seam"),
-                                ["Cross"] = ("A19", "Cross Seam"),
-                            };
-                    if (!string.IsNullOrEmpty(component))
+                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+                    map["J3"] = (dto, reportNo) => dto.Standard!;
+                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (dto, reportNo) => "√";
+                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
+
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
-                        foreach (var kv in ComponentMap)
-                        {
-                            if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
-                            {
-                                var (cell, desc) = kv.Value;
-                                map[cell] = (dto, reportNo) => desc;
-                            }
-                        }
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+                    // 2. 固定顺序的单元格列表
+                    var cellOrder = new List<string>{
+                        "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
+                    };
+                    var selectedParts = (component ?? "")
+                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(k => descMap.ContainsKey(k))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    // 4. 按顺序依次填，发完为止
+                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+                    {
+                        string part = selectedParts[i];
+                        string cell = cellOrder[i];
+                        string desc = descMap[part];
+                        map[cell] = (dto, reportNo) => desc;
                     }
                 }
                 return map;
             },
-            ["Seam Strength"] = (dto, reportNo) =>
+            ["Seam Strength"] = ( dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func< CheckListDto, string, string>>();
+                map["M1"] = (dto, reportNo) => reportNo;
+                if (dto.sampleDescription!.Contains("Knit"))
+                {
+                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+                    map["J3"] = (dto, reportNo) => dto.Standard!;
+                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (dto, reportNo) => "√";
+                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
+
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+                    // 2. 固定顺序的单元格列表
+                    var cellOrder = new List<string>{
+                        "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
+                    };
+                    var selectedParts = (component ?? "")
+                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(k => descMap.ContainsKey(k))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    // 4. 按顺序依次填，发完为止
+                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+                    {
+                        string part = selectedParts[i];
+                        string cell = cellOrder[i];
+                        string desc = descMap[part];
+                        map[cell] = (dto, reportNo) => desc;
+                    }
+                }
+                else if (dto.sampleDescription!.Contains("Garment"))
+                {
+                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+                    map["J18"] = (dto, reportNo) => dto.Standard!;
+                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q19"] = (dto, reportNo) => "√";
+                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF19"] = (dto, reportNo) => "√";
+
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+                    // 2. 固定顺序的单元格列表
+                    var cellOrder = new List<string>{
+                        "A20", "A21", "A22", "A23", "A24", "A25","A26", "A27","A28","A29", "A30", "A31"
+                    };
+                    var selectedParts = (component ?? "")
+                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(k => descMap.ContainsKey(k))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    // 4. 按顺序依次填，发完为止
+                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+                    {
+                        string part = selectedParts[i];
+                        string cell = cellOrder[i];
+                        string desc = descMap[part];
+                        map[cell] = (dto, reportNo) => desc;
+                    }
+                }
+                return map;
+            },
+            ["Bursting Strength"] = ( dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<CheckListDto, string, string>>();
-                map["M1"] = (dto, reportNo) => reportNo;
-                if (dto.sampleDescription!.Contains("Fabric"))
-                {
-                    map["A3"] = (dto, reportNo) => dto.Standard!;
-                }
-                if (dto.sampleDescription!.Contains("Garment"))
+                map["M1"] = ( dto, reportNo) => reportNo;
+                if (dto.sampleDescription!.Contains("Fabric")) map["I3"] = (dto, reportNo) => dto.Standard!;
+                else if (dto.sampleDescription!.Contains("Garment"))
                 {
                     string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
                     string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-                    if (dto.sampleDescription!.Contains("Knit"))
+
+                    map["J3"] = (dto, reportNo) => dto.Standard!;
+                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = ( dto, reportNo) => "√";
+                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
+
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
-                        map["A3"] = (dto, reportNo) => "DIN EN ISO 13938-2:2020";
-                        if (layout.Contains("Shell") && !string.IsNullOrEmpty(layout))
-                        {
-                            map["Q5"] = (dto, reportNo) => "√";
-                            map["Q15"] = (dto, reportNo) => "√";
-                        }
-                        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout))
-                        {
-                            map["AF5"] = (dto, reportNo) => "√";
-                            map["AF15"] = (dto, reportNo) => "√";
-                        }
-                        Dictionary<string, (string Cell, string Desc)> ComponentMap =
-                            new(StringComparer.OrdinalIgnoreCase)
-                            {
-                                ["Side"] = ("A6", "Side Seam"),
-                                ["Sleeve"] = ("A7", "Sleeve Seam"),
-                                ["Armhole"] = ("A8", "Armhole Seam"),
-                                ["Shoulder"] = ("A9", "Shoulder Seam"),
-                                ["Armprit"] = ("A10", "Armprit Seam"),
-                                ["Front Panel"] = ("A11", "Front Panel Seam"),
-                                ["Back Panel"] = ("A12", "Back Panel Seam"),
-                                ["OutSide"] = ("A16", "Out-Side Seam"),
-                                ["InSide"] = ("A17", "In-Side Seam"),
-                                ["Back Rise"] = ("A18", "Back Rise Seam"),
-                                ["Front Crotch"] = ("A19", "Front Crotch Seam"),
-                                ["Cross"] = ("A20", "Cross Seam"),
-                            };
-                        if (!string.IsNullOrEmpty(component))
-                        {
-                            foreach (var kv in ComponentMap)
-                            {
-                                if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    var (cell, desc) = kv.Value;
-                                    map[cell] = (dto, reportNo) => desc;
-                                }
-                            }
-                        }
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+                    // 2. 固定顺序的单元格列表
+                    var cellOrder = new List<string>{
+                        "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
+                    };
+                    var selectedParts = (component ?? "")
+                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(k => descMap.ContainsKey(k))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
 
-                    }
-                    else
+                    // 4. 按顺序依次填，发完为止
+                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
                     {
-                        map["J22"] = (dto, reportNo) => dto.Standard!;
-                        if (layout.Contains("Shell") && !string.IsNullOrEmpty(layout))
-                        {
-                            map["Q23"] = (dto, reportNo) => "√";
-                            map["Q33"] = (dto, reportNo) => "√";
-                        }
-                        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout))
-                        {
-                            map["AF23"] = (dto, reportNo) => "√";
-                            map["AF33"] = (dto, reportNo) => "√";
-                        }
-                        Dictionary<string, (string Cell, string Desc)> ComponentMap =
-                            new(StringComparer.OrdinalIgnoreCase)
-                            {
-                                ["Side"] = ("A24", "Side Seam"),
-                                ["Sleeve"] = ("A25", "Sleeve Seam"),
-                                ["Armhole"] = ("A26", "Armhole Seam"),
-                                ["Shoulder"] = ("A27", "Shoulder Seam"),
-                                ["Armprit"] = ("A28", "Armprit Seam"),
-                                ["Front Panel"] = ("A29", "Front Panel Seam"),
-                                ["Back Panel"] = ("A30", "Back Panel Seam"),
-                                ["OutSide"] = ("A34", "Out-Side Seam"),
-                                ["InSide"] = ("A35", "In-Side Seam"),
-                                ["Back Rise"] = ("A36", "Back Rise Seam"),
-                                ["Front Crotch"] = ("A37", "Front Crotch Seam"),
-                                ["Cross"] = ("A38", "Cross Seam"),
-                            };
-                        if (!string.IsNullOrEmpty(component))
-                        {
-                            foreach (var kv in ComponentMap)
-                            {
-                                if (component.Contains(kv.Key, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    var (cell, desc) = kv.Value;
-                                    map[cell] = (dto, reportNo) => desc;
-                                }
-                            }
-                        }
+                        string part = selectedParts[i];
+                        string cell = cellOrder[i];
+                        string desc = descMap[part];
+                        map[cell] = (dto, reportNo) => desc;
                     }
-
-
                 }
                 return map;
-            },
-            ["Bursting Strength"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
-            {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["I3"] = (dto, reportNo) => dto.Standard!
             },
             ["Tensile Strength"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
             {

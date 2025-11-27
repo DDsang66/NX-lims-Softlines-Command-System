@@ -140,7 +140,7 @@
             }
             else
             {
-                stringMap = new List<string> { "D5" };
+                stringMap = new List<string> { "D3" };
             }
             return stringMap?.ToArray() ?? new string[0];
         }

@@ -50,7 +50,7 @@
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
-                "Garment" => new List<string> { "D4", "D14" },
+                "Garment" => new List<string> { "D3" },
                 "Fabric" => new List<string> { "A10", "A12" },
                 _ => new List<string> { "A10", "A12" }
             };
@@ -68,9 +68,9 @@
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
-                "Garment" => new List<string> { "D23", "D33" },
-                "Knit" => new List<string> { "D5", "D15" },
-                _ => new List<string> { "D23", "D33" }
+                "Garment" => new List<string> { "D18" },
+                "Knit" => new List<string> { "D3" },
+                _ => new List<string> { "D18" }
             };
 
             return stringMap?.ToArray() ?? new string[0];

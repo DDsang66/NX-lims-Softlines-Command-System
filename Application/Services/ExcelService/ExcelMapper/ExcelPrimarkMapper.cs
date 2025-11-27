@@ -454,14 +454,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         public static string[] MapBursting(string sampleDescription)
         {
             List<string> stringMap = null;
-            if (sampleDescription.Contains("Seam"))
-            {
-                stringMap = new List<string> { "A24", "A26", "A28", "A30" };
-            }
-            else
-            {
-                stringMap = new List<string> { "A9", "A10", "A11" };
-            }
+            if (sampleDescription.Contains("Fabric")) stringMap = new List<string> { "A9", "A10", "A11" };
+            else if (sampleDescription.Contains("Seam")) stringMap = new List<string> { "A24", "A26", "A28", "A30" };
+            else if (sampleDescription.Contains("Garment")) stringMap = new List<string> { "D3"};
             return stringMap?.ToArray() ?? new string[0];
         }
         public static string[] MapAbsorbency()
