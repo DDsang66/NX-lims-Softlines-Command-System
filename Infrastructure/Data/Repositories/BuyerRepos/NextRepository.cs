@@ -4,18 +4,18 @@ using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos
 {
 
-
-    public class JakoRepository : IRepository
+    //与数据库交互
+    public class NextRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public JakoRepository(LabDbContextSec db, FiberContentHelper helper)
+        public NextRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -26,33 +26,22 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             try
             {
                 string menuName = input;
-                var Menu = await _db.Menus.FirstOrDefaultAsync(m => m.MenuName == menuName);
+                var Menu = await _db.NextMenus.Where(m => m.BuyerTable!.Contains(menuName)).ToListAsync();
                 if (Menu == null) return null;
 
-                var properties = typeof(Menu).GetProperties();
-                var standards = properties
-                    .Where(p => p.Name.StartsWith("StandardIndex"))
-                    .Select(p => p.GetValue(Menu))
-                    .OfType<int?>()
-                    .Where(v => v.HasValue)
-                    .ToList();
-
                 var checkLists = new List<CheckListDto>();
-                foreach (var standard in standards)
+                foreach (var m in Menu)
                 {
                     try
                     {
-                        int? itemID = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.ItemIndex;
-                        string? standardCore = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.StandardCode;
-                        var item = await _db.Items.FindAsync(itemID);
-                        if (item != null)
+                        if (m.StandardName != null)
                         {
                             checkLists.Add(new CheckListDto
                             {
                                 MenuName = menuName,
-                                ItemName = item.ItemName,
-                                Standard = standardCore,
-                                Type = item.Type,
+                                ItemName = m.ItemName,
+                                Standard = m.StandardName,
+                                Type = m.Type,
                                 Parameter = null
                             });
 
@@ -60,10 +49,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error processing standard {standard}: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Error processing standard {m.StandardName}: {ex.Message}");
                     }
                 }
-                checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
+                checkLists = checkLists.OrderBy(cl => cl.Standard).ToList();
 
                 return checkLists;
             }
@@ -77,15 +66,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "Appearance", "DS to Dry-clean", "Print Durability For JAKO", "Heat Press Test For JAKO", "CF to Hot Pressing", "Spirality/Skewing","CF to Sublimation in Storage" }
+            if (!new[] { "Colour Fastness to Washing", "Absorbency of Textiles", "Colour Fastness to Hot Pressing",
+                "Dimensional and Bra Wire Casing Stability", "Martindale Pilling", "Print / Motif / Flock Durability",
+                "Print Durability","Shower Resistant Claims Spray Rating","Spirality","Stability to Dry Cleaning",
+                "Stability to Washing","Waterproof Claims Hydrostatic Head","Dimensional Stability","Security of Attachment(Wash)",
+                "Easycare/Non-Iron","Appearance-Common"}
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            JakoParameterProvider wetParam = new JakoParameterProvider(_helper);
+            NextParameterProvider wetParam = new NextParameterProvider(_helper);
             if (Param != null)
             {
-                var updatedParam = await wetParam.CreateWetParameters(input);
+                var updatedParam = wetParam.CreateWetParameters(input);
                 updatedParam.ParamId = Param.ParamId;
                 _db.Entry(Param).CurrentValues.SetValues(updatedParam);
                 await _db.SaveChangesAsync();
@@ -100,7 +93,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     ReportNumber = input.OrderNumber!,
                     ContactItem = itemName
                 };
-                Param = await wetParam.CreateWetParameters(input);
+                Param = wetParam.CreateWetParameters(input);
                 foreach (var prop in typeof(WetParameterIso).GetProperties())
                 {
                     if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
@@ -117,8 +110,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 await _db.SaveChangesAsync();
                 Param = newParam;
             }
-            return (T)(object)Param;
+            return (T)(object)Param;//返回WetParameters类型的对象
         }
-
     }
 }
+

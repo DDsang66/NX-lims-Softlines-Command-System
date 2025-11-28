@@ -4,10 +4,10 @@ using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos
 {
 
     //与数据库交互

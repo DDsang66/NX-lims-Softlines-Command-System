@@ -4,16 +4,18 @@ using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos
 {
-    public class TchiboRepository : IRepository
+
+    //与数据库交互
+    public class CrazyLineRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public TchiboRepository(LabDbContextSec db, FiberContentHelper helper)
+        public CrazyLineRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -53,6 +55,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                 Type = item.Type,
                                 Parameter = null
                             });
+
                         }
                     }
                     catch (Exception ex)
@@ -74,12 +77,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "DS to Washing" ,"Appearance","CF to Sublimation in Storage", "CF to Hot Pressing" , "Absorbency", "Water Repellency-Spray Test" }
+            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean", "Spirality/Skewing" }
                  .Contains(itemName))
                 return default;
-            var Param = await _db.WetParameterIsos
+            var Param = await _db.WetParameterAatccs
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            TchiboParamProvider wetParam = new TchiboParamProvider(_helper);
+            CrazyLineParameterProvider wetParam = new CrazyLineParameterProvider(_helper);
             if (Param != null)
             {
                 var updatedParam = wetParam.CreateWetParameters(input);
@@ -90,15 +93,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             }
             else
             {
-                var newParam = new WetParameterIso//没有找到对应的对象，随即构造一个
+                var newParam = new WetParameterAatcc//没有找到对应的对象，随即构造一个
                 {
-                    StandardType = "ISO",
+                    StandardType = "AATCC",
                     Sensitive = "N",
-                    ReportNumber = input.OrderNumber,
+                    ReportNumber = input.OrderNumber!,
                     ContactItem = itemName
                 };
                 Param = wetParam.CreateWetParameters(input);
-                foreach (var prop in typeof(WetParameterIso).GetProperties())
+                foreach (var prop in typeof(WetParameterAatcc).GetProperties())
                 {
                     if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
                     {
@@ -110,12 +113,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     }
                 }
 
-                await _db.WetParameterIsos.AddAsync(newParam);
+                await _db.WetParameterAatccs.AddAsync(newParam);
                 await _db.SaveChangesAsync();
                 Param = newParam;
             }
-            return (T)(object)Param;//返回WetParameters类型的对象
+            return (T)(object)Param;
         }
-
     }
 }

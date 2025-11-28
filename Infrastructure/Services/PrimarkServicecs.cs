@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
@@ -103,10 +103,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "Colour Fastness to Water" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Martindale Abrasion" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Nap Stability" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
-            "Residual Elogation" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
+            "Residual Elongation" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Residual Elongation SHAPEWEAR" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Tear Strength" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Tensile Strength" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
+            "Seam Strength" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
+            "Seam Slippage" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Unrecovered Elongation" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Elastic Extension and Modulus Test" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),
             "Vertical Wicking of Textiles" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, Param),

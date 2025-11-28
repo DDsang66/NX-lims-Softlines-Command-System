@@ -4,7 +4,7 @@ using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using SixLabors.Fonts.Unicode;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
+namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider
 {
     public class JakoParameterProvider
     {
@@ -37,7 +37,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
-                Iron =p.Iron ?? null,
+                Iron = p.Iron ?? null,
             },
             ("Appearance", var add) when add?.Contains("Garment") == true => new WetParameterIso
             {
@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = /*(p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? */
                 !string.IsNullOrEmpty(p.DCProcedure) ? p.DCProcedure : "Tumble Dry",
-                Temperature = /*(p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ?*/ 
+                Temperature = /*(p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ?*/
                 p.WashingProcedure!.Contains("3") ? "30" : "40",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
@@ -107,7 +107,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Dyed") == true ? "150" : "110",
-                IronMethod = p.IronMethod??null
+                IronMethod = p.IronMethod ?? null
             },
             ("CF to Sublimation in Storage", _) => new WetParameterIso
             {

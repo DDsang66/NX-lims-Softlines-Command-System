@@ -4,18 +4,16 @@ using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos
 {
-
-    //与数据库交互
-    public class KikRepository : IRepository
+    public class TchiboRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public KikRepository(LabDbContextSec db, FiberContentHelper helper)
+        public TchiboRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -55,7 +53,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                                 Type = item.Type,
                                 Parameter = null
                             });
-
                         }
                     }
                     catch (Exception ex)
@@ -77,12 +74,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean", "Attachment Strength", "Spirality/Skewing", "Appearance" }
+            if (!new[] { "CF to Washing", "DS to Washing", "Appearance", "CF to Sublimation in Storage", "CF to Hot Pressing", "Absorbency", "Water Repellency-Spray Test" }
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            KikParameterProvider wetParam = new KikParameterProvider(_helper);
+            TchiboParamProvider wetParam = new TchiboParamProvider(_helper);
             if (Param != null)
             {
                 var updatedParam = wetParam.CreateWetParameters(input);
@@ -119,5 +116,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             }
             return (T)(object)Param;//返回WetParameters类型的对象
         }
+
     }
 }

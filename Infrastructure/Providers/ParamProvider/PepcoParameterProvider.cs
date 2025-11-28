@@ -6,7 +6,7 @@ using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
+namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider
 {
     public class PepcoParameterProvider
     {
@@ -42,8 +42,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!)>=51? "Type I (100% Cotton)"
-                :_helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >=51? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -139,11 +139,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
 
             // 1. 计算最大值
             string? Condition = null;
-            if (ItemName == "Pilling Resistance") 
+            if (ItemName == "Pilling Resistance")
             {
                 Condition = infoDto.sampleDescription!.Contains("Knit") ? "Knit" : "Woven";
             }
-            if (ItemName == "Air Permeability") 
+            if (ItemName == "Air Permeability")
             {
                 if (infoDto.sampleDescription!.Contains("WindProof")) Condition = "As Received";
                 else if (infoDto.sampleDescription.Contains("Breathability")) Condition = "After 3 Wash";

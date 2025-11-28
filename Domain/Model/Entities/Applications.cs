@@ -20,4 +20,6 @@ public partial class Applications
     public string? Express { get; set; }
 
     public int? TestSampleNum { get; set; }
+
+    public string? Remark { get; set; }
 }

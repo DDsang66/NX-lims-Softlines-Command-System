@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {

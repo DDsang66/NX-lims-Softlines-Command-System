@@ -12,10 +12,10 @@ using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using NX_lims_Softlines_Command_System.Application.Services.OrderService;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
-using NX_lims_Softlines_Command_System.Data.Repositories;
 using NX_lims_Softlines_Command_System.Application.Services.UserService;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.FeedBackRepos;
 
 namespace NX_lims_Softlines_Command_System
 {

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
@@ -24,16 +24,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             var checkLists = await _repo.GetCheckListAsync(MenuName);//返回CheckListDto类型的对象
             if (checkLists == null) return null;
 
-            //var groupedCheckLists = checkLists
-            //    .GroupBy(cl => cl.ItemName)
-            //    .Select(group => new
-            //    {
-            //        ItemName = group.Key,
-            //        Standards = group.Select(cl => cl.Standard).Distinct().ToList(),
-            //        Types = group.Select(cl => cl.Type).Distinct().ToList(),
-            //        Parameters = group.Select(cl => cl.Parameter).Distinct().ToList()
-            //    })
-            //    .ToList();
             var groupedCheckLists = checkLists
                 .Select(cl => new
                 {

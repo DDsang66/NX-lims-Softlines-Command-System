@@ -1,7 +1,7 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
+namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Order
 {
     public class OrderReportingQueryProvider
     {
@@ -35,7 +35,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         /// <param name="queryParams">查询条件</param>
         /// <returns>符合条件的查询语句</returns>
         public IQueryable<LabTestInfo> QueryTimeInfo(
-            DateTimeOffset timeOffset, string timeType,string Property,
+            DateTimeOffset timeOffset, string timeType, string Property,
             LabDbContextSec _db)
         {
             var query = _db.LabTestInfos.AsQueryable();
@@ -53,7 +53,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         break;
                 }
             }
-            else if (timeType.ToLower() == "month") 
+            else if (timeType.ToLower() == "month")
             {
                 switch (Property!.ToLower())
                 {
@@ -116,7 +116,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                         (!o.LabOutTime.HasValue ?
                             o.ReportDueDate!.Value.AddDays(1) < DateTimeOffset.Now :
                             o.LabOutTime.Value.Date > o.ReportDueDate!.Value.Date.AddDays(1)) ||
-                            (o.DelayReason!=null || o.DelayType!=null)
+                            o.DelayReason != null || o.DelayType != null
                             );
                     break;
                 case "inadvancelabout":

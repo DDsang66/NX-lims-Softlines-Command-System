@@ -7,12 +7,12 @@ using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
-    public class CrazyLineService : IBuyerService
+    public class NextService : IBuyerService
     {
-        private readonly CrazyLineRepository _repo;
+        private readonly NextRepository _repo;
         private readonly FiberContentHelper _helper;
 
-        public CrazyLineService(CrazyLineRepository repo, FiberContentHelper helper)
+        public NextService(NextRepository repo, FiberContentHelper helper)
         {
             _repo = repo;
             _helper = helper;
@@ -23,32 +23,30 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             string MenuName = infoDto.menuName!;
             var checkLists = await _repo.GetCheckListAsync(MenuName);//返回CheckListDto类型的对象
             if (checkLists == null) return null;
-
             var groupedCheckLists = checkLists
-                .GroupBy(cl => cl.ItemName)
-                .Select(group => new
+                .Select(cl => new
                 {
-                    ItemName = group.Key,
-                    Standards = group.Select(cl => cl.Standard).Distinct().ToList(),
-                    Types = group.Select(cl => cl.Type).Distinct().ToList(),
-                    Parameters = group.Select(cl => cl.Parameter).Distinct().ToList()
+                    ItemName = cl.ItemName,
+                    Standards = cl.Standard != null ? new List<string> { cl.Standard } : new List<string>(),
+                    Types = cl.Type != null ? new List<string> { cl.Type } : new List<string>(),
+                    Parameters = cl.Parameter != null ? new List<string> { cl.Parameter } : new List<string> { "-" }
                 })
                 .ToList();
 
-            return groupedCheckLists;
+            return groupedCheckLists;//去重后，返回给Mango类
         }
 
         public async Task<object?> ShowParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
             var items = infoDto.items;
-            CrazyLineParameterProvider helper = new CrazyLineParameterProvider(_helper);
+            NextParameterProvider helper = new NextParameterProvider(_helper);
             // 生成对应 DTO
             try
             {
                 var dtos = new List<object>();
                 foreach (var item in items!)
                 {
-                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterAatcc>(
+                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(
                         new ParamsInput
                         {
                             WashingProcedure = infoDto.washingProcedure,
@@ -59,13 +57,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             Bleach = infoDto.bleachProcedure,
                             FiberContent = infoDto.fiberComposition,
                             OrderNumber = infoDto.reportNumber,
-                            AfterWash = infoDto.afterWash,
                             DCProcedure = infoDto.dcProcedure,
-                            SampleDescription = infoDto.sampleDescription,
+                            AfterWash = infoDto.afterWash,
                             ItemName = item.itemName
                         }, item.itemName!);
                     string? param = await helper.CreateParameters(infoDto, item.itemName!)!;
-                    dtos.Add(CreateResponse(item.itemName!, wetParams ?? new WetParameterAatcc { ContactItem = item.itemName }, param!));
+                    dtos.Add(CreateResponse(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName! }, param!));
                 }
                 return dtos;
             }
@@ -75,18 +72,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             }
             return null;
         }
+
         //返回前端需要的实体对象
-        private static ParamDto CreateResponse(string itemName, WetParameterAatcc p, string Param) => itemName switch
+        private static ParamDto CreateResponse(string itemName, WetParameterIso p, string Param) => itemName switch
         {
-            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
-            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", null, null, null, p.SpecialCareInstruction, p.DryProcedure, null, null, p.Cycle, null, p.Iron),
+            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
+            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
             "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null),
             "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Abrasion Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Water Resistance-Hydrostatic Pressure" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Spirality/Skewing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°F", null, null, null, p.SpecialCareInstruction, p.DryProcedure, null, null, p.Cycle, null, p.Iron),
             _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };
-
     }
 }

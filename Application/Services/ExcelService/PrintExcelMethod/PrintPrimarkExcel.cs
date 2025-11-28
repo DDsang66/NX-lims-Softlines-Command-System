@@ -45,6 +45,25 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     sampleDescription = sampleDescription,
                 });
             }
+            foreach (var row in checkLists)
+            {
+                if (new[] { "Seam Slippage", "Seam Strength", "Tear Strength", "Tensile Strength", "Martindale Abrasion" , "Back Pocket Application Strength",
+                "Belt Loop Application Strength"}
+                     .Contains(row.ItemName))
+                    checkLists.Add(new CheckListDto
+                    {
+                        ItemName = "Mass per Unit Area",
+                        Standard = "BS EN 12127:1998",
+                        Parameter = "Single unit weight",
+                        Type = "Physics",
+                        Sample = row.Sample,
+                        Extra = null,
+                        MenuName = menu,
+                        sampleDescription = sampleDescription,
+                    });
+                break;
+            }
+
             foreach (var dto in checkLists)
             {
                 Console.WriteLine($"{dto.ItemName} -> {dto.Type}");
@@ -298,7 +317,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Colour Fastness to Chlorinated Water"] = "CFtoSublimation&HotPressing&Cl",
             ["Colour Fastness to Chlorine Bleach"] = "CFtoPerspiration&Bleach",
             ["Colour Fastness to Dry Cleaning"] = "Yellowing&DryClean",
-            ["Colour Fastness to Hot Pressing"]= "CFtoSublimation&HotPressing&Cl",
+            ["Colour Fastness to Hot Pressing"] = "CFtoSublimation&HotPressing&Cl",
             ["Colour Fastness to Light"] = "CFtoWash&Rub&Lig&Wat",
             ["Colour Fastness to Non Chlorine Bleach"] = "CFtoPerspiration&Bleach",
             ["Colour Fastness to Perspiration"] = "CFtoPerspiration&Bleach",
@@ -799,6 +818,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["J1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
+                ["S3"] = (w, dto, reportNo) => dto.Parameter!.Contains("unit")?"刻一个":"-",
             },
             ["Nap Stability"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

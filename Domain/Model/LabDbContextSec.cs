@@ -34,6 +34,8 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<Menu> Menus { get; set; }
 
+    public virtual DbSet<NextMenu> NextMenus { get; set; }
+
     public virtual DbSet<PrimarkMenu> PrimarkMenus { get; set; }
 
     public virtual DbSet<Standard> Standards { get; set; }
@@ -91,6 +93,9 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("reason");
+            entity.Property(e => e.Remark)
+                .HasColumnType("text")
+                .HasColumnName("remark");
             entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
             entity.Property(e => e.ReportNumber)
                 .HasMaxLength(20)
@@ -422,6 +427,33 @@ public partial class LabDbContextSec : DbContext
             entity.Property(e => e.UploadTime).HasColumnName("upload_time");
         });
 
+        modelBuilder.Entity<NextMenu>(entity =>
+        {
+            entity.HasKey(e => e.IdNext);
+
+            entity.ToTable("next_menu");
+
+            entity.Property(e => e.IdNext)
+                .ValueGeneratedNever()
+                .HasColumnName("id_next");
+            entity.Property(e => e.BuyerTable)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("buyer_table");
+            entity.Property(e => e.ItemName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("item_name");
+            entity.Property(e => e.StandardName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("standard_name");
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
         modelBuilder.Entity<PrimarkMenu>(entity =>
         {
             entity.HasKey(e => e.IdPrimark);
@@ -567,11 +599,11 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("cycle");
             entity.Property(e => e.Detergent)
-                .HasMaxLength(50)
+                .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("detergent");
             entity.Property(e => e.DryCleanProcedure)
-                .HasMaxLength(100)
+                .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("dry_clean_procedure");
             entity.Property(e => e.DryCondition)
@@ -649,11 +681,11 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("contact_item");
             entity.Property(e => e.Detergent)
-                .HasMaxLength(50)
+                .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("detergent");
             entity.Property(e => e.DryCleanProcedure)
-                .HasMaxLength(100)
+                .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("dry_clean_procedure");
             entity.Property(e => e.DryProcedure)

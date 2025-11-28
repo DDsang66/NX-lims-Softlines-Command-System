@@ -1,7 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Data.Repositories;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.OrderService
 {

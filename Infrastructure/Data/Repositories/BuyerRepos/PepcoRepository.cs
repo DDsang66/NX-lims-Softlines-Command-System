@@ -4,18 +4,18 @@ using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos
 {
 
     //与数据库交互
-    public class PrimarkRepository : IRepository
+    public class PepcoRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public PrimarkRepository(LabDbContextSec db, FiberContentHelper helper)
+        public PepcoRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -26,22 +26,33 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             try
             {
                 string menuName = input;
-                var Menu = await _db.PrimarkMenus.Where(m => m.BuyerTable!.Contains(menuName)).ToListAsync();
+                var Menu = await _db.Menus.FirstOrDefaultAsync(m => m.MenuName == menuName);
                 if (Menu == null) return null;
 
+                var properties = typeof(Menu).GetProperties();
+                var standards = properties
+                    .Where(p => p.Name.StartsWith("StandardIndex"))
+                    .Select(p => p.GetValue(Menu))
+                    .OfType<int?>()
+                    .Where(v => v.HasValue)
+                    .ToList();
+
                 var checkLists = new List<CheckListDto>();
-                foreach (var m in Menu)
+                foreach (var standard in standards)
                 {
                     try
                     {
-                        if (m.StandardName != null)
+                        int? itemID = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.ItemIndex;
+                        string? standardCore = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.StandardCode;
+                        var item = await _db.Items.FindAsync(itemID);
+                        if (item != null)
                         {
                             checkLists.Add(new CheckListDto
                             {
                                 MenuName = menuName,
-                                ItemName = m.ItemName,
-                                Standard = m.StandardName,
-                                Type = m.Type,
+                                ItemName = item.ItemName,
+                                Standard = standardCore,
+                                Type = item.Type,
                                 Parameter = null
                             });
 
@@ -49,10 +60,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                     }
                     catch (Exception ex)
                     {
-                        System.Diagnostics.Debug.WriteLine($"Error processing standard {m.StandardName}: {ex.Message}");
+                        System.Diagnostics.Debug.WriteLine($"Error processing standard {standard}: {ex.Message}");
                     }
                 }
-                checkLists = checkLists.OrderBy(cl => cl.Standard).ToList();
+                checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
 
                 return checkLists;
             }
@@ -66,16 +77,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "Colour Fastness to Washing", "Absorbency of Textiles", "Colour Fastness to Hot Pressing", 
-                "Dimensional and Bra Wire Casing Stability", "Martindale Pilling", "Print / Motif / Flock Durability",
-                "Print Durability","Shower Resistant Claims Spray Rating","Spirality","Stability to Dry Cleaning",
-                "Stability to Washing","Waterproof Claims Hydrostatic Head","Dimensional Stability","Security of Attachment(Wash)",
-                "Easycare/Non-Iron","Appearance-Common"}
+            if (!new[] { "CF to Washing", "DS to Washing", "Appearance", "Print Durability", "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure", "Air Permeability" }
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            PrimarkParameterProvider wetParam = new PrimarkParameterProvider(_helper);
+            PepcoParameterProvider wetParam = new PepcoParameterProvider(_helper);
             if (Param != null)
             {
                 var updatedParam = wetParam.CreateWetParameters(input);
@@ -90,7 +97,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
                 {
                     StandardType = "ISO",
                     Sensitive = "N",
-                    ReportNumber = input.OrderNumber!,
+                    ReportNumber = input.OrderNumber,
                     ContactItem = itemName
                 };
                 Param = wetParam.CreateWetParameters(input);

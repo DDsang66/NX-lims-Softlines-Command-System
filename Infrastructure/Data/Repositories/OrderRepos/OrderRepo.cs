@@ -10,13 +10,13 @@ using DocumentFormat.OpenXml.Vml.Office;
 using System.Collections.Concurrent;
 using DocumentFormat.OpenXml.Drawing;
 using Azure.Core;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers;
 using DocumentFormat.OpenXml.Office2010.CustomUI;
 using Microsoft.VisualBasic;
 using DocumentFormat.OpenXml.Bibliography;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
 
 
-namespace NX_lims_Softlines_Command_System.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos
 {
     public class OrderRepo
     {
@@ -75,11 +75,11 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 string? remark = null;
                 if (order.Remark != null && row.Remark != null)
                 {
-                     remark = order.Remark + " - " + row.Remark;
+                    remark = order.Remark + " - " + row.Remark;
                 }
-                else 
+                else
                 {
-                    remark = string.IsNullOrEmpty(order.Remark) ? row.Remark: order.Remark;
+                    remark = string.IsNullOrEmpty(order.Remark) ? row.Remark : order.Remark;
                 }
 
                 var orderEntity = new LabTestInfo
@@ -151,25 +151,27 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         existingOrderInfo.OrderEntryPerson = orderEntryPerson;
                         existingOrderInfo.Express = item.Express;
                         existingOrderInfo.Remark = item.Remark;
-                        existingOrderInfo.ReportDueDate = (item.ReportDueDate!.Value).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                        existingOrderInfo.ReportDueDate = item.ReportDueDate!.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                         existingOrderInfo.Express = item.Express;
-                        existingOrderInfo.LastUpdateTime = (DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                        existingOrderInfo.LastUpdateTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                         existingOrderInfo.TestItemNum = item.TestItemNum;
                         existingOrderInfo.TestSampleNum = item.TestSampleNum;
-                        if(existingOrderInfo.TestGroup != item.TestGroup)existingOrderInfo.TestGroup = item.TestGroup;
-                        /*if(existingOrderInfo.DelayType==null)*/existingOrderInfo.DelayType = item.DelayType;
-                        /*if (existingOrderInfo.DelayReason == null) */existingOrderInfo.DelayReason = item.DelayReason;
+                        if (existingOrderInfo.TestGroup != item.TestGroup) existingOrderInfo.TestGroup = item.TestGroup;
+                        /*if(existingOrderInfo.DelayType==null)*/
+                        existingOrderInfo.DelayType = item.DelayType;
+                        /*if (existingOrderInfo.DelayReason == null) */
+                        existingOrderInfo.DelayReason = item.DelayReason;
                         //labtestschedule表
                         if (item.ReviewFinishTime != null)
                         {
                             existingOrderInfo.Status = 2;
-                            existingOrderInfo.ReviewFinishTime = (item.ReviewFinishTime.Value).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                            existingOrderInfo.ReviewFinishTime = item.ReviewFinishTime.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                             //existingOrderSchedule.ReviewFinishTime = (item.ReviewFinishTime.Value).ToUniversalTime();
                         }
                         if (item.LabOutTime != null)
                         {
                             existingOrderInfo.Status = 3;
-                            existingOrderInfo.LabOutTime = (item.LabOutTime.Value).ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
+                            existingOrderInfo.LabOutTime = item.LabOutTime.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
                             //existingOrderSchedule.LabOutTime = (item.LabOutTime.Value).ToUniversalTime();
                         }
                         _db.LabTestInfos.Update(existingOrderInfo);
@@ -533,7 +535,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                     }
                 }
 
-                if (type == "delayLabOut") 
+                if (type == "delayLabOut")
                 {
                     // 如果有任何一个 Id 是 delay，整体算作 delay
                     if (groupIds.Any(id => queryIds.Contains(id) && queries["delayLabOut"].Any(q => q.Id == id)))
@@ -543,15 +545,15 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 }
 
                 if (type == "inAdvanceLabOut")
-                {               
+                {
                     // 如果所有 Id 都是 inAdvance，整体算作 inAdvance
                     if (groupIds.All(id => queryIds.Contains(id) && queries["inAdvanceLabOut"].Any(q => q.Id == id)))
                     {
                         return "inAdvanceLabOut";
                     }
                 }
-                if( type == "needLabOut")
-                {            
+                if (type == "needLabOut")
+                {
                     // 如果有任何一个 Id 是 needLabOut，整体算作 needLabOut
                     if (groupIds.Any(id => queryIds.Contains(id) && queries["needLabOut"].Any(q => q.Id == id)))
                     {
@@ -560,7 +562,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                 }
 
                 if (type == "internalReasonDelay")
-                { 
+                {
                     // 如果有任何一个 Id 是 delay，整体算作 delay
                     if (groupIds.Any(id => queryIds.Contains(id) && queries["internalReasonDelay"].Any(q => q.Id == id)))
                     {
@@ -598,18 +600,18 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
         /// <param name="duedate"></param>
         /// <param name="labindate"></param>
         /// <returns></returns>
-        public async Task<OrderFanCardOutput> OrderfanCardAsync(DateTimeOffset time, string group, string timeType) 
+        public async Task<OrderFanCardOutput> OrderfanCardAsync(DateTimeOffset time, string group, string timeType)
         {
             var infoQuery = _orderReportingQueryProvider.QueryGroupInfo(group, _db).ToList();
 
             // 获取所有查询类型
-            var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut" ,"Unknow","inDueDate","internalReasonDelay"};
+            var queryTypes = new[] { "needLabOut", "delayLabOut", "inAdvanceLabOut", "Unknow", "inDueDate", "internalReasonDelay" };
             var queries = queryTypes.ToDictionary(
                 type => type,
                 type => _orderReportingQueryProvider.QuerySelect(time, timeType, type, _db)
                     .ToList()
             );
-            if(queries["needLabOut"].Count() == 0)return new OrderFanCardOutput { Delay = 0, InAdvance = 0, Normal = 0 };
+            if (queries["needLabOut"].Count() == 0) return new OrderFanCardOutput { Delay = 0, InAdvance = 0, Normal = 0 };
             // 计算交集和去重计数的通用方法
             Func<string, int> calculateCount = (type) =>
             {
@@ -623,7 +625,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                                                     .Select(g => new
                                                     {
                                                         ReportNumber = g.Key,
-                                                        Status = DetermineStatus(g, queryIds,type)
+                                                        Status = DetermineStatus(g, queryIds, type)
                                                     })
                                                     .ToList();
 
@@ -704,13 +706,14 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
 
                 return null;
             }
-            return new OrderFanCardOutput {
+            return new OrderFanCardOutput
+            {
                 Delay = calculateCount("delayLabOut"),
                 InAdvance = calculateCount("inAdvanceLabOut"),
                 InDueDate = calculateCount("inDueDate"),
                 Unknown = calculateCount("Unknow"),
                 InternalReasonDelay = calculateCount("internalReasonDelay"),
-                Normal = calculateCount("inDueDate") +calculateCount("inAdvanceLabOut")
+                Normal = calculateCount("inDueDate") + calculateCount("inAdvanceLabOut")
             };
         }
 
@@ -818,7 +821,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                         var normalQuery = filteredInfo.Where(
                             o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
-                            (o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date ||o.LabOutTime<o.ReportDueDate.Value.Date)&&
+                            (o.LabOutTime.Value.Date == o.ReportDueDate.Value.Date || o.LabOutTime < o.ReportDueDate.Value.Date) &&
                             o.ReportDueDate.Value >= firstDayOfMonth &&
                             o.ReportDueDate.Value <= lastDayOfMonth).ToList();
 
@@ -856,7 +859,7 @@ namespace NX_lims_Softlines_Command_System.Data.Repositories
                             o => o.LabOutTime.HasValue &&
                             o.ReportDueDate.HasValue &&
                             (o.LabOutTime.Value.Date.AddDays(1) == o.ReportDueDate.Value.Date
-                            ||o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date)&&
+                            || o.LabOutTime.Value.Date.AddDays(1) < o.ReportDueDate.Value.Date) &&
                             o.ReportDueDate.Value >= firstDayOfMonth &&
                             o.ReportDueDate.Value <= lastDayOfMonth
                         ).ToList();

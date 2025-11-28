@@ -7,7 +7,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using DocumentFormat.OpenXml.Presentation;
 
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
+namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider
 {
     public class KikParameterProvider
     {
@@ -91,7 +91,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                       p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
             },
-            ("Spirality/Skewing", _,_) => new WetParameterIso 
+            ("Spirality/Skewing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
@@ -122,21 +122,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             string? Condition = null;
             if (ItemName == "CF to Light")
             {
-                if(infoDto.sampleDescription!.Contains("General"))Condition = "L-4";
+                if (infoDto.sampleDescription!.Contains("General")) Condition = "L-4";
                 else if (infoDto.sampleDescription.Contains("Swimwear") || infoDto.sampleDescription.Contains("Ski Wear")) Condition = "L-5";
-                else if (infoDto.sampleDescription.Contains("Swimwear") && (infoDto.sampleDescription.Contains("Neon")|| infoDto.sampleDescription.Contains("Turquoise"))) Condition = "L-3";
+                else if (infoDto.sampleDescription.Contains("Swimwear") && (infoDto.sampleDescription.Contains("Neon") || infoDto.sampleDescription.Contains("Turquoise"))) Condition = "L-3";
             }
-            if(ItemName == "Water Resistance-Hydrostatic Pressure")
+            if (ItemName == "Water Resistance-Hydrostatic Pressure")
             {
                 if (infoDto.sampleDescription!.Contains("General")) Condition = "1500";
                 else if (infoDto.sampleDescription.Contains("Swimwear") || infoDto.sampleDescription.Contains("Ski Wear")) Condition = "3000";
                 else if (infoDto.sampleDescription.Contains("Sealed Seams")) Condition = "800";
                 else if (infoDto.sampleDescription.Contains("Non-sealed Seams")) Condition = "0";
             }
-            if (ItemName == "Pilling Resistance") 
+            if (ItemName == "Pilling Resistance")
             {
                 if (infoDto.sampleDescription!.Contains("Anti-pilling")) Condition = "2000";
-                else if (infoDto.sampleDescription.Contains("Woven") || (infoDto.sampleDescription.Contains("Knit")&& infoDto.sampleDescription.Contains("Tights"))) Condition = "1000";
+                else if (infoDto.sampleDescription.Contains("Woven") || infoDto.sampleDescription.Contains("Knit") && infoDto.sampleDescription.Contains("Tights")) Condition = "1000";
                 else if (infoDto.sampleDescription.Contains("knit")) Condition = "500";
             }
             return GetParameter(ItemName, Condition);//返回一个string类型的Parameter
@@ -152,15 +152,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             [("CF to Light", "L-4")] = "L-4",
             [("CF to Light", "L-5")] = "L-5",
             [("CF to Light", null)] = "L-5",
-            [("Water Resistance-Hydrostatic Pressure",null)] = "function wear(general):1500mmH2O\r\nfunction wear(ski):3000mmH2O\r\nsealed seams: 800mmH2O\r\nnon-sealed seams: 0",
+            [("Water Resistance-Hydrostatic Pressure", null)] = "function wear(general):1500mmH2O\r\nfunction wear(ski):3000mmH2O\r\nsealed seams: 800mmH2O\r\nnon-sealed seams: 0",
             [("Water Resistance-Hydrostatic Pressure", "1500")] = "function wear(general):1500mmH2O",
             [("Water Resistance-Hydrostatic Pressure", "3000")] = "3000mmH2O",
             [("Water Resistance-Hydrostatic Pressure", "800")] = "800mmH2O",
             [("Water Resistance-Hydrostatic Pressure", "0")] = "0",
             [("CF to Chlorinated Water", null)] = "50mg/L",
             [("Pilling Resistance", null)] = "Articles with anti-pilling finishing:\r\n2000 cycles: Grade 3-4\r\nWoven fabric, Knitted fabric (incl. tights, leggings):\r\n1000 cycles: Grade 3-4\r\nCoarse knit (</= 12 gauge):\r\n 500 cycles: Grade 2-3\r\n",
-            [("Pilling Resistance","500")]= "500 revs",
-            [("Pilling Resistance","1000")]= "1000 revs",
+            [("Pilling Resistance", "500")] = "500 revs",
+            [("Pilling Resistance", "1000")] = "1000 revs",
             [("Pilling Resistance", "2000")] = "2000 revs",
         };
 

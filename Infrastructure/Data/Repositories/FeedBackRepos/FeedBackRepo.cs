@@ -7,7 +7,7 @@ using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
+namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.FeedBackRepos
 {
     public class FeedBackRepo
     {
@@ -23,9 +23,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             if (input == null) return false;
             var snowflake = new SnowflakeIdGenerator();
             long snowId = snowflake.NextId();
-            var user = _db.Users.FirstOrDefault(u=>u.UserId == input.UserId!);
+            var user = _db.Users.FirstOrDefault(u => u.UserId == input.UserId!);
             if (user == null) return false;
-            try 
+            try
             {
                 var feedback = new Feedback
                 {
@@ -47,11 +47,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories
             }
         }
 
-        public async Task<List<FeedBackDtoResponse>>Get()
+        public async Task<List<FeedBackDtoResponse>> Get()
         {
             var feedbacks = _db.Feedbacks.ToArray();
             var List = new List<FeedBackDtoResponse>();
-            foreach (var feedback in feedbacks) 
+            foreach (var feedback in feedbacks)
             {
                 var ResponseList = new FeedBackDtoResponse
                 {

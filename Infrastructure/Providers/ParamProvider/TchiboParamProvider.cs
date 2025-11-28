@@ -6,7 +6,7 @@ using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 
-namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
+namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider
 {
     public class TchiboParamProvider
     {
@@ -47,7 +47,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 : "Wollens procedure",
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
-                AfterWash ="10",
+                AfterWash = "10",
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
@@ -76,7 +76,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
-                : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure" 
+                : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
                 DryProcedure = p.DryProcedure,
@@ -117,11 +117,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.IronMethod!.Contains("Cool") ? "110"
-                : p.IronMethod!.Contains("Warm")?"150"
-                : p.IronMethod!.Contains("Hot")?"200"
-                :"/",
+                : p.IronMethod!.Contains("Warm") ? "150"
+                : p.IronMethod!.Contains("Hot") ? "200"
+                : "/",
                 Iron = Limitation("CF to Hot Pressing", p.SampleDescription!) == "L-5" ? "L-5" : null,
-                IronMethod = p.IronMethod?? null,
+                IronMethod = p.IronMethod ?? null,
             },
             _ => new WetParameterIso
             {
@@ -131,7 +131,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
         };
 
 
-        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName,string Standard)
+        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName, string Standard)
         {
 
             // 1. 计算最大值
@@ -150,20 +150,20 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                 else if (Standard.Contains("12945-1")) Limit = "Knit";
                 else Limit = "Woven";
             }
-            if (ItemName == "Extension and Recovery") 
+            if (ItemName == "Extension and Recovery")
             {
                 var content = _helper.CompositionRate(infoDto.fiberComposition!, "Elastane");
                 if (content == 0) Limit = "N/A";
-                if (infoDto.sampleDescription!.Contains("Woven") ){ Limit = "Woven"; }
+                if (infoDto.sampleDescription!.Contains("Woven")) { Limit = "Woven"; }
                 else if (infoDto.sampleDescription!.Contains("Knit"))
                 {
                     if (content <= 5)
-                    { Limit = infoDto.sampleDescription.Contains("Strip")?"3": infoDto.sampleDescription.Contains("Loop")?"6":null; }
-                    else if(content<12&&content>5)
-                    {Limit = infoDto.sampleDescription.Contains("Strip") ? "4" : infoDto.sampleDescription.Contains("Loop") ? "8" : null;}
-                    else if(content>=12&&content<=20)
-                    {Limit = infoDto.sampleDescription.Contains("Strip") ? "5" : infoDto.sampleDescription.Contains("Loop") ? "10" : null;}
-                    else if (content >20)
+                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "3" : infoDto.sampleDescription.Contains("Loop") ? "6" : null; }
+                    else if (content < 12 && content > 5)
+                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "4" : infoDto.sampleDescription.Contains("Loop") ? "8" : null; }
+                    else if (content >= 12 && content <= 20)
+                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "5" : infoDto.sampleDescription.Contains("Loop") ? "10" : null; }
+                    else if (content > 20)
                     { Limit = infoDto.sampleDescription.Contains("Strip") ? "7" : infoDto.sampleDescription.Contains("Loop") ? "14" : null; }
                 }
             }
@@ -218,7 +218,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
             if (sampleDescription == null) return null;
             // 定义一个字典，包含需要检查的值
             if (string.IsNullOrEmpty(item)) return null;
-            else {
+            else
+            {
                 HashSet<string> keywords = new HashSet<string>();
                 switch (item)
                 {
@@ -230,7 +231,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers
                             "145777", "145778", "145933", "147338", "147696", "148481", "148916",
                             "149546", "151069", "151518", "152076"});
                         break;
-                    case "CF to Water": keywords.Add("148457");
+                    case "CF to Water":
+                        keywords.Add("148457");
                         break;
                 }
                 // 遍历字典中的每个值
