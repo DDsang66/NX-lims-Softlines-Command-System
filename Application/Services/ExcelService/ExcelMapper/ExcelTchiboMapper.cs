@@ -144,7 +144,7 @@
             List<string> stringMap = null;
             if (sampleDescription.Contains("Knit"))
             {
-                stringMap = new List<string> { "A8", "A9","A10" };
+                stringMap = new List<string> { "A18", "A25" };
             }
             else
             {

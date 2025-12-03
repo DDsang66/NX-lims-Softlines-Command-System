@@ -334,7 +334,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["H1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
                 ["D4"] = (w, dto, reportNo) => w.Temperature!,
-                ["G4"] = (w, dto, reportNo) => "48",
+                ["G4"] = (w, dto, reportNo) => "80",
                 ["D7"] = (w, dto, reportNo) => w.Ballast!
             },
             ["CF to Hot Pressing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>

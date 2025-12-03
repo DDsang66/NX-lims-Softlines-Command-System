@@ -59,7 +59,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                             OrderNumber = infoDto.reportNumber,
                             DCProcedure = infoDto.dcProcedure,
                             AfterWash = infoDto.afterWash,
-                            ItemName = item.itemName
+                            ItemName = item.itemName,
+                            SampleDescription = infoDto.sampleDescription,
                         }, item.itemName!);
                     string? param = await helper.CreateParameters(infoDto, item.itemName!)!;
                     dtos.Add(CreateResponse(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName! }, param!));
@@ -76,14 +77,41 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         //返回前端需要的实体对象
         private static ParamDto CreateResponse(string itemName, WetParameterIso p, string Param) => itemName switch
         {
-            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
-            "DS to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
-            "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null),
+            "Fastness to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, Param),
+            "Cross Staining to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, Param),
+            "Stability to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Print Durability" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Embellishment Durability (Childrenswear)" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Embellishment Durability (General)" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Foil Durability" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Appearance Assessment after Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Spray Rating" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Appearance Assessment after Dry Clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, Param),
+            "Stability to Dry Cleaning" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, Param),
             "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Abrasion Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Swiss Pilling" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Fastness to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Fastness to Dry Cleaning"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Cross Staining to Dry Cleaning"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Fastness to Water"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Cross Staining to Water"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Fastness to Chlorinated Water" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Grab Strength & Seam Slippage"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Seam Slippage of Garment Seams"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Tear Strength"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Martindale Abrasion"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Abrasion Home"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Bursting Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),      
+            "Extension and Recovery"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Extension and Modulus"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Fastness to Saliva"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Fastness to Sea Water"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Fastness to Perspiration"=> new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Air Permeability of Textile Fabrics" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Water Resistance-Hydrostatic Pressure" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Hydrostatic Head Test" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Moisture Management" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
+            "Accelerotor Pile Loss" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
             _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
         };
     }

@@ -18,21 +18,172 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
         public WetParameterIso CreateWetParameters(ParamsInput p) => (p.ItemName, p.WashingProcedure, p.DCProcedure) switch
         {
-            ("CF to Washing", "4N" or "4M" or "4G" or "3N", _) => new WetParameterIso
+            ("Fastness to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
-                Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
-                SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10
+                Temperature = "50",
+                Program = "B2S",
+                SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 25
             },
-            ("CF to Washing", "4H" or "3M" or "3G" or "3H", _) => new WetParameterIso
+            ("Cross Staining to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
-                Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
-                SteelBallNum = 0
+                Temperature = "50",
+                Program = "B2S",
+                SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 25
+            },
+            ("Print Durability", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure ="2A",
+                DryProcedure = "Tumble Dry for 90 min",
+                Temperature = "60",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Embellishment Durability (Childrenswear)", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = "2A",
+                DryProcedure = "Tumble Dry for 90 min",
+                Temperature = "60",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Embellishment Durability (General)", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Foil Durability", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Appearance Assessment after Washing", _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Appearance Assessment after Dry Clean",_,_) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                                  p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
+            },
+            ("Polar Fleece Assessment", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = "5A",
+                DryProcedure = "Tumble Dry Height",
+                Temperature = "40",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+    : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+    : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Stability to Washing", _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!,p.SampleDescription!),
+                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                Temperature = "40",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Spirality",_,_) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                Temperature = "40",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Stability to Dry Cleaning",_,_) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                                  p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
+            },
+            ("Spray Rating",_,_) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                Temperature = "40",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
             },
             _ => new WetParameterIso
             {
@@ -47,51 +198,179 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
             // 1. 计算最大值
             string? Condition = null;
+            string? Condition1 = null;
             if (ItemName == "Pilling Resistance")
             {
                 Condition = infoDto.sampleDescription!.Contains("Knit") ? "Knit" : "Woven";
             }
-            if (ItemName == "Air Permeability")
+            else if (ItemName == "Swiss Pilling")
+            {
+                Condition = infoDto.sampleDescription!.Contains("Home") ? "Home" : "Apparel";
+                Condition1 = infoDto.sampleDescription!.Contains("Knit") ? "Knit" : "Woven";
+            }
+            else if (ItemName == "Air Permeability")
             {
                 if (infoDto.sampleDescription!.Contains("WindProof")) Condition = "As Received";
                 else if (infoDto.sampleDescription.Contains("Breathability")) Condition = "After 3 Wash";
                 else Condition = null;
             }
-            return GetParameter(ItemName, Condition);//返回一个string类型的Parameter
+            else if (ItemName == "Martindale Abrasion")
+            {
+                if (_helper.CompositionRate(infoDto.fiberComposition!, "Elastane") > 10
+                    ||infoDto.sampleDescription!.Contains("Dress")
+                    ||infoDto.sampleDescription.Contains("Blouse")
+                    || infoDto.sampleDescription.Contains("Tailoring")) Condition = "Stretch";
+            }
+            else if (ItemName == "Extension and Recovery")
+            {
+                if (_helper.CompositionRate(infoDto.fiberComposition!, "Elastane") > 10) Condition1 = "TM21";
+                else Condition = infoDto.sampleDescription!.Contains("Knit") ? "Knit" : "Woven";
+            }
+            else if (ItemName == "Extension and Modulus")
+            {
+                if (infoDto.sampleDescription!.Contains("Briefs")) Condition = "Briefs";
+                else if (infoDto.sampleDescription!.Contains("Shoulder Strap")) Condition = "Shoulder Strap";
+                else if (infoDto.sampleDescription!.Contains("Underarm and Underband")) Condition = "UU";
+                else if (infoDto.sampleDescription!.Contains("Wide Elastics")) Condition = "Wide Elastics";
+                else if (infoDto.sampleDescription!.Contains("Knit")) Condition = "Knit";
+                else if (infoDto.sampleDescription!.Contains("Woven")) Condition = "Woven";
+            }
+            return GetParameter(ItemName, Condition,Condition1);//返回一个string类型的Parameter
         }
 
         // ---------- 2. 映射表 ----------
-        private static readonly Dictionary<(string Item, string? Lv), string?> _map = new()
+        private static readonly Dictionary<(string Item, string? Condition, string? Condition1), string?> _map = new()
         {
-            [("Fastness to Light", null)] = "L-4",
-            [("Fastness to Washing", null)] = "Multi-Fibre Type:LW",
-            [("Cross Staining to Washing", null)] = "Multi-Fibre Type:LW",
-            [("Fastness to Dry Cleaning", null)] = "Multi-Fibre Type:LW",
-            [("Cross Staining to Dry Cleaning", null)] = "Multi-Fibre Type:LW",
-            [("Fastness to Water", null)] = "Multi-Fibre Type:LW",
-            [("Cross Staining to Water", null)] = "Multi-Fibre Type:LW",
-            [("Fastness to Chlorinated Water", null)] = "50mg/L",
-            [("Stability to Dry Cleaning", null)] = "Wash Procedure: Commercial dry-cleaning",
-            [("Appearance Assessment after Dry Clean", null)] = "Wash Procedure: Commercial dry-cleaning",
-            [("Grab Strength & Seam Slippage", null)] = "Need additional unit weight",
-            [("Seam Slippage of Garment Seams", null)] = "Need additional unit weight",
-            [("Tear Strength", null)] = "Need additional unit weight",
-            [("Martindale Abrasion", null)] = "9KPa,Shade Change @ 5000 {≤150g/m²: 10000 rubs；150-250g/m²: 15000 rubs；≥250g/m²: 20000 rubs}",
-            [("Abrasion Home", null)] = "12KPa；Cycle：20000revs；Shade Change @ 6000&10000",
-            [("Bursting Strength", null)] = "Diameter: 30.5mm",
+            [("Fastness to Light", null,null)] = "L-4",
+            [("Fastness to Washing", null, null)] = "Multi-Fibre Type:LW",
+            [("Cross Staining to Washing", null,null)] = "Multi-Fibre Type:LW",
+            [("Fastness to Dry Cleaning", null,null)] = "Multi-Fibre Type:LW",
+            [("Cross Staining to Dry Cleaning", null, null)] = "Multi-Fibre Type:LW",
+            [("Fastness to Water", null, null)] = "Multi-Fibre Type:LW",
+            [("Cross Staining to Water", null,null)] = "Multi-Fibre Type:LW",
+            [("Fastness to Chlorinated Water", null, null)] = "50mg/L",
+            [("Stability to Dry Cleaning", null, null)] = "Wash Procedure: Commercial dry-cleaning",
+            [("Appearance Assessment after Dry Clean", null, null)] = "Wash Procedure: Commercial dry-cleaning",
+            [("Grab Strength & Seam Slippage", null,null)] = "Need additional unit weight；{≤150g/m²: 8kg；150-250g/m²: 15kg；≥250g/m²: 20kg}",
+            [("Seam Slippage of Garment Seams", null, null)] = "Need additional unit weight",
+            [("Tear Strength", null, null)] = "Need additional unit weight",
+            [("Martindale Abrasion", "Stretch", null)] = "9KPa,Shade Change @ 5000 {≤150g/m²: 10000 rubs；150-250g/m²: 15000 rubs；≥250g/m²: 20000 rubs}",
+            [("Martindale Abrasion", null, null)] = "9KPa,Shade Change @ 5000 {10000 rubs}",
+            [("Abrasion Home", null, null)] = "12KPa；Cycle：20000revs；Shade Change @ 6000&10000",
+            [("Bursting Strength", null, null)] = "Diameter: 30.5mm",
+            [("Pilling Resistance", "Woven",null)] = "Cycle: 18000 revs；After 1 Wash",
+            [("Pilling Resistance", "Knit",null)] = "Cycle: 7200 revs；After 1 Wash",
+            [("Extension and Recovery", "Woven", null)] = "Load: 4.0 kg",
+            [("Extension and Recovery", "Knit", null)] = "Load: 2.0 kg",
+            [("Extension and Recovery", null, "TM21")] = "Change to Method: TM21",
+            [("Extension and Modulus", "Woven", null)] = "Load: 4.0kg，Modulus: 10%",
+            [("Extension and Modulus", "Knit", null)] = "Load: 3.6kg，Modulus: 40%",
+            [("Extension and Modulus", "Briefs", null)] = "Load: 1.5kg，Modulus: 40%",
+            [("Extension and Modulus", "UU", null)] = "Load: 2.5kg，Modulus: 40%",
+            [("Extension and Modulus", "Shoulder Strap", null)] = "Load: 3.6kg，Modulus: 40%",
+            [("Extension and Modulus", "Wide Elastics", null)] = "Load: 2.5kg，Modulus: 40%",
+            [("Bursting Strength", null, null)] = "Diameter: 30.5mm",
+            [("Fastness to Saliva", null, null)] = "Multi-Fibre Type:LW",
+            [("Fastness to Sea Water", null, null)] = "Multi-Fibre Type:LW",
+            [("Fastness to Perspiration", null, null)] = "Multi-Fibre Type:LW",
+            [("Snagging Resistance", null, null)] = "Cycle: 2000 revs",
+            [("Air Permeability of Textile Fabrics", null, null)] = "Area 20cm², P: 100Pa；Before and After 1 Wash",
+            [("Swiss Pilling", "Home", "Woven")] = "Load: 12KPa; {1st pair: 1000 revs；2nd pair: 2000 revs；3rd pair: 4000 revs}",
+            [("Swiss Pilling", "Apparel", "Woven")] = "Load: 9KPa; {1st pair: 500 revs；2nd pair: 1000 revs；3rd pair: 2000 revs}",
+            [("Swiss Pilling", "Apparel", "Knit")] = "Load: 3KPa; {1st pair: 500 revs；2nd pair: 1000 revs；3rd pair: 2000 revs}",
+            [("Hydrostatic Head Test", null, null)] = "P: 5000mmH2O；Before and After 1 Wash",
+            [("Moisture Management",null,null)] = "Before and After 10 Wash",
+            [("Accelerotor Pile Loss", null, null)] = "Before and After 1 Wash",
         };
 
-        private static string? GetParameter(string item, string? lv)
+        private static string? GetParameter(string item, string? Condition, string? Condition1)
         {
             // 1) 先精确匹配 (Menu, Item, Lv)
-            if (_map.TryGetValue((item, lv), out var exact)) return exact;
+            if (_map.TryGetValue((item, Condition,Condition1), out var exact)) return exact;
 
             // 2) 再匹配 (Menu, Item, any)
-            if (_map.TryGetValue((item, null), out var fallback)) return fallback;
+            if (_map.TryGetValue((item, null,null), out var fallback)) return fallback;
 
             return null!;
         }
 
+
+
+        private string? WashingProcedureHelper(List<FiberDto> fiberComposition, string sampleDescription)
+        {
+            string WashingProcedure = string.Empty;
+            var maxComposition = _helper.MaxComposition(fiberComposition);
+            if (sampleDescription.Contains("Garment"))
+            {
+                if (sampleDescription.Contains("Swimwear"))
+                {
+                    if (sampleDescription.Contains("Embellished")) WashingProcedure = "SHW";
+                    else WashingProcedure = "5A";
+                }
+                else if (sampleDescription.Contains("Cap")
+                    || sampleDescription.Contains("Gloves")
+                    || sampleDescription.Contains("Socks"))
+                {
+                    WashingProcedure = "7A";
+                }
+                else if (maxComposition == "Silk"
+                    || maxComposition == "Wool"
+                    || maxComposition == "Mohair")
+                {
+                    if (sampleDescription.Contains("HandWash")) WashingProcedure = "SHW";
+                    else WashingProcedure = "7A";
+                }
+                else WashingProcedure = "7A";
+
+            }
+            else if (sampleDescription.Contains("Fabric") || sampleDescription.Contains("Mock-up")) WashingProcedure = "5A";
+            else WashingProcedure = "5A";
+            return WashingProcedure;
+        }
+
+        private string? DryProcedureHelper(List<FiberDto> fiberComposition, string sampleDescription)
+        {
+            string DryProcedure = string.Empty;
+            var maxComposition = _helper.MaxComposition(fiberComposition);
+            if (sampleDescription.Contains("Garment") && sampleDescription.Contains("Knit"))
+            {
+                DryProcedure = "Tumble Dry";
+            }
+            if (sampleDescription.Contains("Fabric") || sampleDescription.Contains("Mock-up")) DryProcedure = "Line Dry";
+            return DryProcedure;
+        }
+
+        private string? WashingProcedureTranslationHelper(string WashingProcedure)
+        {
+            string washingProcedureTranslation = string.Empty;
+            switch (WashingProcedure) 
+            {
+                case "4H":washingProcedureTranslation = "SHW";
+                    break;
+                case "3G":washingProcedureTranslation = "8A";
+                    break;
+                case "3M":washingProcedureTranslation = "Refer 6A";
+                    break;
+                case "3N":washingProcedureTranslation = "Refer 5A";
+                    break;
+                case "4G":washingProcedureTranslation = "7A";
+                    break;
+                case "4M":washingProcedureTranslation = "6A";
+                    break;
+                case "4N": washingProcedureTranslation = "5A";
+                    break;
+                case "5M":washingProcedureTranslation = "4A";
+                    break;
+                case "5N":washingProcedureTranslation = "Refer 5A";
+                    break;
+                case "6M":washingProcedureTranslation = "3A";
+                    break;
+                case "6N":washingProcedureTranslation = "2A";
+                    break;
+            }
+
+            return washingProcedureTranslation;
+        }
     }
 
 

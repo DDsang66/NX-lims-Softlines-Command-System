@@ -109,7 +109,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.SampleDescription!.Contains("Dyed") == true ? "90" : "70",
+                Temperature = "120",
                 Ballast = _helper.MaxComposition(p.FiberContent!)
             },
             ("CF to Hot Pressing", _, _) => new WetParameterIso
