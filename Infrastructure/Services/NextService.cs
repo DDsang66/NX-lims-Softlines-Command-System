@@ -86,6 +86,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             "Foil Durability" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
             "Appearance Assessment after Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
             "Spray Rating" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
+            "Assessment of Easy to Iron Fabrics" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, p.Sensitive, null, null, null),
             "Appearance Assessment after Dry Clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, Param),
             "Stability to Dry Cleaning" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, Param),
             "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),

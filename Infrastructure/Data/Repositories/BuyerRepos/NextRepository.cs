@@ -68,7 +68,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             // 只处理指定 item 类型
             if (!new[] { "Fastness to Washing", "Cross Staining to Washing", "Print Durability" ,
                 "Embellishment Durability (Childrenswear)"    ,"Embellishment Durability (General)","Foil Durability","Appearance Assessment after Washing","Appearance Assessment after Dry Clean",
-                "Polar Fleece Assessment","Stability to Washing","Spirality","Spray Rating","Stability to Dry Cleaning"
+                "Polar Fleece Assessment","Stability to Washing","Spirality","Spray Rating","Stability to Dry Cleaning","Assessment of Easy to Iron Fabrics"
             }
                  .Contains(itemName))
                 return default;

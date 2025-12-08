@@ -92,6 +92,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         }
 
         /// <summary>
+        /// 找出Description对应的成分是否存在
+        /// </summary>
+        public bool IsCompositionDescExist(string Desc, List<FiberDto> Composition)
+        {
+            bool isExist = false;
+            foreach (var item in Composition)
+            {
+                var key = char.ToUpper(item.Composition![0]) +
+                      item.Composition.Substring(1).ToLower();
+                var fiber = _db.Compositions.FirstOrDefault(f => f.FiberName == key);
+                string? description = fiber?.FiberSource;
+                if (description == Desc) { isExist = true; }
+            }
+            return isExist;
+        }
+
+
+
+        /// <summary>
         /// Type对应的成分的总和
         /// </summary>
         public double? IsCompositionTypeExist(string type, List<FiberDto> composition)

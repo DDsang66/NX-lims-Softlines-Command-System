@@ -105,6 +105,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
+                Detergent = "25g Print Test Durability Detergent",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
@@ -137,11 +138,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureHelper(p.FiberContent!,p.SampleDescription!),
-                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
+                Detergent = "ECE(A)+ Sodium perborate",
                 SpecialCareInstruction = p.Sci ?? null,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,
@@ -152,7 +154,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
-                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
@@ -170,20 +172,49 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
             },
-            ("Spray Rating",_,_) => new WetParameterIso
+            ("Assessment of Easy to Iron Fabrics",_,_)=> new WetParameterIso 
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
-                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
-                Iron = p.Iron ?? null,
+                Iron = _helper.CompositionRate(p.FiberContent!, "Cotton") == 100 ? "190±10" 
+                : (_helper.CompositionRate(p.FiberContent!,"Polyester") + _helper.CompositionRate(p.FiberContent!, "Cotton")) >90? "150±10"
+                : "130±10",
                 IronMethod = p.IronMethod ?? null,
+
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                                  p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" 
+                :string.IsNullOrWhiteSpace(p.DCProcedure) ?null : "N",
+
+            },
+            ("Spray Rating", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
+                Temperature = "40",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = _helper.CompositionRate(p.FiberContent!, "Cotton") == 100 ? "190±10"
+                : (_helper.CompositionRate(p.FiberContent!, "Polyester") + _helper.CompositionRate(p.FiberContent!, "Cotton")) > 90 ? "150±10"
+                : "130±10",
+                IronMethod = p.IronMethod ?? null,
+
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                                  p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y"
+                : p.DCProcedure == "" ? null : "N",
+
             },
             _ => new WetParameterIso
             {
@@ -207,12 +238,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 Condition = infoDto.sampleDescription!.Contains("Home") ? "Home" : "Apparel";
                 Condition1 = infoDto.sampleDescription!.Contains("Knit") ? "Knit" : "Woven";
-            }
-            else if (ItemName == "Air Permeability")
-            {
-                if (infoDto.sampleDescription!.Contains("WindProof")) Condition = "As Received";
-                else if (infoDto.sampleDescription.Contains("Breathability")) Condition = "After 3 Wash";
-                else Condition = null;
             }
             else if (ItemName == "Martindale Abrasion")
             {
@@ -256,7 +281,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Tear Strength", null, null)] = "Need additional unit weight",
             [("Martindale Abrasion", "Stretch", null)] = "9KPa,Shade Change @ 5000 {≤150g/m²: 10000 rubs；150-250g/m²: 15000 rubs；≥250g/m²: 20000 rubs}",
             [("Martindale Abrasion", null, null)] = "9KPa,Shade Change @ 5000 {10000 rubs}",
-            [("Abrasion Home", null, null)] = "12KPa；Cycle：20000revs；Shade Change @ 6000&10000",
+            [("Abrasion Home", null, null)] = "12KPa；Cycle：20000 revs；Shade Change @ 6000&10000",
             [("Bursting Strength", null, null)] = "Diameter: 30.5mm",
             [("Pilling Resistance", "Woven",null)] = "Cycle: 18000 revs；After 1 Wash",
             [("Pilling Resistance", "Knit",null)] = "Cycle: 7200 revs；After 1 Wash",
@@ -328,17 +353,117 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             return WashingProcedure;
         }
 
-        private string? DryProcedureHelper(List<FiberDto> fiberComposition, string sampleDescription)
+        #region
+        //private string? DryProcedureHelper1(List<FiberDto> fiberComposition, string sampleDescription,string? dryProcedure)
+        //{
+        //    string DryProcedure = string.Empty;
+        //    var maxComposition = _helper.MaxComposition(fiberComposition);
+        //    var descComposition = _helper.IsCompositionDescExist("Regenerated Cellulose", fiberComposition);
+        //    var isSyntheticExist = _helper.IsCompositionSourceExist("Synthetic", fiberComposition) >= 51;
+
+        //    if (sampleDescription.Contains("Woven") && sampleDescription.Contains("Fabric")) 
+        //    {
+        //        if (maxComposition == "Cotton" || isSyntheticExist || maxComposition == "Silk") DryProcedure = "Tumble Dry";
+        //        else if (maxComposition == "Linen") DryProcedure = "Flat Dry";
+        //        else if (descComposition) DryProcedure = "Line Dry";
+        //        else if (maxComposition == "Wool")
+        //        {
+        //            if (dryProcedure.Contains("Tumble")) DryProcedure = "Tumble Dry";
+        //            else DryProcedure = "Line Dry";
+        //        }
+        //        else if (sampleDescription.Contains("Lining") || sampleDescription.Contains("Pocket"))
+        //        {
+        //            if (maxComposition == "Acetate" || maxComposition == "Silk" || maxComposition == "Viscose" || maxComposition == "Acrylic") DryProcedure = "Flat Dry";
+        //            else DryProcedure = "Tumble Dry";
+        //        }
+        //    }
+
+        //    if (sampleDescription.Contains("Knit") && sampleDescription.Contains("Fabric")&&sampleDescription.Contains("Weft")) 
+        //    {
+        //        if(maxComposition=="Cotton" || isSyntheticExist) DryProcedure = "Tumble Dry";
+        //        else if (maxComposition == "Silk"||maxComposition=="Wool" || descComposition || maxComposition == "Acrylic") DryProcedure = "Line Dry";
+        //    }
+        //    else if (sampleDescription.Contains("Knit") && sampleDescription.Contains("Fabric") && sampleDescription.Contains("Warp"))
+        //    {
+        //        if (sampleDescription.Contains("Stretch")) DryProcedure = "Line Dry";
+        //        else DryProcedure = "Tumble Dry";
+        //    }
+
+        //    if (sampleDescription.Contains("Garment") || sampleDescription.Contains("Knitwear")) 
+        //    {
+        //        if (sampleDescription.Contains("Childrenswear")) DryProcedure = "Tumble Dry";
+        //        else DryProcedure = "Flat Dry";
+        //    }
+
+        //    if (sampleDescription.Contains("Elastics")) DryProcedure = "Tumble Dry";
+        //    if (sampleDescription.Contains("Leathers")||sampleDescription.Contains("Swimwear")) DryProcedure = "Line Dry";
+        //    if (sampleDescription.Contains("Cap")
+        //            || sampleDescription.Contains("Gloves")
+        //            || sampleDescription.Contains("Socks")) DryProcedure = dryProcedure;
+        //    return DryProcedure;
+        //}
+        #endregion
+
+        private string? DryProcedureHelper(
+            List<FiberDto> fiberComposition,
+            string sampleDescription,
+            string? dryProcedure)
         {
-            string DryProcedure = string.Empty;
-            var maxComposition = _helper.MaxComposition(fiberComposition);
-            if (sampleDescription.Contains("Garment") && sampleDescription.Contains("Knit"))
+            // 预计算只做一次
+            var maxComp = _helper.MaxComposition(fiberComposition);
+            var hasRegCell = _helper.IsCompositionDescExist("Regenerated Cellulose", fiberComposition);
+            var over51Syn = _helper.IsCompositionSourceExist("Synthetic", fiberComposition) >= 51;
+
+            // 1. 特殊小件直接透传
+            if (sampleDescription.ContainsAny("Cap", "Gloves", "Socks")) return dryProcedure;
+
+            // 2. 皮革、泳衣、松紧带 一票否决
+            if (sampleDescription.ContainsAny("Leathers", "Swimwear")) return "Line Dry";
+            if (sampleDescription.Contains("Elastics")) return "Tumble Dry";
+
+            // 3. 成衣 / 毛衫
+            if (sampleDescription.ContainsAny("Garment", "Knitwear"))
+                return sampleDescription.Contains("Childrenswear") ? "Tumble Dry" : "Flat Dry";
+
+            // 4. 针织物
+            if (sampleDescription.ContainsAll("Knit", "Fabric"))
             {
-                DryProcedure = "Tumble Dry";
+                if (sampleDescription.Contains("Weft"))      // 纬编
+                {
+                    if (maxComp == "Cotton" || over51Syn) return "Tumble Dry";
+                    if (maxComp is "Silk" or "Wool" or "Acrylic" || hasRegCell) return "Line Dry";
+                }
+                else if (sampleDescription.Contains("Warp")) // 经编
+                {
+                    return sampleDescription.Contains("Stretch") ? "Line Dry" : "Tumble Dry";
+                }
+                return null;                                 // 其他针织兜底
             }
-            if (sampleDescription.Contains("Fabric") || sampleDescription.Contains("Mock-up")) DryProcedure = "Line Dry";
-            return DryProcedure;
+
+            // 5. 机织物（Woven Fabric）
+            if (sampleDescription.ContainsAll("Woven", "Fabric"))
+            {
+                // 5a. 里料 / 口袋
+                if (sampleDescription.ContainsAny("Lining", "Pocket"))
+                {
+                    return maxComp is "Acetate" or "Silk" or "Viscose" or "Acrylic"
+                        ? "Flat Dry"
+                        : "Tumble Dry";
+                }
+
+                // 5b. 羊毛
+                if (maxComp == "Wool")
+                    return dryProcedure?.Contains("Tumble") == true ? "Tumble Dry" : "Line Dry";
+
+                // 5c. 常规
+                if (maxComp == "Cotton" || over51Syn || maxComp == "Silk") return "Tumble Dry";
+                if (maxComp == "Linen") return "Flat Dry";
+                if (hasRegCell) return "Line Dry";
+            }
+
+            return null; // 未命中任何规则
         }
+
 
         private string? WashingProcedureTranslationHelper(string WashingProcedure)
         {
@@ -373,5 +498,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         }
     }
 
+    // 1. 文件级私有工具类
+    file static class Ext
+    {
+        public static bool ContainsAny(this string s, params string[] keys)
+            => keys.Any(k => s.Contains(k, StringComparison.OrdinalIgnoreCase));
+
+        public static bool ContainsAll(this string s, params string[] keys)
+            => keys.All(k => s.Contains(k, StringComparison.OrdinalIgnoreCase));
+    }
 
 }
