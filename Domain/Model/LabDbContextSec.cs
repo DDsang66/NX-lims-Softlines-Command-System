@@ -38,6 +38,8 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<PrimarkMenu> PrimarkMenus { get; set; }
 
+    public virtual DbSet<SampleDescription> SampleDescriptions { get; set; }
+
     public virtual DbSet<Standard> Standards { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -75,9 +77,8 @@ public partial class LabDbContextSec : DbContext
 
         modelBuilder.Entity<Applications>(entity =>
         {
-            entity.HasKey(e => e.ApplicationId);
             entity.ToTable("application");
-
+            entity.HasKey(e => e.ApplicationId);
             entity.Property(e => e.ApplicationId)
                 .ValueGeneratedNever()
                 .HasColumnName("application_id");
@@ -477,6 +478,37 @@ public partial class LabDbContextSec : DbContext
                 .HasColumnName("standard_name");
             entity.Property(e => e.Type)
                 .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<SampleDescription>(entity =>
+        {
+            entity.HasKey(e => e.IdSampleDescription);
+
+            entity.ToTable("sample_description");
+
+            entity.Property(e => e.IdSampleDescription)
+                .ValueGeneratedNever()
+                .HasColumnName("id_sample_description");
+            entity.Property(e => e.BuyerName)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("buyer_name");
+            entity.Property(e => e.DefaultValue)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("default_value");
+            entity.Property(e => e.PropertyName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_name");
+            entity.Property(e => e.PropertyValue)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_value");
+            entity.Property(e => e.Type)
+                .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("type");
         });

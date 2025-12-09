@@ -16,6 +16,7 @@ using NX_lims_Softlines_Command_System.Application.Services.UserService;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.FeedBackRepos;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.RenderRepos;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -43,6 +44,8 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<OrderQueryProvider>();
             builder.Services.AddScoped<OrderReportingQueryProvider>();
             builder.Services.AddSingleton<JwtService>();
+            builder.Services.AddScoped<RenderService>();
+            builder.Services.AddScoped<RenderRepos>();
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(opt =>

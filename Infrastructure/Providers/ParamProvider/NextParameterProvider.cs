@@ -137,7 +137,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = WashingProcedureHelper(p.FiberContent!,p.SampleDescription!),
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!,p.SampleDescription!,p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -153,7 +153,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!, p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -176,7 +176,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!, p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -198,7 +198,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!),
+                WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!, p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -321,36 +321,36 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
 
 
-        private string? WashingProcedureHelper(List<FiberDto> fiberComposition, string sampleDescription)
+        private string? WashingProcedureHelper(List<FiberDto> fiberComposition, string sampleDescription, string? WashingProcedure)
         {
-            string WashingProcedure = string.Empty;
+            string washingProcedure = string.Empty;
             var maxComposition = _helper.MaxComposition(fiberComposition);
             if (sampleDescription.Contains("Garment"))
             {
                 if (sampleDescription.Contains("Swimwear"))
                 {
-                    if (sampleDescription.Contains("Embellished")) WashingProcedure = "SHW";
-                    else WashingProcedure = "5A";
+                    if (sampleDescription.Contains("Embellished")) washingProcedure = "SHW";
+                    else washingProcedure = "5A";
                 }
                 else if (sampleDescription.Contains("Cap")
                     || sampleDescription.Contains("Gloves")
                     || sampleDescription.Contains("Socks"))
                 {
-                    WashingProcedure = "7A";
+                    washingProcedure = "7A";
                 }
                 else if (maxComposition == "Silk"
                     || maxComposition == "Wool"
                     || maxComposition == "Mohair")
                 {
-                    if (sampleDescription.Contains("HandWash")) WashingProcedure = "SHW";
-                    else WashingProcedure = "7A";
+                    if (!string.IsNullOrEmpty(WashingProcedure)&&WashingProcedure.Contains("H")) washingProcedure = "SHW";
+                    else washingProcedure = "7A";
                 }
                 else WashingProcedure = "7A";
 
             }
-            else if (sampleDescription.Contains("Fabric") || sampleDescription.Contains("Mock-up")) WashingProcedure = "5A";
-            else WashingProcedure = "5A";
-            return WashingProcedure;
+            else if (sampleDescription.Contains("Fabric") || sampleDescription.Contains("Mockup")) washingProcedure = "5A";
+            else washingProcedure = "5A";
+            return washingProcedure;
         }
 
         #region
@@ -417,7 +417,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             // 1. 特殊小件直接透传
             if (sampleDescription.ContainsAny("Cap", "Gloves", "Socks")) return dryProcedure;
 
-            // 2. 皮革、泳衣、松紧带 一票否决
+            // 2. 皮革、泳衣、松紧带 
             if (sampleDescription.ContainsAny("Leathers", "Swimwear")) return "Line Dry";
             if (sampleDescription.Contains("Elastics")) return "Tumble Dry";
 

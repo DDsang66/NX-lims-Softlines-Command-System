@@ -354,16 +354,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 case "Tear Strength":
                     if (!infoDto.sampleDescription!.Contains("Woven")) Condition = "N/A";
                     bool isCelluloseExist = _helper.IsCompositionExist("Cellulose", infoDto.fiberComposition!);
-                    if (infoDto.sampleDescription!.Contains("Non-Stretch") && !isCelluloseExist) Condition = "N/A";
+                    if (_helper.CompositionRate(infoDto.fiberComposition!, "Elastane") ==0&& !isCelluloseExist) Condition = "N/A";
                     break;
                 case "Tensile Strength":
-                    if (!(infoDto.sampleDescription!.Contains("Woven") || infoDto.sampleDescription.Contains("Non-Stretch"))) Condition = "N/A";
+                    if (!(infoDto.sampleDescription!.Contains("Woven") || _helper.CompositionRate(infoDto.fiberComposition!, "Elastane") == 0)) Condition = "N/A";
                     break;
                 case "Seam Strength":
-                    if (!(infoDto.sampleDescription!.Contains("Woven") || infoDto.sampleDescription.Contains("Non-Stretch"))) Condition = "N/A";
+                    if (!(infoDto.sampleDescription!.Contains("Woven") || _helper.CompositionRate(infoDto.fiberComposition!, "Elastane") == 0)) Condition = "N/A";
                     break;
                 case "Seam Slippage":
-                    if (!(infoDto.sampleDescription!.Contains("Woven") || infoDto.sampleDescription.Contains("Non-Stretch"))) Condition = "N/A";
+                    if (!(infoDto.sampleDescription!.Contains("Woven") || _helper.CompositionRate(infoDto.fiberComposition!, "Elastane") == 0)) Condition = "N/A";
                     break;
                 case "Unrecovered Elongation":
                     if (infoDto.sampleDescription!.Contains("Jeans")) Condition = "40";

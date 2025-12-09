@@ -158,13 +158,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 else if (infoDto.sampleDescription!.Contains("Knit"))
                 {
                     if (content <= 5)
-                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "3" : infoDto.sampleDescription.Contains("Loop") ? "6" : null; }
+                    { Limit = infoDto.sampleDescription.Contains("Stripe") ? "3" : infoDto.sampleDescription.Contains("Loop") ? "6" : null; }
                     else if (content < 12 && content > 5)
-                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "4" : infoDto.sampleDescription.Contains("Loop") ? "8" : null; }
+                    { Limit = infoDto.sampleDescription.Contains("Stripe") ? "4" : infoDto.sampleDescription.Contains("Loop") ? "8" : null; }
                     else if (content >= 12 && content <= 20)
-                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "5" : infoDto.sampleDescription.Contains("Loop") ? "10" : null; }
+                    { Limit = infoDto.sampleDescription.Contains("Stripe") ? "5" : infoDto.sampleDescription.Contains("Loop") ? "10" : null; }
                     else if (content > 20)
-                    { Limit = infoDto.sampleDescription.Contains("Strip") ? "7" : infoDto.sampleDescription.Contains("Loop") ? "14" : null; }
+                    { Limit = infoDto.sampleDescription.Contains("Stripe") ? "7" : infoDto.sampleDescription.Contains("Loop") ? "14" : null; }
                 }
             }
 
