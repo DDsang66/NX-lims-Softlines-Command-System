@@ -30,8 +30,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Rend
                 {
                     PropertyName = group.Key,
                     PropertyValue = group.Select(cl => cl.PropertyValue).Distinct().ToList(),
-                    Type = group.Select(cl => cl.Type).Distinct().ToList(),
-                    DefaultValue = group.Select(cl => cl.DefaultValue).Distinct().ToList()
+                    type = group.Select(cl => cl.Type).Distinct().FirstOrDefault(),
+                    defaultValue = group.Select(cl => cl.DefaultValue).Distinct().FirstOrDefault()
                 })
                 .ToList();
             return groupedsampleDescList;

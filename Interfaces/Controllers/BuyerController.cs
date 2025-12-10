@@ -22,14 +22,14 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// </summary>
         [HttpPost("confirm")]
         public async Task<IActionResult> BuyerConfirm([FromBody] RequiredInfoDto infoDto)
-            => await HandleAsync(infoDto, data => _factory.CreateBuyer(data.buyer).ShowItem(data)!);
+            => await HandleAsync(infoDto, data => _factory.CreateBuyer(data.buyer!.ToLower()).ShowItem(data)!);
 
         /// <summary>
         /// 买家要求确认接口，更新CheckList中的param
         /// </summary>
         [HttpPost("parameter")]
         public async Task<IActionResult> ShowParameter([FromBody] RequiredInfoDto infoDto)
-            => await HandleAsync(infoDto, data => _factory.CreateBuyer(data.buyer).ShowParameter(data)!);
+            => await HandleAsync(infoDto, data => _factory.CreateBuyer(data.buyer!.ToLower()).ShowParameter(data)!);
 
         private async Task<IActionResult> HandleAsync(RequiredInfoDto infoDto, Func<RequiredInfoDto, Task<object>> action)
         {

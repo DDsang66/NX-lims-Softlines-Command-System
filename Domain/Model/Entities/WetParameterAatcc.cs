@@ -6,7 +6,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
 public partial class WetParameterAatcc:IWetParam
 {
-    public int ParamId { get; set; }
+    public string ParamId { get; set; } = null!;
 
     public string ReportNumber { get; set; } = null!;
 

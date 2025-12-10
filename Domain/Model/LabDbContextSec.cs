@@ -50,6 +50,7 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -613,7 +614,10 @@ public partial class LabDbContextSec : DbContext
 
             entity.ToTable("wet_parameter_aatcc");
 
-            entity.Property(e => e.ParamId).HasColumnName("param_id");
+            entity.Property(e => e.ParamId)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("param_id");
             entity.Property(e => e.AfterWash)
                 .HasMaxLength(100)
                 .IsUnicode(false)
@@ -695,7 +699,10 @@ public partial class LabDbContextSec : DbContext
 
             entity.ToTable("wet_parameter_iso");
 
-            entity.Property(e => e.ParamId).HasColumnName("param_id");
+            entity.Property(e => e.ParamId)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("param_id");
             entity.Property(e => e.AfterWash)
                 .HasMaxLength(100)
                 .IsUnicode(false)
