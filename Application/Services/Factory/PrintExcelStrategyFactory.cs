@@ -20,15 +20,15 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
         public IPrintExcelStrategy GetStrategy(string buyer) =>
             buyer switch
             {
-                "Mango" => _sp.GetRequiredService<PrintMangoExcel>(),
-                "Adidas" => _sp.GetRequiredService<PrintAdidasExcel>(),
-                "CrazyLine" => _sp.GetRequiredService<PrintCrazyLineExcel>(),
-                "Jako" => _sp.GetRequiredService<PrintJakoExcel>(),
-                "Tchibo" => _sp.GetRequiredService<PrintTchiboExcel>(),
-                "Primark" => _sp.GetRequiredService<PrintPrimarkExcel>(),
-                "Pepco" => _sp.GetRequiredService<PrintPepcoExcel>(),
-                "Kik" => _sp.GetRequiredService<PrintKikExcel>(),
-                "Next" => _sp.GetRequiredService<PrintNextExcel>(),
+                "mango" => _sp.GetRequiredService<PrintMangoExcel>(),
+                "adidas" => _sp.GetRequiredService<PrintAdidasExcel>(),
+                "crazyline" => _sp.GetRequiredService<PrintCrazyLineExcel>(),
+                "jako" => _sp.GetRequiredService<PrintJakoExcel>(),
+                "tchibo" => _sp.GetRequiredService<PrintTchiboExcel>(),
+                "primark" => _sp.GetRequiredService<PrintPrimarkExcel>(),
+                "pepco" => _sp.GetRequiredService<PrintPepcoExcel>(),
+                "kik" => _sp.GetRequiredService<PrintKikExcel>(),
+                "next" => _sp.GetRequiredService<PrintNextExcel>(),
                 _ => throw new ArgumentException($"Unknown buyer: {buyer}")
             };
     }

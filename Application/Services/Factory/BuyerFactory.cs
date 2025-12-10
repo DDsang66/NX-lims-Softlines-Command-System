@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Services;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.Factory
 {
@@ -25,22 +26,24 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
         {
             switch (buyerType)
             {
-                case "Mango":
+                case "mango":
                     return new MangoBuyer(new MangoService(new MangoRepository(_dbContext, _fiberHelper), _fiberHelper));
-                case "CrazyLine":
+                case "crazyline":
                     return new CrazyLineBuyer(new CrazyLineService(new CrazyLineRepository(_dbContext, _fiberHelper), _fiberHelper));
-                case "Jako":
+                case "jako":
                     return new JakoBuyer(new JakoService(new JakoRepository(_dbContext, _fiberHelper), _fiberHelper));
-                case "Tchibo":
+                case "tchibo":
                     return new TchiboBuyer(new TchiboService(new TchiboRepository(_dbContext, _fiberHelper), _fiberHelper));
-                case "Primark":
+                case "primark":
                     return new PrimarkBuyer(new PrimarkService(new PrimarkRepository(_dbContext, _fiberHelper), _fiberHelper));
-                case "Pepco":
+                case "pepco":
                     return new PepcoBuyer(new PepcoService(new PepcoRepository(_dbContext, _fiberHelper), _fiberHelper));
-                case "Kik":
+                case "kik":
                     return new KikBuyer(new KikService(new KikRepository(_dbContext, _fiberHelper), _fiberHelper));
-                case "Next":
+                case "next":
                     return new NextBuyer(new NextService(new NextRepository(_dbContext, _fiberHelper), _fiberHelper));
+                case "ovs":
+                    return new OvsBuyer(new OvsService(new OvsRepository(_dbContext, _fiberHelper), _fiberHelper));
                 default:
                     throw new ArgumentException("Invalid buyer type");
             }

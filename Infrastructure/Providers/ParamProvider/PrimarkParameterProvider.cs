@@ -307,7 +307,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 case "Accelerotor":
                     if (infoDto.sampleDescription!.Contains("Velvet")) Condition = "3min";
-                    else if (infoDto.sampleDescription!.Contains("Corurcy") || infoDto.sampleDescription.Contains("Velour")) Condition = "5min";
+                    else if (infoDto.sampleDescription!.Contains("Corduroy") || infoDto.sampleDescription.Contains("Velour")) Condition = "5min";
                     else Condition = null;
                     break;
                 case "Colour Fastness to Non Chlorine Bleach":
