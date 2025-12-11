@@ -23,42 +23,31 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             {
                 try
                 {
-                    string menuName = input;
-                    var Menu = await _db.Menus.FirstOrDefaultAsync(m => m.MenuName == menuName);
-                    if (Menu == null) return null;
+                string menuName = input;
+                var Menu = await _db.NextMenus.Where(m => m.BuyerTable!.Contains(menuName)).ToListAsync();
+                if (Menu == null) return null;
 
-                    var properties = typeof(Menu).GetProperties();
-                    var standards = properties
-                        .Where(p => p.Name.StartsWith("StandardIndex"))
-                        .Select(p => p.GetValue(Menu))
-                        .OfType<int?>()
-                        .Where(v => v.HasValue)
-                        .ToList();
-
-                    var checkLists = new List<CheckListDto>();
-                    foreach (var standard in standards)
+                var checkLists = new List<CheckListDto>();
+                foreach (var m in Menu)
+                {
+                    try
                     {
-                        try
+                        if (m.StandardName != null)
                         {
-                            int? itemID = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.ItemIndex;
-                            string? standardCore = _db.Standards.FirstOrDefault(s => s.StandardId == standard)!.StandardCode;
-                            var item = await _db.Items.FindAsync(itemID);
-                            if (item != null)
+                            checkLists.Add(new CheckListDto
                             {
-                                checkLists.Add(new CheckListDto
-                                {
-                                    MenuName = menuName,
-                                    ItemName = item.ItemName,
-                                    Standard = standardCore,
-                                    Type = item.Type,
-                                    Parameter = null
-                                });
+                                MenuName = menuName,
+                                ItemName = m.ItemName,
+                                Standard = m.StandardName,
+                                Type = m.Type,
+                                Parameter = null
+                            });
 
-                            }
                         }
-                        catch (Exception ex)
+                    }
+                    catch (Exception ex)
                         {
-                            System.Diagnostics.Debug.WriteLine($"Error processing standard {standard}: {ex.Message}");
+                            System.Diagnostics.Debug.WriteLine($"Error processing standard {m.StandardName}: {ex.Message}");
                         }
                     }
                     checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
@@ -80,7 +69,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                     return default;
                 var Param = await _db.WetParameterIsos
                                   .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-                MangoParameterProvider wetParam = new MangoParameterProvider(_helper);
+                OvsParameterProvider wetParam = new OvsParameterProvider(_helper);
                 if (Param != null)
                 {
                     var updatedParam = wetParam.CreateWetParameters(input);
@@ -95,7 +84,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                     {
                         StandardType = "ISO",
                         Sensitive = "N",
-                        ReportNumber = input.OrderNumber,
+                        ReportNumber = input.OrderNumber!,
                         ContactItem = itemName
                     };
                     Param = wetParam.CreateWetParameters(input);

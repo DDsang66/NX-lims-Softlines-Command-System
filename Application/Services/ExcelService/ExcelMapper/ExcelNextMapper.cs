@@ -136,7 +136,7 @@
         {
             return new string[]
             {
-                "D5","F5","H5","J5","L5","N5","P5","D17","F17","H17","J17","L17","N17","P17"
+                "D5","F5","H5","L5","N5","P5","D17","F17","H17","L17","N17","P17"
             };
         }
 
@@ -176,7 +176,7 @@
         {
             return new string[]
             {
-                "A8","A26"
+                "A7"
             };
         }
         public static string[] MapYarnCount()
@@ -299,17 +299,14 @@
         #endregion
 
         //AfterWash
-        public static string[] DStoWashingAf(string sampleDescription)
+        public static string[] WashingAf(string sampleDescription)
         {
             List<string> stringMap = null;
-            if (sampleDescription.Contains("Fabric"))
-            {
-                stringMap = new List<string> { "AZ12", "BR12","AZ23","BR23" };
-            }
-            else
-            {
-                stringMap = new List<string> { "W7", "AG9" };
-            }
+            if (sampleDescription.Contains("Fabric"))stringMap = new List<string> { "AZ14", "BR14", "AZ24", "BR24" };
+            else if (sampleDescription.Contains("Garment")) stringMap = new List<string> { "W9", "AG11" };
+            else if (sampleDescription.Contains("Socks")) stringMap = new List<string> { "W9", "AG11" };
+            else if (sampleDescription.Contains("Glove")) stringMap = new List<string> { "W18", "AG20" };
+            else if (sampleDescription.Contains("Cap")) stringMap = new List<string> { "W27", "AG29" };
             return stringMap?.ToArray() ?? new string[0];
         }
         public static string[] AppearanceAf()

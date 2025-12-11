@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
@@ -93,8 +94,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             }
             else
             {
+                var snowflake = new SnowflakeIdGenerator();
                 var newParam = new WetParameterAatcc//没有找到对应的对象，随即构造一个
                 {
+                    ParamId = snowflake.NextId().ToString(),
                     StandardType = "AATCC",
                     Sensitive = "N",
                     ReportNumber = input.OrderNumber!,
@@ -103,14 +106,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 Param = wetParam.CreateWetParameters(input);
                 foreach (var prop in typeof(WetParameterAatcc).GetProperties())
                 {
-                    if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
+
+                    var value = prop.GetValue(Param);
+                    if (value != null)
                     {
-                        var value = prop.GetValue(Param);
-                        if (value != null)
-                        {
-                            prop.SetValue(newParam, value);
-                        }
+                        prop.SetValue(newParam, value);
                     }
+
                 }
 
                 await _db.WetParameterAatccs.AddAsync(newParam);
