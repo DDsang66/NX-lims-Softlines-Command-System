@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
@@ -49,24 +50,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                 foreach (var item in items!)
                 {
                     var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(
-                        new ParamsInput
-                        {
-                            WashingProcedure = infoDto.washingProcedure,
-                            DryProcedure = infoDto.dryProcedure,
-                            Sci = infoDto.sci,
-                            Iron = infoDto.ironProcedure,
-                            IronMethod = infoDto.ironMethod,
-                            Bleach = infoDto.bleachProcedure,
-                            FiberContent = infoDto.fiberComposition,
-                            OrderNumber = infoDto.reportNumber,
-                            DCProcedure = infoDto.dcProcedure,
-                            AfterWash = infoDto.afterWash,
-                            ItemName = item.itemName,
-                            additionalRequire = infoDto.additionalRequire,
-                            SampleDescription = infoDto.sampleDescription
-                        }, item.itemName);
+                        new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString()), item.itemName!);
                     string? param = await helper.CreateParameters(infoDto, item.itemName)!;
-                    dtos.Add(CreateResponse(item.itemName, wetParams ?? new WetParameterIso { ContactItem = item.itemName, ReportNumber = infoDto.reportNumber! }, param!));
+                    //dtos.Add(CreateResponse(item.itemName, wetParams ?? new WetParameterIso { ContactItem = item.itemName, ReportNumber = infoDto.reportNumber! }, param!));
+                    dtos.Add(JakoParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName! }, param!));
                 }
                 return dtos;
             }
@@ -76,31 +63,5 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             }
             return null;
         }
-
-
-        private static ParamDto CreateResponse(string itemName, WetParameterIso p, string Param) => itemName switch
-        {
-            "CF to Washing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, null, null, null, null, null),
-            "CF to Hot Pressing" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, null, null, null, null, null, null, null, null),
-            "Appearance" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, p.AfterWash, p.Iron),
-            "DS to Dry-clean" => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, p.Sensitive, null, null, null),
-            "Pilling Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Print Durability For JAKO" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, null, null, p.DryProcedure, null, null, null, null, null),
-            "Heat Press Test For JAKO" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", p.Program, null, null, null, null, null, null, null, null, null),
-            "Snagging Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Abrasion Resistance" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "CF to Light" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Seam Slippage" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Seam Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Bursting Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Tensile Strength" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Extension and Recovery" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Air Permeability" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Water Repellency-Spray Test" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "Spirality/Skewing" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            "CF to Sublimation in Storage" => new(p.ContactItem!, p.ReportNumber, p.Temperature + "°C", null, null, null, null, null, null, null, null, null, "48h"),
-            "CF to Chlorinated Water" => new(itemName, null, null, null, null, null, null, null, null, null, null, null, Param),
-            _ => new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null)
-        };
     }
 }

@@ -99,7 +99,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" 
+                || itemName == "Appearance" || itemName == "Spirality/Skewing" || (itemName== "Water Repellency-Spray Test"&& dto.sampleDescription!.Contains("After Wash")))
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
@@ -108,7 +109,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" 
+                || itemName == "Appearance" || itemName == "Spirality/Skewing" || (itemName == "Water Repellency-Spray Test" && dto.sampleDescription!.Contains("After Wash")))
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -261,7 +263,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Zipper Strength"] = (_, _) => ExcelTchiboMapper.MapZipperStrength(),
             ["Resistance to Unsnapping of Snap Fasteners"] = (_, _) => ExcelTchiboMapper.MapUnsnapping(),
             ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelTchiboMapper.MapHydrostaticPressing(),
-            ["Water Repellency-Spray Test"] = (_, _) => ExcelTchiboMapper.MapRepellency(),
+            ["Water Repellency-Spray Test"] = (_, m) => ExcelTchiboMapper.MapRepellency(m),
             ["Extension and Recovery"] = (_, _) => ExcelTchiboMapper.MapExtensionAndRecovery(),
             ["Air Permeability"] = (_, _) => ExcelTchiboMapper.MapAirPermeability(),
             ["Absorbency"] = (_, _) => ExcelTchiboMapper.MapAbsorbency(),
@@ -286,6 +288,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             ["DS to Washing"] = (_, m) => ExcelTchiboMapper.DStoWashingAf(m),
             ["Appearance"] = (_, _) => ExcelTchiboMapper.AppearanceAf(),
+            ["Water Repellency-Spray Test"] = (_, _) => ExcelTchiboMapper.SprayAf(),
         };
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> WetExtraMap = new()
         {
@@ -474,18 +477,32 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["M1"] = (wp, dto, reportNo) => reportNo,
                 ["A3"] = (wp, dto, reportNo) => dto.Standard!,
             },
-            ["Water Repellency-Spray Test"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Water Repellency-Spray Test"] = (w, dto, reportNo) =>
             {
-                ["M1"] = (wp, dto, reportNo) => reportNo,
-                ["A3"] = (wp, dto, reportNo) => dto.Standard!,
-                ["K20"] = (w, dto, reportNo) => w.Temperature!,
-                ["R20"] = (w, dto, reportNo) => w.Detergent!,
-                ["L21"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["A22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
-                ["N22"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["A23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
-                ["C5"] = (w, dto, reportNo) => w.AfterWash!.Contains("3 Wash") ? "3" : "5",
-                ["C12"] = (w, dto, reportNo) => w.AfterWash!.Contains("3 Wash") ? "3" : "5"
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                if (dto.sampleDescription!.Contains("After Wash"))
+                {
+                    map["M1"] = (wp, dto, reportNo) => reportNo;
+                    map["A3"] = (wp, dto, reportNo) => dto.Standard!;
+                    map["K20"] = (w, dto, reportNo) => w.Temperature!;
+                    map["R20"] = (w, dto, reportNo) => w.Detergent!;
+                    map["L21"] = (w, dto, reportNo) => w.WashingProcedure!;
+                    map["A22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["N22"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["A23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                }
+                else
+                {
+                    map["M1"] = (wp, dto, reportNo) => reportNo;
+                    map["A3"] = (wp, dto, reportNo) => dto.Standard!;
+                    map["K20"] = (w, dto, reportNo) => "-";
+                    map["R20"] = (w, dto, reportNo) => "-";
+                    map["L21"] = (w, dto, reportNo) => "-";
+                    map["A22"] = (w, dto, reportNo) => "-";
+                    map["N22"] = (w, dto, reportNo) => "-";
+                    map["A23"] = (w, dto, reportNo) => "-";
+                }
+                return map;
             },
             ["Seam Slippage"] = (w, dto, reportNo) =>
             {
@@ -579,6 +596,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             ["CF to Perspiration"] = 6,
             ["DS to Washing"] = 4,
+            ["Water Repellency-Spray Test"] = 3
         };
         private void WriteSamples(
             ExcelWorksheet ws,
@@ -590,6 +608,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string sampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
+            if (itemName== "Water Repellency-Spray Test"&& !sampleDescription.Contains("Before and After Wash")) offset = 0;
             if (afmap != null && afmap.Length > 0 && AfterWashCellAddrs != null && AfterWashCellAddrs.Length > 0 && itemName == "Appearance")
             {
                 for (int i = 0; i < AfterWashCellAddrs.Length; i++)

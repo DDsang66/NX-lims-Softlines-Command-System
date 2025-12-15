@@ -251,6 +251,14 @@
                 "D10", "D17", "D24", "D31"
             };
         }
+
+        public static string[] MapTM42()
+        {
+            return new string[]
+            {
+                "AD3"
+            };
+        }
         public static string[] MapTM58()
         {
             return new string[]

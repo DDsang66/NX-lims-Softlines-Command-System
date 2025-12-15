@@ -96,7 +96,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Dry-clean")
+            if (itemName == "DS to Washing")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
@@ -113,12 +113,20 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     .ToArray();
             }
             int[]? afterWashMap = null;
-            if (itemName == "DS")
+            if (itemName == "DS to Washing")
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
+                if (itemName == "DS to Washing")
+                {
+                    afterWash = string.Join(", ", dto.Sample!
+                        .Split(',')
+                        .Select(s => s.Trim())
+                        .SelectMany(s => new[] { $"{s}-1 Wash" }));
+                }
+
                 string? iron = wp!.Iron;
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
@@ -275,6 +283,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
         {
+            ["DS to Washing"] = (_, m) => ExcelPepcoMapper.DStoWashingAf(m)
         };
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> WetExtraMap = new()
         {
@@ -291,10 +300,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BI6"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["BR6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                     map["AR7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) == true ? "-" : w.SpecialCareInstruction;
-                    map["AZ13"] = (w, dto, reportNo) => "1";
-                    //map["BR13"] = (w, dto, reportNo) => "1";
-                    //map["AZ24"] = (w, dto, reportNo) => "1";
-                    //map["BR24"] = (w, dto, reportNo) => "1";
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
@@ -306,10 +311,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["V6"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["AE6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                     map["A7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) == true ? "-":w.SpecialCareInstruction;
-                    map["W8"] = (w, dto, reportNo) => "1";
-                    //map["AB8"] = (w, dto, reportNo) => "1";
-                    map["AG10"] = (w, dto, reportNo) => "1";
-                    //map["AL10"] = (w, dto, reportNo) => "1";
                 }
                 else
                 {
@@ -537,6 +538,26 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
             if (!sampleDescription.Contains("Fabric") && itemName == "DS to Washing") offset = 0;
+
+            if (afmap != null && afmap.Length > 0 && itemName == "DS to Washing" && !sampleDescription.Contains("Fabric"))
+            {
+                for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
+                }
+            }
+            else if (afmap != null && afmap.Length > 0)
+            {
+                for (int i = 0; i < afmap.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[i];
+                }
+            }
+
+
+
+
+
             if (itemName == "Appearance"|| itemName == "Print Durability")
             {
                 for (int i = 0; i < cellAddrs.Length; i++)

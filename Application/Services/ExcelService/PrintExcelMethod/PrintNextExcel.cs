@@ -183,7 +183,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "")
+            if (itemName == "Stability to Washing" || itemName == "Stability to Dry Cleaning")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
@@ -268,7 +268,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 int[]? afmap = null;
                 if (afterWashMap != null) afmap = afterWashMap.Skip(start).Take(count).ToArray();
                 /* 把这段样本写进去,如果有水洗遍数，那么也把水洗遍数写进去 */
-                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName,dto.sampleDescription);
+                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName,dto.sampleDescription!);
                 //这里是分割样本的逻辑<-------------------------------------------------------------------------------------->
                 // 5) 其余参数
                 if (dto.Type == "Wet")
@@ -442,7 +442,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Spray Rating"] = (n, m) => ExcelNextMapper.MapTM22TM23(n),
             ["Swiss Pilling"] = (n, m) => ExcelNextMapper.MapTM26(),
             ["Accelerotor Pile Loss"] = (n, m) => ExcelNextMapper.MapTM31(),
-            ["Attachment Strength"] = (n, m) => ExcelNextMapper.MapTM31(),//无工作单
+            ["Attachment Strength"] = (n, m) => ExcelNextMapper.MapTM42(),//无工作单
             ["Moisture Management"] = (n, m) => ExcelNextMapper.MapTM58(),
             ["Snagging Resistance"] = (n, m) => ExcelNextMapper.MapTM59(),
             ["Mass per Unit Length"] = (n, m) => ExcelNextMapper.MapTM62(),
@@ -994,6 +994,25 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string sampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
+            if (afmap != null && afmap.Length > 0
+               && (itemName == "Stability to Washing" || itemName == "Stability to Dry Cleaning")
+               && !sampleDescription.Contains("Fabric"))
+            {
+                for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
+                }
+            }
+            else if (afmap != null && afmap.Length > 0)
+            {
+                for (int i = 0; i < afmap.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[i];
+                }
+            }
+
+
+
             if (itemName == "Stability to Washing" || itemName == "Stability to Dry Cleaning" && !sampleDescription.Contains("Fabric")) offset = 0;
             if (itemName.Contains("Appearance")||itemName== "Moisture Management")
             {

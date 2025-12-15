@@ -1,4 +1,6 @@
-﻿namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
+﻿using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+
+namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
 {
     public static class ExcelPepcoMapper
     {
@@ -155,13 +157,23 @@
       
         
         //AfterWash
-        public static string[] DStoWashingAf() 
+        public static string[] DStoWashingAf(string SampleDescription) 
         {
-            return new string[]
+
+            List<string> stringMap = null;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+            .FirstOrDefault(key => SampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
             {
-                "AZ13","BR13","AZ24","BR24"
-                // 可以根据需要添加更多固定的单元格地址
+                "Garment" => new List<string> { "W8","AG10" },
+                "Fabric" => new List<string>  {"AZ13","BR13","AZ24","BR24"  },
+                "Socks" => new List<string> { "W8", "AG10" },
+                "Gloves" => new List<string> { "W17", "AG19" },
+                "Cap" => new List<string> { "W26", "AG28" },
+                _ => new List<string> { "AZ13", "BR13", "AZ24", "BR24" }
             };
+            return stringMap?.ToArray() ?? new string[0];
         }
 
         public static string[] DStoDCAf()

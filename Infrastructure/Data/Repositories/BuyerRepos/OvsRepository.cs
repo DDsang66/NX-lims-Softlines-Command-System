@@ -23,34 +23,33 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             {
                 try
                 {
-                string menuName = input;
-                var Menu = await _db.NextMenus.Where(m => m.BuyerTable!.Contains(menuName)).ToListAsync();
-                if (Menu == null) return null;
+                string menuName = input.Trim();
 
-                var checkLists = new List<CheckListDto>();
-                foreach (var m in Menu)
-                {
-                    try
+                // 先全表拉到内存
+                var allMenus = await _db.OvsMenus.AsNoTracking().ToListAsync();
+
+                // 精确匹配
+                var hitMenus = allMenus
+                    .Where(m => m.BuyerTable!
+                        .Split(',')
+                        .Select(s => s.Trim())
+                        .Contains(menuName, StringComparer.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (!hitMenus.Any()) return null;
+
+                var checkLists = hitMenus
+                    .Where(m => m.StandardName != null)
+                    .Select(m => new CheckListDto
                     {
-                        if (m.StandardName != null)
-                        {
-                            checkLists.Add(new CheckListDto
-                            {
-                                MenuName = menuName,
-                                ItemName = m.ItemName,
-                                Standard = m.StandardName,
-                                Type = m.Type,
-                                Parameter = null
-                            });
-
-                        }
-                    }
-                    catch (Exception ex)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"Error processing standard {m.StandardName}: {ex.Message}");
-                        }
-                    }
-                    checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
+                        MenuName = menuName,
+                        ItemName = m.ItemName,
+                        Standard = m.StandardName,
+                        Type = m.Type,
+                        Parameter = null
+                    })
+                    .ToList();
+                checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
 
                     return checkLists;
                 }
@@ -90,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                     Param = wetParam.CreateWetParameters(input);
                     foreach (var prop in typeof(WetParameterIso).GetProperties())
                     {
-                        if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
+                        if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段，因为它是自增的
                         {
                             var value = prop.GetValue(Param);
                             if (value != null)
