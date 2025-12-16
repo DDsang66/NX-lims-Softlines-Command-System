@@ -20,7 +20,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
             string templatePathPhysics,
             string excelOutputPathWet,
             string excelOutputPathPhy,
-            ExcelSubmitDto Dto, IPrintExcelStrategyFactory _factory)          // 用 object 代替 dynamic，性能更好
+            ExcelSubmitDto Dto, IPrintExcelStrategyFactory _factory)
         {
             try
             {
@@ -38,7 +38,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
                 var strategy = _factory.GetStrategy(Dto.Buyer!);
                 strategy.PrintJsonData(Dto, packageWet, packagePhy);
 
-                // 5. 异步保存
+                // 异步保存
                 await Task.WhenAll(
                     SaveAsync(packageWet),
                     SaveAsync(packagePhy)
@@ -50,48 +50,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
                 Console.WriteLine($"FillExcelAsync Error: {ex}");
             }
         }
-
-
-        #region
-        ///// <summary>
-        ///// 内存版：把模板填完后写回 MemoryStream（零磁盘，除 1 个临时文件）
-        ///// </summary>
-        //public async Task FillExcelAsync(
-        //        string templatePathWet,
-        //        string templatePathPhysics,
-        //        MemoryStream outputWetMs,
-        //        MemoryStream outputPhyMs,
-        //        ExcelSubmitDto Dto,
-        //        IPrintExcelStrategyFactory factory)
-        //{
-        //    var tempDir = Path.GetTempPath();          // 本地临时目录，速度最快
-        //    var wetTmp = Path.Combine(tempDir, $"wet_{Guid.NewGuid()}.xlsx");
-        //    var phyTmp = Path.Combine(tempDir, $"phy_{Guid.NewGuid()}.xlsx");
-
-        //    try
-        //    {
-        //        // ① 先走原有“文件路径”逻辑
-        //        await FillExcelAsync(templatePathWet, templatePathPhysics,
-        //                             wetTmp, phyTmp, Dto, factory);
-
-        //        // ② 把填好的文件读进 MemoryStream
-        //        using (var fs = File.OpenRead(wetTmp)) await fs.CopyToAsync(outputWetMs);
-        //        using (var fs = File.OpenRead(phyTmp)) await fs.CopyToAsync(outputPhyMs);
-
-        //        // ③ 复位指针，方便上层直接压缩
-        //        outputWetMs.Position = 0;
-        //        outputPhyMs.Position = 0;
-        //    }
-        //    finally
-        //    {
-        //        // ④ 清理临时文件
-        //        if (File.Exists(wetTmp)) File.Delete(wetTmp);
-        //        if (File.Exists(phyTmp)) File.Delete(phyTmp);
-        //    }
-        //}
-        #endregion
-
-
 
 
 

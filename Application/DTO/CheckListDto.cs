@@ -19,5 +19,23 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? sampleDescription { get; set; }
 
         public object? Extra { get; set; }
+
+
+        public CheckListDto CreateDto(SelectedRows row,string menuName,string SampleDescription) 
+        {
+            return new CheckListDto 
+            {
+                ItemName = row.itemName,
+                MenuName = menuName,
+                Standard = row.standards,
+                Parameter = row.parameters,
+                Type = row.types,
+                Sample = row.samples,
+                Method = string.Empty,
+                sampleDescription = SampleDescription,
+                Extra = row.extra
+            };
+        }
+
     }
 }

@@ -53,7 +53,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                     var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(
                           new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(),item.standards!.ToString()), item.itemName!);
                     string? param = await helper.CreateParameters(infoDto, item.itemName!,item.standards!)!;
-                    dtos.Add(TchiboParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName! }, param!));
+                    dtos.Add(TchiboParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!, Standard = item.standards }, param!));
                 }
                 return dtos;
             }

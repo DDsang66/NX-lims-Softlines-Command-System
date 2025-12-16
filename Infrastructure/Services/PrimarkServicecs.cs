@@ -22,7 +22,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         public async Task<object?> ShowItemAsync([FromBody] RequiredInfoDto infoDto)
         {
             string MenuName = infoDto.menuName!;
+
             var checkLists = await _repo.GetCheckListAsync(MenuName);//返回CheckListDto类型的对象
+
             if (checkLists == null) return null;
 
             var groupedCheckLists = checkLists
@@ -48,10 +50,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                 var dtos = new List<object>();
                 foreach (var item in items!)
                 {
-                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(
-                        new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString()), item.itemName!);
+                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString()), item.itemName!);
+
                     string? param = await helper.CreateParameters(infoDto, item.itemName!)!;
-                    dtos.Add(PrimarkParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName! }, param!));
+
+                    dtos.Add(PrimarkParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!, Standard = item.standards }, param!));
                 }
                 return dtos;
             }

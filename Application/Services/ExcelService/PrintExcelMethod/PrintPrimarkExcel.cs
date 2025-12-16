@@ -32,20 +32,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             var selectedRows = Dto.SelectedRows;
 
             List<CheckListDto> checkLists = new List<CheckListDto>();
-            foreach (var row in selectedRows!)
-            {
-                checkLists.Add(new CheckListDto
-                {
-                    ItemName = row.itemName,
-                    Standard = row.standards,
-                    Parameter = row.parameters,
-                    Type = row.types,
-                    Sample = row.samples,
-                    Extra = row.extra,
-                    MenuName = menu,
-                    sampleDescription = sampleDescription,
-                });
-            }
+            foreach (var row in selectedRows!) checkLists.Add(new CheckListDto().CreateDto(row, menu, sampleDescription));
             foreach (var row in checkLists)
             {
                 if (new[] { "Seam Slippage", "Seam Strength", "Tear Strength", "Tensile Strength", "Martindale Abrasion" , "Back Pocket Application Strength",

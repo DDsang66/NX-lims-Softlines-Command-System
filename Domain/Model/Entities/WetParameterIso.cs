@@ -10,7 +10,7 @@ public partial class WetParameterIso:IWetParam
 
     public string ReportNumber { get; set; } = null!;
 
-    public string? StandardType { get; set; }
+    public string? Standard { get; set; }
 
     public string? WashingProcedure { get; set; }
 

@@ -54,6 +54,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("Moisture Management", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = "3N",
+                Temperature = "30",
+                DryProcedure = "Line Dry",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -62,7 +77,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         };
 
 
-        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName)
+        public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName, string standard)
         {
 
             // 1. 计算最大值
@@ -114,6 +129,35 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                         _ => null
                     };
                     break;
+                case "Water Repellency":
+                    condition = infoDto.menuName switch
+                    {
+                        "A" => "1 Cycle",
+                        "A1" => "1 Cycle",
+                        "E" => "1 Cycle",
+                        "UM-Umbrellas" => "Original Sample",
+                        "A-SKI wear" or "A-Act" =>"5 Cycle",
+                        _ => "N/A"
+                    };
+                    break;
+                case "Air Permeability":
+                    condition = infoDto.menuName switch
+                    {
+                        "I-SKI wear" => "3 Cycle",
+                        _ => "5 Cycle"
+                    };
+                    break;
+                case "Absorbency":
+                    if(infoDto.menuName=="HTL-Y-Slipper")condition = "Original Sample";
+                    else condition = "1 Cycle";
+                    break;
+                case "Pilling Resistance":
+                    if (standard.Contains("12945-1")) condition = "ICI";
+                    else if (standard.Contains("12945-2"))
+                    {
+
+                    }
+                    break;
             }
 
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
@@ -138,13 +182,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Appearance after Washing/Dry-Cleaning", null, null)] = "Same Test Method as Dimensional Stability",
             [("Calculation of Color Differences", null, null)] = "∆E - D65 and TL84",
             [("Movement after Washing", null, null)] = "TM179 Option1, Test Method Same as Dimensional Stability",
-            [("Water Permeability/Hydrostatic Head","1800",null)]="Press: 1800mmH2O，Original Sample",
+            [("Water Permeability/Hydrostatic Head", "1800", null)] = "Press: 1800mmH2O，Original Sample",
             [("Water Permeability/Hydrostatic Head", "2000", "3 Cycle")] = "Press: 2000mmH2O，After 3Cycles",
             [("Water Permeability/Hydrostatic Head", "2000", "5 Cycle")] = "Press: 2000mmH2O，After 5 Cycles",
             [("Water Permeability/Hydrostatic Head", "3000", null)] = "Press: 3000mmH2O，After 5 Cycles",
             [("Water Permeability/Hydrostatic Head", "5000", "3 Cycle")] = "Press: 5000mmH2O，After 3 Cycles",
             [("Water Permeability/Hydrostatic Head", "5000", "5 Cycle")] = "Press: 5000mmH2O，After 5 Cycles",
-            [("Water Permeability/Hydrostatic Head", "N/A", null)] = "N/A",
+            [("Water Repellency", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
+            [("Water Repellency", "5 Cycle", null)] = "After 5 Cycle；4N@40°C. ",
+            [("Water Repellency", "Original Sample", null)] = "Original Sample",
+            [("Air Permeability", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
+            [("Air Permeability", "5 Cycle", null)] = "After 5 Cycle；4N@40°C. ",
+            [("Absorbency","Original Sample",null)] = "Original Sample",
+            [("Absorbency", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
+            [("Moisture Management", null, null)] = "After 1 Cycle",
+            [("Pilling Resistance","ICI",null)]= "Evaluation at 7.200 and 10.800 revs"
 
         };
 

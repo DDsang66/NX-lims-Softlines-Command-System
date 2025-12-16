@@ -18,6 +18,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             _helper = helper;
         }
 
+        /// <summary>
+        /// 根据菜单名称获取检查列表
+        /// </summary>
+        /// <param name="infoDto"></param>
+        /// <returns></returns>
         public async Task<object?> ShowItemAsync([FromBody] RequiredInfoDto infoDto)
         {
             string MenuName = infoDto.menuName!;
@@ -38,7 +43,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             return groupedCheckLists;
         }
 
-
+        /// <summary>
+        /// 根据检查列表生成参数
+        /// </summary>
+        /// <param name="infoDto"></param>
+        /// <returns></returns>
         public async Task<object?> ShowParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
             var items = infoDto.items;
@@ -53,7 +62,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                         new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString()), item.itemName!);
                     string? param = await helper.CreateParameters(infoDto, item.itemName)!;
                     //dtos.Add(CreateResponse(item.itemName, wetParams ?? new WetParameterIso { ContactItem = item.itemName, ReportNumber = infoDto.reportNumber! }, param!));
-                    dtos.Add(JakoParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName! }, param!));
+                    dtos.Add(JakoParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!,Standard=item.standards }, param!));
                 }
                 return dtos;
             }

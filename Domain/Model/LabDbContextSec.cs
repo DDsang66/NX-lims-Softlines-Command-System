@@ -579,7 +579,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("default_value");
             entity.Property(e => e.IsNecessary)
-                .HasMaxLength(2)
+                .HasMaxLength(1)
                 .IsFixedLength()
                 .HasColumnName("is_necessary");
             entity.Property(e => e.PropertyName)
@@ -753,10 +753,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("special_care_instruction");
-            entity.Property(e => e.StandardType)
+            entity.Property(e => e.Standard)
                 .HasMaxLength(50)
                 .IsUnicode(false)
-                .HasColumnName("standard_type");
+                .HasColumnName("standard");
             entity.Property(e => e.SteelBallNum).HasColumnName("steel_ball_num");
             entity.Property(e => e.SteelBallType)
                 .HasMaxLength(10)
@@ -831,10 +831,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("special_care_instruction");
-            entity.Property(e => e.StandardType)
+            entity.Property(e => e.Standard)
                 .HasMaxLength(50)
                 .IsUnicode(false)
-                .HasColumnName("standard_type");
+                .HasColumnName("standard");
             entity.Property(e => e.SteelBallNum).HasColumnName("steel_ball_num");
             entity.Property(e => e.SteelBallType)
                 .HasMaxLength(50)

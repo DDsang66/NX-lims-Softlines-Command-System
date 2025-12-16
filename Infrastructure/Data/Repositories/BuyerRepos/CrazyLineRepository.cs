@@ -95,7 +95,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             {
                 var newParam = new WetParameterAatcc//没有找到对应的对象，随即构造一个
                 {
-                    StandardType = "AATCC",
+                    Standard = input.Standard,
                     Sensitive = "N",
                     ReportNumber = input.OrderNumber!,
                     ContactItem = itemName

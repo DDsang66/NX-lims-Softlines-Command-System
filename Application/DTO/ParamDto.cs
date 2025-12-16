@@ -2,7 +2,7 @@
 {
     public record ParamDto(
         string ItemName,
-        string? OrderNumber,
+        string? Standard,
         string? Temperature,
         string? Program,
         int? SteelBall,
