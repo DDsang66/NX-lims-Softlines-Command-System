@@ -20,6 +20,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Washing", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Fabric") == true ? "40" : null,
                 Program = p.SampleDescription.Contains("Fabric") == true ? "A2S" : null,
@@ -28,6 +29,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Appearance", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
@@ -42,6 +44,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Appearance", var add) when add?.Contains("Garment") == true => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = /*(p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? */
@@ -58,6 +61,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality/Skewing", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry",
@@ -70,6 +74,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality/Skewing", var add) when add?.Contains("Garment") == true => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
                 DryProcedure = (p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? p.DCProcedure : "Tumble Dry",
@@ -82,6 +87,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("DS to Dry-clean", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N"
@@ -89,6 +95,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Heat Press Test For JAKO", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Sublimation") == true ? "130" : "170",
                 Program = "30",
@@ -96,6 +103,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Print Durability For JAKO", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = "60",
                 Program = "1200 rpn, automatic time 1:20h",
@@ -105,6 +113,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Hot Pressing", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Dyed") == true ? "150" : "110",
                 IronMethod = p.IronMethod ?? null
@@ -112,6 +121,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Sublimation in Storage", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Dyed") == true ? "90" : "70",
                 Ballast = _helper.MaxComposition(p.FiberContent!)
@@ -119,6 +129,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

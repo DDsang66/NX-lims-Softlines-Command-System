@@ -21,6 +21,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Colour Fastness to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!).Contains("4") == true ? "40" : "60",
                 Program = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!).Contains("4") == true ? "A2S" : "C2S",
@@ -30,6 +31,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Dimensional Stability to Washing", _, _) => new WetParameterIso 
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure =WashingProcedureBuilder(p.WashingProcedure,p.MenuName!),
                 Temperature = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!).Contains("4") == true ? "40" : "60",
@@ -45,6 +47,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Accelerated Ageing(Stroage) Test", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Program = "7 days",
                 WashingProcedure = "90%RH",
@@ -57,6 +60,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Moisture Management", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "3N",
                 Temperature = "30",
@@ -72,6 +76,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

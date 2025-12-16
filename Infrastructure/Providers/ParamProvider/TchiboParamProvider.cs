@@ -22,6 +22,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Washing", "4N" or "4M" or "4G" or "3N", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = IsA1MProgram(p.SampleDescription!) ? "40" : p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = IsA1MProgram(p.SampleDescription!) ? "A1M" :
@@ -31,6 +32,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Washing", "4H" or "3M" or "3G" or "3H", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = IsA1MProgram(p.SampleDescription!) ? "40" : p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = IsA1MProgram(p.SampleDescription!) ? "A1M" :
@@ -40,6 +42,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Absorbency", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
@@ -57,6 +60,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Water Repellency-Spray Test", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
@@ -74,6 +78,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("DS to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
@@ -91,6 +96,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Appearance", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
@@ -108,6 +114,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Sublimation in Storage", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = "120",
                 Ballast = _helper.MaxComposition(p.FiberContent!)
@@ -115,6 +122,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Hot Pressing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.IronMethod!.Contains("Cool") ? "110"
                 : p.IronMethod!.Contains("Warm") ? "150"
@@ -126,6 +134,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

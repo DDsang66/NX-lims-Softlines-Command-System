@@ -22,6 +22,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Colour Fastness to Washing", "4H" or "3M" or "3G" or "3H", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.WashingProcedure!.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
@@ -31,6 +32,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Colour Fastness to Washing", "4N" or "4M" or "4G" or "3N", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.WashingProcedure!.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
@@ -40,6 +42,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Colour Fastness to Washing", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = "40",
                 Program = "A2S",
@@ -49,6 +52,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Absorbency of Textiles", "3H" or "4H", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
@@ -61,6 +65,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Absorbency of Textiles", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Program = WetParamHelper(p.WashingProcedure!),
                 WashingProcedure = p.WashingProcedure,
@@ -85,6 +90,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Wind Resistant Claims Air Permeability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
@@ -100,6 +106,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Colour Fastness to Hot Pressing", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = HotPressingHelper(p.IronMethod, p.MenuName!),
                 IronMethod = p.IronMethod ?? null,
@@ -107,6 +114,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Dimensional and Bra Wire Casing Stability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4H",
                 Temperature = "40",
@@ -122,6 +130,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Martindale Pilling", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
@@ -137,6 +146,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Print / Motif / Flock Durability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 Temperature = "40",
@@ -146,6 +156,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Print Durability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 Temperature = "30",
@@ -155,6 +166,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Shower Resistant Claims Spray Rating", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
@@ -170,6 +182,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality", _, _, "PTC09" or "PTC10" or "PTC13" or "PTC14" or "PTC15" or "PTC15A" or "PTC29") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
@@ -185,6 +198,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Stability to Dry Cleaning", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                       p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
@@ -193,6 +207,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Stability to Washing", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4N",
                 Temperature = "40",
@@ -208,6 +223,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Waterproof Claims Hydrostatic Head", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4N",
                 Temperature = "40",
@@ -223,6 +239,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Dimensional Stability", "3H" or "4H", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -238,6 +255,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Dimensional Stability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -253,6 +271,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -268,6 +287,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Security of Attachment(Wash)", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -282,15 +302,22 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             },
             ("Easycare/Non-Iron", _, _, _) => new WetParameterIso
             {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
             ("Appearance-Common", _, _, _) => new WetParameterIso
             {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

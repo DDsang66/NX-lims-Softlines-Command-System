@@ -19,6 +19,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure.Contains("Cold") == true ? "88" : "105",
@@ -31,6 +32,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Washing", _, _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 Temperature = p.WashingProcedure!.Contains("Cold") ? "85"
@@ -44,6 +46,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("DS to Washing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
@@ -58,6 +61,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("DS to Washing", _, _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Program = WetParamHelper(p.WashingProcedure!),
                 WashingProcedure = p.WashingProcedure,
@@ -81,6 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
@@ -92,6 +97,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality/Skewing", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
@@ -104,6 +110,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality/Skewing", _, _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Program = WetParamHelper(p.WashingProcedure!),
                 WashingProcedure = p.WashingProcedure,
@@ -125,6 +132,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

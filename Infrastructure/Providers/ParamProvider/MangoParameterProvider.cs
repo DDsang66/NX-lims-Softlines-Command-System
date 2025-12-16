@@ -23,6 +23,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
                 Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
                 SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10
@@ -31,6 +32,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
                 Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
                 SteelBallNum = 0
@@ -39,6 +41,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
@@ -53,6 +56,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("DS to Dry-clean", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
@@ -61,6 +65,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

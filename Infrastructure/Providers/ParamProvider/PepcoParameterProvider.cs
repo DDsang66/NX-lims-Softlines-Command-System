@@ -22,6 +22,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("CF to Washing", "4N" or "4M" or "4G" or "3N", _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
@@ -38,6 +39,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("DS to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
@@ -53,6 +55,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Appearance", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
@@ -68,6 +71,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Air Permeability", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
@@ -83,6 +87,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Water Repellency-Spray Test", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
@@ -98,6 +103,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Water Resistance-Hydrostatic Pressure", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
@@ -113,6 +119,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Print Durability", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
@@ -129,6 +136,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

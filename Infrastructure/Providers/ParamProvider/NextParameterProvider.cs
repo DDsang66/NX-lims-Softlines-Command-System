@@ -21,6 +21,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Fastness to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = "50",
                 Program = "B2S",
@@ -29,6 +30,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Cross Staining to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = "50",
                 Program = "B2S",
@@ -37,6 +39,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Print Durability", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure ="2A",
                 DryProcedure = "Tumble Dry for 90 min",
@@ -52,6 +55,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Embellishment Durability (Childrenswear)", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "2A",
                 DryProcedure = "Tumble Dry for 90 min",
@@ -67,6 +71,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Embellishment Durability (General)", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
                 DryProcedure = p.DryProcedure,
@@ -82,6 +87,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Foil Durability", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
                 DryProcedure = p.DryProcedure,
@@ -97,6 +103,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Appearance Assessment after Washing", _, _) => new WetParameterIso 
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
                 DryProcedure = p.DryProcedure,
@@ -113,6 +120,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Appearance Assessment after Dry Clean",_,_) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
@@ -121,6 +129,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Polar Fleece Assessment", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "5A",
                 DryProcedure = "Tumble Dry Height",
@@ -136,6 +145,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Stability to Washing", _, _) => new WetParameterIso 
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureHelper(p.FiberContent!,p.SampleDescription!,p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
@@ -152,6 +162,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality",_,_) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!, p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
@@ -167,6 +178,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Stability to Dry Cleaning",_,_) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
                                   p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
@@ -175,6 +187,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Assessment of Easy to Iron Fabrics",_,_)=> new WetParameterIso 
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!, p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
@@ -197,6 +210,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spray Rating", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = WashingProcedureHelper(p.FiberContent!, p.SampleDescription!, p.WashingProcedure),
                 DryProcedure = DryProcedureHelper(p.FiberContent!, p.SampleDescription!, p.DryProcedure),
@@ -219,6 +233,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
             }
         };

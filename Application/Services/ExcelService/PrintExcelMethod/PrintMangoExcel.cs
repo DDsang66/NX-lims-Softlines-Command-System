@@ -216,7 +216,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BY4"] = (w, dto, reportNo) => w.Temperature!;
                     map["BG5"] = (w, dto, reportNo) => w.Ballast!;
                     map["BI6"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["AR11"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                    map["AR7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment")) 
                 {
