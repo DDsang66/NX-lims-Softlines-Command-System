@@ -16,4 +16,6 @@ public partial class SampleDescription
     public string BuyerName { get; set; } = null!;
 
     public string? DefaultValue { get; set; }
+
+    public string? IsNecessary { get; set; }
 }

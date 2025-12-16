@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using System.Diagnostics;
 using System.IO.Compression;

@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using OfficeOpenXml;
 

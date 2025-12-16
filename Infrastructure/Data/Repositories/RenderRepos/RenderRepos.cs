@@ -31,7 +31,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Rend
                     PropertyName = group.Key,
                     PropertyValue = group.Select(cl => cl.PropertyValue).Distinct().ToList(),
                     type = group.Select(cl => cl.Type).Distinct().FirstOrDefault(),
-                    defaultValue = group.Select(cl => cl.DefaultValue).Distinct().FirstOrDefault()
+                    defaultValue = group.Select(cl => cl.DefaultValue).Distinct().FirstOrDefault(),
+                    isNecessary = group.Select(cl => cl.IsNecessary).Distinct().FirstOrDefault()
                 })
                 .ToList();
             return groupedsampleDescList;

@@ -2,7 +2,7 @@
 using NX_lims_Softlines_Command_System.Application.DTO;
 using System.Globalization;
 
-namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
+namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool
 {
     public class GetPath
     {

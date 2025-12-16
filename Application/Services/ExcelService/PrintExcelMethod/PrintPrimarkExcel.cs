@@ -9,6 +9,7 @@ using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
 using DocumentFormat.OpenXml.Spreadsheet;
 using System.ComponentModel;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
 
 
 
@@ -81,37 +82,38 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             CheckListDto dto,
             string reportNo)
         {
-            //<-------------------------------------------------------------------------------------->
-            string? tplName = null;
-            bool foundInSub = false;
-            // 1) 模板 sheet
-            if (TemplateSheetNames.TryGetValue(itemName!, out var subDictionary))
-            {
-                /* ---------- 其余测试保持原单关键字逻辑 ---------- */
-                foreach (var kvp in subDictionary)
-                {
-                    if (string.IsNullOrEmpty(kvp.Key) ||
-                        dto.sampleDescription!.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
-                    {
-                        tplName = kvp.Value;
-                        foundInSub = true;
-                        break;
-                    }
-                }
+            ////<-------------------------------------------------------------------------------------->
+            //string? tplName = null;
+            //bool foundInSub = false;
+            //// 1) 模板 sheet
+            //if (TemplateSheetNames.TryGetValue(itemName!, out var subDictionary))
+            //{
+            //    /* ---------- 其余测试保持原单关键字逻辑 ---------- */
+            //    foreach (var kvp in subDictionary)
+            //    {
+            //        if (string.IsNullOrEmpty(kvp.Key) ||
+            //            dto.sampleDescription!.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+            //        {
+            //            tplName = kvp.Value;
+            //            foundInSub = true;
+            //            break;
+            //        }
+            //    }
 
-            }
-            //如果在 TemplateSheetNames 中未找到，尝试从 TemplateSheetNamesNormal 中查找
-            if (!foundInSub)
-            {
-                TemplateSheetNamesNormal.TryGetValue(itemName, out tplName);
-            }
+            //}
+            ////如果在 TemplateSheetNames 中未找到，尝试从 TemplateSheetNamesNormal 中查找
+            //if (!foundInSub)
+            //{
+            //    TemplateSheetNamesNormal.TryGetValue(itemName, out tplName);
+            //}
 
-            // 如果仍未找到匹配的模板名
-            if (tplName == null)
-            {
-                Console.WriteLine("未找到对应的模板名");
-                tplName = "DefaultSheetName"; // 假设有一个默认模板名
-            }
+            //// 如果仍未找到匹配的模板名
+            //if (tplName == null)
+            //{
+            //    Console.WriteLine("未找到对应的模板名");
+            //    tplName = "DefaultSheetName"; // 假设有一个默认模板名
+            //}
+            var tplName = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal).GetTemplateName(itemName, dto.sampleDescription!);
             if (itemName == "Physical & Mechanical" || itemName == "Torque & Tension") 
             {
                 switch (itemName) 

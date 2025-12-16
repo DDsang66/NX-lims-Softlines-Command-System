@@ -1,6 +1,6 @@
 ﻿using ClosedXML.Excel;
 
-namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
+namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool
 {
     internal class XLWorkbook : IDisposable
     {

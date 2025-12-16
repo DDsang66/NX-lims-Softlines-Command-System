@@ -578,6 +578,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("default_value");
+            entity.Property(e => e.IsNecessary)
+                .HasMaxLength(2)
+                .IsFixedLength()
+                .HasColumnName("is_necessary");
             entity.Property(e => e.PropertyName)
                 .HasMaxLength(50)
                 .IsUnicode(false)

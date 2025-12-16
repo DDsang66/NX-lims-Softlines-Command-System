@@ -6,6 +6,7 @@ using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMa
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
@@ -23,6 +24,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string reportNumber = Dto.ReportNumber!;
             string buyer = Dto.Buyer!;
             string menu = Dto.MenuName!;
+            string sampleDescription = Dto.SampleDescription!;
             var selectedRows = Dto.SelectedRows;
 
 
@@ -36,7 +38,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     Parameter = row.parameters,
                     Type = row.types,
                     Sample = row.samples,
-                    MenuName = menu
+                    MenuName = menu,
+                    sampleDescription = sampleDescription
                 });
             }
             foreach (var dto in checkLists)
@@ -57,15 +60,15 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string reportNo)
         {
             // 1) 模板 sheet
-            var tplName = TemplateSheetNames[itemName];
+            var tplName = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal).GetTemplateName(itemName, dto.sampleDescription!);
             var template = pkg.Workbook.Worksheets[tplName];
 
             // 2) 计算需要几张 sheet
-            var cellAddrs = CellMapper[itemName](itemName, dto.MenuName!);
+            var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!,dto.MenuName!);
             string[]? AfterWashCellAddrs = null;
-            if (/*itemName == "DS to Washing" || itemName == "DS to Dry-clean" ||*/ itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "DS to Washing")
             {
-                AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.MenuName!);
+                AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
 
 
@@ -73,7 +76,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (/*itemName == "DS to Washing" || itemName == "DS to Dry-clean" ||*/ itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "DS to Washing" )
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -88,6 +91,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             int offset = OffsetRule.GetValueOrDefault(itemName, 0); // 获取偏移量，默认为0
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
+            if (itemName == "DS to Washing" && dto.sampleDescription!.Contains("Garment")) capacity = 1;
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
             for (int idx = 0; idx < sheetCnt; idx++)
@@ -119,14 +123,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 int[]? afmap = null;
                 if (afterWashMap != null) afmap = afterWashMap.Skip(start).Take(count).ToArray();
                 /* 把这段样本写进去 */
-                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName);
+                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName,dto.sampleDescription!);
 
                 // 5) 其余参数
                 if (dto.Type == "Wet")
                 {
                     var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
-                    var extraMap = WetExtraMap.GetValueOrDefault(itemName, new());
+                    var extraMap = WetExtraMap.GetValueOrDefault(itemName, (w,dto, reportNo) => new Dictionary<string, Func<WetParameterIso,CheckListDto, string, string>>())(wp!,dto, reportNo);
 
                     foreach (var kv in extraMap)
                     {
@@ -154,9 +158,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         }
 
         // 模板 sheet 名
-        private static readonly Dictionary<string, string> TemplateSheetNames = new()
+        private static readonly Dictionary<string, string> TemplateSheetNamesNormal = new()
         {
-            ["DS to Washing"] = "DStoWashing",
             ["DS to Dry-clean"] = "DStoDryClean",
             ["CF to Washing"] = "CFtoWashing&Rubbing&Light",
             ["CF to Rubbing"] = "CFtoWashing&Rubbing&Light",
@@ -172,55 +175,80 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Abrasion Resistance"] = "Abrasion&Snagging Resistance",
             ["Snagging Resistance"] = "Abrasion&Snagging Resistance",
         };
-
-        // 取映射地址的函数
-        private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()
+        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
         {
-            ["DS to Washing"] = (_, _) => ExcelMangoMapper.GetFixedCellAddresses(),
-            ["DS to Dry-clean"] = (_, _) => ExcelMangoMapper.GetDStodrycleanCellAddresses(),
-            ["CF to Washing"] = (n, _) => ExcelMangoMapper.GetCRLCellAddresses(n),
-            ["CF to Rubbing"] = (n, _) => ExcelMangoMapper.GetCRLCellAddresses(n),
-            ["CF to Light"] = (n, _) => ExcelMangoMapper.GetCRLCellAddresses(n),
-            ["CF to Perspiration"] = (n, _) => ExcelMangoMapper.GetPWDCellAddresses(n),
-            ["CF to Water"] = (n, _) => ExcelMangoMapper.GetPWDCellAddresses(n),
-            ["CF to Dry-clean"] = (n, _) => ExcelMangoMapper.GetPWDCellAddresses(n),
-            ["Weight"] = (_, _) => ExcelMangoMapper.GetWeightCellAddresses(),
-            ["Yarn Count"] = (_, _) => ExcelMangoMapper.GetYarnCountCellAddresses(),
-            ["Pilling Resistance"] = (_, m) => ExcelMangoMapper.GetPillingCellAddresses(m),
-            ["Seam Slippage"] = (n, _) => ExcelMangoMapper.GetSTCellAddresses(n),
-            ["Tear Strength"] = (n, _) => ExcelMangoMapper.GetSTCellAddresses(n),
-            ["Abrasion Resistance"] = (n, _) => ExcelMangoMapper.GetASCellAddresses(n),
-            ["Snagging Resistance"] = (n, _) => ExcelMangoMapper.GetASCellAddresses(n),
+            ["DS to Washing"] = new Dictionary<string, string>
+            {
+                {"Fabric", "DStoWashing-F" },
+                {"Garment", "DStoWashing-G" },
+                {"Socks", "DStoWashing-Acc" },
+                {"Gloves", "DStoWashing-Acc" },
+                {"Cap", "DStoWashing-Acc" },
+            },
+        };
+        // 取映射地址的函数
+        private static readonly Dictionary<string, Func<string, string, string, string[]>> CellMapper = new()
+        {
+            ["DS to Washing"] = (n, m, y) => ExcelMangoMapper.GetFixedCellAddresses(m),
+            ["DS to Dry-clean"] = (n, m, y) => ExcelMangoMapper.GetDStodrycleanCellAddresses(),
+            ["CF to Washing"] = (n, m, y) => ExcelMangoMapper.GetCRLCellAddresses(n),
+            ["CF to Rubbing"] = (n, m, y) => ExcelMangoMapper.GetCRLCellAddresses(n),
+            ["CF to Light"] = (n, m, y) => ExcelMangoMapper.GetCRLCellAddresses(n),
+            ["CF to Perspiration"] = (n, m, y) => ExcelMangoMapper.GetPWDCellAddresses(n),
+            ["CF to Water"] = (n, m, y) => ExcelMangoMapper.GetPWDCellAddresses(n),
+            ["CF to Dry-clean"] = (n, m, y) => ExcelMangoMapper.GetPWDCellAddresses(n),
+            ["Weight"] = (n, m, y) => ExcelMangoMapper.GetWeightCellAddresses(),
+            ["Yarn Count"] = (n, m, y) => ExcelMangoMapper.GetYarnCountCellAddresses(),
+            ["Pilling Resistance"] = (n, m, y) => ExcelMangoMapper.GetPillingCellAddresses(y),
+            ["Seam Slippage"] = (n, m, y) => ExcelMangoMapper.GetSTCellAddresses(n),
+            ["Tear Strength"] = (n, m, y) => ExcelMangoMapper.GetSTCellAddresses(n),
+            ["Abrasion Resistance"] = (n, m, y) => ExcelMangoMapper.GetASCellAddresses(n),
+            ["Snagging Resistance"] = (n, m, y) => ExcelMangoMapper.GetASCellAddresses(n),
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
         {
-            ["DS to Washing"] = (_, _) => ExcelMangoMapper.DStoWashingAf(),
+            ["DS to Washing"] = (_, m) => ExcelMangoMapper.DStoWashingAf(m),
             ["DS to Dry-clean"] = (_, _) => ExcelMangoMapper.DStoDCAf(),
         };
 
 
 
         // 其余Wet固定/动态参数  →  (单元格, 取值Func)  
-        private static readonly Dictionary<string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>> WetExtraMap = new()
+        private static readonly Dictionary<string, Func<WetParameterIso,CheckListDto, string, Dictionary<string, Func<WetParameterIso,CheckListDto, string, string>>>> WetExtraMap = new()
         {
-            ["DS to Washing"] = new()
+            ["DS to Washing"] = (w, dto, reportNo) =>
             {
-                ["BC1"] = (w, dto, reportNo) => reportNo,
-                ["AR3"] = (w, dto, reportNo) => (dto.Standard ?? "").Replace(",", " / ").TrimEnd(' ', '/'),
-                ["AX4"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["BY4"] = (w, dto, reportNo) => w.Temperature!,
-                ["BG5"] = (w, dto, reportNo) => w.Ballast!,
-                ["BI6"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AR11"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                if (dto.sampleDescription!.Contains("Fabric"))
+                {
+                    map["BC1"] = (w, dto, reportNo) => reportNo;
+                    map["AR3"] = (w, dto, reportNo) => (dto.Standard ?? "").Replace(",", " / ").TrimEnd(' ', '/');
+                    map["AX4"] = (w, dto, reportNo) => w.WashingProcedure!;
+                    map["BY4"] = (w, dto, reportNo) => w.Temperature!;
+                    map["BG5"] = (w, dto, reportNo) => w.Ballast!;
+                    map["BI6"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["AR11"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                }
+                else if (dto.sampleDescription!.Contains("Garment")) 
+                {
+                    map["P1"] = (w, dto, reportNo) => reportNo;
+                    map["A3"] = (w, dto, reportNo) => (dto.Standard ?? "").Replace(",", " / ").TrimEnd(' ', '/');
+                    map["I4"] = (w, dto, reportNo) => w.WashingProcedure!;
+                    map["AK4"] = (w, dto, reportNo) => w.Temperature!;
+                    map["T5"] = (w, dto, reportNo) => w.Ballast!;
+                    map["V6"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["A7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                }
+                return map;
             },
-            ["DS to Dry-clean"] = new()
+            ["DS to Dry-clean"] = (w, dto, reportNo) =>new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR3"] = (w, dto, reportNo) => (dto.Standard ?? "").Replace(",", " / ").TrimEnd(' ', '/'),
                 ["AW4"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal"
             },
-            ["CF to Washing"] = new()
+            ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => "(ISO 105 C06:2010)",
@@ -228,28 +256,28 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["E4"] = (w, dto, reportNo) => w.Temperature!,
                 ["J5"] = (w, dto, reportNo) => w.SteelBallNum.ToString()!,
             },
-            ["CF to Rubbing"] = new()
+            ["CF to Rubbing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A20"] = (w, dto, reportNo) => "(ISO 105-X12:2016)"
             },
-            ["CF to Light"] = new()
+            ["CF to Light"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A28"] = (w, dto, reportNo) => "(ISO 105 B02:2014)",
                 ["B30"] = (w, dto, reportNo) => "L-5"
             },
-            ["CF to Perspiration"] = new()
+            ["CF to Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => "(ISO 105 E04:2013)",
             },
-            ["CF to Water"] = new()
+            ["CF to Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A25"] = (w, dto, reportNo) => "(ISO 105 E01:2013)",
             },
-            ["CF to Dry-clean"] = new()
+            ["CF to Dry-clean"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A37"] = (w, dto, reportNo) => "(ISO 105 D01:2010)"
@@ -332,26 +360,45 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             int[]? afmap,
             string[] cellAddrs,
             string[]? AfterWashCellAddrs,
-            string itemName)
+            string itemName,
+            string SampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
-            if (afmap != null && afmap.Length > 0)
+            if (itemName == "DS to Washing" && SampleDescription.Contains("Garment"))offset = 0;
+            if (afmap != null && afmap.Length > 0 && (itemName == "DS to Washing" && SampleDescription.Contains("Garment")))
             {
-                for (int i = 0; i < afmap.Length; i++) 
+                for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
+                {
+                    ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
+                }
+            }
+            else if (afmap != null && afmap.Length > 0)
+            {
+                for (int i = 0; i < afmap.Length; i++)
                 {
                     ws.Cells[AfterWashCellAddrs![i]].Value = afmap[i];
                 }
             }
 
-            for (int i = 0; i < slice.Length; i++)
+            if (itemName == "DS to Washing" && SampleDescription.Contains("Garment"))
             {
-                // 写入样本数据到指定的单元格地址
-                ws.Cells[cellAddrs[i]].Value = slice[i];
-
-                // 如果有偏移量，并且偏移后的单元格地址在范围内
-                if (offset > 0 && i + offset < cellAddrs.Length)
+                for (int i = 0; i < cellAddrs.Length; i++)
                 {
-                    ws.Cells[cellAddrs[i + offset]].Value = slice[i];
+                    ws.Cells[cellAddrs[i]].Value = slice[0];
+                }
+            }
+            else 
+            {
+                for (int i = 0; i < slice.Length; i++)
+                {
+                    // 写入样本数据到指定的单元格地址
+                    ws.Cells[cellAddrs[i]].Value = slice[i];
+
+                    // 如果有偏移量，并且偏移后的单元格地址在范围内
+                    if (offset > 0 && i + offset < cellAddrs.Length)
+                    {
+                        ws.Cells[cellAddrs[i + offset]].Value = slice[i];
+                    }
                 }
             }
         }

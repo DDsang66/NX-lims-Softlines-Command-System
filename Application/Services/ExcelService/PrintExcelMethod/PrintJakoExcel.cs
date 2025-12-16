@@ -8,6 +8,7 @@ using NX_lims_Softlines_Command_System.Application.Services.ExcelService.Helper;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
@@ -59,61 +60,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             CheckListDto dto,
             string reportNo)
         {
-            //<-------------------------------------------------------------------------------------->
-            string? tplName = null;
-            bool foundInSub = false;
-            // 1) 模板 sheet
-            if (TemplateSheetNames.TryGetValue(itemName, out var subDictionary))
-            {
-                /* ---------- 只有 Seam Strength 需要多条件 ---------- */
-                if (itemName == "Seam Strength")
-                {
-                    bool hasGarment = dto.sampleDescription.Contains("Garment", StringComparison.OrdinalIgnoreCase);
-                    bool hasKnit = dto.sampleDescription.Contains("Knit", StringComparison.OrdinalIgnoreCase);
-
-                    // 按优先级命中
-                    if (hasKnit && hasGarment &&
-                        subDictionary.TryGetValue("Knit", out tplName))   // 字典里放的是 Seam Bursting-G
-                    {
-                        foundInSub = true;
-                    }
-                    else if (hasGarment &&
-                             subDictionary.TryGetValue("Garment", out tplName)) // Seam Slippage&Breakage-G
-                    {
-                        foundInSub = true;
-                    }
-                    /* 只命中 Knit 就不管，保持 foundInSub == false */
-                }
-                else
-                {
-                    /* ---------- 其余测试保持原单关键字逻辑 ---------- */
-                    foreach (var kvp in subDictionary)
-                    {
-                        if (string.IsNullOrEmpty(kvp.Key) ||
-                            dto.sampleDescription!.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
-                        {
-                            tplName = kvp.Value;
-                            foundInSub = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            //如果在 TemplateSheetNames 中未找到，尝试从 TemplateSheetNamesNormal 中查找
-            if (!foundInSub)
-            {
-                TemplateSheetNamesNormal.TryGetValue(itemName, out tplName);
-            }
-
-            // 如果仍未找到匹配的模板名
-            if (tplName == null)
-            {
-                Console.WriteLine("未找到对应的模板名");
-                tplName = "DefaultSheetName"; // 假设有一个默认模板名
-            }
+            var tplName = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal).GetTemplateName(itemName, dto.sampleDescription!);
             var template = pkg.Workbook.Worksheets[tplName];
-            //<-------------------------------------------------------------------------------------->
-
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
@@ -269,8 +217,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             ["Seam Strength"] = new Dictionary<string, string>
             {
-                 {"Garment","Seam Slippage&Breakage-G"},
-                 {"Knit","Seam Bursting-G"}
+                 {"Knit","Seam Bursting-G"},
+                 {"Garment","Seam Slippage&Breakage-G"}
             },
             ["Zipper Strength"] = new Dictionary<string, string>
             {

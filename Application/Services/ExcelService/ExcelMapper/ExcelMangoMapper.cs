@@ -1,16 +1,28 @@
-﻿namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
+﻿using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+
+namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
 {
     public static class ExcelMangoMapper
     {
         //WET
-        public static string[] GetFixedCellAddresses()
+        public static string[] GetFixedCellAddresses(string sampleDescription)
         {
             // 定义固定的单元格地址映射
-            return new string[]
+            List<string>? stringMap = null;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
             {
-                "AZ8", "BG8", "BN8", "BU8","AW12","BO12","AW23","BO23"
-                // 可以根据需要添加更多固定的单元格地址
+                "Garment" => new List<string> { "G10" },
+                "Fabric" => new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" },
+                "Socks" => new List<string> { "F10" },
+                "Gloves" => new List<string> { "F19" },
+                "Cap" => new List<string> { "F28" },
+                _ => new List<string> { "G10" }
             };
+            return stringMap?.ToArray() ?? new string[0];
+
         }
         public static string[] GetDStodrycleanCellAddresses()
         {
@@ -124,13 +136,23 @@
 
 
         //AfterWash
-        public static string[] DStoWashingAf() 
+        public static string[] DStoWashingAf(string sampleDescription) 
         {
-            return new string[]
+            // 定义固定的单元格地址映射
+            List<string>? stringMap = null;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
             {
-                "AZ13","BR13","AZ24","BR24"
-                // 可以根据需要添加更多固定的单元格地址
+                "Garment" => new List<string> { "W8", "AG10" },
+                "Fabric" => new List<string> { "AZ13", "BR13", "AZ24", "BR24" },
+                "Socks" => new List<string> { "W8", "AG10" },
+                "Gloves" => new List<string> { "W17", "AG19" },
+                "Cap" => new List<string> { "W26", "AG28" },
+                _ => new List<string> { "W8", "AG10" }
             };
+            return stringMap?.ToArray() ?? new string[0];
         }
 
         public static string[] DStoDCAf()

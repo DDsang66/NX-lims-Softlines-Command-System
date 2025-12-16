@@ -99,6 +99,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     else if (infoDto.menuName!.Contains("LG")) condition = "50";
                     else condition = "20";
                     break;
+                case "Water Permeability/Hydrostatic Head":
+                    condition = infoDto.menuName switch
+                    {
+                        "A-Act" => "3000",
+                        "A" when infoDto.sampleDescription!.Contains("Garment") => "1800",
+                        "A-SKI wear" or "I-SKI wear" => infoDto.sampleDescription!.Contains("With Membrane") ? "2000" : "5000",
+                        _ => "N/A"
+                    };
+                    condition1 = infoDto.menuName switch
+                    {
+                        "A-SKI wear" =>"5 Cycle",
+                        "I-SKI wear" => "3 Cycle",
+                        _ => null
+                    };
+                    break;
             }
 
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
@@ -116,13 +131,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Colour Fastness to Light", "L-5", "Brilliant")] = "L-3",
             [("Colour Fastness to Light", "L-5", "Fluo")] = "L-3",
             [("Colour Fastness to Light", "L-5", "Sweatband")] = "L-3",
-            [("Colour Fastness to Light", "L-5",null)] = "L-5",
+            [("Colour Fastness to Light", "L-5", null)] = "L-5",
             [("Colour Fastness to Chlorinated Water", "50", null)] = "50ppm",
             [("Colour Fastness to Chlorinated Water", "20", null)] = "20ppm",
             [("Dimensional Stability to Dry-Cleaning", null, null)] = "Commercial Cycle",
             [("Appearance after Washing/Dry-Cleaning", null, null)] = "Same Test Method as Dimensional Stability",
             [("Calculation of Color Differences", null, null)] = "∆E - D65 and TL84",
             [("Movement after Washing", null, null)] = "TM179 Option1, Test Method Same as Dimensional Stability",
+            [("Water Permeability/Hydrostatic Head","1800",null)]="Press: 1800mmH2O，Original Sample",
+            [("Water Permeability/Hydrostatic Head", "2000", "3 Cycle")] = "Press: 2000mmH2O，After 3Cycles",
+            [("Water Permeability/Hydrostatic Head", "2000", "5 Cycle")] = "Press: 2000mmH2O，After 5 Cycles",
+            [("Water Permeability/Hydrostatic Head", "3000", null)] = "Press: 3000mmH2O，After 5 Cycles",
+            [("Water Permeability/Hydrostatic Head", "5000", "3 Cycle")] = "Press: 5000mmH2O，After 3 Cycles",
+            [("Water Permeability/Hydrostatic Head", "5000", "5 Cycle")] = "Press: 5000mmH2O，After 5 Cycles",
+            [("Water Permeability/Hydrostatic Head", "N/A", null)] = "N/A",
+
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)
