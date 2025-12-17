@@ -754,7 +754,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("special_care_instruction");
             entity.Property(e => e.Standard)
-                .HasMaxLength(50)
+                .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("standard");
             entity.Property(e => e.SteelBallNum).HasColumnName("steel_ball_num");
@@ -832,7 +832,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("special_care_instruction");
             entity.Property(e => e.Standard)
-                .HasMaxLength(50)
+                .HasMaxLength(100)
                 .IsUnicode(false)
                 .HasColumnName("standard");
             entity.Property(e => e.SteelBallNum).HasColumnName("steel_ball_num");

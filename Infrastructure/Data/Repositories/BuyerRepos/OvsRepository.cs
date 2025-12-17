@@ -60,11 +60,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 return null;
             }
 
-            public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
-            {
-                // 只处理指定 item 类型
-                if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" }
-                     .Contains(itemName))
+        public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
+        {
+            // 只处理指定 item 类型
+            if (!new[] { "Colour Fastness to Washing", "Dimensional Stability to Washing", "Accelerated Ageing(Stroage) Test" ,
+                "Moisture Management","Pilling Resistance","Pilling Resistance","Bursting Strength","Seam Slippage", "Vertical Wicking","Dimensional Stability to Dry-Cleaning"}
+                 .Contains(itemName))
                     return default;
                 var Param = await _db.WetParameterIsos
                                   .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);

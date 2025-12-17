@@ -44,6 +44,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("Dimensional Stability to Dry-Cleaning", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                                  p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
+            },
             ("Accelerated Ageing(Stroage) Test", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -303,6 +312,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Tensile Strength", null, null)] = "Need additional unit weight",
             [("Tear Strength", "", null)] = "Need additional unit weight",
             [("Bursting Strength", "N/A", null)] = "N/A",
+            [("Drying Rate", null, null)] = "After 30 mins",
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)
