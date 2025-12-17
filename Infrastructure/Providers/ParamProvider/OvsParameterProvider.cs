@@ -73,6 +73,70 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("Pilling Resistance", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = PillingWashingProcedureBuilder(p.WashingProcedure,p.FiberContent!),
+                Temperature = p.WashingProcedure!.Contains("4")?"40":"60",
+                DryProcedure = _helper.IsCompositionSourceExist("Animal",p.FiberContent!)>0?"Flat Dry":p.DryProcedure,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Bursting Strength", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = _helper.CompositionRate(p.FiberContent!, "Silk") > 0 ? PillingWashingProcedureBuilder(p.WashingProcedure, p.FiberContent!) : p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : p.WashingProcedure!.Contains("6") ? "60" : "30",
+                DryProcedure = _helper.IsCompositionSourceExist("Animal", p.FiberContent!) > 0 ? "Flat Dry" : p.DryProcedure,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+    : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+    : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Seam Slippage", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = _helper.CompositionRate(p.FiberContent!, "Silk") > 0 ? PillingWashingProcedureBuilder(p.WashingProcedure,p.FiberContent!) : p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : p.WashingProcedure!.Contains("6")?"60":"30",
+                DryProcedure = _helper.IsCompositionSourceExist("Animal", p.FiberContent!) > 0 ? "Flat Dry" : p.DryProcedure,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+    : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+    : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Vertical Wicking", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = "3N",
+                Temperature = "30",
+                DryProcedure = "Line Dry",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+: _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+: "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = "3 Cycles",
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -158,10 +222,30 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     break;
                 case "Pilling Resistance":
                     if (standard.Contains("12945-1")) condition = "ICI";
-                    else if (standard.Contains("12945-2"))
+                    else if (standard.Contains("12945-2")) condition = "Martindale";
+                    break;
+                case "Abrasion Resistance":
+                    condition = infoDto.menuName switch
                     {
-
-                    }
+                        "E" => "3",
+                        "UPF-T" => "12",
+                        _ => "9"
+                    };
+                    condition1 = infoDto.menuName switch
+                    {
+                        "J-SKI wear"or"J-Act"or"J" => "15000",
+                        "I-SKI wear" or "A-SKI wear" or "C" => "30000",
+                        "UPF-T" or "A-Act" or "A" or "A1" or "B" or "F" or "P" or "T" or "U" or "HTL-S-SPA&Sea Towel" => "20000",
+                        _ => "10000"
+                    };
+                    break;
+                case "Bursting Strength":
+                    if (!infoDto.sampleDescription!.Contains("Knit")) condition = "N/A";
+                    if(_helper.CompositionRate(infoDto.fiberComposition!,"Silk")>0) condition1 = "After Wash";
+                    break;
+                case "Seam Slippage":
+                    if (!infoDto.sampleDescription!.Contains("Woven")) condition = "N/A";
+                    if (_helper.CompositionRate(infoDto.fiberComposition!, "Silk") > 0) condition1 = "After Wash";
                     break;
             }
 
@@ -201,8 +285,24 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Absorbency","Original Sample",null)] = "Original Sample",
             [("Absorbency", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
             [("Moisture Management", null, null)] = "After 1 Cycle",
-            [("Pilling Resistance","ICI",null)]= "Evaluation at 7.200 and 10.800 revs"
-
+            [("Pilling Resistance","ICI",null)]= "Evaluation at 7.200 and 10.800 revs",
+            [("Pilling Resistance", "Martindale", null)] = "Tex-tex Evaluation at 500, 1000 and 2000 revs",
+            [("Abrasion Resistance", "3", null)] = "Load: 3KPa；CC ≥ 3-4 at 10000 revs；No noticeable changes at 20000 revs ",
+            [("Abrasion Resistance", "12", null)] = "Load:12KPa；Evaluation at 20000 revs；CC ≥ 3-4 at 3.000 revs",
+            [("Abrasion Resistance", "9", "10000")] = "Load: 9KPa；Evaluation at 10000 revs；CC ≥ 3-4 at 3.000 revs",
+            [("Abrasion Resistance", "9", "15000")] = "Load: 9KPa；Evaluation at 15000 revs；CC ≥ 3-4 at 3.000 revs",
+            [("Abrasion Resistance", "9", "20000")] = "Load: 9KPa；Evaluation at 20000 revs；CC ≥ 3-4 at 3.000 revs",
+            [("Abrasion Resistance", "9", "30000")] = "Load: 9KPa；Evaluation at 30000 revs；CC ≥ 3-4 at 3.000 revs",
+            [("Bursting Strength", "N/A", null)] = "N/A",
+            [("Bursting Strength", null, "After Wash")] = "After 1 Hand Cycle",
+            [("Bursting Strength", null, "Unit Weight")] = "Need additional unit weight",
+            [("Seam Slippage", "N/A", null)] = "N/A",
+            [("Seam Slippage", null, "After Wash")] = "After 1 Hand Cycle",
+            [("Seam Slippage", null, "Unit Weight")] = "Need additional unit weight",
+            [("Stretch & Recovery", null,null)]= "Stretch: ≥ 15%/Residual Extension: ≤ 5%",
+            [("Tensile Strength", null, null)] = "Need additional unit weight",
+            [("Tear Strength", "", null)] = "Need additional unit weight",
+            [("Bursting Strength", "N/A", null)] = "N/A",
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)
@@ -221,6 +321,20 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         {
             return "6N";
         }
+        private string PillingWashingProcedureBuilder(string? WashingProcedure, List<FiberDto> fiberComposition)
+        {
+            var aniRate = _helper.IsCompositionSourceExist("Animal", fiberComposition);
+            if (aniRate == 0)
+            {
+                if (WashingProcedure!.Contains("4")) return "4N";
+                else if (WashingProcedure!.Contains("3")) return "3N";
+                else return "6N";
+            }
+            else if (aniRate > 0&& WashingProcedure!.Contains("4")) return "4H";
+            else if (aniRate > 0 && WashingProcedure!.Contains("3")) return "3H";
+            else return "4N";
+        }
+
         private int BallNumberBuilder(string Menuname, List<FiberDto> fiberComposition)
         {
             return 10;

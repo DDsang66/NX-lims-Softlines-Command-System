@@ -34,7 +34,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 Console.WriteLine($"{dto.ItemName} -> {dto.Type}");
                 var pkg = dto.Type == "Wet" ? PackageWet : PackagePhy;
-                if (TemplateSheetNames.ContainsKey(dto.ItemName!))
+                if (TemplateSheetNames.ContainsKey(dto.ItemName!) || TemplateSheetNamesNormal.ContainsKey(dto.ItemName!))
                     FillSheet(pkg, dto.ItemName!, dto, reportNumber);
             }
             PackageWet.Save();
