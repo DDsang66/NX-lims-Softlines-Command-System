@@ -23,8 +23,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                Temperature = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!).Contains("4") == true ? "40" : "60",
-                Program = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!).Contains("4") == true ? "A2S" : "C2S",
+                Temperature = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!,p.FiberContent!).Contains("6") == true ? "60" : "40",
+                Program = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!,p.FiberContent!).Contains("6") == true ? "C2S" : "A2S",
                 SteelBallNum = BallNumberBuilder(p.MenuName!,p.FiberContent!),
                 SteelBallType = "Steel Ball"
             },
@@ -33,8 +33,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure =WashingProcedureBuilder(p.WashingProcedure,p.MenuName!),
-                Temperature = WashingProcedureBuilder(p.WashingProcedure,p.MenuName!).Contains("4") == true ? "40" : "60",
+                WashingProcedure =WashingProcedureBuilder(p.WashingProcedure,p.MenuName!, p.FiberContent!),
+                Temperature = WashingProcedureBuilder(p.WashingProcedure, p.MenuName!, p.FiberContent!).Contains("6") ? "60" 
+                : WashingProcedureBuilder(p.WashingProcedure, p.MenuName!, p.FiberContent!).Contains("3") ? "30"
+                :"40",
                 DryProcedure = DryProcedureBuilder(p.DryProcedure,p.MenuName!,p.FiberContent!),
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
@@ -327,9 +329,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         }
 
 
-        private string WashingProcedureBuilder(string? WashingProcedure,string Menuname) 
+        private string WashingProcedureBuilder(string? WashingProcedure, string Menuname, List<FiberDto> fiberComposition)
         {
-            return "6N";
+            if (_helper.IsCompositionSourceExist("Animal", fiberComposition) > 0) return "3G";
+            else if (Menuname == "PP-Period Panties") return "5A";
+            else if (Menuname == "O" || Menuname == "P" || Menuname == "T"
+                || Menuname == "HTL-P-TableClothes" || Menuname == "HTL-N-Bed Sheet"
+                || Menuname == "HTL-T-Bathrobe&Towel" || Menuname == "HTL-S-SPA&Sea Towel") return "6N";
+            else return "4N";
         }
         private string PillingWashingProcedureBuilder(string? WashingProcedure, List<FiberDto> fiberComposition)
         {
@@ -347,12 +354,20 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
         private int BallNumberBuilder(string Menuname, List<FiberDto> fiberComposition)
         {
-            return 10;
+            if (Menuname == "O" || Menuname == "P" || Menuname == "T"
+                 || Menuname == "HTL-P-TableClothes" || Menuname == "HTL-N-Bed Sheet"
+                 || Menuname == "HTL-T-Bathrobe&Towel" || Menuname == "HTL-S-SPA&Sea Towel") return 25;
+            else 
+            {
+                var ballNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10;
+                return ballNum;
+            }
         }
 
         private string DryProcedureBuilder(string? DryProcedure, string Menuname, List<FiberDto> fiberComposition)
         {
-            return "Tumble Dry";
+            if (_helper.IsCompositionSourceExist("Animal", fiberComposition) > 0) return "Flat Dry";
+            else return "Tumble Dry";
         }
 
     }
