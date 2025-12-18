@@ -242,6 +242,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
+                SpecialCareInstruction = p.Sci,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
@@ -258,6 +259,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
+                SpecialCareInstruction = p.Sci,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
@@ -274,6 +276,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
+                SpecialCareInstruction = p.Sci,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
@@ -290,6 +293,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
+                SpecialCareInstruction = p.Sci,
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",

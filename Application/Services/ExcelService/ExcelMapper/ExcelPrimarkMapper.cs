@@ -24,6 +24,25 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             };
             return stringMap?.ToArray() ?? new string[0];
         }
+        public static string[] MapPM01(string? sampleDescription)
+        {
+            // 定义固定的单元格地址映射
+            List<string>? stringMap = null;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "G10","G61" },
+                "Fabric" => new List<string> { "AZ8", "AW12", "BO12", "AW23", "BO23" },
+                "Socks" => new List<string> { "F10" ,"F65"},
+                "Gloves" => new List<string> { "F19","F74" },
+                "Cap" => new List<string> { "F28","F83" },
+                _ => new List<string> { "G10", "G61" }
+            };
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
         public static string[] MapBra()
         {
             return new string[]

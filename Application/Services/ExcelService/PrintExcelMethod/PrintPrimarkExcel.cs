@@ -69,37 +69,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             CheckListDto dto,
             string reportNo)
         {
-            ////<-------------------------------------------------------------------------------------->
-            //string? tplName = null;
-            //bool foundInSub = false;
-            //// 1) 模板 sheet
-            //if (TemplateSheetNames.TryGetValue(itemName!, out var subDictionary))
-            //{
-            //    /* ---------- 其余测试保持原单关键字逻辑 ---------- */
-            //    foreach (var kvp in subDictionary)
-            //    {
-            //        if (string.IsNullOrEmpty(kvp.Key) ||
-            //            dto.sampleDescription!.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
-            //        {
-            //            tplName = kvp.Value;
-            //            foundInSub = true;
-            //            break;
-            //        }
-            //    }
 
-            //}
-            ////如果在 TemplateSheetNames 中未找到，尝试从 TemplateSheetNamesNormal 中查找
-            //if (!foundInSub)
-            //{
-            //    TemplateSheetNamesNormal.TryGetValue(itemName, out tplName);
-            //}
-
-            //// 如果仍未找到匹配的模板名
-            //if (tplName == null)
-            //{
-            //    Console.WriteLine("未找到对应的模板名");
-            //    tplName = "DefaultSheetName"; // 假设有一个默认模板名
-            //}
             var tplName = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal).GetTemplateName(itemName, dto.sampleDescription!);
             if (itemName == "Physical & Mechanical" || itemName == "Torque & Tension") 
             {
@@ -122,7 +92,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.Standard!,dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "Dimensional Stability" ||
+            if (/*itemName == "Dimensional Stability" ||*/
                 itemName == "Stability to Dry Cleaning" ||
                 itemName == "Stability to Washing" ||
                 itemName == "Appearance-Common" ||
@@ -147,7 +117,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             }
 
             int[]? afterWashMap = null;
-            if (itemName == "Dimensional Stability" ||
+            if (/*itemName == "Dimensional Stability" ||*/
                 itemName == "Stability to Dry Cleaning" ||
                 itemName == "Stability to Washing" ||
                 itemName == "Appearance-Common"||
@@ -161,13 +131,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
 
-                if (itemName == "Dimensional Stability")
-                {
-                    afterWash = string.Join(", ", dto.Sample!
-                        .Split(',')
-                        .Select(s => s.Trim())
-                        .SelectMany(s => new[] { $"{s}-5 Wash-23 Wash-32 Wash-45 Wash" }));
-                }
+                //if (itemName == "Dimensional Stability")
+                //{
+                //    afterWash = string.Join(", ", dto.Sample!
+                //        .Split(',')
+                //        .Select(s => s.Trim())
+                //        .SelectMany(s => new[] { $"{s}-5 Wash-23 Wash-32 Wash-45 Wash" }));
+                //}
                 string? iron = wp!.Iron;
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
@@ -178,7 +148,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
             if (itemName == "Colour Fastness to Hot Pressing") { capacity = 3; }// 特例处理，实际容量为3
             if (itemName == "Appearance"||itemName== "Appearance-Common") { capacity = 1; }
-            if ((itemName == "Dimensional Stability"||itemName=="Stability to Washing")&& !dto.sampleDescription!.Contains("Fabric")) { capacity = 1; }
+            if (itemName == "Dimensional Stability"||(itemName=="Stability to Washing"&& !dto.sampleDescription!.Contains("Fabric"))){ capacity = 1; }
             if (itemName == "Easycare/Non-Iron") { capacity = 1; }
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
@@ -371,11 +341,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             [("Dimensional Stability")] = new Dictionary<string, string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment", "DStoWashing-G" },
-                {"Socks", "DStoWashing-Acc" },
-                {"Gloves", "DStoWashing-Acc" },
-                {"Cap", "DStoWashing-Acc" },
+                {"Fabric", "PM01Washing-F" },
+                {"Garment", "PM01Washing-G" },
+                {"Socks", "PM01Washing-Acc" },
+                {"Gloves", "PM01Washing-Acc" },
+                {"Cap", "PM01Washing-Acc" },
             },
             [("Stability to Washing")] = new Dictionary<string, string>
             {
@@ -455,13 +425,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Appearance-Common"] = (n, m, l) => ExcelPrimarkMapper.MapAppearance(m),
             ["Colour Change and Staining"] = (n, m, l) => ExcelPrimarkMapper.MapAppearance(m),
             ["Spirality"] = (n, m, l) => ExcelPrimarkMapper.MapSpirality(m),
-            ["Dimensional Stability"] = (n, m, l) => ExcelPrimarkMapper.MapStability(l),
+            ["Dimensional Stability"] = (n, m, l) => ExcelPrimarkMapper.MapPM01(l),
             ["Stability to Washing"] = (n, m, l) => ExcelPrimarkMapper.MapStability(l),
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string,string, string, string[]>> AfterWashCellMapper = new()
         {
-            ["Dimensional Stability"] = (n, m, l) => ExcelPrimarkMapper.StabilityAf(l),
+            //["Dimensional Stability"] = (n, m, l) => ExcelPrimarkMapper.StabilityAf(l),
             ["Stability to Washing"] = (n, m, l) => ExcelPrimarkMapper.StabilityAf(l),
             ["Stability to Dry Cleaning"] = (n, m, l) => ExcelPrimarkMapper.DStoDCAf(),
             ["Print / Motif / Flock Durability"] = (n, m, l) => ExcelPrimarkMapper.DurabilityAf(),
@@ -638,7 +608,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BX4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["BF5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["BI6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["BR6"] = (wp, dto, reportNo) => "/";
+                    map["BR6"] = (wp, dto, reportNo) => "/ Iron";
                     map["AR7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
@@ -649,8 +619,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AJ4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["S5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["V6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AE6"] = (wp, dto, reportNo) =>"/";
+                    map["AE6"] = (wp, dto, reportNo) =>"/ Iron";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+
+                    map["P52"] = (wp, dto, reportNo) => reportNo;
+                    map["A54"] = (wp, dto, reportNo) => "BS EN ISO 5077:2008/BS EN ISO 3759:2011/BS EN ISO 6330:2021";
+                    map["I55"] = (wp, dto, reportNo) => w.WashingProcedure!;
+                    map["AJ55"] = (wp, dto, reportNo) => w.Temperature!;
+                    map["S56"] = (wp, dto, reportNo) => w.Ballast!;
+                    map["V57"] = (wp, dto, reportNo) => w.DryProcedure!;
+                    map["AE57"] = (wp, dto, reportNo) => "/ Iron";
+                    map["A58"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Cap")|| dto.sampleDescription!.Contains("Socks")|| dto.sampleDescription!.Contains("Gloves"))
                 {
@@ -660,8 +639,18 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AL4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["R5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["T6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AD6"] = (wp, dto, reportNo) =>"/";
+                    map["AD6"] = (wp, dto, reportNo) =>"/ Iron";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+
+                    map["N56"] = (wp, dto, reportNo) => reportNo;
+                    map["A58"] = (wp, dto, reportNo) => "BS EN ISO 5077:2008/BS EN ISO 3759:2011/BS EN ISO 6330:2021";
+                    map["G59"] = (wp, dto, reportNo) => w.WashingProcedure!;
+                    map["AL59"] = (wp, dto, reportNo) => w.Temperature!;
+                    map["R60"] = (wp, dto, reportNo) => w.Ballast!;
+                    map["T61"] = (wp, dto, reportNo) => w.DryProcedure!;
+                    map["AD61"] = (wp, dto, reportNo) => "/ Iron";
+                    map["A62"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+
                 }
                 return map;
             },
@@ -676,7 +665,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BX4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["BF5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["BI6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["BR6"] = (wp, dto, reportNo) => "/";
+                    map["BR6"] = (wp, dto, reportNo) => "/ Iron";
                     map["AR7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
@@ -687,7 +676,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AJ4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["S5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["V6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AE6"] = (wp, dto, reportNo) => "/";
+                    map["AE6"] = (wp, dto, reportNo) => "/ Iron";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Cap") || dto.sampleDescription!.Contains("Socks") || dto.sampleDescription!.Contains("Gloves"))
@@ -698,7 +687,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AL4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["R5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["T6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AD6"] = (wp, dto, reportNo) => "/";
+                    map["AD6"] = (wp, dto, reportNo) => "/ Iron";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
@@ -1168,7 +1157,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private static readonly Dictionary<string, int> OffsetRule = new()
         {
             ["Colour Fastness to Perspiration"] = 6,
-            ["Dimensional Stability"] = 4,
+            //["Dimensional Stability"] = 4,
             ["Stability to Washing"] = 4,
             ["Stability to Dry Cleaning"] = 4,
             ["Colour Fastness to Non Chlorine Bleach"] = 6,
@@ -1201,7 +1190,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
             }
             else if (afmap != null && afmap.Length > 0 
-                && (itemName == "Stability to Washing" || itemName == "Dimensional Stability")
+                && (itemName == "Stability to Washing" /*|| itemName == "Dimensional Stability"*/)
                 && !sampleDescription.Contains("Fabric"))
             {
                 for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
@@ -1220,7 +1209,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             if (itemName == "Appearance"
                 ||itemName== "Dimensional and Bra Wire Casing Stability"
-                ||itemName == "Appearance-Common")
+                ||itemName == "Appearance-Common" || itemName == "Dimensional Stability")
             {
                 for (int i = 0; i < cellAddrs.Length; i++)
                 {
