@@ -34,8 +34,16 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
                 wetOut, phyOut,
                 dto, _factory);
 
+            // 比较并标记更改
             ExcelHelper.CompareAndMarkChanges(wetTemplate, wetOut);
             ExcelHelper.CompareAndMarkChanges(physicsTemplate, phyOut);
+
+            // 排 wetOut 文件
+            SheetSorter.SortSheetsAndFixNames(wetOut);
+            // 排 phyOut 文件
+            SheetSorter.SortSheetsAndFixNames(phyOut);
+
+
             // 本机打开（开发环境可选）
             var paths = new List<string> { wetOut, phyOut };
 
@@ -55,6 +63,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
                     existingPaths.FirstOrDefault(p => p == phyOut));
 
         }
+
     }
 
 }

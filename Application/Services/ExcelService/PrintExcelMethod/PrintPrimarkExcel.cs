@@ -638,7 +638,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BX4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["BF5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["BI6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["BR6"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["BR6"] = (wp, dto, reportNo) => "/";
                     map["AR7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
@@ -649,7 +649,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AJ4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["S5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["V6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AE6"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["AE6"] = (wp, dto, reportNo) =>"/";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Cap")|| dto.sampleDescription!.Contains("Socks")|| dto.sampleDescription!.Contains("Gloves"))
@@ -660,7 +660,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AL4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["R5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["T6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AD6"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["AD6"] = (wp, dto, reportNo) =>"/";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
@@ -676,7 +676,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BX4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["BF5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["BI6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["BR6"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["BR6"] = (wp, dto, reportNo) => "/";
                     map["AR7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Garment"))
@@ -687,7 +687,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AJ4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["S5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["V6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AE6"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["AE6"] = (wp, dto, reportNo) => "/";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Cap") || dto.sampleDescription!.Contains("Socks") || dto.sampleDescription!.Contains("Gloves"))
@@ -698,7 +698,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AL4"] = (wp, dto, reportNo) => w.Temperature!;
                     map["R5"] = (wp, dto, reportNo) => w.Ballast!;
                     map["T6"] = (wp, dto, reportNo) => w.DryProcedure!;
-                    map["AD6"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["AD6"] = (wp, dto, reportNo) => "/";
                     map["A7"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
