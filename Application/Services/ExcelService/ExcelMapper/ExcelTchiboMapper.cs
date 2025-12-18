@@ -18,11 +18,11 @@
             List<string> stringMap=null;
             if (sampleDescription.Contains("Fabric"))
             {
-                stringMap = new List<string> { "AZ7", "BG7", "BN7", "BU7", "AW11", "BO11", "AW22", "BO22" };
+                stringMap = new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" };
             }
             else 
             {
-                stringMap = new List<string> { "G9"};
+                stringMap = new List<string> { "G10"};
             }
             return stringMap?.ToArray() ?? new string[0];
         }
@@ -247,11 +247,11 @@
             List<string> stringMap = null;
             if (sampleDescription.Contains("Fabric"))
             {
-                stringMap = new List<string> { "AZ12", "BR12","AZ23","BR23" };
+                stringMap = new List<string> { "AZ13", "BR13","AZ24","BR24" };
             }
             else
             {
-                stringMap = new List<string> { "W7", "AG9" };
+                stringMap = new List<string> { "W8", "AG10" };
             }
             return stringMap?.ToArray() ?? new string[0];
         }

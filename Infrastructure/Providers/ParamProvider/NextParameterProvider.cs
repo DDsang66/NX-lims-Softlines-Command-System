@@ -249,6 +249,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             {
                 Condition = infoDto.sampleDescription!.Contains("Knit") ? "Knit" : "Woven";
             }
+            else if (ItemName == "Fastness to Rubbing")
+            {
+                Condition = infoDto.sampleDescription!.Contains("dry rubbing only") ? "dry" : infoDto.sampleDescription!.Contains("wet rubbing only") ? "wet" : "both";
+            }
             else if (ItemName == "Swiss Pilling")
             {
                 Condition = infoDto.sampleDescription!.Contains("Home") ? "Home" : "Apparel";
@@ -287,6 +291,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Fastness to Dry Cleaning", null,null)] = "Multi-Fibre Type:LW",
             [("Cross Staining to Dry Cleaning", null, null)] = "Multi-Fibre Type:LW",
             [("Fastness to Water", null, null)] = "Multi-Fibre Type:LW",
+            [("Fastness to Rubbing", "dry", null)] = "dry rubbing only",
+            [("Fastness to Rubbing", "wet", null)] = "wet rubbing only",
+            [("Fastness to Rubbing", "both", null)] = "Both dry and wet rubbing",
             [("Cross Staining to Water", null,null)] = "Multi-Fibre Type:LW",
             [("Fastness to Chlorinated Water", null, null)] = "50mg/L",
             [("Stability to Dry Cleaning", null, null)] = "Wash Procedure: Commercial dry-cleaning",

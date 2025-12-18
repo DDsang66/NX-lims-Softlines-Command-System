@@ -462,14 +462,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["B10"] = (w, dto, reportNo) => w.Program!,
                 ["E10"] = (w, dto, reportNo) => w.Temperature!,
-                ["B10"] = (w, dto, reportNo) => w.SteelBallNum.ToString()!,
+                ["D11"] = (w, dto, reportNo) => w.SteelBallNum.ToString()!,
             },
             ["Cross Staining to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["B10"] = (w, dto, reportNo) => w.Program!,
                 ["E10"] = (w, dto, reportNo) => w.Temperature!,
-                ["D10"] = (w, dto, reportNo) => w.SteelBallNum.ToString()!,
+                ["E11"] = (w, dto, reportNo) => w.SteelBallNum.ToString()!,
             },
             ["Fastness to Dry Cleaning"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -491,9 +491,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
             },
-            ["Fastness to Rubbing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Fastness to Rubbing"] = (w, dto, reportNo) => 
             {
-                ["D1"] = (w, dto, reportNo) => reportNo,
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["D1"] = (w, dto, reportNo) => reportNo;
+                map["L23"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("dry rubbing only") ? "dry rubbing only"
+                : dto.sampleDescription.Contains("wet rubbing only") ?"wet rubbing only"
+                :"-";
+                return map;
             },
             ["Phenolic Yellowing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -768,12 +773,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["D6"] = (w, dto, reportNo) => dto.Parameter!.Contains("18000")?"18000 revs":"7200 revs";
                 if (string.IsNullOrEmpty(w.Sensitive) == false)
                 {
-                    map["J4"] = (w, dto, reportNo) => "√";
+                    map["U4"] = (w, dto, reportNo) => "√";
                     map["L43"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["U4"] = (w, dto, reportNo) => "√";
+                    map["J4"] = (w, dto, reportNo) => "√";
                     map["G38"] = (w, dto, reportNo) => w!.WashingProcedure!;
                     map["AK38"] = (w, dto, reportNo) => w!.Temperature!;
                     map["Q39"] = (w, dto, reportNo) => w!.Ballast!;

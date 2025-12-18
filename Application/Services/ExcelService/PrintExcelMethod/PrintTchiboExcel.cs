@@ -294,7 +294,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["AV5"] = (w, dto, reportNo) => w.WashingProcedure!;
                        map["BP5"] = (w, dto, reportNo) => w.DryProcedure!;
                        map["AR6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
-                       map["BJ6"] = (w, dto, reportNo) => w.Program!;
+                       map["AU7"] = (w, dto, reportNo) => w.Program!;
                    }
                    else if (dto.sampleDescription!.Contains("Garment"))
                    {
@@ -305,7 +305,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["A5"] = (w, dto, reportNo) => w.WashingProcedure!;
                        map["Y5"] = (w, dto, reportNo) => w.DryProcedure!;
                        map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
-                       map["W6"] = (w, dto, reportNo) => w.Program!;
+                       map["D7"] = (w, dto, reportNo) => w.Program!;
                    }
                    return map;
                },
@@ -607,7 +607,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             }
             else if (afmap != null && afmap.Length > 0 && itemName == "DS to Washing" && sampleDescription.Contains("Garment"))
             {
-                for (int i = 0; i < afmap.Length; i++)
+                for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
                 {
                     ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
                 }

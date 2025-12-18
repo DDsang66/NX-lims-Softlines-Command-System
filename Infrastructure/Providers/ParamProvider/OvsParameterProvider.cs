@@ -359,7 +359,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                  || Menuname == "HTL-T-Bathrobe&Towel" || Menuname == "HTL-S-SPA&Sea Towel") return 25;
             else 
             {
-                var ballNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10;
+                var ballNum = _helper.IsCompositionExist("Animal",fiberComposition!) == true ? 0 : 10;
                 return ballNum;
             }
         }
