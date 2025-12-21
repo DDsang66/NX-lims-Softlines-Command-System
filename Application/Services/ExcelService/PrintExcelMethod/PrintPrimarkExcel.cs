@@ -570,6 +570,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
+                ["AX52"] = (wp, dto, reportNo) => w.WashingProcedure!,
+                ["BW52"] = (wp, dto, reportNo) => w.Temperature!,
+                ["BF53"] = (wp, dto, reportNo) => w.Ballast!,
+                ["BH54"] = (wp, dto, reportNo) => w.DryProcedure!,
+                ["BQ54"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["AR55"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
             },
             ["Stability to Dry Cleaning"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

@@ -287,7 +287,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                 "D13","D19","D25"
+                 "A14","A20","A26"
             };
         }
 
@@ -309,7 +309,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                "F12","F19","F26","F33"
+                "D11","D18","D25","D32"
             };
         }
         public static string[] MapPhysicalMechanical(string? standard)
@@ -336,10 +336,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
                     stringMap = new List<string> { "AC3" };
                     break;
                 case "16 CFR 1500.51-53":
-                    stringMap = new List<string> { "A5" };
+                    stringMap = new List<string> { "A6" };
                     break;
                 default:
-                    stringMap = new List<string> { "A5" };
+                    stringMap = new List<string> { "A6" };
                     break;
             }
             return stringMap?.ToArray() ?? new string[0];
@@ -445,7 +445,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                "D37"
+                "A37"
             };
         }
 
