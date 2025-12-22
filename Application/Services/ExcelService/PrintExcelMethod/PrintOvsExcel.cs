@@ -15,10 +15,10 @@ using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPr
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
-    public sealed class PrintPrimarkExcel : IPrintExcelStrategy
+    public sealed class PrintOvsExcel : IPrintExcelStrategy
     {
         private readonly LabDbContextSec _db;
-        public PrintPrimarkExcel(LabDbContextSec db)
+        public PrintOvsExcel(LabDbContextSec db)
         {
             _db = db;
         }
@@ -131,13 +131,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
 
-                //if (itemName == "Dimensional Stability")
-                //{
-                //    afterWash = string.Join(", ", dto.Sample!
-                //        .Split(',')
-                //        .Select(s => s.Trim())
-                //        .SelectMany(s => new[] { $"{s}-5 Wash-23 Wash-32 Wash-45 Wash" }));
-                //}
                 string? iron = wp!.Iron;
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
@@ -239,39 +232,23 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
         private static readonly Dictionary<string, string> TemplateSheetNamesNormal = new()
         {
-            ["Abrasion of Knitted Footwear Garments - Modified Martindale"]= "Abrasion",
-            ["Absorbency of Textiles"]= "Absorbency",
-            ["Accelerotor"] = "Accelerotor",
-            ["Back Pocket Application Strength"]= "PM07PM08",
-            ["Belt Loop Application Strength"] = "PM07PM08",
-            ["Chenille Pile Loss"]= "PM06",
-            ["Elastic Extension and Modulus Test"]= "PM23&AR(TABER)",
-            ["EU Security of Attachment on Children's Clothing"] = "Attachment Strength",
-            ["Fibre Proof Properties"]= "Fibre Proof Properties",
-            ["Fibre Shedding"]= "PM03PM05",
-            ["Martindale Abrasion"]= "Abrasion",
-            ["Martindale Pilling"] = "Pilling Resistance",
-            ["Mass per Unit Area"]="Weight",
-            ["Nap Stability"]= "PM03PM05",
-            ["Peel Bond"]="Peel Bond",
-            ["Pile Retention"]= "PM03PM05",
-            ["Quick Dry"]= "DryingRate",
-            ["Residual Elongation"]= "Stretch&Recovery of Elastic",
-            ["Residual Elongation SHAPEWEAR"]= "Stretch&Recovery of Elastic",
-            ["Security of Attachment"]= "Attachment Strength",
-            ["Security of Attachment Buttons"]= "Attachment Strength",
-            ["Security of Attachment Mechanically Applied Fasteners"]="Attachment Strength",
-            ["Sharp Edges Restrctions"]= "Torque&Tension",
-            ["Sharp Point Restrctions"]= "Torque&Tension",
-            ["Small Parts Restrictions"]= "Torque&Tension",
-            ["Shower Resistant Claims Spray Rating"] = "WaterRepellency",
-            ["Tear Strength"]= "Tearing Strength",
+            ["Water Permeability/Hydrostatic Head"] = "Hydrostatic",
+            ["Spray Test"] = "Water Repellency",
+            ["Air Permeability"] = "Air Permeability",
+            ["Absorbency"] = "Absorbency",
+            ["Moisture Management"] = "Moisture Management",
+            ["Pilling Resistance"] = "Pilling Resistance",
+            ["Abrasion Resistance"] = "Abrasion Resistance",
+            ["Tear Strength"] = "Tearing Strength",
             ["Tensile Strength"] = "Tensile Strength",
-            ["Unrecovered Elongation"] = "Stretch&Recovery of Elastic",
-            ["Waterproof Claims Hydrostatic Head"] = "Hydrostatichead",
-            ["Wind Resistant Claims Air Permeability"] = "Air Permeability",
-            ["Zip Fasteners"]= "ZipperStrength",
-            ["Vertical Wicking of Textiles"] = "Wicking",
+            ["Stretch & Recovery"] = "Stretch&Recovery of Elastic",
+            ["Slide Fastness(Zipper)"] = "Zipper Strength",
+            ["Pull Test"] = "Attachment Strength",
+            ["Vertical Wicking"] = "Wicking",
+            ["Weight per Square Meter"]= "Weight",
+            ["Fabric Width"] = "Fabric Width",
+            ["Drying Rate"] = "DryingRate",
+            ["Electrostatic Properties"]= "Electrostatic Properties",
 
             ["Colour Fastness to Chlorinated Water"] = "CFtoSublimation&HotPressing&Cl",
             ["Colour Fastness to Chlorine Bleach"] = "CFtoPerspiration&Bleach",
@@ -318,22 +295,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {"Fabric", "Bursting Strength" },
                 {"Garment","Bursting Strength-G"},
             },
-            [("Physical & Mechanical")] = new Dictionary<string, string>
-            {
-                {"EN 71-1:2014+A1:2018 8.4", "Attachment Strength" },
-            },
-            [("Physical & Mechanical")] = new Dictionary<string, string>
-            {
-                {"ASTM F963-23", "ASTM F963-23" },
-            },
-            [("Torque & Tension")] = new Dictionary<string, string>
-            {
-                {"16 CFR 1500.51-53", "Torque&Tension" },
-            },
-            [("Torque & Tension")] = new Dictionary<string, string>
-            {
-                {"EN 71-1:2024+A1:2018", "Attachment Strength" },
-            },
             [("Spirality")] = new Dictionary<string, string>
             {
                 {"Fabric", "Spirality-F" },
@@ -359,86 +320,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private static readonly Dictionary<string, Func<string, string, string, string[]>> CellMapper = new()
         {
             ["Abrasion of Knitted Footwear Garments - Modified Martindale"] = (n, m, l) => ExcelPrimarkMapper.MapAbrasion(m),
-            ["Absorbency of Textiles"] = (n, m, l) => ExcelPrimarkMapper.MapAbsorbency(),
-            ["Accelerotor"] = (n, m, l) => ExcelPrimarkMapper.MapAccelerotor(),
-            ["Back Pocket Application Strength"] = (n, m, l) => ExcelPrimarkMapper.MapPM07PM08(m),
-            ["Belt Loop Application Strength"] = (n, m, l) => ExcelPrimarkMapper.MapPM07PM08(m),
-            ["Chenille Pile Loss"] = (n, m, l) => ExcelPrimarkMapper.MapPM06(),
-            ["Elastic Extension and Modulus Test"] = (n, m, l) => ExcelPrimarkMapper.MapPM23TABER(m),
-            ["EU Security of Attachment on Children's Clothing"] = (n, m, l) => ExcelPrimarkMapper.MapAttachmentStrength(),
-            ["Fibre Proof Properties"] = (n, m, l) => ExcelPrimarkMapper.MapFibreProof(),
-            ["Fibre Shedding"] = (n, m, l) => ExcelPrimarkMapper.MapPM03PM05(m),
-            ["Martindale Abrasion"] = (n, m, l) => ExcelPrimarkMapper.MapAbrasion(m),
-            ["Martindale Pilling"] = (n, m, l) => ExcelPrimarkMapper.MapPilling(),
-            ["Mass per Unit Area"] = (n, m, l) => ExcelPrimarkMapper.MapWeight(),
-            ["Nap Stability"] = (n, m, l) => ExcelPrimarkMapper.MapPM03PM05(m),
-            ["Peel Bond"] = (n, m, l) => ExcelPrimarkMapper.MapPeelBond(),
-            ["Pile Retention"] = (n, m, l) => ExcelPrimarkMapper.MapPM03PM05(m),
-            ["Quick Dry"] = (n, m, l) => ExcelPrimarkMapper.MapDryRate(),
-            ["Residual Elongation"] = (n, m, l) => ExcelPrimarkMapper.MapElastic(),
-            ["Residual Elongation SHAPEWEAR"] = (n, m, l) => ExcelPrimarkMapper.MapElastic(),
-            ["Security of Attachment"] = (n, m, l) => ExcelPrimarkMapper.MapAttachmentStrength(),
-            ["Security of Attachment Buttons"] = (n, m, l) => ExcelPrimarkMapper.MapAttachmentStrength(),
-            ["Security of Attachment Mechanically Applied Fasteners"] = (n, m, l) => ExcelPrimarkMapper.MapAttachmentStrength(),
-            ["Sharp Edges Restrctions"] = (n, m, l) => ExcelPrimarkMapper.MapTorqueTension(m),
-            ["Sharp Point Restrctions"] = (n, m, l) => ExcelPrimarkMapper.MapTorqueTension(m),
-            ["Small Parts Restrictions"] = (n, m, l) => ExcelPrimarkMapper.MapTorqueTension(m),
-            ["Shower Resistant Claims Spray Rating"] = (n, m, l) => ExcelPrimarkMapper.MapRepellency(l),
-            ["Tear Strength"] = (n, m, l) => ExcelPrimarkMapper.MapTear(),
-            ["Tensile Strength"] = (n, m, l) => ExcelPrimarkMapper.MapTensile(),
-            ["Unrecovered Elongation"] = (n, m, l) => ExcelPrimarkMapper.MapElastic(),
-            ["Waterproof Claims Hydrostatic Head"] = (n, m, l) => ExcelPrimarkMapper.MapHydroatatic(),
-            ["Wind Resistant Claims Air Permeability"] = (n, m, l) => ExcelPrimarkMapper.MapAir(),
-            ["Zip Fasteners"] = (n, m, l) => ExcelPrimarkMapper.MapZipper(),
-            ["Vertical Wicking of Textiles"] = (n, m, l) => ExcelPrimarkMapper.MapWicking(),
-            ["Bursting Strength"] = (n, m, l) => ExcelPrimarkMapper.MapBursting(l),
-            ["Seam Slippage"] = (n, m, l) => ExcelPrimarkMapper.MapSlippageStrength(n,l),
-            ["Seam Strength"] = (n, m, l) => ExcelPrimarkMapper.MapSlippageStrength(n,l),
-            ["Physical & Mechanical"] = (n, m, l) => ExcelPrimarkMapper.MapPhysicalMechanical(m),
-            ["Torque & Tension"] = (n, m, l) => ExcelPrimarkMapper.MapTorqueTension(m),
 
-
-            ["Colour Fastness to Chlorinated Water"] = (n,m , l) => ExcelPrimarkMapper.MapSPC(n),
-            ["Colour Fastness to Chlorine Bleach"] = (n, m, l) => ExcelPrimarkMapper.MapPB(n),
-            ["Colour Fastness to Dry Cleaning"] = (n, m, l) => ExcelPrimarkMapper.MapYD(n),
-            ["Colour Fastness to Hot Pressing"] = (n, m, l) => ExcelPrimarkMapper.MapSPC(n),
-            ["Colour Fastness to Light"] = (n, m, l) => ExcelPrimarkMapper.MapWRLW(n),
-            ["Colour Fastness to Non Chlorine Bleach"] = (n, m, l) => ExcelPrimarkMapper.MapPB(n),
-            ["Colour Fastness to Perspiration"] = (n, m, l) => ExcelPrimarkMapper.MapPB(n),
-            ["Colour Fastness to PVC Migration"] = (n, m, l) => ExcelPrimarkMapper.MapSeaWaterPVC(n),
-            ["Colour Fastness to Rubbing"] = (n, m, l) => ExcelPrimarkMapper.MapWRLW(n),
-            ["Colour Fastness to Saliva"] = (n, m, l) => ExcelPrimarkMapper.MapCFtoSalivaSweat(),
-            ["Colour Fastness to Saliva and Perspiration"] = (n, m, l) => ExcelPrimarkMapper.MapCFtoSalivaSweat(),
-            ["Colour Fastness to Sea Water"] = (n, m, l) => ExcelPrimarkMapper.MapSeaWaterPVC(n),
-            ["Colour Fastness to Washing"] = (n, m, l) => ExcelPrimarkMapper.MapWRLW(n),
-            ["Colour Fastness to Water"] = (n, m, l) => ExcelPrimarkMapper.MapWRLW(n),
-            ["Dimensional and Bra Wire Casing Stability"] = (n, m, l) => ExcelPrimarkMapper.MapBra(),
-            ["Dye Transfer in Storage"] = (n, m, l) => ExcelPrimarkMapper.MapCFtoTD(n),
-            ["Easycare/Non-Iron"] = (n, m, l) => ExcelPrimarkMapper.MapCFtoEI(m),
-            ["Phenolic Yellowing"] = (n, m, l) => ExcelPrimarkMapper.MapYD(n),
-            ["Print / Motif / Flock Durability"] = (n, m, l) => ExcelPrimarkMapper.MapDurability(),
-            ["Print Durability"] = (n, m, l) => ExcelPrimarkMapper.MapDurability(),
-            ["Security of Attachment(Wash)"] = (n, m, l) => ExcelPrimarkMapper.MapAttachment(),
-            ["Stability to Dry Cleaning"] = (n, m, l) => ExcelPrimarkMapper.MapStabilityToDryClean(),
-            ["TS Board Fit"] = (n, m, l) => ExcelPrimarkMapper.MapCFtoTD(n),
-            ["Appearance"] = (n, m, l) => ExcelPrimarkMapper.MapAppearance(m),
-            ["Appearance-Common"] = (n, m, l) => ExcelPrimarkMapper.MapAppearance(m),
-            ["Colour Change and Staining"] = (n, m, l) => ExcelPrimarkMapper.MapAppearance(m),
-            ["Spirality"] = (n, m, l) => ExcelPrimarkMapper.MapSpirality(l),
-            ["Dimensional Stability"] = (n, m, l) => ExcelPrimarkMapper.MapPM01(l),
-            ["Stability to Washing"] = (n, m, l) => ExcelPrimarkMapper.MapStability(l),
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string,string, string, string[]>> AfterWashCellMapper = new()
         {
-            //["Dimensional Stability"] = (n, m, l) => ExcelPrimarkMapper.StabilityAf(l),
             ["Stability to Washing"] = (n, m, l) => ExcelPrimarkMapper.StabilityAf(l),
-            ["Stability to Dry Cleaning"] = (n, m, l) => ExcelPrimarkMapper.DStoDCAf(),
-            ["Print / Motif / Flock Durability"] = (n, m, l) => ExcelPrimarkMapper.DurabilityAf(),
-            ["Print Durability"] = (n, m, l) => ExcelPrimarkMapper.DurabilityAf(),
-            ["Security of Attachment(Wash)"] = (n, m, l) => ExcelPrimarkMapper.AttachmentAf(),
-            ["Easycare/Non-Iron"] = (n, m, l) => ExcelPrimarkMapper.EasyCareAf(m),
-            ["Appearance-Common"] = (n, m, l) => ExcelPrimarkMapper.AppearanceAf(),
         };
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> WetExtraMap = new()
         {
@@ -709,293 +596,38 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         };
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> PhyExtraMap = new()
         {
-            ["Abrasion of Knitted Footwear Garments - Modified Martindale"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A21"] = (w, dto, reportNo) => dto.Standard!,
-                ["C25"] = (w, dto, reportNo) => "12KPa",
-                ["I25"] = (w, dto, reportNo) => "8000 revs",
-            },
-            ["Absorbency of Textiles"] = (w, dto, reportNo) =>
+            ["Water Permeability/Hydrostatic Head"] = (w, dto, reportNo) => 
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
                 map["M1"] = (w, dto, reportNo) => reportNo;
                 map["A3"] = (w, dto, reportNo) => dto.Standard!;
-                map["A31"] = (w, dto, reportNo) => w.Bleach + " Cycle";
-                map["S30"] = (w, dto, reportNo) => w.Temperature!;
-                map["E30"] = (w, dto, reportNo) => w.Program!;
-                map["R31"] = (w, dto, reportNo) => w.DryProcedure!;
-                map["H30"] = (w, dto, reportNo) => w.DryCleanProcedure!;
-                map["AF31"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
-                map["A32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
-                if (dto.sampleDescription!.Contains("Fabric"))
+                if (dto.Parameter!.Contains("Original")) map["I7"] = (w, dto, reportNo) => "1800";
+                else 
                 {
-                    map["A29"] = (w, dto, reportNo) => "AATCC TM 135-2018t";
+                    map["D15"] = (w, dto, reportNo) => dto.Parameter!.Contains("1 Cycle")?"1" 
+                    : dto.Parameter.Contains("3 Cycles") ? "3"
+                    : dto.Parameter.Contains("5 Cycles") ? "5"
+                    :"1";
+                    map["I15"] = (w, dto, reportNo) => dto.Parameter!.Contains("2000")?"2000"
+                    :dto.Parameter.Contains("3000")?"3000"
+                    :dto.Parameter.Contains("5000")?"5000"
+                    :"1800";
+
+                    map["G32"]= (w, dto, reportNo) => w.WashingProcedure!;
+                    map["AJ32"] = (w, dto, reportNo) => w.Temperature!;
+                    map["Q33"] = (w, dto, reportNo) => w.Ballast!;
+                    map["L34"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["U34"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["A35"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
-                else if (dto.sampleDescription!.Contains("Garment"))
-                {
-                    map["A29"] = (w, dto, reportNo) => "AATCC TM 150-2018t/AATCC TS006";
-                }
-                return map;
+               return map;
             },
-            ["Accelerotor"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Spray Test"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>> 
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["N5"] = (w, dto, reportNo) => "2000",
-                ["AF5"] = (w, dto, reportNo) => dto.Parameter!.Contains("3") ? "3" : "5",
+
             },
-            ["Back Pocket Application Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-            },
-            ["Belt Loop Application Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-            },
-            ["Chenille Pile Loss"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-            },
-            ["Elastic Extension and Modulus Test"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-            },
-            ["EU Security of Attachment on Children's Clothing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["A17"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Fibre Proof Properties"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Fibre Shedding"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-            },
-            ["Martindale Abrasion"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["C5"] = (w, dto, reportNo) => "9KPa",
-                ["A6"] = (w, dto, reportNo) => dto.Parameter!.Contains("@ 5000")
-                ? "{<100g/m²：10000 rubs；101~199g/m²：15000 rubs；>2000g/m²：20000 rubs}"
-                : "{<200g/m²：10000 rubs；201~270g/m²：15000 rubs；271~390g/m²：18000 rubs；>390g/m²：20000 rubs}",
-                ["AA5"] = (w, dto, reportNo) => dto.Parameter!.Contains("@ 5000") ? "@ 5000 revs" : "-"
-            },
-            ["Martindale Pilling"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["F3"] = (w, dto, reportNo) => dto.Standard!,
-                ["D4"] = (w, dto, reportNo) => dto.Parameter!.Contains("2000 revs")?"2000 revs":"500 revs",
-                ["AC3"] = (w, dto, reportNo) => dto.Parameter!.Contains("N/A") ? "N/A" : "-",
-                ["G40"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["AJ40"] = (w, dto, reportNo) => w.Temperature!,
-                ["Q41"] = (w, dto, reportNo) => w.Ballast!,
-                ["S42"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AB42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "/ Iron" : w.IronMethod!
-            },
-            ["Mass per Unit Area"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["S3"] = (w, dto, reportNo) => dto.Parameter!.Contains("unit")?"刻一个":"-",
-            },
-            ["Nap Stability"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-            },
-            ["Peel Bond"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Pile Retention"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-            },
-            ["Quick Dry"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Residual Elongation"] = (w, dto, reportNo) =>
-            {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["A3"] = (w, dto, reportNo) => dto.Standard!;
-                map["AE9"] = (w, dto, reportNo) => dto.Parameter!.Contains("N/A") ? "N/A" : "-";
-                if (dto.sampleDescription!.Contains("Woven"))
-                {
-                    map["A5"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min"
-                    : "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
-                }
-                else if (dto.sampleDescription!.Contains("Knit"))
-                {
-                    map["A5"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
-                    "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
-                };
-                map["L7"] = (w, dto, reportNo) => "5";
-                map["F7"] = (w, dto, reportNo) => dto.Parameter!.Contains("15")?"15"
-                : dto.Parameter.Contains("20")?"20"
-                : dto.Parameter.Contains("25")?"25"
-                : dto.Parameter.Contains("30")?"30":"40";
-                return map;
-            },
-            ["Residual Elongation SHAPEWEAR"] = (w, dto, reportNo) =>
-            {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["A3"] = (w, dto, reportNo) => dto.Standard!;
-                map["AE9"] = (w, dto, reportNo) => dto.Parameter!.Contains("N/A") ? "N/A" : "-";
-                if (dto.sampleDescription!.Contains("Woven"))
-                {
-                    map["A5"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min"
-                    : "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
-                }
-                else if (dto.sampleDescription!.Contains("Knit"))
-                {
-                    map["A5"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
-                    "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
-                };
-                map["L7"] = (w, dto, reportNo) => "5";
-                map["F7"] = (w, dto, reportNo) => "36";
-                return map;
-            },
-            ["Security of Attachment"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["A17"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Security of Attachment Buttons"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Security of Attachment Mechanically Applied Fasteners"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A17"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Sharp Edges Restrctions"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A4"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Sharp Point Restrctions"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A4"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Small Parts Restrictions"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A4"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Shower Resistant Claims Spray Rating"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["G19"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["AJ19"] = (w, dto, reportNo) => w.Temperature!,
-                ["P20"] = (w, dto, reportNo) => w.Ballast!,
-                ["S21"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AB21"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "/ Iron" : w.IronMethod!
-            },
-            ["Tear Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Tensile Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Unrecovered Elongation"] = (w, dto, reportNo) =>
-            {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["A3"] = (w, dto, reportNo) => dto.Standard!;
-                map["AE9"] = (w, dto, reportNo) => dto.Parameter!.Contains("N/A") ? "N/A" : "-";
-                if (dto.sampleDescription!.Contains("Woven"))
-                {
-                    map["A5"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min"
-                    : "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
-                }
-                else if (dto.sampleDescription!.Contains("Knit"))
-                {
-                    map["A5"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
-                    "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
-                };
-                map["L7"] = (w, dto, reportNo) => "5";
-                map["F7"] = (w, dto, reportNo) => dto.Parameter!.Contains("30") ? "30" : "40";
-                return map;
-            },
-            ["Waterproof Claims Hydrostatic Head"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["I8"] = (w, dto, reportNo) => dto.Parameter!.Contains("1600mm") ? "1600" 
-                : dto.Parameter!.Contains("1000mm") ?"1000"
-                : dto.Parameter!.Contains("10000mm") ? "10000"
-                : dto.Parameter!.Contains("8000mm") ? "8000"
-                :"/" ,
-                ["I15"] = (w, dto, reportNo) => dto.Parameter!.Contains("1600mm") ? "1600"
-                : dto.Parameter!.Contains("1000mm") ? "1000"
-                : dto.Parameter!.Contains("10000mm") ? "10000"
-                : dto.Parameter!.Contains("8000mm") ? "8000"
-                : "/",
-                ["G30"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["AJ30"] = (w, dto, reportNo) => w.Temperature!,
-                ["P31"] = (w, dto, reportNo) => w.Ballast!,
-                ["S32"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AB32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "/ Iron" : w.IronMethod!
-                //洗前洗后都有
-            },
-            ["Zip Fasteners"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Vertical Wicking of Textiles"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["J1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-            },
-            ["Wind Resistant Claims Air Permeability"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
-            {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["A25"] = (w, dto, reportNo) => dto.Standard!,
-                ["F5"] = (w, dto, reportNo) =>"100",
-                ["E6"] = (w, dto, reportNo) => "20",
-            },
-            ["Physical & Mechanical"] = (w, dto, reportNo) => 
-            {                
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                if (dto.Standard!.Contains("ASTM F963-23")) map["A3"] = (w, dto, reportNo) => dto.Standard!;
-                else if (dto.Standard!.Contains( "EN 71-1:2014+A1:2018 8.4")) map["A17"] = (w, dto, reportNo) => dto.Standard!;
-                return map;
-            },
-            ["Torque & Tension"] = (w, dto, reportNo) =>
-            {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                if (dto.Standard == "EN 71-1:2014+A1:2018 8.4") map["A17"] = (w, dto, reportNo) => dto.Standard!;
-                return map;
-            },
+
+
             ["Bursting Strength"] = (w, dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();

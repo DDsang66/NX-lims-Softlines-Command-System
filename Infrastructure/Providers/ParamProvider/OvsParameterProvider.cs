@@ -148,6 +148,22 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("Water Permeability/Hydrostatic Head", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.MenuName=="PP-Period Panties"? "3N" : p.MenuName =="A-SKI wear"?"4N":p.WashingProcedure,
+                Temperature = p.MenuName == "PP-Period Panties" ? "30" : p.MenuName == "A-SKI wear" ? "30" : p.WashingProcedure!.Contains("3")?"30":"40",
+                DryProcedure = p.MenuName == "PP-Period Panties" ? "Line Dry" : p.MenuName == "A-SKI wear" ? "Line Dry" : p.DryProcedure,
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                : "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -206,6 +222,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     {
                         "A-SKI wear" =>"5 Cycle",
                         "I-SKI wear" => "3 Cycle",
+                        "PP-Period Panties" => "1 Cycle",
                         _ => null
                     };
                     break;
@@ -218,6 +235,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                         "UM-Umbrellas" => "Original Sample",
                         "A-SKI wear" or "A-Act" =>"5 Cycle",
                         _ => "N/A"
+                    };
+                    condition1 = infoDto.menuName switch
+                    {
+                        "E" => "DC",
+                        _ => null
                     };
                     break;
                 case "Air Permeability":
@@ -283,12 +305,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Calculation of Color Differences", null, null)] = "∆E - D65 and TL84",
             [("Movement after Washing", null, null)] = "TM179 Option1, Test Method Same as Dimensional Stability",
             [("Water Permeability/Hydrostatic Head", "1800", null)] = "Press: 1800mmH2O，Original Sample",
-            [("Water Permeability/Hydrostatic Head", "2000", "3 Cycle")] = "Press: 2000mmH2O，After 3Cycles",
+            [("Water Permeability/Hydrostatic Head", "2000", "3 Cycle")] = "Press: 2000mmH2O，After 3 Cycles",
             [("Water Permeability/Hydrostatic Head", "2000", "5 Cycle")] = "Press: 2000mmH2O，After 5 Cycles",
+            [("Water Permeability/Hydrostatic Head", "3000", "1 Cycle")] = "Press: 3000mmH2O，After 1 Cycle",
             [("Water Permeability/Hydrostatic Head", "3000", null)] = "Press: 3000mmH2O，After 5 Cycles",
             [("Water Permeability/Hydrostatic Head", "5000", "3 Cycle")] = "Press: 5000mmH2O，After 3 Cycles",
             [("Water Permeability/Hydrostatic Head", "5000", "5 Cycle")] = "Press: 5000mmH2O，After 5 Cycles",
             [("Water Repellency", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
+            [("Water Repellency", "1 Cycle", "DC")] = "After 1 Cycle；Dry Cleaning Cycle. ",
             [("Water Repellency", "5 Cycle", null)] = "After 5 Cycle；4N@40°C. ",
             [("Water Repellency", "Original Sample", null)] = "Original Sample",
             [("Air Permeability", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
@@ -369,6 +393,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             if (_helper.IsCompositionSourceExist("Animal", fiberComposition) > 0) return "Flat Dry";
             else return "Tumble Dry";
         }
+
+
 
     }
 }

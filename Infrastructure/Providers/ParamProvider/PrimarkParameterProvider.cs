@@ -537,6 +537,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             //仅适用于合成纤维，羊毛，晴纶，及其混纺物
             //长丝不做
             //抓绒只测试正面
+            if(sampleDescription.Contains("Filament"))return Result = "N/A";
             var rateS = _helper.CompositionRate(fiberComposition, "Silk");
             if (rateS > 0) return Result = "N/A";
             var rateW = _helper.CompositionRate(fiberComposition, "Wool");

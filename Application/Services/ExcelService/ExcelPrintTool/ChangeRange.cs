@@ -24,8 +24,22 @@ public static class SheetSorter
         var sheetList = sheets!.Elements<Sheet>().ToList();
         var nameMap = sheetList.Select((s, idx) => new { Sheet = s, OldIndex = idx }).ToList();
 
-        /* 2. 按名称排序 */
-        var ordered = nameMap.OrderBy(x => x.Sheet.Name!.Value, StringComparer.OrdinalIgnoreCase).ToList();
+        /* 2. 自定义排序 */
+        var ordered = nameMap
+            .OrderBy(x =>
+            {
+                var first = char.ToUpperInvariant(x.Sheet.Name.Value[0]);
+                // 特殊字母的优先级：D=1，S=2，A=3；其余字母=0（保持字母序）
+                return first switch
+                {
+                    'P' => 1,
+                    'S' => 2,
+                    'A' => 3,
+                    _ => 0
+                };
+            })
+            .ThenBy(x => x.Sheet.Name!.Value, StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
         /* 3. 建立 旧索引→新索引 映射 */
         var indexMap = new Dictionary<int, int>();
