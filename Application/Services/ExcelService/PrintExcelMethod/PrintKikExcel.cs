@@ -210,6 +210,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {"Tights","DStoWashing&DC-BBPSC"},
                 {"Socks","DStoWashing&DC-BBPSC"},
                 {"Caps","DStoWashing&DC-BBPSC"},
+                {"Fabric and Home Textile","DStoWashing-F"},
             },
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()
@@ -247,16 +248,31 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         };
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, string, Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>>> WetExtraMap = new()
         {
-            ["DS to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["DS to Washing"] = (w, dto, reportNo) =>
             {
-                ["P1"] = (w, dto, reportNo) => reportNo,
-                ["L4"] = (w, dto, reportNo) => w.Temperature!,
-                ["J5"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["AG5"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
-                ["N6"] = (w, dto, reportNo) => w.SpecialCareInstruction ?? "-",
-                ["W8"] = (w, dto, reportNo) => "1",
-                ["AG108"] = (w, dto, reportNo) => "1",
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>() ;
+                if (dto.sampleDescription!.Contains("Fabric and Home Textile"))
+                {
+                    map["BC1"] = (w, dto, reportNo) => reportNo;
+                    map["BA4"] = (w, dto, reportNo) => w.Temperature!;
+                    map["BB5"] = (w, dto, reportNo) => w.WashingProcedure!;
+                    map["AR6"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["BJ6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["AR7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) ? "-":w.SpecialCareInstruction;
+                    map["AZ13"] = (w, dto, reportNo) => "1";
+                }
+                else
+                {
+                    map["P1"] = (w, dto, reportNo) => reportNo;
+                    map["L4"] = (w, dto, reportNo) => w.Temperature!;
+                    map["J5"] = (w, dto, reportNo) => w.WashingProcedure!;
+                    map["AG5"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["N6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) ? "-" : w.SpecialCareInstruction;
+                    map["W8"] = (w, dto, reportNo) => "1";
+                    map["AG108"] = (w, dto, reportNo) => "1";
+                }
+                return map;
             },
             ["Appearance"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -430,6 +446,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private static readonly Dictionary<string, int> OffsetRule = new()
         {
             ["CF to Perspiration"] = 6,
+            ["DS to Washing"] = 4,
         };
         private void WriteSamples(
             ExcelWorksheet ws,
@@ -441,6 +458,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string sampleDescription)
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
+            if(itemName=="DS to Washing"&&!sampleDescription.Contains("Fabric and Home Textile")) offset = 0;
             if (itemName == "Appearance")
             {
                 for (int i = 0; i < cellAddrs.Length; i++)

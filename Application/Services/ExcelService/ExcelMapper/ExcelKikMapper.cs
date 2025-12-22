@@ -41,6 +41,7 @@
             else if (sampleDescription.Contains("Tights")) stringMap = new List<string> { "D33" };
             else if (sampleDescription.Contains("Socks")) stringMap = new List<string> { "D26" };
             else if (sampleDescription.Contains("Caps")) stringMap = new List<string> { "D43" };
+            else if (sampleDescription.Contains("Fabric and Home Textile")) stringMap = new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" };
             return stringMap?.ToArray() ?? new string[0];
         }
         public static string[] MapWRL(string ItemName)
