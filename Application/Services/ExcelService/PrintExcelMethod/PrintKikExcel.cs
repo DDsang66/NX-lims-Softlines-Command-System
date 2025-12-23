@@ -62,7 +62,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS")
+            if (itemName == "DS to Washing")
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -77,6 +77,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             offset = OffsetRule.GetValueOrDefault(itemName, 0);
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
             if (itemName == "Appearance") { capacity = 1; }
+            if (itemName == "DS to Washing" && !dto.sampleDescription!.Contains("Fabric")) capacity = 1;
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
 

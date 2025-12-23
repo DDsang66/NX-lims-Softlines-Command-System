@@ -622,10 +622,52 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                return map;
             },
-            ["Spray Test"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>> 
+            ["Spray Test"] = (w, dto, reportNo) => 
             {
-
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                map["A3"] = (w, dto, reportNo) => dto.Standard!;
+                if (dto.sampleDescription!.Contains("Cycle")) 
+                {
+                    map["C12"]= (w, dto, reportNo) => dto.Parameter!.Contains("1 Cycle")?"1" : "5";
+                    if (!string.IsNullOrEmpty(w.DryCleanProcedure)) map["L25"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    else 
+                    {
+                        map["G20"] = (w, dto, reportNo) => w.WashingProcedure!;
+                        map["AJ20"] = (w, dto, reportNo) => w.Temperature!;
+                        map["Q21"] = (w, dto, reportNo) => w.Ballast!;
+                        map["L22"] = (w, dto, reportNo) => w.DryProcedure!;
+                        map["U22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                        map["A23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                    }
+                }
+                return map;
             },
+            ["Air Permeability"] = (w, dto, reportNo) => 
+            { 
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                map["A3"] = (w, dto, reportNo) => dto.Standard!;
+                map["F5"] = (w, dto, reportNo) => "100"!;
+                map["E6"] = (w, dto, reportNo) => "20"!;
+                map["G30"] = (w, dto, reportNo) => w.WashingProcedure!;
+                map["AJ30"] = (w, dto, reportNo) => w.Temperature!;
+                map["Q31"] = (w, dto, reportNo) => w.Ballast!;
+                map["L32"] = (w, dto, reportNo) => w.DryProcedure!;
+                map["U32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                map["A33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                return map;
+            },
+            //["Absorbency"] = (w, dto, reportNo) => 
+            //{ 
+
+            //},
+
+
+
+
+
+
 
 
             ["Bursting Strength"] = (w, dto, reportNo) =>
