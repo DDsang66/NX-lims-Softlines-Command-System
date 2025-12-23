@@ -270,7 +270,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                     map["N6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) ? "-" : w.SpecialCareInstruction;
                     map["W8"] = (w, dto, reportNo) => "1";
-                    map["AG108"] = (w, dto, reportNo) => "1";
+                    map["AG10"] = (w, dto, reportNo) => "1";
                 }
                 return map;
             },
@@ -280,11 +280,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BG6"] = (w, dto, reportNo) => "1",
                 ["BE13"] = (w, dto, reportNo) => "1",
                 ["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
-                ["BA37"] = (w, dto, reportNo) => w.Temperature!,
-                ["BE38"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["AU39"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["BD39"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
-                ["AR40"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
+                ["BA39"] = (w, dto, reportNo) => w.Temperature!,
+                ["BE40"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["AU41"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["BD41"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["AR42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
