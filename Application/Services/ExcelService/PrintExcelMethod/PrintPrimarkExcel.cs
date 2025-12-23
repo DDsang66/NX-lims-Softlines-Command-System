@@ -454,10 +454,20 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A29"] = (w, dto, reportNo) => dto.Standard!,
                 ["L30"] = (w, dto, reportNo) => dto.Parameter == "N/A" ? "N/A" : "-",
             },
-            ["Colour Fastness to Dry Cleaning"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Colour Fastness to Dry Cleaning"] = (w, dto, reportNo) => 
             {
-                ["BC1"] = (w, dto, reportNo) => reportNo,
-                ["AR12"] = (w, dto, reportNo) => dto.Standard!,
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["BC1"] = (w, dto, reportNo) => reportNo;
+                if (w.DryCleanProcedure!.Contains("Petroleum"))
+                {
+                    map["AR12"] = (w, dto, reportNo) => "ref" + " " + dto.Standard!;
+                    map["BJ12"] = (w, dto, reportNo) => "With hydrocarbon solvent";
+                }
+                else 
+                {
+                    map["AR12"] = (w, dto, reportNo) => dto.Standard!;
+                }
+                return map;
             },
             ["Colour Fastness to Hot Pressing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

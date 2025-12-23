@@ -70,7 +70,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 "Dimensional and Bra Wire Casing Stability", "Martindale Pilling", "Print / Motif / Flock Durability",
                 "Print Durability","Shower Resistant Claims Spray Rating","Spirality","Stability to Dry Cleaning",
                 "Stability to Washing","Waterproof Claims Hydrostatic Head","Dimensional Stability","Security of Attachment(Wash)",
-                "Easycare/Non-Iron","Appearance-Common"}
+                "Easycare/Non-Iron","Appearance-Common","Colour Fastness to Dry Cleaning"}
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos

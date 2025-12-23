@@ -204,6 +204,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                       p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
             },
+            ("Colour Fastness to Dry Cleaning", _, _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                DryCleanProcedure =p.DCProcedure,
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+          p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
+            },
             ("Stability to Washing", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
