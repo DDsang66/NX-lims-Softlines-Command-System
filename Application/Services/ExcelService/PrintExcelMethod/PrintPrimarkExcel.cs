@@ -112,7 +112,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 samples = dto.Sample!
                     .Split(',')
                     .Select(s => s.Trim())
-                    .SelectMany(s => new[] { $"{s} - 5 Wash", $"{s} - 23 Wash", $"{s} - 32 Wash", $"{s} - 45 Wash" })
+                    .SelectMany(s => new[] { $"{s} × 5", $"{s} × 23", $"{s} × 32", $"{s} × 45" })
                     .ToArray();
             }
 
