@@ -658,10 +658,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["A33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 return map;
             },
-            //["Absorbency"] = (w, dto, reportNo) => 
-            //{ 
-
-            //},
+            ["Absorbency"] = (w, dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                if (dto.MenuName == "HTL-Y-Slipper") { }
+                return map;
+            },
 
 
 

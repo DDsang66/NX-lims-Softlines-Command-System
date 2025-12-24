@@ -698,7 +698,7 @@ public partial class LabDbContextSec : DbContext
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
             entity.Property(e => e.AfterWash)
-                .HasMaxLength(100)
+                .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("after_wash");
             entity.Property(e => e.Bleach)
@@ -780,7 +780,7 @@ public partial class LabDbContextSec : DbContext
 
             entity.Property(e => e.ParamId).HasColumnName("param_id");
             entity.Property(e => e.AfterWash)
-                .HasMaxLength(100)
+                .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("after_wash");
             entity.Property(e => e.Ballast)
