@@ -115,6 +115,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     .SelectMany(s => new[] { $"{s} × 5", $"{s} × 23", $"{s} × 32", $"{s} × 45" })
                     .ToArray();
             }
+            if (itemName == "TS Board Fit" && dto.Standard == "PM01")
+            {
+                samples = dto.Sample!
+                    .Split(',')
+                    .Select(s => s.Trim())
+                    .SelectMany(s => new[] { $"{s}" ,$"{s} After 5 Washes", $"{s} After 23 Washes", $"{s} After 32 Washes", $"{s} After 45 Washes" })
+                    .ToArray();
+            }
 
             int[]? afterWashMap = null;
             if (/*itemName == "Dimensional Stability" ||*/
@@ -130,14 +138,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
-
-                //if (itemName == "Dimensional Stability")
-                //{
-                //    afterWash = string.Join(", ", dto.Sample!
-                //        .Split(',')
-                //        .Select(s => s.Trim())
-                //        .SelectMany(s => new[] { $"{s}-5 Wash-23 Wash-32 Wash-45 Wash" }));
-                //}
                 string? iron = wp!.Iron;
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
@@ -150,6 +150,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             if (itemName == "Appearance"||itemName== "Appearance-Common") { capacity = 1; }
             if (itemName == "Dimensional Stability"||(itemName=="Stability to Washing"&& !dto.sampleDescription!.Contains("Fabric"))){ capacity = 1; }
             if (itemName == "Easycare/Non-Iron") { capacity = 1; }
+            if (itemName == "TS Board Fit"){ capacity = 2; }
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
 

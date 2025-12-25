@@ -30,6 +30,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                 "kik" => _sp.GetRequiredService<PrintKikExcel>(),
                 "next" => _sp.GetRequiredService<PrintNextExcel>(),
                 "ovs" => _sp.GetRequiredService<PrintOvsExcel>(),
+                "lpp" => _sp.GetRequiredService<PrintOvsExcel>(),
                 _ => throw new ArgumentException($"Unknown buyer: {buyer}")
             };
     }

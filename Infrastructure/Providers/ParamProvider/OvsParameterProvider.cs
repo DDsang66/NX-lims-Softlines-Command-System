@@ -206,14 +206,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "6N",
                 Temperature = "60",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = (p.MenuName=="O"||p.MenuName=="T")?p.DryProcedure:"Tumble Dry",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                AfterWash = p.MenuName!.Contains("I-SKI wear") ? "3 Cycles" : "5 Cycles",
+                AfterWash = "1 Cycle",
             },
             _ => new WetParameterIso
             {
@@ -331,6 +331,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     if (!infoDto.sampleDescription!.Contains("Woven")) condition = "N/A";
                     if (_helper.CompositionRate(infoDto.fiberComposition!, "Silk") > 0) condition1 = "After Wash";
                     break;
+                case "Stretch & Recovery":
+                    if (!infoDto.sampleDescription!.Contains("Woven")) condition1 = "N/A";
+                    break;
             }
 
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
@@ -379,6 +382,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Abrasion Resistance", "9", "15000")] = "Load: 9KPa；Evaluation at 15000 revs；CC ≥ 3-4 at 3.000 revs",
             [("Abrasion Resistance", "9", "20000")] = "Load: 9KPa；Evaluation at 20000 revs；CC ≥ 3-4 at 3.000 revs",
             [("Abrasion Resistance", "9", "30000")] = "Load: 9KPa；Evaluation at 30000 revs；CC ≥ 3-4 at 3.000 revs",
+            [("Abrasion Resistance","N/A",null)] = "N/A",
             [("Bursting Strength", "N/A", null)] = "N/A",
             [("Bursting Strength", null, "After Wash")] = "After 1 Hand Cycle",
             [("Bursting Strength", null, "Unit Weight")] = "Need additional unit weight",
@@ -386,8 +390,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Seam Slippage", null, "After Wash")] = "After 1 Hand Cycle",
             [("Seam Slippage", null, "Unit Weight")] = "Need additional unit weight",
             [("Stretch & Recovery", null,null)]= "Stretch: ≥ 15%/Residual Extension: ≤ 5%",
+            [("Stretch & Recovery", null, "N/A")] = "N/A",
             [("Tensile Strength", null, null)] = "Need additional unit weight",
-            [("Tear Strength", "", null)] = "Need additional unit weight",
+            [("Tear Strength", "200", null)] = " { Fabric up to 200 g/m2: ≥ 10 N; Fabric over 200 g/m2: ≥ 15 N }",
+            [("Tear Strength", "120", null)] = " { Fabric up to 200 g/m2: ≥ 15 N; Fabric over 200 g/m2: ≥ 20 N }",
+            [("Tear Strength", "120", null)] = " { Fabric up to 200 g/m2: ≥ 120 N; Fabric over 200 g/m2: ≥ 170 N }",
+            [("Tear Strength", "120", null)] = " {Fabric up to 120 g/m2: ≥ 10 N; Fabric over 120 g/m2: ≥ 15 N}",
+            [("Tear Strength", null, "N/A")] = " N/A",
             [("Bursting Strength", "N/A", null)] = "N/A",
             [("Drying Rate", null, null)] = "After 30 mins",
         };

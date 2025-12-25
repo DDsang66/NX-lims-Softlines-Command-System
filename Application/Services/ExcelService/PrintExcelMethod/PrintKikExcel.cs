@@ -58,7 +58,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
 
-
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
@@ -84,7 +83,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             if (itemName == "Appearance") { capacity = 1; }
             if (itemName == "DS to Washing" && !dto.sampleDescription!.Contains("Fabric")) capacity = 1;
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
-
 
             List<ExcelWorksheet> sheets = new List<ExcelWorksheet>();
             for (int idx = 0; idx < sheetCnt; idx++)

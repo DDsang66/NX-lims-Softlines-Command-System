@@ -661,15 +661,133 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Absorbency"] = (w, dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                if (dto.MenuName == "HTL-Y-Slipper") { }
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                map["A3"] = (w, dto, reportNo) => dto.Standard!;
+                if (dto.MenuName != "HTL-Y-Slipper")
+                {
+                    map["D17"]= (w, dto, reportNo) => "1";
+                    map["G29"] = (w, dto, reportNo) => w.WashingProcedure!;
+                    map["AJ29"] = (w, dto, reportNo) => w.Temperature!;
+                    map["Q30"] = (w, dto, reportNo) => w.Ballast!;
+                    map["L31"] = (w, dto, reportNo) => w.DryProcedure!;
+                    map["U31"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["A32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                }
                 return map;
             },
+            ["Moisture Management"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["AQ1"] = (w, dto, reportNo) => reportNo,
+                ["A3"] = (w, dto, reportNo) => dto.Standard!,
+            },
+            ["Pilling Resistance"]  = (w, dto, reportNo) => 
+            {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                if (dto.Standard!.Contains("12945-1"))
+                {
+                    map["G3"] = (w, dto, reportNo) => dto.Standard!;
+                    map["D4"] = (w, dto, reportNo) => "7200 & 10800 revs";
+                    if (w.AfterWash!.Contains("Original")) map["A5"] = (w, dto, reportNo) => "√";
+                    else
+                    {
+                        map["T5"] = (w, dto, reportNo) => w.AfterWash!.Contains("1") ? "1" : w.AfterWash.Contains("3") ? "3" : "5";
+                        if (!string.IsNullOrEmpty(w.DryCleanProcedure)) map["L36"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                        else
+                        {
+                            map["G31"] = (w, dto, reportNo) => w.WashingProcedure!;
+                            map["AJ31"] = (w, dto, reportNo) => w.Temperature!;
+                            map["Q32"] = (w, dto, reportNo) => w.Ballast!;
+                            map["L33"] = (w, dto, reportNo) => w.DryProcedure!;
+                            map["U33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                            map["A34"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                        }
+                    }
+                }
+                else if (dto.Standard!.Contains("12945-2"))
+                {
+                    map["F13"] = (w, dto, reportNo) => dto.Standard!;
+                    map["D14"] = (w, dto, reportNo) => "2000 revs";
+                    if (w.AfterWash!.Contains("Original")) { map["A15"] = (w, dto, reportNo) => "√"; map["A22"] = (w, dto, reportNo) => "√"; }
+                    else
+                    {
+                        map["T15"] = (w, dto, reportNo) => w.AfterWash!.Contains("1") ? "1" : w.AfterWash.Contains("3") ? "3" : "5";
+                        map["T22"] = (w, dto, reportNo) => w.AfterWash!.Contains("1") ? "1" : w.AfterWash.Contains("3") ? "3" : "5";
+                        if (!string.IsNullOrEmpty(w.DryCleanProcedure)) map["L36"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                        else
+                        {
+                            map["G31"] = (w, dto, reportNo) => w.WashingProcedure!;
+                            map["AJ31"] = (w, dto, reportNo) => w.Temperature!;
+                            map["Q32"] = (w, dto, reportNo) => w.Ballast!;
+                            map["L33"] = (w, dto, reportNo) => w.DryProcedure!;
+                            map["U33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                            map["A34"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
+                        }
+                    }
+                }
+                return map;
+            },
+            ["Abrasion Resistance"]= (w, dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                map["A3"]= (w, dto, reportNo) => dto.Standard!;
+                if (dto.Parameter!.Contains("N/A")) map["AC3"] = (w, dto, reportNo) => "N/A";
+                else 
+                {
+                    map["C5"] = (w, dto, reportNo) => dto.Parameter!.Contains("3KPa")?"3KPa"
+                    : dto.Parameter!.Contains("9KPa") ? "9KPa"
+                    : "12KPa";
+                    map["I5"] = (w, dto, reportNo) => dto.Parameter!.Contains("10000") ? "10000 revs"
+                    : dto.Parameter!.Contains("15000") ? "15000 revs"
+                    : dto.Parameter!.Contains("20000") ? "20000 revs"
+                    : "30000 revs";
 
-
-
-
-
-
+                    map["AA5"] = (w, dto, reportNo) => "@3000 revs";
+                }
+                return map;
+            },
+            ["Tear Strength"] = (w, dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                if (dto.Standard!.Contains("13937-2")) 
+                {
+                    map["Q3"] = (w, dto, reportNo) => "Tongue Tear";
+                }
+                if (dto.Standard!.Contains("13937-1"))
+                {
+                    map["Q3"] = (w, dto, reportNo) => "Elmendorf";
+                }
+                map["A3"] = (w, dto, reportNo) => dto.Standard!;
+                return map;
+            },
+            ["Tensile Strength"] = (w, dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                map["A3"] = (w, dto, reportNo) => dto.Standard!;
+                return map;
+            },
+            ["Stretch & Recovery"] = (w, dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (w, dto, reportNo) => reportNo;
+                map["A3"] = (w, dto, reportNo) => dto.Standard!;
+                if (dto.Parameter!.Contains("N/A")) map["I3"] = (w, dto, reportNo) => "N/A";
+                return map;
+            },
+            ["Slide Fastness(Zipper)"] = (w,dto,reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>> 
+            {
+                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["A3"] = (w, dto, reportNo) => dto.Standard!,
+            },
+            ["Pull Test"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["A3"] = (w, dto, reportNo) => dto.Standard!,
+            },
 
 
             ["Bursting Strength"] = (w, dto, reportNo) =>
