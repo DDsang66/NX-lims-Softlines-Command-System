@@ -77,7 +77,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" }
+            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure" }
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos
@@ -97,7 +97,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 {
                     Standard = input.Standard,
                     Sensitive = "N",
-                    ReportNumber = input.OrderNumber,
+                    ReportNumber = input.OrderNumber!,
                     ContactItem = itemName
                 };
                 Param = wetParam.CreateWetParameters(input);
