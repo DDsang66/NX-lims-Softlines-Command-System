@@ -151,7 +151,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Washing"] = "CFtoWashing&Rubbing&Light",
             ["CF to Rubbing"] = "CFtoWashing&Rubbing&Light",
             ["CF to Light"] = "CFtoWashing&Rubbing&Light",
-             ["CF to Light and Perspiration"] = "CFtoWashing&Rubbing&Light",
+            ["CF to Light and Perspiration"] = "CFtoWashing&Rubbing&Light",
             ["CF to Perspiration"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Water"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Dry-clean"] = "CFtoPerspiration&Water&Dryclean",
