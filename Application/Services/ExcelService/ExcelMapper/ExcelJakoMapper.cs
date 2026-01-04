@@ -184,6 +184,9 @@
                 case "CF to Light":
                     stringMap = new List<string> { "D30", "F30", "H30", "J30", "L30", "N30", "P30" };
                     break;
+                case "CF to Light and Perspiration":
+                    stringMap = new List<string> { "D37", "F37", "H37", "J37", "L37", "N37", "P37" };
+                    break;
                 default: break;
             }
             return stringMap?.ToArray() ?? new string[0];

@@ -156,6 +156,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("RegularFabric(JAKO)", "Pilling Resistance", null, null)] = null,
             [("RegularFabric(JAKO)", "Seam Slippage", null, null)] = "Load: 16N",
             [("RegularFabric(JAKO)", "CF to Light", null, null)] = "L-4",
+            [("RegularFabric(JAKO)", "CF to Light and Perspiration", null, null)] = "L-4",
             [("RegularFabric(JAKO)", "Bursting Strength", null, null)] = "Diameter: 30.5mm (Test Area: 7.3cm²)",
             [("RegularFabric(JAKO)", "Tensile Strength", null, null)] = "Gauge: 75mm",
             [("RegularFabric(JAKO)", "Extension and Recovery", null, null)] = "Load: 3daN,Cycle: 5",

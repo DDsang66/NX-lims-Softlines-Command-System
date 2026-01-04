@@ -151,6 +151,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Washing"] = "CFtoWashing&Rubbing&Light",
             ["CF to Rubbing"] = "CFtoWashing&Rubbing&Light",
             ["CF to Light"] = "CFtoWashing&Rubbing&Light",
+             ["CF to Light and Perspiration"] = "CFtoWashing&Rubbing&Light",
             ["CF to Perspiration"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Water"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Dry-clean"] = "CFtoPerspiration&Water&Dryclean",
@@ -220,6 +221,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Washing"] = (n, _) => ExcelJakoMapper.MapWRL(n),
             ["CF to Rubbing"] = (n, _) => ExcelJakoMapper.MapWRL(n),
             ["CF to Light"] = (n, _) => ExcelJakoMapper.MapWRL(n),
+            ["CF to Light and Perspiration"] = (n, _) => ExcelJakoMapper.MapWRL(n),
             ["CF to Perspiration"] = (n, _) => ExcelJakoMapper.MapPWD(n),
             ["CF to Water"] = (n, _) => ExcelJakoMapper.MapPWD(n),
             ["CF to Dry-clean"] = (n, _) => ExcelJakoMapper.MapPWD(n),
@@ -328,7 +330,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A28"] = (w, dto, reportNo) => dto.Standard!,
-                ["B31"] = (w, dto, reportNo) =>"L - 4",
+                ["B31"] = (w, dto, reportNo) =>"L-4",
+            },
+            ["CF to Light and Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["D1"] = (w, dto, reportNo) => reportNo,
+                ["A36"] = (w, dto, reportNo) => dto.Standard!,
+                ["B38"] = (w, dto, reportNo) => "L-4",
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
