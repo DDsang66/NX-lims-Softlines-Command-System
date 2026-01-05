@@ -31,6 +31,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                 "next" => _sp.GetRequiredService<PrintNextExcel>(),
                 "ovs" => _sp.GetRequiredService<PrintOvsExcel>(),
                 "lpp" => _sp.GetRequiredService<PrintLppExcel>(),
+                "woolworth" => _sp.GetRequiredService<PrintWoolworthExcel>(),
                 _ => throw new ArgumentException($"Unknown buyer: {buyer}")
             };
     }
