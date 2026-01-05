@@ -124,6 +124,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("CF to Light", "swim wear", "neon&turquoise")] = "L-3",
             [("CF to Light", "swim wear", null)] = "L-5",
             [("CF to Light", "ski wear", null)] = "L-5",
+            [("CF to Light", null, null)] = "L-4",
             [("Water Resistance-Hydrostatic Pressure", "general", null)] = "1500 mmbar",
             [("Water Resistance-Hydrostatic Pressure", "ski wear", null)] = "3000 mmbar",
             [("Water Resistance-Hydrostatic Pressure", "sealed seam", null)] = "800 mmbar",
