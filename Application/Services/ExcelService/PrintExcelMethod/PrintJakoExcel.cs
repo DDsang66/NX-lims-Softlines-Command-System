@@ -265,7 +265,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["CM1"] = (w, dto, reportNo) => reportNo;
                     map["AR4"] = (w, dto, reportNo) => "EN ISO 5077:2007 / EN ISO 3759:2011 / EN ISO 6330:2021";
                     map["AR12"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
-                    map["BF6"] = (w, dto, reportNo) => w.Ballast!;
+                    map["BG6"] = (w, dto, reportNo) => w.Ballast!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {

@@ -92,28 +92,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             switch (ItemName) 
             {
                 case "Pilling Resistance":
-                    if(standard.Contains("12945-1")) condition = "ICI";
-                    else if (standard.Contains("12945-2")) condition = "Martindale";
-
-                    if(_helper.CompositionRate(infoDto.fiberComposition!,"Wool")>0) condition1 = "Wool";
-                    else if (infoDto.sampleDescription!.Contains("Woven")) condition1 = "Woven";
-                    else if (infoDto.sampleDescription.Contains("Knit")) condition1 = "Knit";
+                    if(infoDto.sampleDescription!.Contains("Woven")) condition = "1000";
+                    else if (infoDto.sampleDescription!.Contains("Knit")) condition = "500";
+                    if (infoDto.sampleDescription!.Contains("Anti-Pilling Finished")) condition = "2000";
+                    if (infoDto.sampleDescription!.Contains("Knit")&&
+                        (infoDto.sampleDescription.Contains("Tights")
+                        || infoDto.sampleDescription.Contains("Leggings"))) condition = "1000";
                     break;
                 case "CF to Light":
-                    if (standard.Contains("12945-1")) condition = "ICI";
-                    else if (standard.Contains("12945-2")) condition = "Martindale";
+                    if(infoDto.sampleDescription!.Contains("General Apparel")) condition = "general";
+                    else if (infoDto.sampleDescription!.Contains("Swimwear")) condition = "swim wear";
+                    else if(infoDto.sampleDescription!.Contains("Ski wear")) condition = "ski wear";
 
-                    if (_helper.CompositionRate(infoDto.fiberComposition!, "Wool") > 0) condition1 = "Wool";
-                    else if (infoDto.sampleDescription!.Contains("Woven")) condition1 = "Woven";
-                    else if (infoDto.sampleDescription.Contains("Knit")) condition1 = "Knit";
+                    if(infoDto.sampleDescription.Contains("Neon")||infoDto.sampleDescription.Contains("Turquoise")) condition1 = "neon&turquoise";
                     break;
                 case "Water Resistance-Hydrostatic Pressure":
-                    if (standard.Contains("12945-1")) condition = "ICI";
-                    else if (standard.Contains("12945-2")) condition = "Martindale";
-
-                    if (_helper.CompositionRate(infoDto.fiberComposition!, "Wool") > 0) condition1 = "Wool";
-                    else if (infoDto.sampleDescription!.Contains("Woven")) condition1 = "Woven";
-                    else if (infoDto.sampleDescription.Contains("Knit")) condition1 = "Knit";
+                    if (infoDto.sampleDescription!.Contains("General Apparel")) condition = "general";
+                    else if (infoDto.sampleDescription!.Contains("Sealed Seam")) condition = "sealed seam";
+                    else if (infoDto.sampleDescription!.Contains("Ski wear")) condition = "ski wear";
+                    else if (infoDto.sampleDescription!.Contains("Non-sealed Seam")) condition = "non-sealed seam";
                     break;
 
             }
@@ -138,6 +135,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Seam Slippage", null, null)] = "Normal Stressed Seams: 80N；Strong Stressed Seams: 100N",
             [("Tear Strengrh", null, null)] = "{Trousers, Skirts：15N；Blouses, Shirts, Dresses, Lining：8N；Other：12N}",
             [("Tensile Strengrh", null, null)] = "{Coats, Jackets, Slim fitted：150N； Blouses, Shirts, Dress, Lining：120N；Other：180N}",
+            [("Bursting Strengrh", null, null)] = "{Slim fitted：200KPa； Underwear：110KPa；Weft and warp knit：170KPa}",
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)
