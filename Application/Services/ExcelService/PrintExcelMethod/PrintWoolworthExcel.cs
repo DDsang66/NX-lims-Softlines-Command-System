@@ -537,11 +537,21 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["F5"] = (wp, dto, reportNo) => "100",
                 ["E6"] = (wp, dto, reportNo) => "20",
             },
-            ["Attachment Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Attachment Strength"] = (w, dto, reportNo) =>
             {
-                ["M1"] = (wp, dto, reportNo) => reportNo,
-                ["A3"] = (wp, dto, reportNo) => dto.Standard!,
-                ["A17"] = (wp, dto, reportNo) => dto.Standard!,
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
+                map["M1"] = (wp, dto, reportNo) => reportNo;
+                if (dto.Standard!.Contains("EN 71") || dto.Standard!.Contains("16792"))
+                {
+                    map["A3"] = (wp, dto, reportNo) => dto.Standard!;
+                    map["A17"] = (wp, dto, reportNo) => dto.Standard!;
+                }
+                else
+                {
+                    map["A3"] = (wp, dto, reportNo) => "BS EN 17394-2:2020";
+                    map["A17"] = (wp, dto, reportNo) => "CEN/TS 17394-3:2021";
+                }
+                return map;
             },
             ["Tear Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
