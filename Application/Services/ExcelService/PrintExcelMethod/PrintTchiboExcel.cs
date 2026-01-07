@@ -193,9 +193,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Water"] = "CFtoPerspiration&Water",
             ["CF to Saliva"] = "CFtoSaliva&Sweat",
             ["CF to Sweat"] = "CFtoSaliva&Sweat",
-            ["CF to Sublimation in Storage"] = "CFtoSublimation&HotPressing&Cl",
-            ["CF to Hot Pressing"] = "CFtoSublimation&HotPressing&Cl",
-            ["CF to Chlorinated Water"] = "CFtoSublimation&HotPressing&Cl",
+            ["CF to Sublimation in Storage"] = "CFtoSHCl",
+            ["CF to Hot Pressing"] = "CFtoSHCl",
+            ["CF to Chlorinated Water"] = "CFtoSHCl",
         };
         private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
         {

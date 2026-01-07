@@ -50,7 +50,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
-                AfterWash = "After 3 Washes",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
@@ -75,7 +75,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
     : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
     : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
-                AfterWash = "After 3 Washes",
+                AfterWash = "After 1 Wash",
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
@@ -112,25 +112,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             string? condition1 = null;
             switch (ItemName) 
             {
-                case "Pilling Resistance":
-                    if(standard.Contains("12945-1")) condition = "ICI";
-                    else if (standard.Contains("12945-2")) condition = "Martindale";
-
-                    if(_helper.CompositionRate(infoDto.fiberComposition!,"Wool")>0) condition1 = "Wool";
-                    else if (infoDto.sampleDescription!.Contains("Woven")) condition1 = "Woven";
-                    else if (infoDto.sampleDescription.Contains("Knit")) condition1 = "Knit";
+                case "CF to Light":
+                    if(infoDto.sampleDescription!.Contains("Apparel")) condition = "30";
+                    if (infoDto.sampleDescription!.Contains("Apparel")) condition = "30";
                     break;
-                case "Tear Strength":
-                    if (infoDto.sampleDescription!.Contains("Textile")) condition = "textile";
-                    else if (infoDto.sampleDescription.Contains("Denim")) condition = "denim";
-                    else if (infoDto.sampleDescription.Contains("Leather")) condition = "leather";
-                    break;
-                case "Tensile Strength":
-                    if (infoDto.sampleDescription!.Contains("Fabric")) condition = "fabric";    
-                    else if (infoDto.sampleDescription.Contains("Leather")) condition = "leather";
-
-                    if (infoDto.sampleDescription.Contains("Woven")) condition1 = "Woven";
-                    else if (infoDto.sampleDescription.Contains("Knit")) condition1 = "knit";
+                case "Abrasion Resistance":
+                    if (infoDto.sampleDescription!.Contains("Foil Print")) condition = "9";
+                    else condition = "12";
+                    if (infoDto.sampleDescription.Contains("Fabric")) condition1 = "Fabric";
+                    else condition1 = "Garment";
                     break;
                 case "Extension and Recovery":
                     var content = _helper.CompositionRate(infoDto.fiberComposition!, "Elastane");
@@ -150,12 +140,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     }
 
                     break;
-                case "Zipper Strength":
-                    if (infoDto.sampleDescription!.Contains("Fastener durability test")) condition = "Fastener durability test";
-                    else if (infoDto.sampleDescription.Contains("Puller strength")) condition = "Puller strength";
-                    else if (infoDto.sampleDescription.Contains("Zipper resistance")) condition = "Zipper resistance";
-                    break;
-
             }
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
         }
@@ -163,18 +147,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string Item, string? Condition, string? Condition1), string?> _map = new()
         {
-            [("Seam Slippage", null, null)] = "{ ≤ 220 g/m² Load applied: 60N; > 220 g/m² Load applied: 120N}",
-            [("Pilling Resistance", "ICI", "Wool")] = "Cycle: 7200 revs",
-            [("Pilling Resistance", "ICI", "Knit")] = "Cycle: 14400 revs",
-            [("Pilling Resistance", "Martindale", "Woven")] = "Cycle: 2000 revs",
-            [("Pilling Resistance", "Martindale", "Knit")] = "Cycle: 2000 revs",
-            [("Tear Strength", "textile", null)] = "{ ≤90 gsm Load > 5N；90-149 gsm Load > 10N；150-200 gsm Load > 15N；>200 gsm Load >16N}",
-            [("Tear Strength", "denim", null)] = "{> 270 gsm untreated：16N，chemical treated：15N；> 370 gsm untreated：20N，chemical treated：16N}",
-            [("Tear Strength", "leather", null)] = "Load > 30N",
-            [("Tensile Strength", "leather", null)] = "Load > 10N/mm",
-            [("Tensile Strength", "fabric", "Woven")] = "{≤150 gsm Load：140N；150-250 gsm Load：250N；>250 gsm Load：250N}",
-            [("Tensile Strength", "fabric", "knit")] = "N/A",
-            [("Abrasion Resistance", null, null)] = "Cycle 20000 revs; Color Change @ 5000 revs",
+            [("Abrasion Resistance", "12", null)] = "Load：12KPa；Cycle: 10000 rubs",
+            [("Abrasion Resistance", "9", "Fabric")] = "Load：9KPa；Cycle: 1000 / 2000 / 5000 revs",
+            [("Abrasion Resistance", "9", "Garment")] = "Load：9KPa；Cycle: 2000 / 5000 / 10000 revs",
+            [("CF to Light", "20", null)] = "Method 5, Use water cooled Xenon arc lamp; After 20 hours.",
+            [("CF to Light", "30", null)] = "Method 5, Use water cooled Xenon arc lamp; After 30 hours.",
+            [("CF to Light", "60", null)] = "Method 5, Use water cooled Xenon arc lamp; After 60 hours.",
+            [("Seam Slippage", null , null)] = "After 1 Wash",
+            [("Pilling Resistance", null, null)] = "After 1 Wash, Cycle：2000 revs",
+            [("CF to Chlorinated Water", null, null)] = "20mg/L",
+            [("Water Repellency-Spray Test", "1 Wash", null)] = "After 1 Wash",
+            [("Water Repellency-Spray Test", null, null)] = "As received sample",
+            [("Tensile Strength", null, null)] = "Need unit weight",
+            [("Tear Strength", null, null)] = "Need unit weight",
             [("Extension and Recovery", "N/A", null)] = "N/A",
             [("Extension and Recovery", "Woven", null)] = "Load: 30N",
             [("Extension and Recovery", "Knit", "3")] = "Load: 3N",
@@ -185,17 +170,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Extension and Recovery", "Knit", "8")] = "Load: 8N",
             [("Extension and Recovery", "Knit", "10")] = "Load: 10N",
             [("Extension and Recovery", "Knit", "14")] = "Load: 14N",
-            [("CF to Light", null, null)] = "L-4",
-            [("CF to Washing", null, null)] = "After 5 Washes",
-            [("Attachment Strength", null, null)] = "90N 10s",
-            [("Seam Strength", null, null)] = "Load：70N",
-            [("Water Resistance-Hydrostatic Pressure", null, null)] = "2000mm H2O，After 5 Washes",
-            [("Water Repellency-Spray Test", null, null)] = "Before and after 5 Washes",
-            [("Air Permeability", null, null)] = "< 20 mm/s ",
-            [("Quick Dry", null, null)] = "After 30 min ≤ 0.04 ml",
-            [("Zipper Strength", "Fastener durability test", null)] = "Buttons, snap fasteners, etc.: 70N 10s",
-            [("Zipper Strength", "Puller strength", null)] = "≥200N",
-            [("Zipper Strength", "Zipper resistance", null)] = "≥500 cycles without failure",
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)

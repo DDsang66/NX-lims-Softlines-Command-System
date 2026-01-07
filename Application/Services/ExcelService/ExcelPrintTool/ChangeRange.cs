@@ -32,11 +32,11 @@ public static class SheetSorter
                 // 特殊字母的优先级：D=1，S=2，A=3；其余字母=0（保持字母序）
                 return first switch
                 {
-                    'D' => 1,
-                    'P' => 2,
-                    'S' => 3,
-                    'A' => 4,
-                    _ => 0
+                    'D' => 0,
+                    'P' => 1,
+                    'S' => 2,
+                    'A' => 3,
+                    _ => 4
                 };
             })
             .ThenBy(x => x.Sheet.Name!.Value, StringComparer.OrdinalIgnoreCase)
