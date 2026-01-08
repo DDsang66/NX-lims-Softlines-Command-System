@@ -31,6 +31,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         {
             public string? itemName { get; set; }
             public string? standards { get; set; }
+            public string? sample { get; set; }
         }
         public string? sampleDescription { get; set; }
     }

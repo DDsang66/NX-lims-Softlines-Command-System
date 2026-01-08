@@ -91,7 +91,71 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
     : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
     : "Type III (100% Polyester)",
                 SpecialCareInstruction = p.Sci ?? null,
-                AfterWash = "After 3 Washes",
+                AfterWash = "After 1 Wash",
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Tear Strength", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+: _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+: "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = "After 1 Wash",
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Tensile Strength", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+: _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+: "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = "After 1 Wash",
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Seam Slippage", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+: _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+: "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = "After 1 Wash",
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Extension and Recovery", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
+: _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+: "Type III (100% Polyester)",
+                SpecialCareInstruction = p.Sci ?? null,
+                AfterWash = "After 1 Wash",
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
@@ -113,8 +177,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             switch (ItemName) 
             {
                 case "CF to Light":
-                    if(infoDto.sampleDescription!.Contains("Apparel")) condition = "30";
-                    if (infoDto.sampleDescription!.Contains("Apparel")) condition = "30";
+                    if(infoDto.sampleDescription!.Contains("30 hours")) condition = "30";
+                    else condition = "60";
                     break;
                 case "Abrasion Resistance":
                     if (infoDto.sampleDescription!.Contains("Foil Print")) condition = "9";
@@ -140,6 +204,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     }
 
                     break;
+                case "Seam Slippage":
+                    if (standard.Contains("13936-2")) condition = "1 Wash";
+                    break;
+                case "Tear Strength":
+                   if (infoDto.sampleDescription!.Contains("After Wash")) condition = "1 Wash";
+                    break;
+                case "Tensile Strength":
+                    if (infoDto.sampleDescription!.Contains("After Wash")) condition = "1 Wash";
+                    break;
             }
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
         }
@@ -153,13 +226,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("CF to Light", "20", null)] = "Method 5, Use water cooled Xenon arc lamp; After 20 hours.",
             [("CF to Light", "30", null)] = "Method 5, Use water cooled Xenon arc lamp; After 30 hours.",
             [("CF to Light", "60", null)] = "Method 5, Use water cooled Xenon arc lamp; After 60 hours.",
-            [("Seam Slippage", null , null)] = "After 1 Wash",
+            [("Seam Slippage", "1 Wash" , null)] = "After 1 Wash",
             [("Pilling Resistance", null, null)] = "After 1 Wash, Cycle：2000 revs",
             [("CF to Chlorinated Water", null, null)] = "20mg/L",
             [("Water Repellency-Spray Test", "1 Wash", null)] = "After 1 Wash",
             [("Water Repellency-Spray Test", null, null)] = "As received sample",
             [("Tensile Strength", null, null)] = "Need unit weight",
             [("Tear Strength", null, null)] = "Need unit weight",
+            [("Tensile Strength", "1 Wash", null)] = "Need unit weight; After 1 Wash",
+            [("Tear Strength", "1 Wash", null)] = "Need unit weight; After 1  Wash",
             [("Extension and Recovery", "N/A", null)] = "N/A",
             [("Extension and Recovery", "Woven", null)] = "Load: 30N",
             [("Extension and Recovery", "Knit", "3")] = "Load: 3N",
@@ -170,6 +245,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Extension and Recovery", "Knit", "8")] = "Load: 8N",
             [("Extension and Recovery", "Knit", "10")] = "Load: 10N",
             [("Extension and Recovery", "Knit", "14")] = "Load: 14N",
+            [("Colour Fastness to Chlorinated Water", null, null)] = "20 mg/L",
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)

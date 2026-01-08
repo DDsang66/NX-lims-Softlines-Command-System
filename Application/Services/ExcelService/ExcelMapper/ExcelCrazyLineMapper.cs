@@ -38,7 +38,14 @@
                 "A10", "A12"
             };
         }
-
+        public static string[] MapSpray()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "A8", "A9","A10", "A15","A16", "A17"
+            };
+        }
         public static string[] MapRegular()
         {
             // 定义固定的单元格地址映射

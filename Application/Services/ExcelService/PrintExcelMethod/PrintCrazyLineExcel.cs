@@ -170,6 +170,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Small Parts"] = "Small Part",
             ["Resistance to Snapping of Snap Fasteners"] = "Snapping & Unsnapping",
             ["Resistance to Unsnapping of Snap Fasteners"] = "Snapping & Unsnapping",
+            ["Water Repellency-Spray Test"] = "Water Repellency",
 
         };
         private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
@@ -220,6 +221,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Resistance to Snapping of Snap Fasteners"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
             ["Resistance to Unsnapping of Snap Fasteners"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
             ["Small Parts"] = (_, _) => ExcelCrazyLineMapper.MapRegular(),
+            ["Water Repellency-Spray Test"] = (_, _) => ExcelCrazyLineMapper.MapSpray(),
         };
 
         //取洗涤遍数映射地址的函数
@@ -397,6 +399,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["M1"] = (dto, reportNo) => reportNo,
                 ["A26"] = (dto, reportNo) => dto.Standard!
+            },
+            ["Water Repellency-Spray Test"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
+            {
+                ["M1"] = (dto, reportNo) => reportNo,
+                ["A3"] = (dto, reportNo) => dto.Standard!
             },
         };
 

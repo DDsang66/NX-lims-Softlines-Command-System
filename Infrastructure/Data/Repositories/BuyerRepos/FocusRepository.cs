@@ -77,12 +77,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure" }
+            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure", "Tear Strength", "Tensile Strength", "Seam Slippage", "Extension and Recovery" }
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            LPPParameterProvider wetParam = new LPPParameterProvider(_helper);
+            FocusParameterProvider wetParam = new FocusParameterProvider(_helper);
             if (Param != null)
             {
                 var updatedParam = wetParam.CreateWetParameters(input);
