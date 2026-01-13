@@ -77,7 +77,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : "",
                 DryCondition = DryConditionHelper(p.DryProcedure!),
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
-                //Iron =  _helper.CompositionRate(p.FiberContent!,"Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,

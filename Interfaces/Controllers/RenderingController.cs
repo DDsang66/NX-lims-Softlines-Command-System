@@ -23,5 +23,16 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             var Results = await _service.SampleDesc(buyername);
             return Ok(new {Data = Results, success = true, message = "Loading Successed." });
         }
+
+
+        /// <summary>
+        /// 接收前端返回的买家名称返回选项列表
+        /// </summary>
+        [HttpGet("compositionsearch")]
+        public async Task<IActionResult> CompostionSearch()
+        {
+            var Results = await _service.CompostionSearch();
+            return Ok(new { Data = Results, success = true, message = "Loading Successed." });
+        }
     }
 }

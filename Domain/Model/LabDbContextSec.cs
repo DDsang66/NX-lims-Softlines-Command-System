@@ -24,6 +24,8 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<Composition> Compositions { get; set; }
 
+    public virtual DbSet<CompositionNew> CompositionNews { get; set; }
+
     public virtual DbSet<CustomerService> CustomerServices { get; set; }
 
     public virtual DbSet<Feedback> Feedbacks { get; set; }
@@ -53,6 +55,10 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=GUANGXDDCHEN\\SQLEXPRESS;Database=NX-lims Lab Command Sys;Trusted_Connection=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -175,6 +181,47 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("fiber_type");
+        });
+
+        modelBuilder.Entity<CompositionNew>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("composition_new");
+
+            entity.Property(e => e.CompositionNameChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("composition_nameCHN");
+            entity.Property(e => e.CompositionNameEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("composition_nameEN");
+            entity.Property(e => e.IdComposition).HasColumnName("id_composition");
+            entity.Property(e => e.PrimaryCategoryChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("primary_categoryCHN");
+            entity.Property(e => e.PrimaryCategoryEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("primary_categoryEN");
+            entity.Property(e => e.SecondaryClassificationChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("secondary_classificationCHN");
+            entity.Property(e => e.SecondaryClassificationEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("secondary_classificationEN");
+            entity.Property(e => e.TertiaryClassificationChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("tertiary_classificationCHN");
+            entity.Property(e => e.TertiaryClassificationEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("tertiary_classificationEN");
         });
 
         modelBuilder.Entity<CustomerService>(entity =>

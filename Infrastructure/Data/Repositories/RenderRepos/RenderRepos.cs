@@ -37,5 +37,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Rend
                 .ToList();
             return groupedsampleDescList;
         }
-     }
+
+        /// <summary>
+        /// 表单数据获取
+        /// </summary>
+        public async Task<object> CompostionSearchAsync()
+        {
+            var List = await _db.CompositionNews.Select(x => x.CompositionNameEn).ToArrayAsync();
+            return List;
+        }
+    }
 }

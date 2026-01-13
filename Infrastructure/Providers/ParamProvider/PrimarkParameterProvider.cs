@@ -504,14 +504,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             string part_1 = "";
             string part_2 = "";
             part_1 =
-            WashingProcedure!.Contains("Normal") ? "(1)"
-            : WashingProcedure.Contains("Gentle") ? "(2)"
-            : WashingProcedure.Contains("Permanent") ? "(3)"
+            WashingProcedure!.Contains("N") ? "(1)"
+            : WashingProcedure.Contains("G") ? "(2)"
+            : WashingProcedure.Contains("P") ? "(3)"
             : "";
             part_2 =
-                WashingProcedure!.Contains("Cold") ? "II"
-                : WashingProcedure.Contains("Warm") ? "III"
-                : WashingProcedure.Contains("Hot") ? "IV"
+                WashingProcedure!.Contains("3") ? "II"
+                : WashingProcedure.Contains("4") ? "III"
+                : WashingProcedure.Contains("5") ? "IV"
                 : "V";
             string program = part_1 + part_2;
             return program;

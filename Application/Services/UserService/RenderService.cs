@@ -16,5 +16,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.UserService
             var result  =await _renderRepo.RenderAsync(buyername.ToLower());
             return result;
         }
+
+        public async Task<object?> CompostionSearch()
+        {
+            var result = await _renderRepo.CompostionSearchAsync();
+            return result;
+        }
     }
 }

@@ -16,6 +16,7 @@
         public string? Detergent { get; set; }
         public List<string>? AfterWash { get; set; }
         public List<FiberDto>? FiberContent { get; set; }
+        public List<FiberInfoNew>? FiberInfo { get; set; }
         public string? additionalRequire { get; set; }
         public string? SampleDescription { get; set; }
 
@@ -40,6 +41,7 @@
                 Detergent = requiredInfoDto.detergent,
                 AfterWash = requiredInfoDto.afterWash,
                 FiberContent = requiredInfoDto.fiberComposition,
+                FiberInfo = requiredInfoDto.fibercompositionInfo,
                 additionalRequire = requiredInfoDto.additionalRequire,
                 SampleDescription = requiredInfoDto.sampleDescription,
             };
@@ -52,5 +54,12 @@
         public int Rate { get; set; }
     }
 
+
+    public class FiberInfoNew
+    {
+        public string? Sample { get; set; }
+        public List<FiberDto>? CompositionList { get; set; }
+
+    }
 
 }

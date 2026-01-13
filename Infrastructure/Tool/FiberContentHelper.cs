@@ -15,6 +15,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
         {
             _db = db;
         }
+
+        #region old
+
         /// <summary>
         /// 最大成分的名称
         /// </summary>
@@ -156,6 +159,28 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
 
             return totalRate;
         }
+
+        #endregion
+
+
+        #region new
+        /// <summary>
+        ///选择的样品，最大成分的名称
+        /// </summary>
+        public string? MaxCompositionNew(List<FiberInfoNew> composition, string? Sample)
+        {
+            if (composition == null || composition.Count == 0||string.IsNullOrWhiteSpace(Sample))
+                return null;
+
+            var SelectedSample = composition
+                .OrderByDescending(f => f.Sample)
+                .FirstOrDefault();
+            if (SelectedSample == null) return null;
+            var MaxComposition = SelectedSample.CompositionList!.OrderByDescending(f => f.Rate).FirstOrDefault();
+            var key = char.ToUpper(MaxComposition!.Composition![0]) + MaxComposition.Composition.Substring(1).ToLower();
+            return key;
+        }
+        #endregion
 
     }
 }

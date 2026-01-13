@@ -11,11 +11,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
 {
 
     //与数据库交互
-    public class LPPRepository : IRepository
+    public class FocusRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public LPPRepository(LabDbContextSec db, FiberContentHelper helper)
+        public FocusRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -77,7 +77,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure", "Tear Strength", "Tensile Strength", "Seam Slippage", "Extension and Recovery" }
+            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure", "Tear Strength", "Tensile Strength", "Seam Slippage", "Extension and Recovery" ,"Appearance","Absorbency"}
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterIsos

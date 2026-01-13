@@ -11,11 +11,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
 {
 
     //与数据库交互
-    public class FocusRepository : IRepository
+    public class LPPRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public FocusRepository(LabDbContextSec db, FiberContentHelper helper)
+        public LPPRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
