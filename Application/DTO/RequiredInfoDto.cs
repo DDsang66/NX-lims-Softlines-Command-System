@@ -8,11 +8,9 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? buyer { get; set; }
         public string? reportNumber { get; set; }
         public string? reviewer { get; set; }
-
         public string? menuName { get; set; }
         public string? remark { get; set; }
         public string? extraItem { get; set; }
-        public List<Items>? items { get; set; }
         public string? washingProcedure { get; set; }
         public string? dryProcedure { get; set; }
         public string? dcProcedure { get; set; }
@@ -20,8 +18,11 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? ironProcedure { get; set; }
         public string? ironMethod { get; set; }
         public string? bleachProcedure { get; set; }
-
         public string? detergent{ get; set; }
+
+
+
+        public List<Items>? items { get; set; }
         public List<string>? afterWash { get; set; }
         public List<FiberDto>? fiberComposition { get; set; }
         public List<FiberInfoNew>? fibercompositionInfo { get; set; }

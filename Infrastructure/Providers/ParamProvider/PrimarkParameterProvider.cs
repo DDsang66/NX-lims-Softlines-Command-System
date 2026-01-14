@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
 
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider
@@ -11,13 +12,76 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
     public class PrimarkParameterProvider
     {
         private readonly FiberContentHelper _helper;
+        private readonly PrimarkRepository _repo;
 
-        public PrimarkParameterProvider(FiberContentHelper helper)
+        public PrimarkParameterProvider(FiberContentHelper helper, PrimarkRepository repo)
         {
             _helper = helper;
+            _repo = repo;
         }
+
+
+        /// <summary>
+        /// 根据ItemName生成对应的参数
+        /// </summary>
+        /// <param name="infoDto"></param>
+        /// <param name="ItemName"></param>
+        public async void CreateParamGeneratorAsync([FromBody] RequiredInfoDto infoDto, string itemName, string standard)
+        {
+            if (string.IsNullOrWhiteSpace(itemName)) return;
+
+            string contactSample = infoDto.items!.Select(x => x.itemName == itemName).ToString()!;
+
+            var samples = contactSample!.Split(',').Select(s => s.Trim()).ToArray();
+
+            List<SampleInfo> sampleInfos = new List<SampleInfo>();
+
+            foreach (var sample in samples)
+            {
+                var sampleObj = await _repo.GetSamplesByNames(sample, infoDto.reportNumber!, infoDto.buyer!);
+
+                sampleInfos.Add(sampleObj);
+
+                /*生成缩水参数----------------------------------------------------------------------------------------------------------------------------*/
+
+                var paramInput = new ParamsInput().CreateParamsInput(infoDto, itemName, standard);
+
+                var wetParams = CreateWetParameters(paramInput, sample);
+
+                var existWetParam = await _repo.GetWetParamAsync(infoDto.reportNumber!, itemName);
+
+                if (existWetParam != null)
+                {
+                    //如果存在，更新
+                    _repo.UpdateWetParamAsync(wetParams, existWetParam);
+                }
+                else
+                {
+                    //如果不存在，创建后更新
+                    var newWetParam = await _repo.CreateWetParamAsync(paramInput);
+                    _repo.UpdateWetParamAsync(wetParams, newWetParam);
+                }
+                /*----------------------------------------------------------------------------------------------------------------------------*/
+
+
+                //调用规则字典把相关的测点信息、测试条件、测试方法传入，最后输出参数
+
+            }
+
+            return;
+        }
+
+
+
+
+
+
+
+
+
+
         //仅仅用于修改对应ItemName中的Parameter
-        public WetParameterIso CreateWetParameters(ParamsInput p) => (p.ItemName, p.WashingProcedure, p.DCProcedure, p.MenuName) switch
+        private WetParameterIso CreateWetParameters(ParamsInput p, string sample) => (p.ItemName, p.WashingProcedure, p.DCProcedure, p.MenuName) switch
         {
             ("Colour Fastness to Washing", "4H" or "3M" or "3G" or "3H", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
             {
@@ -336,7 +400,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             }
         };
 
-
+        #region
         public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName)
         {
 
@@ -614,24 +678,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        #endregion
 
 
     }

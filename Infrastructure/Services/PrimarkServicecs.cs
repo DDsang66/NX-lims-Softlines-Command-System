@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using NX_lims_Softlines_Command_System.Domain.Model.Interface;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
@@ -8,7 +9,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
-    public class PrimarkService: IBuyerService
+    public class PrimarkService
     {
         private readonly PrimarkRepository _repo;
         private readonly FiberContentHelper _helper;
@@ -40,33 +41,49 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             return groupedCheckLists;//去重后
         }
 
-        public async Task<object?> ShowParameterAsync([FromBody] RequiredInfoDto infoDto)
+        /// <summary>
+        /// 生成参数服务
+        /// </summary>
+        /// <param name="infoDto"></param>
+        /// <returns></returns>
+        public async Task<object?>ParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
             var items = infoDto.items;
-            PrimarkParameterProvider helper = new PrimarkParameterProvider(_helper);
+
+            PrimarkParameterProvider paramHelper = new PrimarkParameterProvider(_helper, _repo);
 
             SaveSampleInfo(infoDto.sampleDescripBoundSingle!, infoDto.reportNumber!, infoDto.buyer!);
 
-            try
+            var dtos = new List<object>();
+            foreach (var item in items!)
             {
-                var dtos = new List<object>();
-                foreach (var item in items!)
-                {
-                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString()), item.itemName!);
 
-                    string? param = await helper.CreateParameters(infoDto, item.itemName!)!;
+                paramHelper.CreateParamGeneratorAsync(infoDto, item.itemName!,item.standards!);
+                #region
+                //var paramInput = new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString());
 
-                    dtos.Add(PrimarkParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!, Standard = item.standards }, param!));
-                }
-                return dtos;
+                //var wetParams = paramHelper.CreateWetParameters(paramInput, item.samples!);
+
+                //var existWetParam = await _repo.GetWetParamAsync(infoDto.reportNumber!, item.itemName!);
+
+                //if (existWetParam != null)
+                //{
+                //    //如果存在，更新
+                //    _repo.UpdateWetParamAsync(wetParams, existWetParam);
+                //}
+                //else
+                //{
+                //    //如果不存在，创建后更新
+                //    var newWetParam = await _repo.CreateWetParamAsync(paramInput);
+                //    _repo.UpdateWetParamAsync(wetParams, newWetParam);
+                //}
+                #endregion
+                string? param = await paramHelper.CreateParameters(infoDto, item.itemName!)!;
+
+                //dtos.Add(PrimarkParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!, Standard = item.standards }, param!));
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"{ex.Message}");
-            }
-            return null;
+            return dtos;
         }
-
 
         /// <summary>
         /// 保存SampleInfo服务
@@ -84,8 +101,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             foreach (var item in sampleDescObjects) 
             {
                 var sampleObject = new SampleDescObject();
+
                 sampleObject.sample = item.sample;
+
                 sampleObject.description = item.description;
+
                 _repo.SaveSampleInfoAsync(sampleObject, reportNum, buyer);
             }
         }

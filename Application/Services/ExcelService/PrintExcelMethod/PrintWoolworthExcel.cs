@@ -292,7 +292,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                    }
                    return map;
                },
-            ["Spiraility/Skewing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Spirality/Skewing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["P1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,

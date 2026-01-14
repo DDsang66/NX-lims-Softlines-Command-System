@@ -30,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.BuyerService
         }
         public Task<object?> ShowParameter([FromBody] RequiredInfoDto infoDto)
         {
-            return _service.ShowParameterAsync(infoDto);
+            return _service.ParameterAsync(infoDto);
         }
     }
 }

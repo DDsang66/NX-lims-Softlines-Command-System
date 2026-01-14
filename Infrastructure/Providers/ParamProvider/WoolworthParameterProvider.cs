@@ -74,6 +74,24 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Program = "900r",
                 AfterWash = "After 1 Wash"
             },
+            ("Spirality/Skewing", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
+    : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
+    : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
+    : "Wollens procedure",
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Detergent = "77％ECE(A)+3%TAED+20% sodium perborate",
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+                Program = "900r",
+                AfterWash = "After 1 Wash"
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,

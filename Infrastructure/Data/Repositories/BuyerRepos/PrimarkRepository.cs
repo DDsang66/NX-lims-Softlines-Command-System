@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
 {
 
     //与数据库交互
-    public class PrimarkRepository : IRepository
+    public class PrimarkRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
@@ -22,6 +22,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             _helper = helper;
         }
 
+
+        /// <summary>
+        /// 获取基础CheckList
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public async Task<List<CheckListDto>?> GetCheckListAsync(dynamic input)
         {
             try
@@ -64,6 +70,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             return null;
         }
 
+
+
+        /* 原缩水参数生成逻辑
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
@@ -76,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 return default;
             var Param = await _db.WetParameterIsos
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            PrimarkParameterProvider wetParam = new PrimarkParameterProvider(_helper);
+            PrimarkParameterProvider wetParam = new PrimarkParameterProvider();
             if (Param != null)
             {
                 var updatedParam = wetParam.CreateWetParameters(input);
@@ -113,6 +122,79 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             }
             return (T)(object)Param;//返回WetParameters类型的对象
         }
+        */
+
+
+
+        /// <summary>
+        /// 获取WetParams
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns> WetParameterIso</returns>
+        public async Task<WetParameterIso> CreateWetParamAsync(ParamsInput input) 
+        {
+            var newParam = new WetParameterIso//构造一个基础对象
+            {
+                Standard = input.Standard,
+                Sensitive = "N",
+                ReportNumber = input.OrderNumber!,
+                ContactItem = input.ItemName
+            };
+            await _db.WetParameterIsos.AddAsync(newParam);
+            await _db.SaveChangesAsync();
+            return newParam!;
+        }
+
+
+        /// <summary>
+        /// 新建WetParam
+        /// </summary>
+        /// <param name="reportNum"></param>
+        /// <param name="itemName"></param>
+        /// <returns></returns>
+        public async Task<WetParameterIso> GetWetParamAsync(string reportNum, string itemName)
+        {
+            var Param = await _db.WetParameterIsos
+                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum);
+            return Param!;
+        }
+
+
+        /// <summary>
+        /// 更新WetParam
+        /// </summary>
+        /// <param name="newParam"></param>
+        /// <param name="exitParam"></param>
+        public async void UpdateWetParamAsync(WetParameterIso newParam, WetParameterIso exitParam) 
+        {
+            foreach (var prop in typeof(WetParameterIso).GetProperties())
+            {
+                if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
+                {
+                    var value = prop.GetValue(newParam);
+                    if (value != null)
+                    {
+                        prop.SetValue(exitParam, value);
+                    }
+                }
+            }
+
+            await _db.WetParameterIsos.AddAsync(exitParam);
+            await _db.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// 获取SampleInfo
+        /// </summary>
+        /// <param name="samples"></param>
+        /// <param name="reportNumber"></param>
+        /// <param name="buyer"></param>
+        public async Task<SampleInfo> GetSamplesByNames(string sample, string reportNumber, string buyer)
+        {
+            return new SampleInfo();
+        }
+
+
 
         /// <summary>
         /// 保存SampleInfo
