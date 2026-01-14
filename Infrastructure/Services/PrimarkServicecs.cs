@@ -8,7 +8,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
-    public class PrimarkService : IBuyerService
+    public class PrimarkService: IBuyerService
     {
         private readonly PrimarkRepository _repo;
         private readonly FiberContentHelper _helper;
@@ -44,7 +44,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         {
             var items = infoDto.items;
             PrimarkParameterProvider helper = new PrimarkParameterProvider(_helper);
-            // 生成对应 DTO
+
+            SaveSampleInfo(infoDto.sampleDescripBoundSingle!, infoDto.reportNumber!, infoDto.buyer!);
+
             try
             {
                 var dtos = new List<object>();
@@ -63,6 +65,29 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                 System.Diagnostics.Debug.WriteLine($"{ex.Message}");
             }
             return null;
+        }
+
+
+        /// <summary>
+        /// 保存SampleInfo服务
+        /// </summary>
+        /// <param name="sampleDescObjects"></param>
+        /// <param name="reportNum"></param>
+        /// <param name="buyer"></param>
+        private void SaveSampleInfo (List<SampleDescObject> sampleDescObjects, string reportNum, string buyer)
+        {
+            // 检查输入参数是否为空
+            if (sampleDescObjects == null || !sampleDescObjects.Any())
+            {
+                return; // 或者抛出新的 ArgumentNullException(nameof(sampleDescObjects));
+            }
+            foreach (var item in sampleDescObjects) 
+            {
+                var sampleObject = new SampleDescObject();
+                sampleObject.sample = item.sample;
+                sampleObject.description = item.description;
+                _repo.SaveSampleInfoAsync(sampleObject, reportNum, buyer);
+            }
         }
     }
 }

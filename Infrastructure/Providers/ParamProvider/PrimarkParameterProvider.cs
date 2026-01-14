@@ -612,5 +612,27 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             var Result = AfterWashing?.Any() == true ? string.Join(",", AfterWashing) : null;
             return Result;
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }

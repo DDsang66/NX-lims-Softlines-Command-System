@@ -25,15 +25,38 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public List<string>? afterWash { get; set; }
         public List<FiberDto>? fiberComposition { get; set; }
         public List<FiberInfoNew>? fibercompositionInfo { get; set; }
-
         public string? additionalRequire { get; set; }
-
-        public class Items 
-        {
-            public string? itemName { get; set; }
-            public string? standards { get; set; }
-            public string? sample { get; set; }
-        }
         public string? sampleDescription { get; set; }
+        public List<SampleDescObject>? sampleDescripBoundSingle { get; set; }
+    }
+    public class SampleDescObject
+    {
+        public string? sample { get; set; }
+        public List<DescObject>? description { get; set; }
+    }
+    public class DescObject
+    {
+        public string? propertyName { get; set; }
+        public string? value { get; set; }
+    }
+
+    public class Items
+    {
+        public string? itemName { get; set; }
+        public string? standards { get; set; }
+        public string? samples { get; set; }
+    }
+    public class FiberDto
+    {
+        public string? Composition { get; set; }
+        public int Rate { get; set; }
+    }
+
+
+    public class FiberInfoNew
+    {
+        public string? Sample { get; set; }
+        public List<FiberDto>? CompositionList { get; set; }
+
     }
 }

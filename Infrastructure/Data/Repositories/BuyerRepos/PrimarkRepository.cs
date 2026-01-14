@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
@@ -111,6 +112,43 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 Param = newParam;
             }
             return (T)(object)Param;//返回WetParameters类型的对象
+        }
+
+        /// <summary>
+        /// 保存SampleInfo
+        /// </summary>
+        /// <param name="sampleDescObject"></param>
+        /// <param name="reportNum"></param>
+        /// <param name="buyer"></param>
+        public async void SaveSampleInfoAsync(SampleDescObject sampleDescObject, string reportNum, string buyer)
+        {
+            var snowflake = new SnowflakeIdGenerator();
+            long snowId = snowflake.NextId();
+            foreach (var item in sampleDescObject.description!)
+            {
+                if (item.propertyName != null && item.value != null) 
+                {
+                    var desc = new SampleInfoDescription
+                    {
+                        IdDescription = snowId.ToString(),
+                        SampleId = snowId.ToString(),
+                        PropertyName = item.propertyName,
+                        PropertyValue = item.value,
+                    };
+                    _db.SampleInfoDescriptions.Add(desc);
+                }
+            }
+
+            var sampleInfo = new SampleInfo
+            {
+                IdSample = snowId.ToString(),
+                SampleCode = sampleDescObject.sample!,
+                DescriptionId = snowId.ToString(),
+                ContactBuyer = buyer,
+                ReportNumber = reportNum
+            };
+            _db.SampleInfos.Add(sampleInfo);
+            await _db.SaveChangesAsync();
         }
     }
 }

@@ -264,6 +264,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BJ6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
                     map["AR7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) ? "-":w.SpecialCareInstruction;
                     map["AZ13"] = (w, dto, reportNo) => "1";
+                    map["BQ6"] = (w, dto, reportNo) => w.Program!;
                 }
                 else
                 {
@@ -275,6 +276,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["N6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) ? "-" : w.SpecialCareInstruction;
                     map["W8"] = (w, dto, reportNo) => "1";
                     map["AG10"] = (w, dto, reportNo) => "1";
+                    map["H6"] = (w, dto, reportNo) => w.Program!;
                 }
                 return map;
             },
@@ -288,7 +290,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BE40"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["AU41"] = (w, dto, reportNo) => w.DryProcedure!,
                 ["BD41"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
-                ["AR42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
+                ["AR42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
+                ["BL41"] = (w, dto, reportNo) => w.Program!,
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -349,7 +352,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BH27"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["BM28"] = (w, dto, reportNo) => w.DryProcedure!,
                 ["BV28"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
-                ["BH29"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
+                ["BH29"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
+                ["BU26"] = (w, dto, reportNo) => w.Program!
             },
             ["Determination of Size"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -360,6 +364,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
                 ["AT8"] = (w, dto, reportNo) =>"1",
+                ["BR50"] = (w, dto, reportNo) => w.Temperature!,
+                ["BJ51"] = (w, dto, reportNo) => w.DryProcedure!,
             },
         };
 

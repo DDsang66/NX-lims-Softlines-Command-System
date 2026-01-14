@@ -46,6 +46,10 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<SampleDescription> SampleDescriptions { get; set; }
 
+    public virtual DbSet<SampleInfo> SampleInfos { get; set; }
+
+    public virtual DbSet<SampleInfoDescription> SampleInfoDescriptions { get; set; }
+
     public virtual DbSet<Standard> Standards { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -55,10 +59,6 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=GUANGXDDCHEN\\SQLEXPRESS;Database=NX-lims Lab Command Sys;Trusted_Connection=True;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -641,6 +641,61 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(10)
                 .IsUnicode(false)
                 .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<SampleInfo>(entity =>
+        {
+            entity.HasKey(e => e.IdSample);
+
+            entity.ToTable("sample_info");
+
+            entity.Property(e => e.IdSample)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("id_sample");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
+            entity.Property(e => e.DescriptionId)
+                .IsUnicode(false)
+                .HasColumnName("description_id");
+            entity.Property(e => e.Remark)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.SampleCode)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("sample_code");
+        });
+
+        modelBuilder.Entity<SampleInfoDescription>(entity =>
+        {
+            entity.HasKey(e => e.IdDescription);
+
+            entity.ToTable("sample_info_description");
+
+            entity.Property(e => e.IdDescription)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("id_description");
+            entity.Property(e => e.PropertyName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_name");
+            entity.Property(e => e.PropertyValue)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_value");
+            entity.Property(e => e.SampleId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("sample_id");
         });
 
         modelBuilder.Entity<Standard>(entity =>

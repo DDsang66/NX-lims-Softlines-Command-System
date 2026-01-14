@@ -347,10 +347,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         }
         #endregion
 
-
-
-
-
         //AfterWash
         public static string[] DStoWashingAf(string sampleDescription)
         {

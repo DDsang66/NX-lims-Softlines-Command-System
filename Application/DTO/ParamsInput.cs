@@ -19,6 +19,7 @@
         public List<FiberInfoNew>? FiberInfo { get; set; }
         public string? additionalRequire { get; set; }
         public string? SampleDescription { get; set; }
+        public List<SampleDescObject>? SampleDescriptionList { get; set; }
 
 
 
@@ -44,22 +45,10 @@
                 FiberInfo = requiredInfoDto.fibercompositionInfo,
                 additionalRequire = requiredInfoDto.additionalRequire,
                 SampleDescription = requiredInfoDto.sampleDescription,
+                SampleDescriptionList  =requiredInfoDto.sampleDescripBoundSingle
             };
         }
     }
 
-    public class FiberDto
-    {
-        public string? Composition { get; set; }
-        public int Rate { get; set; }
-    }
-
-
-    public class FiberInfoNew
-    {
-        public string? Sample { get; set; }
-        public List<FiberDto>? CompositionList { get; set; }
-
-    }
 
 }

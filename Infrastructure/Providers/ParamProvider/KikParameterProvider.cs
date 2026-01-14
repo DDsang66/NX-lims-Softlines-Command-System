@@ -53,8 +53,23 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Program = "900r"
+                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM":"900RPM"
             },
+
+            ("Determination of the Fastening of Components", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
+    : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
+    : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
+    : "Wollens procedure",
+                DryProcedure = p.DryProcedure,
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+            },
+
+
             ("Appearance", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -70,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Program = "900r"
+                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM" : "900RPM"
             },
             ("Attachment Strength", _, _) => new WetParameterIso
             {
@@ -112,7 +127,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Program = "900r"
+                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM" : "900RPM"
             },
             _ => new WetParameterIso
             {
