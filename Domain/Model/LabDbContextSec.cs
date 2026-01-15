@@ -547,6 +547,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("contact_item");
+            entity.Property(e => e.ContactSample)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_sample");
             entity.Property(e => e.IsAfterwash)
                 .HasMaxLength(10)
                 .IsFixedLength()
@@ -658,6 +662,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("contact_buyer");
             entity.Property(e => e.DescriptionId)
+                .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("description_id");
             entity.Property(e => e.Remark)
@@ -811,6 +816,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("contact_item");
+            entity.Property(e => e.ContactSample)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_sample");
             entity.Property(e => e.Cycle)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -897,6 +906,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("contact_item");
+            entity.Property(e => e.ContactSample)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_sample");
             entity.Property(e => e.Detergent)
                 .HasMaxLength(100)
                 .IsUnicode(false)

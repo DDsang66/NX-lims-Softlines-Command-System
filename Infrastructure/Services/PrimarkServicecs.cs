@@ -19,7 +19,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             _repo = repo;
             _helper = helper;
         }
-
+        /// <summary>
+        /// 生成CheckList服务
+        /// </summary>
+        /// <param name="infoDto"></param>
+        /// <returns></returns>
         public async Task<object?> ShowItemAsync([FromBody] RequiredInfoDto infoDto)
         {
             string MenuName = infoDto.menuName!;
@@ -78,9 +82,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                 //    _repo.UpdateWetParamAsync(wetParams, newWetParam);
                 //}
                 #endregion
-                string? param = await paramHelper.CreateParameters(infoDto, item.itemName!)!;
+                //string? param = await paramHelper.CreateParameters(infoDto, item.itemName!)!;//这里要转化为物理参数去保存
 
                 //dtos.Add(PrimarkParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!, Standard = item.standards }, param!));
+                //这里改成动态去数据库去生成好的参数，最后注入到dto返回给前端
             }
             return dtos;
         }

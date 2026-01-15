@@ -19,73 +19,88 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _helper = helper;
             _repo = repo;
         }
+        // 将硬编码的测试项目列表提取为静态只读常量
+        public static readonly string[] WetTestItems = new[]
+        {
+            "Colour Fastness to Washing",
+            "Absorbency of Textiles",
+            "Colour Fastness to Hot Pressing",
+            "Dimensional and Bra Wire Casing Stability",
+            "Martindale Pilling",
+            "Print / Motif / Flock Durability",
+            "Print Durability",
+            "Shower Resistant Claims Spray Rating",
+            "Spirality", 
+            "Stability to Dry Cleaning",
+            "Stability to Washing",
+            "Waterproof Claims Hydrostatic Head",
+            "Dimensional Stability",
+            "Security of Attachment(Wash)",
+            "Easycare/Non-Iron",
+            "Appearance-Common",
+            "Colour Fastness to Dry Cleaning"
+        };
 
+        // 为了提高查找效率，同时提供一个 HashSet 版本
+        public static readonly HashSet<string> WetTestItemsSet = new HashSet<string>(WetTestItems);
 
         /// <summary>
         /// 根据ItemName生成对应的参数
         /// </summary>
         /// <param name="infoDto"></param>
         /// <param name="ItemName"></param>
-        public async void CreateParamGeneratorAsync([FromBody] RequiredInfoDto infoDto, string itemName, string standard)
+        public async void CreateParamGeneratorAsync(
+            [FromBody] RequiredInfoDto infoDto,
+            string itemName, 
+            string standard)
         {
             if (string.IsNullOrWhiteSpace(itemName)) return;
 
-            string contactSample = infoDto.items!.Select(x => x.itemName == itemName).ToString()!;
+            string contactSample = infoDto.items!.Where(x => x.itemName == itemName).FirstOrDefault()!.samples!;
 
             var samples = contactSample!.Split(',').Select(s => s.Trim()).ToArray();
 
-            List<SampleInfo> sampleInfos = new List<SampleInfo>();
-
             foreach (var sample in samples)
             {
-                var sampleObj = await _repo.GetSamplesByNames(sample, infoDto.reportNumber!, infoDto.buyer!);
+                var sampleInfo = await _repo.GetSampleByNameAsync(sample, infoDto.reportNumber!, infoDto.buyer!);
 
-                sampleInfos.Add(sampleObj);
-
-                /*生成缩水参数----------------------------------------------------------------------------------------------------------------------------*/
-
-                var paramInput = new ParamsInput().CreateParamsInput(infoDto, itemName, standard);
-
-                var wetParams = CreateWetParameters(paramInput, sample);
-
-                var existWetParam = await _repo.GetWetParamAsync(infoDto.reportNumber!, itemName);
-
-                if (existWetParam != null)
+                /*生成缩水参数----------------------------------------------------------------------------------------------------------*/
+                if (WetTestItemsSet.Contains(itemName)) 
                 {
-                    //如果存在，更新
-                    _repo.UpdateWetParamAsync(wetParams, existWetParam);
-                }
-                else
-                {
-                    //如果不存在，创建后更新
-                    var newWetParam = await _repo.CreateWetParamAsync(paramInput);
-                    _repo.UpdateWetParamAsync(wetParams, newWetParam);
+                    var fiberContent = infoDto.fiberCompositionSingle!.Where(x => x.Sample == sample).FirstOrDefault()!.CompositionList;
+
+                    var paramInput = new ParamsInput().CreateParamsInput(infoDto, itemName, standard);
+
+                    var wetParams = CreateWetParameters(paramInput, sample, fiberContent!);
+
+                    var existWetParam = await _repo.GetWetParamAsync(infoDto.reportNumber!, itemName);
+
+                    if (existWetParam != null) _repo.UpdateWetParamAsync(wetParams, existWetParam);
+                    else
+                    {
+                        //如果不存在，创建后更新
+                        var newWetParam = await _repo.CreateWetParamAsync(paramInput);
+                        _repo.UpdateWetParamAsync(wetParams, newWetParam);
+                    }
+
                 }
                 /*----------------------------------------------------------------------------------------------------------------------------*/
-
+                //通用参数生成逻辑
 
                 //调用规则字典把相关的测点信息、测试条件、测试方法传入，最后输出参数
-
+                string? param = await CreateParameters(infoDto, itemName)!;
             }
 
             return;
         }
 
 
-
-
-
-
-
-
-
-
-        //仅仅用于修改对应ItemName中的Parameter
-        private WetParameterIso CreateWetParameters(ParamsInput p, string sample) => (p.ItemName, p.WashingProcedure, p.DCProcedure, p.MenuName) switch
+        private WetParameterIso CreateWetParameters(ParamsInput p, string sample, List<FiberDto> fiberContent) => (p.ItemName, p.WashingProcedure, p.DCProcedure, p.MenuName) switch
         {
             ("Colour Fastness to Washing", "4H" or "3M" or "3G" or "3H", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.WashingProcedure!.Contains("3") == true ? "30" : "40",
@@ -96,16 +111,18 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Colour Fastness to Washing", "4N" or "4M" or "4G" or "3N", _, "PTC03" or "PTC04" or "PTC24") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.WashingProcedure!.Contains("3") == true ? "30" : "40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
-                SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10,
+                SteelBallNum = _helper.IsCompositionExist("Animal", fiberContent!) == true ? 0 : 10,
                 SpecialCareInstruction = (p.SampleDescription!.Contains("White") || p.SampleDescription.Contains("Cream")) == true ? "N/A" : null
             },
             ("Colour Fastness to Washing", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = "40",
@@ -116,6 +133,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Absorbency of Textiles", "3H" or "4H", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
@@ -129,6 +147,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Absorbency of Textiles", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Program = WetParamHelper(p.WashingProcedure!),
@@ -154,6 +173,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Wind Resistant Claims Air Permeability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
@@ -161,8 +181,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryCleanProcedure = p.DCProcedure,
                 AfterWash = "After 1 Wash",
@@ -170,6 +190,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Colour Fastness to Hot Pressing", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = HotPressingHelper(p.IronMethod, p.MenuName!),
@@ -178,6 +199,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Dimensional and Bra Wire Casing Stability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4H",
@@ -185,8 +207,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryProcedure = p.DryProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -194,6 +216,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Martindale Pilling", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
@@ -201,8 +224,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryProcedure = p.DryProcedure,
                 AfterWash = "After 1 Wash",
@@ -210,6 +233,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Print / Motif / Flock Durability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
@@ -220,6 +244,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Print Durability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
@@ -230,6 +255,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Shower Resistant Claims Spray Rating", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
@@ -237,8 +263,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryProcedure = p.DryProcedure,
                 AfterWash = "After 1 Wash",
@@ -246,6 +272,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality", _, _, "PTC09" or "PTC10" or "PTC13" or "PTC14" or "PTC15" or "PTC15A" or "PTC29") => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
@@ -253,8 +280,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryProcedure = p.DryProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -262,25 +289,28 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Stability to Dry Cleaning", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", fiberContent!) == true ||
                       p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
             },
             ("Colour Fastness to Dry Cleaning", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryCleanProcedure =p.DCProcedure,
-                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", fiberContent!) == true ||
           p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
             },
             ("Stability to Washing", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4N",
@@ -288,8 +318,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryProcedure = p.DryProcedure,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -297,6 +327,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Waterproof Claims Hydrostatic Head", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = "4N",
@@ -304,8 +335,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 DryProcedure = p.DryProcedure,
                 AfterWash = "After 1 Wash",
@@ -313,12 +344,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Dimensional Stability", "3H" or "4H", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 SpecialCareInstruction = p.Sci,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 Temperature = "40",
                 WashingProcedure = "4H",
@@ -330,12 +362,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Dimensional Stability", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 SpecialCareInstruction = p.Sci,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
                 WashingProcedure = p.WashingProcedure,
@@ -347,12 +380,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Spirality", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 SpecialCareInstruction = p.Sci,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
                 WashingProcedure = p.WashingProcedure,
@@ -364,12 +398,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Security of Attachment(Wash)", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 SpecialCareInstruction = p.Sci,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
+                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
                 Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
                 WashingProcedure = p.WashingProcedure,
@@ -381,6 +416,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Easycare/Non-Iron", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -388,6 +424,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             ("Appearance-Common", _, _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -395,10 +432,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
+                ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!
+
             }
         };
+
+
+        private async Task<PhyParameter> CreatPhyParameters(SampleInfo sampleInfo, string itemName, RequiredInfoDto infoDto) 
+        {
+            List<SampleInfoDescription> sampleDesc= await _repo.GetSampleInfoDescription(sampleInfo, infoDto.reportNumber!,infoDto.buyer!);
+
+            return new PhyParameter();
+        }
+
+
+
+
+
 
         #region
         public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName)

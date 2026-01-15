@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
-public partial class WetParameterIso:IWetParam
+public partial class WetParameterIso: IWetParam
 {
     public int ParamId { get; set; }
 
@@ -43,4 +43,6 @@ public partial class WetParameterIso:IWetParam
     public string? Sensitive { get; set; }
 
     public string? ContactItem { get; set; }
+
+    public string? ContactSample { get; set; }
 }

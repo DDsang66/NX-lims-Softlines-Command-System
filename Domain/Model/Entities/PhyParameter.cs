@@ -9,6 +9,8 @@ public partial class PhyParameter
 
     public string? ContactItem { get; set; }
 
+    public string? ContactSample { get; set; }
+
     public string? ReportNumber { get; set; }
 
     public string? IsAfterwash { get; set; }

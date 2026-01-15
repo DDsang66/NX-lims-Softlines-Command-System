@@ -378,7 +378,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["D4"] = (w, dto, reportNo) => w.Temperature!,
                 ["F4"] = (w, dto, reportNo) => w.Program!,
-                ["D33"] = (w, dto, reportNo) => w.Temperature!,
+                ["D33"] = (w, dto, reportNo) => "1",
                 ["G33"] = (w, dto, reportNo) => dto.Sample!
             },
             ["Spirality/Skewing"] = (w, dto, reportNo) =>

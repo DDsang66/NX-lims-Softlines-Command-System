@@ -13,7 +13,7 @@ public partial class SampleInfo
 
     public string SampleCode { get; set; } = null!;
 
-    public string? DescriptionId { get; set; }
+    public string DescriptionId { get; set; } = null!;
 
     public string? Remark { get; set; }
 }

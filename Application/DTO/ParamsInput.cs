@@ -42,7 +42,7 @@
                 Detergent = requiredInfoDto.detergent,
                 AfterWash = requiredInfoDto.afterWash,
                 FiberContent = requiredInfoDto.fiberComposition,
-                FiberInfo = requiredInfoDto.fibercompositionInfo,
+                FiberInfo = requiredInfoDto.fiberCompositionSingle,
                 additionalRequire = requiredInfoDto.additionalRequire,
                 SampleDescription = requiredInfoDto.sampleDescription,
                 SampleDescriptionList  =requiredInfoDto.sampleDescripBoundSingle
