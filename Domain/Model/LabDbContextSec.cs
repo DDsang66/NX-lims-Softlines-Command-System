@@ -38,9 +38,9 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<NextMenu> NextMenus { get; set; }
 
-    public virtual DbSet<OvsMenu> OvsMenus { get; set; }
+    public virtual DbSet<NormalParameter> NormalParameters { get; set; }
 
-    public virtual DbSet<PhyParameter> PhyParameters { get; set; }
+    public virtual DbSet<OvsMenu> OvsMenus { get; set; }
 
     public virtual DbSet<PrimarkMenu> PrimarkMenus { get; set; }
 
@@ -506,6 +506,58 @@ public partial class LabDbContextSec : DbContext
                 .HasColumnName("type");
         });
 
+        modelBuilder.Entity<NormalParameter>(entity =>
+        {
+            entity.HasKey(e => e.ParamId).HasName("PK_phy_parameter");
+
+            entity.ToTable("normal_parameter");
+
+            entity.Property(e => e.ParamId)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("param_id");
+            entity.Property(e => e.CleanseProcedure)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("cleanse_procedure");
+            entity.Property(e => e.ContactItem)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_item");
+            entity.Property(e => e.ContactSample)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_sample");
+            entity.Property(e => e.Cycle)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("cycle");
+            entity.Property(e => e.ExtraParam)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("extra_param");
+            entity.Property(e => e.Load)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("load");
+            entity.Property(e => e.Pressure)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("pressure");
+            entity.Property(e => e.Remark)
+                .HasMaxLength(150)
+                .IsUnicode(false)
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.WashNum)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("wash_num");
+        });
+
         modelBuilder.Entity<OvsMenu>(entity =>
         {
             entity.HasKey(e => e.IdOvs);
@@ -531,58 +583,6 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("type");
-        });
-
-        modelBuilder.Entity<PhyParameter>(entity =>
-        {
-            entity.HasKey(e => e.ParamId);
-
-            entity.ToTable("phy_parameter");
-
-            entity.Property(e => e.ParamId)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("param_id");
-            entity.Property(e => e.ContactItem)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("contact_item");
-            entity.Property(e => e.ContactSample)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("contact_sample");
-            entity.Property(e => e.IsAfterwash)
-                .HasMaxLength(10)
-                .IsFixedLength()
-                .HasColumnName("is_afterwash");
-            entity.Property(e => e.LoadUnit)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("load_unit");
-            entity.Property(e => e.LoadValue)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("load_value");
-            entity.Property(e => e.Pressure)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("pressure");
-            entity.Property(e => e.Remark)
-                .HasMaxLength(150)
-                .IsUnicode(false)
-                .HasColumnName("remark");
-            entity.Property(e => e.ReportNumber)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("report_number");
-            entity.Property(e => e.Revolution)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("revolution");
-            entity.Property(e => e.WashingContactParam)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("washing_contact_param");
         });
 
         modelBuilder.Entity<PrimarkMenu>(entity =>

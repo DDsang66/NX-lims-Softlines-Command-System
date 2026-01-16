@@ -6,6 +6,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRep
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using static NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper.PrimarkParameterMapper;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
@@ -56,37 +57,25 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 
             PrimarkParameterProvider paramHelper = new PrimarkParameterProvider(_helper, _repo);
 
-            SaveSampleInfo(infoDto.sampleDescripBoundSingle!, infoDto.reportNumber!, infoDto.buyer!);
+            await SaveSampleInfo(infoDto.sampleDescripBoundSingle!, infoDto.reportNumber!, infoDto.buyer!);
 
-            var dtos = new List<object>();
             foreach (var item in items!)
             {
+                //分测点,逻辑已从CreateParamGeneratorAsync提出
+                string contactSample = infoDto.items!.Where(x => x.itemName == item.itemName).FirstOrDefault()!.samples!;
 
-                paramHelper.CreateParamGeneratorAsync(infoDto, item.itemName!,item.standards!);
-                #region
-                //var paramInput = new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString());
+                var samples = contactSample!.Split(',').Select(s => s.Trim()).ToArray();
 
-                //var wetParams = paramHelper.CreateWetParameters(paramInput, item.samples!);
+                foreach (var sample in samples)
+                {
+                    var (wetParam, normalParam) = await paramHelper.CreateParamGeneratorAsync(infoDto, item.itemName!, item.standards!, sample);
 
-                //var existWetParam = await _repo.GetWetParamAsync(infoDto.reportNumber!, item.itemName!);
-
-                //if (existWetParam != null)
-                //{
-                //    //如果存在，更新
-                //    _repo.UpdateWetParamAsync(wetParams, existWetParam);
-                //}
-                //else
-                //{
-                //    //如果不存在，创建后更新
-                //    var newWetParam = await _repo.CreateWetParamAsync(paramInput);
-                //    _repo.UpdateWetParamAsync(wetParams, newWetParam);
-                //}
-                #endregion
-                //string? param = await paramHelper.CreateParameters(infoDto, item.itemName!)!;//这里要转化为物理参数去保存
-
-                //dtos.Add(PrimarkParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!, Standard = item.standards }, param!));
-                //这里改成动态去数据库去生成好的参数，最后注入到dto返回给前端
+                    PrimarkParameterMapperMethod.Map(item.itemName!, item.standards!, item.samples!, wetParam, normalParam);
+                    //这里改成动态去数据库去生成好的参数，最后注入到dto返回给前端
+                }
             }
+            var dtos = PrimarkParameterMapperMethod.GetAllDtos();
+
             return dtos;
         }
 
@@ -96,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         /// <param name="sampleDescObjects"></param>
         /// <param name="reportNum"></param>
         /// <param name="buyer"></param>
-        private void SaveSampleInfo (List<SampleDescObject> sampleDescObjects, string reportNum, string buyer)
+        private async Task SaveSampleInfo (List<SampleDescObject> sampleDescObjects, string reportNum, string buyer)
         {
             // 检查输入参数是否为空
             if (sampleDescObjects == null || !sampleDescObjects.Any())
@@ -111,7 +100,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 
                 sampleObject.description = item.description;
 
-                _repo.SaveSampleInfoAsync(sampleObject, reportNum, buyer);
+                await _repo.SaveSampleInfo(sampleObject, reportNum, buyer);
             }
         }
     }

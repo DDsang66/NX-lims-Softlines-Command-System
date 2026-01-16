@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Drawing.Spreadsheet;
+using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain;
@@ -70,64 +71,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             return null;
         }
 
-
-
-        /* 原缩水参数生成逻辑
-        public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
-        {
-            // 只处理指定 item 类型
-            if (!new[] { "Colour Fastness to Washing", "Absorbency of Textiles", "Colour Fastness to Hot Pressing",
-                "Dimensional and Bra Wire Casing Stability", "Martindale Pilling", "Print / Motif / Flock Durability",
-                "Print Durability","Shower Resistant Claims Spray Rating","Spirality","Stability to Dry Cleaning",
-                "Stability to Washing","Waterproof Claims Hydrostatic Head","Dimensional Stability","Security of Attachment(Wash)",
-                "Easycare/Non-Iron","Appearance-Common","Colour Fastness to Dry Cleaning"}
-                 .Contains(itemName))
-                return default;
-            var Param = await _db.WetParameterIsos
-                              .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            PrimarkParameterProvider wetParam = new PrimarkParameterProvider();
-            if (Param != null)
-            {
-                var updatedParam = wetParam.CreateWetParameters(input);
-                updatedParam.ParamId = Param.ParamId;
-                _db.Entry(Param).CurrentValues.SetValues(updatedParam);
-                await _db.SaveChangesAsync();
-                Param = updatedParam;
-            }
-            else
-            {
-                var newParam = new WetParameterIso//没有找到对应的对象，随即构造一个
-                {
-                    Standard = input.Standard,
-                    Sensitive = "N",
-                    ReportNumber = input.OrderNumber!,
-                    ContactItem = itemName
-                };
-                Param = wetParam.CreateWetParameters(input);
-                foreach (var prop in typeof(WetParameterIso).GetProperties())
-                {
-                    if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
-                    {
-                        var value = prop.GetValue(Param);
-                        if (value != null)
-                        {
-                            prop.SetValue(newParam, value);
-                        }
-                    }
-                }
-
-                await _db.WetParameterIsos.AddAsync(newParam);
-                await _db.SaveChangesAsync();
-                Param = newParam;
-            }
-            return (T)(object)Param;//返回WetParameters类型的对象
-        }
-        */
-
-
-
         /// <summary>
-        /// 获取WetParams
+        /// 新建WetParams
         /// </summary>
         /// <param name="input"></param>
         /// <returns> WetParameterIso</returns>
@@ -147,15 +92,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
 
 
         /// <summary>
-        /// 新建WetParam
+        /// 获取WetParams
         /// </summary>
         /// <param name="reportNum"></param>
         /// <param name="itemName"></param>
         /// <returns></returns>
-        public async Task<WetParameterIso> GetWetParamAsync(string reportNum, string itemName)
+        public async Task<WetParameterIso> GetWetParamAsync(string reportNum, string itemName,string sample)
         {
             var Param = await _db.WetParameterIsos
-                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum);
+                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum && p.ContactSample == sample);
             return Param!;
         }
 
@@ -182,6 +127,54 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             await _db.WetParameterIsos.AddAsync(exitParam);
             await _db.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// 新建NormalParams
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns> WetParameterIso</returns>
+        public async Task<NormalParameter> CreateNormalParamAsync(string reprortNum, string itemName, string sample)
+        {
+            var snowflake = new SnowflakeIdGenerator();
+            long snowId = snowflake.NextId();
+            var newParam = new NormalParameter//构造一个基础对象
+            {
+                ParamId = snowId.ToString(),
+                ReportNumber = reprortNum,
+                ContactItem = itemName,
+                ContactSample = sample
+            };
+            await _db.NormalParameters.AddAsync(newParam);
+            await _db.SaveChangesAsync();
+            return newParam!;
+        }
+
+
+        /// <summary>
+        /// 获取NormaltParam
+        /// </summary>
+        /// <param name="reportNum"></param>
+        /// <param name="itemName"></param>
+        /// <returns></returns>
+        public async Task<NormalParameter> GetNormalParamAsync(string reportNum, string itemName, string sample)
+        {
+            var Param = await _db.NormalParameters
+                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum && p.ContactSample == sample);
+            return Param!;
+        }
+
+        /// <summary>
+        /// 更新WetParam
+        /// </summary>
+        /// <param name="newParam"></param>
+        /// <param name="exitParam"></param>
+        public async void UpdateNormalParamAsync(string newParam, NormalParameter exitParam)
+        {
+            exitParam.ExtraParam = newParam;
+            await _db.NormalParameters.AddAsync(exitParam);
+            await _db.SaveChangesAsync();
+        }
+
 
         /// <summary>
         /// 根据样品代码、报告编号和购买者信息获取单个样品信息
@@ -231,43 +224,42 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             return sampleDescObj;
         }
 
-
-
         /// <summary>
         /// 保存SampleInfo
         /// </summary>
         /// <param name="sampleDescObject"></param>
         /// <param name="reportNum"></param>
         /// <param name="buyer"></param>
-        public async void SaveSampleInfoAsync(SampleDescObject sampleDescObject, string reportNum, string buyer)
+        public async Task SaveSampleInfo(SampleDescObject sampleDescObject, string reportNum, string buyer)
         {
             var snowflake = new SnowflakeIdGenerator();
             long snowId = snowflake.NextId();
+            var sampleInfo = new SampleInfo
+            {
+                IdSample = snowId.ToString(),
+                DescriptionId = snowId.ToString(),
+                SampleCode = sampleDescObject.sample!,
+                ContactBuyer = buyer,
+                ReportNumber = reportNum
+            };
+            _db.SampleInfos.Add(sampleInfo);
             foreach (var item in sampleDescObject.description!)
             {
+                snowId = snowflake.NextId();
                 if (item.propertyName != null && item.value != null) 
                 {
                     var desc = new SampleInfoDescription
                     {
                         IdDescription = snowId.ToString(),
-                        SampleId = snowId.ToString(),
+                        SampleId = sampleInfo.IdSample,
                         PropertyName = item.propertyName,
                         PropertyValue = item.value,
                     };
                     _db.SampleInfoDescriptions.Add(desc);
                 }
-            }
 
-            var sampleInfo = new SampleInfo
-            {
-                IdSample = snowId.ToString(),
-                SampleCode = sampleDescObject.sample!,
-                DescriptionId = snowId.ToString(),
-                ContactBuyer = buyer,
-                ReportNumber = reportNum
-            };
-            _db.SampleInfos.Add(sampleInfo);
-            await _db.SaveChangesAsync();
+               await _db.SaveChangesAsync();
+            }
         }
     }
 }
