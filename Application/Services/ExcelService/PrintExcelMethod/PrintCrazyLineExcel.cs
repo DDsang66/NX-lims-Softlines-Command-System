@@ -71,7 +71,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (wp == null) wp = new WetParameterAatcc();
                 string? afterWash = wp!.AfterWash;
                 string? iron = wp!.Iron;
-                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                string? ironMethod = wp!.IronMethod;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
             }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
@@ -259,12 +260,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["A3"] = (w, dto, reportNo) => "AATCC TM 135-2018t";
-                    map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
                     map["A3"] = (w, dto, reportNo) =>"AATCC TM 150-2018t/AATCC TS006";
-                    map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 return map;
             },
@@ -336,7 +337,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["U32"] = (w, dto, reportNo) => w.Temperature!;
                     map["A33"] = (w, dto, reportNo) => w.Cycle!;
                     map["M33"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["V33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["V33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 else if (w.WashingProcedure.Contains("Hand"))
                 {

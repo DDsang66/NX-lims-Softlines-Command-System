@@ -132,7 +132,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 string? afterWash = wp!.AfterWash;
 
                 string? iron = wp!.Iron;
-                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                string? ironMethod = wp!.IronMethod;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
             }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->

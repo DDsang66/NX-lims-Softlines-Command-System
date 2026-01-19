@@ -139,7 +139,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
                 string? iron = wp!.Iron;
-                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                string? ironMethod = wp!.IronMethod;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
             }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
@@ -585,7 +586,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BW52"] = (wp, dto, reportNo) => w.Temperature!,
                 ["BF53"] = (wp, dto, reportNo) => w.Ballast!,
                 ["BH54"] = (wp, dto, reportNo) => w.DryProcedure!,
-                ["BQ54"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BQ54"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
                 ["AR55"] = (wp, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
             },
             ["Stability to Dry Cleaning"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
@@ -737,7 +738,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["E30"] = (w, dto, reportNo) => w.Program!;
                 map["R31"] = (w, dto, reportNo) => w.DryProcedure!;
                 map["H30"] = (w, dto, reportNo) => w.DryCleanProcedure!;
-                map["AF31"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                map["AF31"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 map["A32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
@@ -807,7 +808,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["AJ40"] = (w, dto, reportNo) => w.Temperature!,
                 ["Q41"] = (w, dto, reportNo) => w.Ballast!,
                 ["S42"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AB42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "/ Iron" : w.IronMethod!
+                ["AB42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron) ? "/ Iron" : w.IronMethod!
             },
             ["Mass per Unit Area"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -919,7 +920,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["AJ19"] = (w, dto, reportNo) => w.Temperature!,
                 ["P20"] = (w, dto, reportNo) => w.Ballast!,
                 ["S21"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AB21"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "/ Iron" : w.IronMethod!
+                ["AB21"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron) ? "/ Iron" : w.IronMethod!
             },
             ["Tear Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -971,7 +972,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["AJ30"] = (w, dto, reportNo) => w.Temperature!,
                 ["P31"] = (w, dto, reportNo) => w.Ballast!,
                 ["S32"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AB32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "/ Iron" : w.IronMethod!
+                ["AB32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron) ? "/ Iron" : w.IronMethod!
                 //洗前洗后都有
             },
             ["Zip Fasteners"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>

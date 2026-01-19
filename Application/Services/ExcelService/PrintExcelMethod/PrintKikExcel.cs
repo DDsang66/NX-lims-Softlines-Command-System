@@ -73,7 +73,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     .Select(s => s.Trim())
                     .SelectMany(s => new[] { $"{s}-1 Wash" }));
                 string? iron = wp!.Iron;
-                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                string? ironMethod = wp!.IronMethod;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, iron);
             }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
@@ -261,7 +262,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BA4"] = (w, dto, reportNo) => w.Temperature!;
                     map["BB5"] = (w, dto, reportNo) => w.WashingProcedure!;
                     map["AR6"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["BJ6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["BJ6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                     map["AR7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) ? "-":w.SpecialCareInstruction;
                     map["AZ13"] = (w, dto, reportNo) => "1";
                     map["BQ6"] = (w, dto, reportNo) => w.Program!;
@@ -272,7 +273,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["L4"] = (w, dto, reportNo) => w.Temperature!;
                     map["J5"] = (w, dto, reportNo) => w.WashingProcedure!;
                     map["AG5"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                     map["N6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) ? "-" : w.SpecialCareInstruction;
                     map["W8"] = (w, dto, reportNo) => "1";
                     map["AG10"] = (w, dto, reportNo) => "1";
@@ -285,11 +286,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["BG6"] = (w, dto, reportNo) => "1",
                 ["BE13"] = (w, dto, reportNo) => "1",
-                ["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BI13"] = (w, dto, reportNo) => w.IronMethod!,
                 ["BA39"] = (w, dto, reportNo) => w.Temperature!,
                 ["BE40"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["AU41"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["BD41"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BD41"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
                 ["AR42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
                 ["BL41"] = (w, dto, reportNo) => w.Program!,
             },
@@ -351,7 +352,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BR24"] = (w, dto, reportNo) => w.Temperature!,
                 ["BH27"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["BM28"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["BV28"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BV28"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
                 ["BH29"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
                 ["BU26"] = (w, dto, reportNo) => w.Program!
             },

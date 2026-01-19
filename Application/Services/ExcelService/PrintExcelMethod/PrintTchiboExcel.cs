@@ -73,7 +73,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
                 string? iron = wp!.Iron;
-                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                string? ironMethod = wp!.IronMethod;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!,iron);
             }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
@@ -280,7 +281,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
-                ["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BI13"] = (w, dto, reportNo) => w.IronMethod!,
                 ["BA37"] = (w, dto, reportNo) => w.Temperature!,
                 ["BH37"] = (w, dto, reportNo) => w.Detergent!,
                 ["AV38"] = (w, dto, reportNo) => w.WashingProcedure!,
@@ -443,7 +444,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["K20"] = (w, dto, reportNo) => w.Temperature!;
                     map["R20"] = (w, dto, reportNo) => w.Detergent!;
                     map["L21"] = (w, dto, reportNo) => w.WashingProcedure!;
-                    map["A22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["A22"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                     map["N22"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["A23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }

@@ -75,7 +75,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         .Select(s => s.Trim())
                         .SelectMany(s => new[] { $"{s}-1 Wash" }));
                 string? iron = wp!.Iron;
-                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                string? ironMethod = wp!.IronMethod;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!,iron);
             }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
@@ -268,7 +269,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["BB5"] = (w, dto, reportNo) => w.WashingProcedure!;
                        map["AR6"] = (w, dto, reportNo) => w.DryProcedure!;
                        map["BI6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
-                       map["BC6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                       map["BC6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                    }
                    else if (dto.sampleDescription!.Contains("Garment"))
                    {
@@ -278,7 +279,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["J5"] = (w, dto, reportNo) => w.WashingProcedure!;
                        map["AG5"] = (w, dto, reportNo) => w.DryProcedure!;
                        map["N6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
-                       map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                       map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                    }
                    else
                    {
@@ -288,7 +289,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["J5"] = (w, dto, reportNo) => w.WashingProcedure!;
                        map["AG5"] = (w, dto, reportNo) => w.DryProcedure!;
                        map["N6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
-                       map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                       map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                    }
                    return map;
                },
@@ -300,7 +301,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["S33"] = (w, dto, reportNo) => w.Detergent!,
                 ["E34"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["Y34"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AH34"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["AH34"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
                 ["A35"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
                 ["AL35"] = (w, dto, reportNo) => w.Program!,
             },
@@ -308,7 +309,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR4"] = (w, dto, reportNo) => dto.Standard!,
-                ["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BI13"] = (w, dto, reportNo) => w.IronMethod!,
                 ["BA37"] = (w, dto, reportNo) => w.Temperature!,
                 ["BH37"] = (w, dto, reportNo) => w.Detergent!,
                 ["AV38"] = (w, dto, reportNo) => w.WashingProcedure!,

@@ -73,7 +73,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
                 string? iron = wp!.Iron;
-                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron);
+                string? ironMethod = wp!.IronMethod;
+                samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!,iron);
             }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
@@ -293,7 +294,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["BX4"] = (w, dto, reportNo) => w.Temperature!;
                        map["BG5"] = (w, dto, reportNo) => w.Ballast!;
                        map["BI6"] = (w, dto, reportNo) => w.DryProcedure!;
-                       map["BR6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                       map["BR6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                        map["AR7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                    }
                    else if (dto.sampleDescription!.Contains("Garment"))
@@ -304,7 +305,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["AJ4"] = (w, dto, reportNo) => w.Temperature!;
                        map["S5"] = (w, dto, reportNo) => w.Ballast!;
                        map["V6"] = (w, dto, reportNo) => w.DryProcedure!;
-                       map["AE6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                       map["AE6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                        map["A7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                    }
                    else
@@ -315,7 +316,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                        map["AL4"] = (w, dto, reportNo) => w.Temperature!;
                        map["R5"] = (w, dto, reportNo) => w.Ballast!;
                        map["T6"] = (w, dto, reportNo) => w.DryProcedure!;
-                       map["AD6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                       map["AD6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                        map["A7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction) == true ? "-" : w.SpecialCareInstruction;
                    }
                    return map;
@@ -325,12 +326,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["AR3"] = (w, dto, reportNo) => dto.Standard!,
                 ["AR38"] = (w, dto, reportNo) => "√"!,
-                ["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BI13"] = (w, dto, reportNo) => w.IronMethod!,
                 ["AX39"] = (w, dto, reportNo) => w.WashingProcedure!,
                 ["BX39"] = (w, dto, reportNo) => w.Temperature!,
                 ["BG40"] = (w, dto, reportNo) => w.Ballast!,
                 ["BI41"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["BR41"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!,
+                ["BR41"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
                 ["AR42"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!
             },
             ["Appearance after Accelerated Heat Aging"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
@@ -486,7 +487,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["AJ21"] = (w, dto, reportNo) => w.Temperature!;
                 map["Q22"] = (w, dto, reportNo) => w.Ballast!;
                 map["L23"] = (w, dto, reportNo) => w.DryProcedure!;
-                map["U23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                map["U23"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 map["A24"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 return map;
             },
@@ -538,7 +539,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["N23"] = (w, dto, reportNo) => w.Program!;
                     map["M24"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["T23"] = (w, dto, reportNo) => w.DryCleanProcedure!;
-                    map["V24"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ " : w.IronMethod!;
+                    map["V24"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ " : w.IronMethod!;
                     map["A27"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 else if (dto.Parameter!.Contains("Dry-clean"))
@@ -565,7 +566,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["N24"] = (w, dto, reportNo) => w.Program!;
                     map["M25"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["T24"] = (w, dto, reportNo) => w.DryCleanProcedure!;
-                    map["V25"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ " : w.IronMethod!;
+                    map["V25"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ " : w.IronMethod!;
                     map["A28"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 else if (dto.Parameter!.Contains("Dry-clean"))
@@ -635,7 +636,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["N20"] = (w, dto, reportNo) => w.Program!;
                     map["M21"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["T20"] = (w, dto, reportNo) => w.DryCleanProcedure!;
-                    map["V21"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ " : w.IronMethod!;
+                    map["V21"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ " : w.IronMethod!;
                     map["A24"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 else if (dto.Parameter!.Contains("Dry-clean"))
@@ -656,7 +657,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AJ42"] = (w, dto, reportNo) => w.Temperature!;
                     map["Q43"] = (w, dto, reportNo) => w.Ballast!;
                     map["L44"] = (w, dto, reportNo) => w.DryProcedure!;
-                    map["U44"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ Iron" : w.IronMethod!;
+                    map["U44"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                     map["A45"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                     map["AE44"] = (w, dto, reportNo) => "1 Wash";
                 }
@@ -696,7 +697,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["N29"] = (w, dto, reportNo) => w.Program!;
                     map["M30"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["T29"] = (w, dto, reportNo) => w.DryCleanProcedure!;
-                    map["V30"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ " : w.IronMethod!;
+                    map["V30"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ " : w.IronMethod!;
                     map["A33"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
@@ -732,7 +733,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             int offset = OffsetRule.GetValueOrDefault(itemName, 0);
             if (itemName == "DS to Washing" && !sampleDescription.Contains("Fabric")) offset = 0;
-            if (afmap != null && afmap.Length > 0 && itemName == "DS to Washing" && !sampleDescription.Contains("Fabric"))
+            if (afmap != null && afmap.Length > 0 && itemName == "DS to Washing" && !sampleDescription.Contains("Fabric") || itemName == "Appearance")
             {
                 for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
                 {

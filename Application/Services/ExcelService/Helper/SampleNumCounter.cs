@@ -15,7 +15,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Hel
         public static string[]? GetSample(
               string? dtoSample,
               string? afterWash,
-              string? iron)
+              string? iron,
+              string? ironMethod)
         {
             if (dtoSample == null)
             {
@@ -32,12 +33,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Hel
             }
 
             // 如果 afterWash 为 null 但 iron 不为 null，需要扩展数组
-            if (afterWash == null && iron != null && iron != "")
+            if (afterWash == null && iron != null && iron != ""&& iron.Contains("Before and After Iron"))
             {
                 foreach (var sample in samples)
                 {
                     expandedSamples.Add(sample);
-                    expandedSamples.Add(sample + " " + iron);
+                    expandedSamples.Add(sample + " " + ironMethod);
                 }
                 return expandedSamples.ToArray();
             }
@@ -78,18 +79,18 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Hel
                     foreach (var washNumber in result[sample])
                     {
                         expandedSamples.Add(sample);
-                        if (iron != null && iron != "")
+                        if (iron != null && iron != "" && iron.Contains("Before and After Iron"))
                         {
-                            expandedSamples.Add(sample + " " + iron);
+                            expandedSamples.Add(sample + " " + ironMethod);
                         }
                     }
                 }
                 else
                 {
                     expandedSamples.Add(sample);
-                    if (iron != null && iron != "")
+                    if (iron != null && iron != "" && iron.Contains("Before and After Iron"))
                     {
-                        expandedSamples.Add(sample + " " + iron);
+                        expandedSamples.Add(sample + " " + ironMethod);
                     }
                 }
             }
@@ -143,7 +144,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Hel
                     var washNumbers = washInfo[basePoint];
 
                     // 每个洗涤遍数对应2个测点（原始+熨烫）
-                    int itemsPerWash = (iron != null && iron != "") ? 2 : 1;
+                    int itemsPerWash = (iron != null && iron != "" && iron.Contains("Before and After Iron")) ? 2 : 1;
                     int washIndex = currentCounter / itemsPerWash;
 
                     if (washIndex < washNumbers.Count)

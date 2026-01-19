@@ -99,7 +99,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             var normalParameter = await CreatNormalParameters(sampleDesc,sample, itemName, infoDto, fiberContent);
 
             normalParam = normalParameter;
-            //最后输出参数,最后调用repo的CreateParamAsync方法保存参数
+
             return (wetParameter, normalParam);
         }
 
