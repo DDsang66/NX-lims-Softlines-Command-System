@@ -50,6 +50,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                     return new WoolworthBuyer(new WoolworthService(new WoolworthRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "focus":
                     return new FocusBuyer(new FocusService(new FocusRepository(_dbContext, _fiberHelper), _fiberHelper));
+                case "ltag":
+                    return new LTAGBuyer(new LTAGService(new LTAGRepository(_dbContext, _fiberHelper), _fiberHelper));
                 default:
                     throw new ArgumentException("Invalid buyer type");
             }

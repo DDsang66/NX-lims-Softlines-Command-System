@@ -11,11 +11,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
 {
 
     //与数据库交互
-    public class LPPRepository : IRepository
+    public class LTAGRepository : IRepository
     {
         private readonly LabDbContextSec _db;
         private readonly FiberContentHelper _helper;
-        public LPPRepository(LabDbContextSec db, FiberContentHelper helper)
+        public LTAGRepository(LabDbContextSec db, FiberContentHelper helper)
         {
             _db = db;
             _helper = helper;
@@ -80,9 +80,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure" }
                  .Contains(itemName))
                 return default;
-            var Param = await _db.WetParameterIsos
+            var Param = await _db.WetParameterAatccs
                               .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-            LPPParameterProvider wetParam = new LPPParameterProvider(_helper);
+            LTAGParameterProvider wetParam = new LTAGParameterProvider(_helper);
             if (Param != null)
             {
                 var updatedParam = wetParam.CreateWetParameters(input);
@@ -93,7 +93,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             }
             else
             {
-                var newParam = new WetParameterIso//没有找到对应的对象，随即构造一个
+                var newParam = new WetParameterAatcc//没有找到对应的对象，随即构造一个
                 {
                     Standard = input.Standard,
                     Sensitive = "N",
@@ -101,7 +101,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                     ContactItem = itemName
                 };
                 Param = wetParam.CreateWetParameters(input);
-                foreach (var prop in typeof(WetParameterIso).GetProperties())
+                foreach (var prop in typeof(WetParameterAatcc).GetProperties())
                 {
                     if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
                     {
@@ -113,7 +113,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                     }
                 }
 
-                await _db.WetParameterIsos.AddAsync(newParam);
+                await _db.WetParameterAatccs.AddAsync(newParam);
                 await _db.SaveChangesAsync();
                 Param = newParam;
             }
