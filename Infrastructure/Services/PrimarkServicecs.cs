@@ -71,11 +71,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                 {
                     var (wetParam, normalParam) = await paramHelper.CreateParamGeneratorAsync(infoDto, item.itemName!, item.standards!, sample);
 
-                    PrimarkParameterMapperMethod.Map(item.itemName!, item.standards!, item.samples!, wetParam, normalParam);
+                    PrimarkParameterMapperMethod.Map(item.itemName!, item.standards!, sample, wetParam, normalParam);
                     //这里改成动态去数据库去生成好的参数，最后注入到dto返回给前端
                 }
             }
             var dtos = PrimarkParameterMapperMethod.GetAllDtos();
+
+            PrimarkParameterMapperMethod.ClearCache();
 
             return dtos;
         }

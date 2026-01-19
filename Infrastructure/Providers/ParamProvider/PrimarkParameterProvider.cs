@@ -72,7 +72,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             List<SampleInfoDescription> sampleDesc = await _repo.GetSampleInfoDescription(sampleInfo, infoDto.reportNumber!, infoDto.buyer!);
 
             //获取Composition(根据测点Code获取对应的成分信息)
-            var fiberContent = infoDto.fiberCompositionSingle!.Where(x => x.Sample == sample).FirstOrDefault()!.CompositionList;
+            var fiberContent = infoDto.fiberCompositionSingle!.Where(x => x.Sample == sample).FirstOrDefault()!.Composition;
 
             /*生成缩水参数----------------------------------------------------------------------------------------------------------*/
             if (WetTestItemsSet.Contains(itemName))
@@ -83,12 +83,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
                 var existWetParam = await _repo.GetWetParamAsync(infoDto.reportNumber!, itemName, sample);
 
-                if (existWetParam != null) _repo.UpdateWetParamAsync(wetParams, existWetParam);
+                if (existWetParam != null)await _repo.UpdateWetParamAsync(wetParams, existWetParam);
                 else
                 {
                     //如果不存在，创建后更新
                     var newWetParam = await _repo.CreateWetParamAsync(paramInput);
-                    _repo.UpdateWetParamAsync(wetParams, newWetParam);
+                    await _repo.UpdateWetParamAsync(wetParams, newWetParam);
                 }
 
                 wetParameter = wetParams;//返回生成的缩水参数
@@ -651,17 +651,19 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     break;
             }
 
+            if(param==null||param=="") return new NormalParameter();
+
             //param存入数据库，暂时统一存入extraParam字段，后续可根据需要调整
             var existNormalParam = await _repo.GetNormalParamAsync(infoDto.reportNumber!, itemName, sample);
             if (existNormalParam != null) 
             {
-                _repo.UpdateNormalParamAsync(param, existNormalParam);
+                await _repo.UpdateNormalParamAsync(param, existNormalParam);
                 return existNormalParam;
             }
             else 
             {
                 var newParam = await _repo.CreateNormalParamAsync(infoDto.reportNumber!, itemName, sample);
-               _repo.UpdateNormalParamAsync(param, newParam);
+                await _repo.UpdateNormalParamAsync(param, newParam);
                 return newParam;
             }
     }

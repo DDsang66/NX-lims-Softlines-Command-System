@@ -57,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     public class FiberInfoNew
     {
         public string? Sample { get; set; }
-        public List<FiberDto>? CompositionList { get; set; }
+        public List<FiberDto>? Composition { get; set; }
 
     }
 }

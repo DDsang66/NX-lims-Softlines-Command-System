@@ -176,7 +176,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
                 .OrderByDescending(f => f.Sample)
                 .FirstOrDefault();
             if (SelectedSample == null) return null;
-            var MaxComposition = SelectedSample.CompositionList!.OrderByDescending(f => f.Rate).FirstOrDefault();
+            var MaxComposition = SelectedSample.Composition!.OrderByDescending(f => f.Rate).FirstOrDefault();
             var key = char.ToUpper(MaxComposition!.Composition![0]) + MaxComposition.Composition.Substring(1).ToLower();
             return key;
         }

@@ -110,7 +110,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         /// </summary>
         /// <param name="newParam"></param>
         /// <param name="exitParam"></param>
-        public async void UpdateWetParamAsync(WetParameterIso newParam, WetParameterIso exitParam) 
+        public async Task UpdateWetParamAsync(WetParameterIso newParam, WetParameterIso exitParam) 
         {
             foreach (var prop in typeof(WetParameterIso).GetProperties())
             {
@@ -124,7 +124,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 }
             }
 
-            await _db.WetParameterIsos.AddAsync(exitParam);
+            _db.WetParameterIsos.Update(exitParam);
             await _db.SaveChangesAsync();
         }
 
@@ -168,10 +168,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         /// </summary>
         /// <param name="newParam"></param>
         /// <param name="exitParam"></param>
-        public async void UpdateNormalParamAsync(string newParam, NormalParameter exitParam)
+        public async Task UpdateNormalParamAsync(string newParam, NormalParameter exitParam)
         {
             exitParam.ExtraParam = newParam;
-            await _db.NormalParameters.AddAsync(exitParam);
+             _db.NormalParameters.Update(exitParam);
             await _db.SaveChangesAsync();
         }
 
@@ -257,9 +257,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                     };
                     _db.SampleInfoDescriptions.Add(desc);
                 }
-
-               await _db.SaveChangesAsync();
             }
+
+            await _db.SaveChangesAsync();
         }
     }
 }

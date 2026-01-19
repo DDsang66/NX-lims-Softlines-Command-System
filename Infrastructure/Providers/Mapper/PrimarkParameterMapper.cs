@@ -11,7 +11,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
         public static class PrimarkParameterMapperMethod
         {
             public static ICollection<ParamResponseDto> GetAllDtos()
-                => _cache.Values; 
+                => _cache.Values;
+
+            public static void ClearCache() => _cache.Clear();
 
             /* 缓存：key = (itemName, standard) */
             private static readonly ConcurrentDictionary<(string itemName, string standard), ParamResponseDto> _cache = new();
