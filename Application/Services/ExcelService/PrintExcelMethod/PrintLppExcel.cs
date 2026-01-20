@@ -63,7 +63,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
-            if (itemName == "CF to Washing")
+            if (itemName == "CF to Washing"&& dto.Parameter!.Contains("5 Washes"))
             {
                 samples = dto.Sample!
                     .Split(',')

@@ -26,7 +26,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
             try
             {
                 string menuName = input;
-                var Menu = await _db.Menus.FirstOrDefaultAsync(m => m.MenuName == menuName);
+                var Menu = await _db.Menus.FirstOrDefaultAsync(m => m.MenuName == menuName && m.ContactBuyer=="LTAG");
                 if (Menu == null) return null;
 
                 var properties = typeof(Menu).GetProperties();

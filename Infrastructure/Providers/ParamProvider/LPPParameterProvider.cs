@@ -155,6 +155,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     else if (infoDto.sampleDescription.Contains("Puller strength")) condition = "Puller strength";
                     else if (infoDto.sampleDescription.Contains("Zipper resistance")) condition = "Zipper resistance";
                     break;
+                case "CF to Washing":
+                    if (infoDto.sampleDescription!.Contains("5 Wash")) condition = "5 Wash";
+                    break;
 
             }
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
@@ -186,7 +189,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Extension and Recovery", "Knit", "10")] = "Load: 10N",
             [("Extension and Recovery", "Knit", "14")] = "Load: 14N",
             [("CF to Light", null, null)] = "L-4",
-            [("CF to Washing", null, null)] = "After 5 Washes",
+            [("CF to Washing", "5 Wash", null)] = "After 5 Washes",
+            [("CF to Washing", null, null)] = "After 1 Wash",
             [("Attachment Strength", null, null)] = "90N 10s",
             [("Seam Strength", null, null)] = "Load：70N",
             [("Water Resistance-Hydrostatic Pressure", null, null)] = "2000mm H2O，After 5 Washes",
