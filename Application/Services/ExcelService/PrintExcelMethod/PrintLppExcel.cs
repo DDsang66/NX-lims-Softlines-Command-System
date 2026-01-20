@@ -406,7 +406,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 else if (dto.Standard!.Contains("12945-1"))
                 {
                     map["M1"] = (w,dto, reportNo) => reportNo;
-                    map["F3"] = (w,dto, reportNo) => dto.Standard!;
+                    map["G3"] = (w,dto, reportNo) => dto.Standard!;
                     map["D4"] = (w, dto, reportNo) => dto.Parameter!;
                 }
                 return map;

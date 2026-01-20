@@ -515,7 +515,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
                     string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
 
-                    map["J3"] = (dto, reportNo) => dto.Standard!;
+                    map["J3"] = (dto, reportNo) => "ISO 13938-2:2019";
                     if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (dto, reportNo) => "√";
                     if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
 

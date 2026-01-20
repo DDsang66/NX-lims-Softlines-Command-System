@@ -52,11 +52,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             var template = pkg.Workbook.Worksheets[tplName];
 
             // 2) 计算需要几张 sheet
-            var cellAddrs = CellMapper[itemName](itemName, dto.MenuName!);
+            var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
             if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" || itemName == "Appearance" || itemName == "Spirality/Skewing")
             {
-                AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.MenuName!);
+                AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
 
 
@@ -435,7 +435,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             if (afmap != null && afmap.Length > 0 && (itemName == "DS to Washing" || itemName == "DS to Dry-clean") && sampleDescription.Contains("Garment"))
             {
-                for (int i = 0; i < afmap.Length; i++)
+                for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
                 {
                     ws.Cells[AfterWashCellAddrs![i]].Value = afmap[0];
                 }

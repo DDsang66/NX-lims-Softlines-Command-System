@@ -131,7 +131,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 itemName == "Appearance-Common"||
                 itemName == "Security of Attachment(Wash)" ||
                 itemName == "Easycare/Non-Iron" ||
-                (itemName == "Appearance"&&dto.Standard!="PM01") ||
+                (itemName == "Appearance"&&dto.Standard !="PM01") ||
                 (itemName == "Spirality" && dto.Standard != "PM01"))
             {
                 var wp = _db.WetParameterIsos
