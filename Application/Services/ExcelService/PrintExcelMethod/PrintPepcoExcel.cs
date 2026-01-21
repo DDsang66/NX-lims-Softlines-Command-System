@@ -201,20 +201,20 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Water"] = "CFtoPerspiration&Water",
             ["Print Durability"] = "Print Durability",
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["DS to Washing"] = new Dictionary<string, string>
+            ["DS to Washing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment", "DStoWashing-G" },
-                {"Socks", "DStoWashing-Acc" },
-                {"Gloves", "DStoWashing-Acc" },
-                {"Cap", "DStoWashing-Acc" },
+                {new[] { "Fabric" }, "DStoWashing-F" },
+                {new[] { "Garment" }, "DStoWashing-G" },
+                {new[] { "Socks" }, "DStoWashing-Acc" },
+                {new[] { "Gloves" }, "DStoWashing-Acc" },
+                {new[] { "Cap" }, "DStoWashing-Acc" },
             },
-            ["Seam Slippage"] = new Dictionary<string, string>
+            ["Seam Slippage"] = new Dictionary<string[], string>
             {
-                {"Fabric", "Seam Slippage" },
-                {"Garment","Seam Slippage-G"},
+                {new[] { "Fabric" }, "Seam Slippage" },
+                {new[] { "Garment" },"Seam Slippage-G"},
             },
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()

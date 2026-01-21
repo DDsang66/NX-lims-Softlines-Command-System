@@ -303,59 +303,59 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Colour Change and Staining"] = "Appearance-PM01",
             };
 
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            [("Seam Slippage")] = new Dictionary<string, string>
+            [("Seam Slippage")] = new Dictionary<string[], string>
             {
-                {"Fabric", "Seam Slippage&Strength" },
-                {"Garment","Seam Slippage&Strength-G"},
+                {new[] { "Fabric" }, "Seam Slippage&Strength" },
+                {new[] { "Garment" },"Seam Slippage&Strength-G"},
             },
-            [("Seam Strength")] = new Dictionary<string, string>
+            [("Seam Strength")] = new Dictionary<string[], string>
             {
-                {"Fabric", "Seam Slippage&Strength" },
-                {"Garment","Seam Slippage&Strength-G"},
+                {new[] { "Fabric" }, "Seam Slippage&Strength" },
+                {new[] { "Garment" },"Seam Slippage&Strength-G"},
             },
-            [("Bursting Strength")] = new Dictionary<string, string>
+            [("Bursting Strength")] = new Dictionary<string[], string>
             {
-                {"Fabric", "Bursting Strength" },
-                {"Garment","Bursting Strength-G"},
+                {new[] { "Fabric" }, "Bursting Strength" },
+                {new[] { "Garment" },"Bursting Strength-G"},
             },
-            [("Physical & Mechanical")] = new Dictionary<string, string>
+            [("Physical & Mechanical")] = new Dictionary<string[], string>
             {
-                {"EN 71-1:2014+A1:2018 8.4", "Attachment Strength" },
+                {new[] { "EN 71-1:2014+A1:2018 8.4" }, "Attachment Strength" },
             },
-            [("Physical & Mechanical")] = new Dictionary<string, string>
+            [("Physical & Mechanical")] = new Dictionary<string[], string>
             {
-                {"ASTM F963-23", "ASTM F963-23" },
+                {new[] { "ASTM F963-23" }, "ASTM F963-23" },
             },
-            [("Torque & Tension")] = new Dictionary<string, string>
+            [("Torque & Tension")] = new Dictionary<string[], string>
             {
-                {"16 CFR 1500.51-53", "Torque&Tension" },
+                {new[] { "16 CFR 1500.51-53" }, "Torque&Tension" },
             },
-            [("Torque & Tension")] = new Dictionary<string, string>
+            [("Torque & Tension")] = new Dictionary<string[], string>
             {
-                {"EN 71-1:2024+A1:2018", "Attachment Strength" },
+                {new[] { "EN 71-1:2024+A1:2018" }, "Attachment Strength" },
             },
-            [("Spirality")] = new Dictionary<string, string>
+            [("Spirality")] = new Dictionary<string[], string>
             {
-                {"Fabric", "Spirality-F" },
-                {"Garment", "Spirality-G" },
+                {new[] { "Fabric" }, "Spirality-F" },
+                {new[] { "Garment" }, "Spirality-G" },
             },
-            [("Dimensional Stability")] = new Dictionary<string, string>
+            [("Dimensional Stability")] = new Dictionary<string[], string>
             {
-                {"Fabric", "PM01Washing-F" },
-                {"Garment", "PM01Washing-G" },
-                {"Socks", "PM01Washing-Acc" },
-                {"Gloves", "PM01Washing-Acc" },
-                {"Cap", "PM01Washing-Acc" },
+                {new[] { "Fabric" }, "PM01Washing-F" },
+                {new[] { "Garment" }, "PM01Washing-G" },
+                {new[] { "Socks" }, "PM01Washing-Acc" },
+                {new[] { "Gloves" }, "PM01Washing-Acc" },
+                {new[] { "Cap" }, "PM01Washing-Acc" },
             },
-            [("Stability to Washing")] = new Dictionary<string, string>
+            [("Stability to Washing")] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment", "DStoWashing-G" },
-                {"Socks", "DStoWashing-Acc" },
-                {"Gloves", "DStoWashing-Acc" },
-                {"Cap", "DStoWashing-Acc" },
+                {new[] { "Fabric" }, "DStoWashing-F" },
+                {new[] { "Garment" }, "DStoWashing-G" },
+                {new[] { "Socks" }, "DStoWashing-Acc" },
+                {new[] { "Gloves" }, "DStoWashing-Acc" },
+                {new[] { "Cap" }, "DStoWashing-Acc" },
             },
         };
         private static readonly Dictionary<string, Func<string, string, string, string[]>> CellMapper = new()

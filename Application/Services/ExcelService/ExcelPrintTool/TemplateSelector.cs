@@ -2,7 +2,7 @@
 {
     public class TemplateSelector
     {
-        private readonly Dictionary<string, Dictionary<string, string>> _templateSheetNames;
+        private readonly Dictionary<string, Dictionary<string[], string>> _templateSheetNames;
         private readonly Dictionary<string, string> _templateSheetNamesNormal;
         private readonly string _defaultSheetName;
 
@@ -14,7 +14,7 @@
         /// <param name="defaultSheetName"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public TemplateSelector(
-            Dictionary<string, Dictionary<string, string>> templateSheetNames,
+            Dictionary<string, Dictionary<string[], string>> templateSheetNames,
             Dictionary<string, string> templateSheetNamesNormal,
             string defaultSheetName = "DefaultSheetName")
         {
@@ -33,12 +33,19 @@
             // 1) 模板 sheet
             if (_templateSheetNames.TryGetValue(itemName, out var subDictionary))
             {
-                foreach (var kvp in subDictionary)
+                // 按条件数量从多到少排序，确保优先匹配多个条件的情况
+                var sortedConditions = subDictionary.Keys
+                    .OrderByDescending(arr => arr.Length)
+                    .ThenBy(arr => arr.Length > 0 ? string.Join(",", arr) : "");
+
+                foreach (var conditions in sortedConditions)
                 {
-                    if (!string.IsNullOrEmpty(kvp.Key) &&
-                        sampleDescription.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                    // 检查所有条件是否都满足
+                    if (conditions.All(condition =>
+                        !string.IsNullOrEmpty(condition) &&
+                        sampleDescription.Contains(condition, StringComparison.OrdinalIgnoreCase)))
                     {
-                        return kvp.Value;
+                        return subDictionary[conditions];
                     }
                 }
             }

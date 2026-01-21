@@ -198,25 +198,25 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Chlorinated Water"] = "CFtoPWCl",
             ["Spirality/Skewing"] = "Spirality",
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["DS to Washing"] = new Dictionary<string, string>
+            ["DS to Washing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment","DStoWashing-G"},
-                {"Socks", "DStoWashing-Acc" },
-                {"Gloves", "DStoWashing-Acc" },
-                {"Cap", "DStoWashing-Acc" },
+                {new[] { "Fabric" }, "DStoWashing-F" },
+                {new[] { "Garment" },"DStoWashing-G"},
+                {new[] { "Socks" }, "DStoWashing-Acc" },
+                {new[] { "Gloves" }, "DStoWashing-Acc" },
+                {new[] { "Cap" }, "DStoWashing-Acc" },
             },
-            ["Seam Slippage"] = new Dictionary<string, string>
+            ["Seam Slippage"] = new Dictionary<string[], string>
             {
-                {"Fabric", "Seam Slippage&Strength" },
-                {"Garment","Seam Slippage&Strength-G"},
+                {new[] { "Fabric" }, "Seam Slippage&Strength" },
+                {new[] { "Garment" },"Seam Slippage&Strength-G"},
             },
-            ["Seam Strength"] = new Dictionary<string, string>
+            ["Seam Strength"] = new Dictionary<string[], string>
             {
-                {"Fabric", "Seam Slippage&Strength" },
-                {"Garment","Seam Slippage&Strength-G"},
+                {new[] { "Fabric" }, "Seam Slippage&Strength" },
+                {new[] { "Garment" },"Seam Slippage&Strength-G"},
             },
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()
@@ -312,10 +312,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BI13"] = (w, dto, reportNo) => w.IronMethod!,
                 ["BA37"] = (w, dto, reportNo) => w.Temperature!,
                 ["BH37"] = (w, dto, reportNo) => w.Detergent!,
-                ["AV38"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["BT38"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AR39"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
-                ["BX39"] = (w, dto, reportNo) => w.Program!,
+                ["BE38"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["AU39"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["BF39"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
+                ["AR40"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
+                ["BL39"] = (w, dto, reportNo) => w.Program!,
             },
             ["CF to Chlorinated Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {

@@ -164,15 +164,15 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Abrasion Resistance"] = "Abrasion&Snagging Resistance",
             ["Snagging Resistance"] = "Abrasion&Snagging Resistance",
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["DS to Washing"] = new Dictionary<string, string>
+            ["DS to Washing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment", "DStoWashing-G" },
-                {"Socks", "DStoWashing-Acc" },
-                {"Gloves", "DStoWashing-Acc" },
-                {"Cap", "DStoWashing-Acc" },
+                {new[] { "Fabric" }, "DStoWashing-F" },
+                {new[] { "Garment" }, "DStoWashing-G" },
+                {new[] { "Socks" }, "DStoWashing-Acc" },
+                {new[] { "Gloves" }, "DStoWashing-Acc" },
+                {new[] { "Cap" }, "DStoWashing-Acc" },
             },
         };
         // 取映射地址的函数

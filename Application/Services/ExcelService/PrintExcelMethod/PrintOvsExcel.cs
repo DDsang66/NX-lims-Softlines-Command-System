@@ -279,44 +279,44 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Colour Change and Staining"] = "Appearance-PM01",
             };
 
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            [("Seam Slippage")] = new Dictionary<string, string>
-            {
-                {"Fabric", "Seam Slippage&Strength" },
-                {"Garment","Seam Slippage&Strength-G"},
-            },
-            [("Seam Strength")] = new Dictionary<string, string>
-            {
-                {"Fabric", "Seam Slippage&Strength" },
-                {"Garment","Seam Slippage&Strength-G"},
-            },
-            [("Bursting Strength")] = new Dictionary<string, string>
-            {
-                {"Fabric", "Bursting Strength" },
-                {"Garment","Bursting Strength-G"},
-            },
-            [("Spirality")] = new Dictionary<string, string>
-            {
-                {"Fabric", "Spirality-F" },
-                {"Garment", "Spirality-G" },
-            },
-            [("Dimensional Stability")] = new Dictionary<string, string>
-            {
-                {"Fabric", "PM01Washing-F" },
-                {"Garment", "PM01Washing-G" },
-                {"Socks", "PM01Washing-Acc" },
-                {"Gloves", "PM01Washing-Acc" },
-                {"Cap", "PM01Washing-Acc" },
-            },
-            [("Stability to Washing")] = new Dictionary<string, string>
-            {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment", "DStoWashing-G" },
-                {"Socks", "DStoWashing-Acc" },
-                {"Gloves", "DStoWashing-Acc" },
-                {"Cap", "DStoWashing-Acc" },
-            },
+            //[("Seam Slippage")] = new Dictionary<string, string>
+            //{
+            //    {"Fabric", "Seam Slippage&Strength" },
+            //    {"Garment","Seam Slippage&Strength-G"},
+            //},
+            //[("Seam Strength")] = new Dictionary<string, string>
+            //{
+            //    {"Fabric", "Seam Slippage&Strength" },
+            //    {"Garment","Seam Slippage&Strength-G"},
+            //},
+            //[("Bursting Strength")] = new Dictionary<string, string>
+            //{
+            //    {"Fabric", "Bursting Strength" },
+            //    {"Garment","Bursting Strength-G"},
+            //},
+            //[("Spirality")] = new Dictionary<string, string>
+            //{
+            //    {"Fabric", "Spirality-F" },
+            //    {"Garment", "Spirality-G" },
+            //},
+            //[("Dimensional Stability")] = new Dictionary<string, string>
+            //{
+            //    {"Fabric", "PM01Washing-F" },
+            //    {"Garment", "PM01Washing-G" },
+            //    {"Socks", "PM01Washing-Acc" },
+            //    {"Gloves", "PM01Washing-Acc" },
+            //    {"Cap", "PM01Washing-Acc" },
+            //},
+            //[("Stability to Washing")] = new Dictionary<string, string>
+            //{
+            //    {"Fabric", "DStoWashing-F" },
+            //    {"Garment", "DStoWashing-G" },
+            //    {"Socks", "DStoWashing-Acc" },
+            //    {"Gloves", "DStoWashing-Acc" },
+            //    {"Cap", "DStoWashing-Acc" },
+            //},
         };
         private static readonly Dictionary<string, Func<string, string, string, string[]>> CellMapper = new()
         {

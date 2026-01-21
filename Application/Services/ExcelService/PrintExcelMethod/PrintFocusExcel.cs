@@ -217,12 +217,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Chlorinated Water"] = "CFtoCl&Bleach",
             ["Phenolic Yellowing"] = "CFtoYD",
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["DS to Washing"] = new Dictionary<string, string>
+            ["DS to Washing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment","DStoWashing-G"},
+                {new[] { "Fabric" }, "DStoWashing-F" },
+                {new[] { "Garment" },"DStoWashing-G"},
             },
         };
         private static readonly Dictionary<string, Func<string, string, string,string[]>> CellMapper = new()

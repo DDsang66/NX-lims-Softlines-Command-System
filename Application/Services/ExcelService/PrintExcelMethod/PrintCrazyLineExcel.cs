@@ -174,30 +174,30 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Water Repellency-Spray Test"] = "Water Repellency",
 
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["DS to Washing"] = new Dictionary<string, string>
+            ["DS to Washing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoWashing-F" },
-                {"Garment","DStoWashing-G"},
-                {"Socks","DStoWashing-Acc"},
-                {"Gloves","DStoWashing-Acc"},
-                {"Cap","DStoWashing-Acc"},
+                { new[]{ "Fabric" },"DStoWashing-F" },
+                { new[]{ "Garment" }, "DStoWashing-G" },
+                { new[]{ "Socks" }, "DStoWashing-Acc" },
+                { new[]{ "Gloves" }, "DStoWashing-Acc" },
+                { new[]{ "Cap" },  "DStoWashing-Acc" },
             },
-            ["DS to Dry-clean"] = new Dictionary<string, string>
+            ["DS to Dry-clean"] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoDryclean-F" },
-                {"Garment", "DStoDryclean-G" },
+                { new[]{ "Fabric" },"DStoDryclean-F" },
+                { new[]{ "Garment" },"DStoDryclean-G" },
             },
-            ["Spirality/Skewing"] = new Dictionary<string, string>
+            ["Spirality/Skewing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "Spirality" },
-                {"Garment","Spirality"}
+                { new[]{ "Fabric" }, "Spirality" },
+                { new[]{ "Garment" },"Spirality" },
             },
-            ["Zipper Strength"] = new Dictionary<string, string>
+            ["Zipper Strength"] = new Dictionary<string[], string>
             {
-                 {"EN","Zipper Strength-ASTM D2061"},
-                 {"ASTM","Zipper Strength-EN 16732"}
+                { new[]{ "EN" },"Zipper Strength-ASTM D2061" },
+                { new[]{ "ASTM" },"Zipper Strength-EN 16732" },
             }
         };
 

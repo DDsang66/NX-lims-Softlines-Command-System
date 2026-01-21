@@ -195,27 +195,27 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Chlorinated Water"] = "CFtoSeaWater&Cl",
             ["Determination of the Fastening of Components"]= "Determination of FC",
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["DS to Washing"] = new Dictionary<string, string>
+            ["DS to Washing"] = new Dictionary<string[], string>
             {
-                {"Bra", "DStoWashing&DC-BSS" },
-                {"Body/Allover suit", "DStoWashing&DC-BSS" },
-                {"Slip", "DStoWashing&DC-BSS" },
-                {"Shirt","DStoWashing&DC-STPSD"},
-                {"Pullover","DStoWashing&DC-STPSD"},
-                {"Top","DStoWashing&DC-STPSD"},
-                {"Undershirt","DStoWashing&DC-STPSD"},
-                {"Pants","DStoWashing&DC-STPSD"},
-                {"Skirt","DStoWashing&DC-STPSD"},
-                {"Dress","DStoWashing&DC-STPSD"},
-                {"Baby-body suits","DStoWashing&DC-BBPSC"},
-                {"Bib overall","DStoWashing&DC-BBPSC"},
-                {"Panty pants","DStoWashing&DC-BBPSC"},
-                {"Tights","DStoWashing&DC-BBPSC"},
-                {"Socks","DStoWashing&DC-BBPSC"},
-                {"Caps","DStoWashing&DC-BBPSC"},
-                {"Fabric and Home Textile","DStoWashing-F"},
+                {new[] { "Bra" }, "DStoWashing&DC-BSS" },
+                {new[] { "Body/Allover suit" }, "DStoWashing&DC-BSS" },
+                {new[] { "Slip" }, "DStoWashing&DC-BSS" },
+                {new[] { "Shirt" },"DStoWashing&DC-STPSD"},
+                {new[] { "Pullover" },"DStoWashing&DC-STPSD"},
+                {new[] { "Top" },"DStoWashing&DC-STPSD"},
+                {new[] { "Undershirt" },"DStoWashing&DC-STPSD"},
+                {new[] { "Pants" },"DStoWashing&DC-STPSD"},
+                {new[] { "Skirt" },"DStoWashing&DC-STPSD"},
+                {new[] { "Dress" },"DStoWashing&DC-STPSD"},
+                {new[] { "Baby-body suits" },"DStoWashing&DC-BBPSC"},
+                {new[] { "Bib overall" },"DStoWashing&DC-BBPSC"},
+                {new[] { "Panty pants" },"DStoWashing&DC-BBPSC"},
+                {new[] { "Tights" },"DStoWashing&DC-BBPSC"},
+                {new[] { "Socks" },"DStoWashing&DC-BBPSC"},
+                {new[] { "Caps" },"DStoWashing&DC-BBPSC"},
+                {new[] { "Fabric and Home Textile" },"DStoWashing-F"},
             },
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()

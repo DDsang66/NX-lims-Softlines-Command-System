@@ -365,31 +365,31 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Air Permeability of Textile Fabrics"] = "Air Permeability",
             ["Yarn Count"] = "Yarn Count"
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["Stability to Washing"] = new Dictionary<string, string>
+            ["Stability to Washing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "TM12-TM14-TM13-F" },
-                {"Garment","TM12-TM14-TM13-G"},
-                {"Socks", "TM12-TM14-TM13-Acc" },
-                {"Gloves", "TM12-TM14-TM13-Acc" },
-                {"Cap", "TM12-TM14-TM13-Acc" },
+                {new[] { "Fabric" }, "TM12-TM14-TM13-F" },
+                {new[] { "Garment" },"TM12-TM14-TM13-G"},
+                {new[] { "Socks" }, "TM12-TM14-TM13-Acc" },
+                {new[] { "Gloves" }, "TM12-TM14-TM13-Acc" },
+                {new[] { "Cap" }, "TM12-TM14-TM13-Acc" },
             },
-            ["Spirality"] = new Dictionary<string, string>
+            ["Spirality"] = new Dictionary<string[], string>
             {
-                {"Fabric", "TM12-TM14-TM13-F" },
-                {"Garment","TM12-TM14-TM13-G"},
-                {"Socks", "TM12-TM14-TM13-Acc" },
-                {"Gloves", "TM12-TM14-TM13-Acc" },
-                {"Cap", "TM12-TM14-TM13-Acc" },
+                { new[] {"Fabric" }, "TM12-TM14-TM13-F" },
+                {new[] { "Garment" },"TM12-TM14-TM13-G"},
+                {new[] { "Socks" }, "TM12-TM14-TM13-Acc" },
+                {new[] { "Gloves" }, "TM12-TM14-TM13-Acc" },
+                {new[] { "Cap" }, "TM12-TM14-TM13-Acc" },
             },
-            ["Stability to Dry Cleaning"] = new Dictionary<string, string>
+            ["Stability to Dry Cleaning"] = new Dictionary<string[], string>
             {
-                {"Fabric", "TM12-TM14-TM13-F" },
-                {"Garment","TM12-TM14-TM13-G"},
-                {"Socks", "TM12-TM14-TM13-Acc" },
-                {"Gloves", "TM12-TM14-TM13-Acc" },
-                {"Cap", "TM12-TM14-TM13-Acc" },
+                {new[] { "Fabric" }, "TM12-TM14-TM13-F" },
+                {new[] { "Garment" },"TM12-TM14-TM13-G"},
+                {new[] { "Socks" }, "TM12-TM14-TM13-Acc" },
+                {new[] { "Gloves" }, "TM12-TM14-TM13-Acc" },
+                {new[] { "Cap" }, "TM12-TM14-TM13-Acc" },
             },
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()

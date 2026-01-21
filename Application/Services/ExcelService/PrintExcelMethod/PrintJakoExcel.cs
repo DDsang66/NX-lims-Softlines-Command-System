@@ -174,45 +174,45 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Water Resistance-Hydrostatic Pressure"] = "Hydroatatic Test",
 
         };
-        private static readonly Dictionary<string, Dictionary<string, string>> TemplateSheetNames = new()
+        private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
-            ["Appearance"] = new Dictionary<string, string>
+            ["Appearance"] = new Dictionary<string[], string>
             {
-                {"Fabric", "AppearanceAfterWashing-F" },
-                {"Garment","AppearanceAfterWashing-G"},
+                {new[] { "Fabric" }, "AppearanceAfterWashing-F" },
+                {new[] { "Garment" },"AppearanceAfterWashing-G"},
             },
-            ["DS to Dry-clean"] = new Dictionary<string, string>
+            ["DS to Dry-clean"] = new Dictionary<string[], string>
             {
-                {"Fabric", "DStoDryclean-F" },
-                {"Garment", "DStoDryclean-G" },
-                {"Socks", "DStoDryclean-Acc" },
-                {"Gloves", "DStoDryclean-Acc" },
-                {"Cap", "DStoDryclean-Acc" },
+                { new[] {"Fabric" }, "DStoDryclean-F" },
+                {new[] { "Garment" }, "DStoDryclean-G" },
+                {new[] { "Socks" }, "DStoDryclean-Acc" },
+                {new[] { "Gloves" }, "DStoDryclean-Acc" },
+                {new[] { "Cap" }, "DStoDryclean-Acc" },
             },
-            ["Spirality/Skewing"] = new Dictionary<string, string>
+            ["Spirality/Skewing"] = new Dictionary<string[], string>
             {
-                {"Fabric", "Spirality-F" },
-                {"Garment", "Spirality-G" },
+                {new[] { "Fabric" }, "Spirality-F" },
+                {new[] { "Garment" }, "Spirality-G" },
             },
-            ["Seam Slippage"] = new Dictionary<string, string>
+            ["Seam Slippage"] = new Dictionary<string[], string>
             {
-                {"Fabric", "Seam Slippage&Tensile" },
-                {"Garment", "Seam Slippage&Breakage-G" },
+                { new[] {"Fabric" }, "Seam Slippage&Tensile" },
+                {new[] { "Garment" }, "Seam Slippage&Breakage-G" },
             },
-            ["Bursting Strength"] = new Dictionary<string, string>
+            ["Bursting Strength"] = new Dictionary<string[], string>
             {
-                 {"Fabric","Bursting Strength"},
-                 {"Garment","Seam Bursting-G"}
+                 { new[] {"Fabric" },"Bursting Strength"},
+                 { new[] {"Garment" },"Seam Bursting-G"}
             },
-            ["Seam Strength"] = new Dictionary<string, string>
+            ["Seam Strength"] = new Dictionary<string[], string>
             {
-                 {"Knit","Seam Bursting-G"},
-                 {"Garment","Seam Slippage&Breakage-G"}
+                 { new[] {"Knit" },"Seam Bursting-G"},
+                 {new[] { "Garment" },"Seam Slippage&Breakage-G"}
             },
-            ["Zipper Strength"] = new Dictionary<string, string>
+            ["Zipper Strength"] = new Dictionary<string[], string>
             {
-                 {"EN","Zipper Strength-ASTM D2061"},
-                 {"ASTM","Zipper Strength-EN 16732"}
+                 {new[] { "EN" },"Zipper Strength-ASTM D2061"},
+                 {new[] { "ASTM" },"Zipper Strength-EN 16732"}
             }
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()
@@ -536,7 +536,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     };
                     // 2. 固定顺序的单元格列表
                     var cellOrder = new List<string>{
-                        "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
+                        "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18", "A19"
                     };
                     var selectedParts = (component ?? "")
                         .Split('-', StringSplitOptions.RemoveEmptyEntries)
@@ -631,7 +631,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     };
                     // 2. 固定顺序的单元格列表
                     var cellOrder = new List<string>{
-                        "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
+                        "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18", "A19"
                     };
                     var selectedParts = (component ?? "")
                         .Split('-', StringSplitOptions.RemoveEmptyEntries)
