@@ -556,9 +556,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
                     string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
 
-                    map["J3"] = (w, dto, reportNo) => "ISO 13938-2:2019";
-                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (w, dto, reportNo) => "√";
-                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (w, dto, reportNo) => "√";
+                    map["J5"] = (w, dto, reportNo) => "ISO 13938-2:2019";
+                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q6"] = (w, dto, reportNo) => "√";
+                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF6"] = (w, dto, reportNo) => "√";
 
                     var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
@@ -577,7 +577,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     };
                     // 2. 固定顺序的单元格列表
                     var cellOrder = new List<string>{
-                        "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18", "A19"
+                       "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18"
                     };
                     var selectedParts = (component ?? "")
                         .Split('-', StringSplitOptions.RemoveEmptyEntries)

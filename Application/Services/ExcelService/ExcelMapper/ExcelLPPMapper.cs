@@ -167,7 +167,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             List<string>? map = null;
             if (SampleDescription.Contains("Fabric")) map = new List<string> { "A10", "A12" };
+            else if (SampleDescription.Contains("Garment") && SampleDescription.Contains("Knit")) map = new List<string> { "D5" };
             else if (SampleDescription.Contains("Garment")) map = new List<string> { "D3" };
+
             return map?.ToArray() ?? new string[0];
         }
         public static string[] MapZipperStrength()

@@ -69,7 +69,7 @@
             stringMap = matched switch
             {
                 "Garment" => new List<string> { "D18" },
-                "Knit" => new List<string> { "D3" },
+                "Knit" => new List<string> { "D5" },
                 _ => new List<string> { "D18" }
             };
 
