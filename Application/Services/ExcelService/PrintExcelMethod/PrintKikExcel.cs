@@ -446,12 +446,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.Standard!.Contains("EN 71")|| dto.Standard!.Contains("16792"))
                 {
                     map["A3"] = (wp, dto, reportNo) => dto.Standard!;
-                    map["A17"] = (wp, dto, reportNo) => dto.Standard!;
+                    map["A18"] = (wp, dto, reportNo) => dto.Standard!;
                 }
                 else 
                 {
                     map["A3"] = (wp, dto, reportNo) => "DIN EN 17394-2:2020"!;
-                    map["A17"] = (wp, dto, reportNo) => "DIN CEN/TS 17394-3:2021";
+                    map["A18"] = (wp, dto, reportNo) => "DIN CEN/TS 17394-3:2021";
                 }
                 return map;
             },
