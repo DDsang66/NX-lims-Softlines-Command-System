@@ -55,7 +55,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
-            if (itemName == "DS to Washing" || itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "Appearance")
             {
                 AfterWashCellAddrs = AfterWashCellMapper[itemName](itemName, dto.sampleDescription!);
             }
@@ -64,7 +64,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             var samples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
             int[]? afterWashMap = null;
-            if (itemName == "DS to Washing" || itemName == "Appearance" || itemName == "Spirality/Skewing")
+            if (itemName == "DS to Washing" || itemName == "Appearance")
             {
                 var wp = _db.WetParameterIsos
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
@@ -300,11 +300,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
                 ["L33"] = (w, dto, reportNo) => w.Temperature!,
                 ["S33"] = (w, dto, reportNo) => w.Detergent!,
-                ["E34"] = (w, dto, reportNo) => w.WashingProcedure!,
-                ["Y34"] = (w, dto, reportNo) => w.DryProcedure!,
-                ["AH34"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
-                ["A35"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
-                ["AL35"] = (w, dto, reportNo) => w.Program!,
+                ["Q34"] = (w, dto, reportNo) => w.WashingProcedure!,
+                ["A35"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["R35"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
+                ["A36"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
+                ["AD35"] = (w, dto, reportNo) => w.Program!,
             },
             ["Appearance"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
