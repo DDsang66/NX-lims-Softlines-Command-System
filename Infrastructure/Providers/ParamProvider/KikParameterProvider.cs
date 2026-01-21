@@ -65,8 +65,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
     : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
     : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
     : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = "Tumble Dry",
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                SpecialCareInstruction = p.Sci ?? null,
             },
 
 

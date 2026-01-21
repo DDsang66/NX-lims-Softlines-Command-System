@@ -367,6 +367,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["AT8"] = (w, dto, reportNo) =>"1",
                 ["BR50"] = (w, dto, reportNo) => w.Temperature!,
                 ["BJ51"] = (w, dto, reportNo) => w.DryProcedure!,
+                ["AR52"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
             },
         };
 
