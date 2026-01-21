@@ -126,7 +126,7 @@
             stringMap = matched switch
             {
                 "Garment" => new List<string> { "G11", "AU4", "AX15", "BG23" },
-                "Fabric" => new List<string> { "AZ9", "AW13", "CK5", "CT13" },
+                "Fabric" => new List<string> { "AZ9", "AW13", "CK5", "CU13" },
                 "Socks" => new List<string> { "G10" },
                 "Gloves" => new List<string> { "G19" },
                 "Cap" => new List<string> { "G28" },
