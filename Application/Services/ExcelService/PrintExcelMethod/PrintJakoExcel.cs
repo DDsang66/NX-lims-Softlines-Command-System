@@ -206,7 +206,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             ["Seam Strength"] = new Dictionary<string[], string>
             {
-                 { new[] {"Knit" },"Seam Bursting-G"},
+                 { new[] {"Knit" ,"Garment"},"Seam Bursting-G"},
                  {new[] { "Garment" },"Seam Slippage&Breakage-G"}
             },
             ["Zipper Strength"] = new Dictionary<string[], string>

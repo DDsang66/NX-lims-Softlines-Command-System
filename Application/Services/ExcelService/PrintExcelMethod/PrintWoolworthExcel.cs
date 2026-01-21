@@ -216,6 +216,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Seam Strength"] = new Dictionary<string[], string>
             {
                 {new[] { "Fabric" }, "Seam Slippage&Strength" },
+                { new[] {"Knit" ,"Garment"},"Seam Bursting"},
                 {new[] { "Garment" },"Seam Slippage&Strength-G"},
             },
         };
@@ -485,6 +486,50 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["A3"] = (w, dto, reportNo) => dto.Standard!;
+                }
+                else if (dto.sampleDescription!.Contains("Garment")&& dto.sampleDescription!.Contains("Knit")) 
+                {
+                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+                    map["J3"] = (w, dto, reportNo) => "ISO 13938-2:2019";
+                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (w,dto, reportNo) => "√";
+                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (w,dto, reportNo) => "√";
+
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+                    // 2. 固定顺序的单元格列表
+                    var cellOrder = new List<string>{
+                        "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18", "A19"
+                    };
+                    var selectedParts = (component ?? "")
+                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(s => s.Trim())
+                        .Where(k => descMap.ContainsKey(k))
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    // 4. 按顺序依次填，发完为止
+                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+                    {
+                        string part = selectedParts[i];
+                        string cell = cellOrder[i];
+                        string desc = descMap[part];
+                        map[cell] = (w,dto, reportNo) => desc;
+                    }
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
