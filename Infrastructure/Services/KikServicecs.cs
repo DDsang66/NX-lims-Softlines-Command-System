@@ -37,7 +37,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                     ItemName = cl.ItemName,
                     Standards = cl.Standard != null ? new List<string> { cl.Standard } : new List<string>(),
                     Types = cl.Type != null ? new List<string> { cl.Type } : new List<string>(),
-                    Parameters = cl.Parameter != null ? new List<string> { cl.Parameter } : new List<string> { "-" }
+                    Parameters = cl.Parameter != null ? new List<string> { cl.Parameter } : null
                 })
                 .ToList();
 
