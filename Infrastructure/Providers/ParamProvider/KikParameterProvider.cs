@@ -62,11 +62,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
-    : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
-    : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
-    : "Wollens procedure",
+                : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
+                : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
+                : "Wollens procedure",
                 DryProcedure = "Tumble Dry",
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("H") ? "40" 
+                : p.WashingProcedure!.Contains("3") ? "40" 
+                : p.WashingProcedure!.Contains("4") ? "50"
+                : p.WashingProcedure!.Contains("5") ? "60"
+                :p.WashingProcedure!.Contains("6") ? "70"
+                :"80",
                 SpecialCareInstruction = p.Sci ?? null,
             },
 
