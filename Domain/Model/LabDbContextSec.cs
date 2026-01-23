@@ -520,6 +520,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(30)
                 .IsUnicode(false)
                 .HasColumnName("cleanse_procedure");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
             entity.Property(e => e.ContactItem)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -812,6 +816,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("bleach");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
             entity.Property(e => e.ContactItem)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -902,6 +910,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("bleach");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
             entity.Property(e => e.ContactItem)
                 .HasMaxLength(50)
                 .IsUnicode(false)

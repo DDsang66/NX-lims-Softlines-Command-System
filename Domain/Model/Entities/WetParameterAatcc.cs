@@ -10,6 +10,12 @@ public partial class WetParameterAatcc:IWetParam
 
     public string ReportNumber { get; set; } = null!;
 
+    public string? ContactBuyer { get; set; }
+
+    public string? ContactItem { get; set; }
+
+    public string? ContactSample { get; set; }
+
     public string? Standard { get; set; }
 
     public string? WashingProcedure { get; set; }
@@ -43,8 +49,4 @@ public partial class WetParameterAatcc:IWetParam
     public string? Sensitive { get; set; }
 
     public string? AfterWash { get; set; }
-
-    public string? ContactItem { get; set; }
-
-    public string? ContactSample { get; set; }
 }

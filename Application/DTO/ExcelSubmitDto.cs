@@ -7,8 +7,9 @@
         public string? Buyer { get; set; }
         public string? MenuName { get; set; }
         public List<SelectedRows>? SelectedRows { get; set; }
-
+        public List<NewSelectedRows>? NewSelectedRows { get; set; }
         public string? AdditionalRequire { get; set; }
         public string? SampleDescription { get; set; }
+        public List<SampleDescObject>? sampleDescripBoundSingleDto  { get; set; }
     }
 }

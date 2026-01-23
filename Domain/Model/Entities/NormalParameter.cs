@@ -7,11 +7,13 @@ public partial class NormalParameter
 {
     public string ParamId { get; set; } = null!;
 
+    public string? ReportNumber { get; set; }
+
+    public string? ContactBuyer { get; set; }
+
     public string? ContactItem { get; set; }
 
     public string? ContactSample { get; set; }
-
-    public string? ReportNumber { get; set; }
 
     public string? Cycle { get; set; }
 

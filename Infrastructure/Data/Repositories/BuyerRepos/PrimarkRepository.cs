@@ -83,7 +83,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 Standard = input.Standard,
                 Sensitive = "N",
                 ReportNumber = input.OrderNumber!,
-                ContactItem = input.ItemName
+                ContactItem = input.ItemName,
+                ContactBuyer = "Primark"
             };
             await _db.WetParameterIsos.AddAsync(newParam);
             await _db.SaveChangesAsync();
@@ -142,7 +143,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
                 ParamId = snowId.ToString(),
                 ReportNumber = reprortNum,
                 ContactItem = itemName,
-                ContactSample = sample
+                ContactSample = sample,
+                ContactBuyer = "Primark"
             };
             await _db.NormalParameters.AddAsync(newParam);
             await _db.SaveChangesAsync();
@@ -159,7 +161,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         public async Task<NormalParameter> GetNormalParamAsync(string reportNum, string itemName, string sample)
         {
             var Param = await _db.NormalParameters
-                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum && p.ContactSample == sample);
+                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum && p.ContactSample == sample && p.ContactBuyer == "Primark");
             return Param!;
         }
 
