@@ -6,6 +6,7 @@ using System.Linq;
 using System.Web;
 using System.Diagnostics;
 using NX_lims_Softlines_Command_System.Domain.Model;
+using System.Security.Cryptography;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 {
@@ -15,10 +16,12 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
     public class SearchController : ControllerBase
     {
 
+        private readonly IWebHostEnvironment _env;
         private readonly LabDbContextSec _db;
-        public SearchController(LabDbContextSec db)
+        public SearchController(LabDbContextSec db,IWebHostEnvironment env)
         {
             _db = db;
+            _env = env;
         }
 
         [HttpPost("main")]
@@ -80,6 +83,80 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
                 .ToList();
             return Ok(new { success = true, message = "User Load Succeed", data = userList });
         }
+
+        [HttpGet("getExcelUrl")]
+        public async Task<IActionResult> GetExcelUrl(string repo,string buyer,string group,[FromServices] IHttpContextAccessor httpContext)
+        {
+            if (string.IsNullOrEmpty(repo) || string.IsNullOrEmpty(buyer) || string.IsNullOrEmpty(group))return Ok(new { success = false, message = "参数不能为空", data = "null" });
+
+            var request = httpContext.HttpContext!.Request;
+
+            // 自动获取当前请求的 scheme + host + port
+            var baseUrl = $"{request.Scheme}://{request.Host}";
+
+            // 或只拿本机 IP（如果 Docker 用 host.docker.internal）
+            var host = request.Host.Host;  // 192.168.74.8 或 localhost
+
+            var port = request.Host.Port;  // 5051
+
+            var baseAddress = $"http://{host}:{port}";
+
+            var fileName = $"{buyer}_{group}_sheet.xlsx";
+
+            var filePath = Path.Combine(_env.WebRootPath, "ExcelModel", fileName);
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+            using var md5 = MD5.Create();
+
+            var hash = md5.ComputeHash(fileBytes);
+
+            var hashString = BitConverter.ToString(hash).Replace("-", "").Substring(0, 16);
+
+            var fileKey = $"{repo}_{hashString}";
+
+            return Ok(new
+            {
+                fileKey = fileKey,
+                fileName = Path.GetFileName(filePath),
+                downloadUrl = $"{baseAddress}/api/documents/{fileName}/download",
+                callbackUrl = $"{baseAddress}/api/documents/{fileName}/callback"
+            });
+        }
+
+
+        [HttpGet("{fileName}/download")]
+        public IActionResult Download(string fileName)
+        {
+            // 根据 fileId 找到实际文件路径
+
+            var filePath = Path.Combine(_env.WebRootPath, "ExcelModel", fileName);
+            // 返回文件流，Content-Type 必须正确
+            return PhysicalFile(
+                filePath,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                enableRangeProcessing: true  // 支持断点续传
+            );
+        }
+
+        [HttpPost("{fileName}/callback")]
+        public async Task<IActionResult> Callback(/*string fileId, [FromBody] CallbackData data*/)
+        {
+            //// status: 0=无变化, 2=准备保存, 6=保存完成
+            //if (data.Status == 2 || data.Status == 6)
+            //{
+            //    // Document Server 给了新文件 URL，下载回来
+            //    using var client = new HttpClient();
+            //    var newFileBytes = await client.GetByteArrayAsync(data.Url);
+
+            //    // 覆盖原文件
+            //    var filePath = FindFileById(fileName);
+            //    await System.IO.File.WriteAllBytesAsync(filePath, newFileBytes);
+            //}
+
+            return Ok("{ \"error\": 0 }");  // 必须返回这个
+        }
+
 
     }
 }

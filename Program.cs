@@ -46,6 +46,7 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddSingleton<JwtService>();
             builder.Services.AddScoped<RenderService>();
             builder.Services.AddScoped<RenderRepos>();
+            builder.Services.AddHttpContextAccessor();
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(opt =>
