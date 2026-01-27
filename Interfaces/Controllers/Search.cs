@@ -7,6 +7,8 @@ using System.Web;
 using System.Diagnostics;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using System.Security.Cryptography;
+using System.Net.Sockets;
+using System.Net;
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 {
@@ -97,11 +99,13 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             var baseUrl = $"{request.Scheme}://{request.Host}";
 
             // 或只拿本机 IP（如果 Docker 用 host.docker.internal）
+            var localIP = GetLocalIPAddress();
+
             var host = request.Host.Host;  // 192.168.74.8 或 localhost
 
             var port = request.Host.Port;  // 5051
 
-            var baseAddress = $"http://{host}:{port}";
+            var baseAddress = $"http://{localIP}:{port}";
 
             var fileName = $"{buyer}_{group.ToUpper()}_sheet.xlsx";
 
@@ -117,7 +121,6 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
             var fileKey = $"{repo}_{hashString}";
 
-            baseAddress = "http://192.168.74.8:5051";
             return Ok(new
             {
                 fileKey = fileKey,
@@ -127,6 +130,18 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             });
         }
 
+        public string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            return "127.0.0.1";
+        }
 
         [HttpGet("{fileName}/download")]
         public IActionResult Download(string fileName)
