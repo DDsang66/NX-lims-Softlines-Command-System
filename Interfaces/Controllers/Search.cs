@@ -89,6 +89,8 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         {
             if (string.IsNullOrEmpty(repo) || string.IsNullOrEmpty(buyer) || string.IsNullOrEmpty(group))return Ok(new { success = false, message = "参数不能为空", data = "null" });
 
+            if (group.ToLower() == "physics") group = "PHY";
+
             var request = httpContext.HttpContext!.Request;
 
             // 自动获取当前请求的 scheme + host + port
@@ -101,7 +103,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
             var baseAddress = $"http://{host}:{port}";
 
-            var fileName = $"{buyer}_{group}_sheet.xlsx";
+            var fileName = $"{buyer}_{group.ToUpper()}_sheet.xlsx";
 
             var filePath = Path.Combine(_env.WebRootPath, "ExcelModel", fileName);
 
@@ -115,12 +117,13 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 
             var fileKey = $"{repo}_{hashString}";
 
+            baseAddress = "http://192.168.74.8:5051";
             return Ok(new
             {
                 fileKey = fileKey,
                 fileName = Path.GetFileName(filePath),
-                downloadUrl = $"{baseAddress}/api/documents/{fileName}/download",
-                callbackUrl = $"{baseAddress}/api/documents/{fileName}/callback"
+                downloadUrl = $"{baseAddress}/api/search/{fileName}/download",
+                callbackUrl = $"{baseAddress}/api/search/{fileName}/callback"
             });
         }
 
@@ -135,6 +138,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             return PhysicalFile(
                 filePath,
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileDownloadName: fileName,
                 enableRangeProcessing: true  // 支持断点续传
             );
         }
