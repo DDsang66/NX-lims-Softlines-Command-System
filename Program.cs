@@ -101,7 +101,7 @@ namespace NX_lims_Softlines_Command_System
 
 
             var app = builder.Build();
-            app.UseStaticFiles(); 
+            app.UseStaticFiles();
             // 确保静态文件中间件已启用
             // Configure the HTTP request pipeline.
             //if (app.Environment.IsDevelopment())

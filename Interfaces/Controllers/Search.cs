@@ -130,7 +130,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             });
         }
 
-        public string GetLocalIPAddress()
+        private string GetLocalIPAddress()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
             foreach (var ip in host.AddressList)

@@ -89,13 +89,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             var bags = new Dictionary<int, ParameterBag>();
 
-            // 0) 提前拿到所有样本（与原来逻辑一致）
+            // 0) 提前拿到所有样本（与原来逻辑一致）,样品的个数和原来的对不上
             var allSamples = dto.Sample!.Split(',').Select(s => s.Trim()).ToArray();
-            // 如果需要展开（Spirality 等），在这里复用你原来展开代码
-            if (dto.ItemName == "Spirality" && dto.Standard == "PM01")
-                allSamples = allSamples.SelectMany(s => new[] { $"{s} × 5", $"{s} × 23", $"{s} × 32", $"{s} × 45" }).ToArray();
-            if (dto.ItemName == "TS Board Fit" && dto.Standard == "PM01")
-                allSamples = allSamples.SelectMany(s => new[] { s, $"{s} After 5 Washes", $"{s} After 23 Washes", $"{s} After 32 Washes", $"{s} After 45 Washes" }).ToArray();
 
             // 1) 批量查库（只查一次）
             var wetList = _db.WetParameterIsos
@@ -180,31 +175,31 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                                      ? AfterWashCellMapper[itemName](itemName, dto.Standard!, dto.sampleDescription!)
                                      : null;
 
-            // 1. 一次性拿参数
-            var paramBags = LoadParamBags(dto, reportNo);
-            // 2. 展开样本
-            var (samples, afterWashMap) = ExpandSamples(dto, reportNo);
-            // 3. 计算容量 & 张数
-            int offset = OffsetRule.GetValueOrDefault(itemName, 0);
-            int capacity = GetCapacity(itemName, dto, cellAddrs, offset);
-            int sheetCnt = (int)Math.Ceiling(samples.Length / (double)capacity);
-            // 4. 切片
-            var slices = BuildSlices(samples, capacity, afterWashMap);
+                // 1. 一次性拿参数
+                var paramBags = LoadParamBags(dto, reportNo);
+                // 2. 展开样本
+                var (samples, afterWashMap) = ExpandSamples(dto, reportNo);
+                // 3. 计算容量 & 张数
+                int offset = OffsetRule.GetValueOrDefault(itemName, 0);
+                int capacity = GetCapacity(itemName, dto, cellAddrs, offset);
+                int sheetCnt = (int)Math.Ceiling(samples.Length / (double)capacity);
+                // 4. 切片
+                var slices = BuildSlices(samples, capacity, afterWashMap);
 
-            // 5. 复制 Sheet
-            var sheets = new List<ExcelWorksheet> { template };
-            for (int i = 1; i < sheetCnt; i++)
-            {
-                string name = $"{tplName} ({i + 1})";
-                sheets.Add(pkg.Workbook.Worksheets.Any(ws => ws.Name == name)
-                           ? pkg.Workbook.Worksheets[name]
-                           : pkg.Workbook.Worksheets.Copy(tplName, name));
-            }
+                // 5. 复制 Sheet
+                var sheets = new List<ExcelWorksheet> { template };
+                for (int i = 1; i < sheetCnt; i++)
+                {
+                    string name = $"{tplName} ({i + 1})";
+                    sheets.Add(pkg.Workbook.Worksheets.Any(ws => ws.Name == name)
+                               ? pkg.Workbook.Worksheets[name]
+                               : pkg.Workbook.Worksheets.Copy(tplName, name));
+                }
 
-            // 6. 单循环：一张 Sheet 填一个切片
-            for (int idx = 0; idx < sheetCnt; idx++)
-                FillSlice(sheets[idx], slices[idx], paramBags[slices[idx].Index], dto, reportNo,
-                          cellAddrs, afterWashCellAddrs, itemName, dto.sampleDescription!, dto.Standard!);
+                // 6. 单循环：一张 Sheet 填一个切片
+                for (int idx = 0; idx < sheetCnt; idx++)
+                    FillSlice(sheets[idx], slices[idx], paramBags[slices[idx].Index], dto, reportNo,
+                              cellAddrs, afterWashCellAddrs, itemName, dto.sampleDescription!, dto.Standard!);
         }
 
 
