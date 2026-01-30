@@ -25,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                 "crazyline" => _sp.GetRequiredService<PrintCrazyLineExcel>(),
                 "jako" => _sp.GetRequiredService<PrintJakoExcel>(),
                 "tchibo" => _sp.GetRequiredService<PrintTchiboExcel>(),
-                "primark" => _sp.GetRequiredService<PrintPrimarkExcel>(),
+                "primark" => _sp.GetRequiredService<PrintPrimarkExcelNew>(),
                 "pepco" => _sp.GetRequiredService<PrintPepcoExcel>(),
                 "kik" => _sp.GetRequiredService<PrintKikExcel>(),
                 "next" => _sp.GetRequiredService<PrintNextExcel>(),

@@ -1175,7 +1175,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         private static readonly Dictionary<string, int> OffsetRule = new()
         {
             ["Colour Fastness to Perspiration"] = 6,
-            //["Dimensional Stability"] = 4,
             ["Stability to Washing"] = 4,
             ["Stability to Dry Cleaning"] = 4,
             ["Colour Fastness to Non Chlorine Bleach"] = 6,
