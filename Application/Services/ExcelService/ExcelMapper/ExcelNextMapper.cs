@@ -226,7 +226,7 @@
         {
             List<string> stringMap = null;
             if (itemName.Contains("Bursting Strength")) stringMap = new List<string> { "A14","A16","A18" ,"A20","A22"};
-            else if(itemName.Contains("Spray Test")) stringMap = new List<string> { "A34", "A36","A38" };
+            else if(itemName.Contains("Spray Rating")) stringMap = new List<string> { "A34", "A36","A38" };
             return stringMap?.ToArray() ?? new string[0];
         }
         public static string[] MapTM25TM20(string itemName)

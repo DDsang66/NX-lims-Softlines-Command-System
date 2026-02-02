@@ -170,6 +170,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
+                Detergent = "20g ECE(A)+ 5g Sodium perborate",
                 SpecialCareInstruction = p.Sci ?? null,
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,

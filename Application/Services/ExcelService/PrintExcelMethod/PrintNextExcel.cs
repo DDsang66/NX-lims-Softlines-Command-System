@@ -35,7 +35,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             #region 附加项配置
             // 1. 检查并添加 Mass Per Unit Area
             var massPerUnitAreaRow = checkLists.FirstOrDefault(row =>
-                new[] { "Tear Strength", "Grab Strength & Seam Slippage", "Seam Slippage of Garment Seams" }
+                new[] { "Tear Strength", "Grab Strength & Seam Slippage", "Seam Slippage of Garment Seams","Bursting Strength" }
                     .Contains(row.ItemName));
 
             if (massPerUnitAreaRow != null)
@@ -121,7 +121,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 Console.WriteLine($"{dto.ItemName} -> {dto.Type}");
                 var pkg = dto.Type == "Wet" ? PackageWet : PackagePhy;
                 if (TemplateSheetNames.ContainsKey(dto.ItemName!) || TemplateSheetNamesNormal.ContainsKey(dto.ItemName!))
-                    FillSheet(pkg, dto.ItemName!, dto, reportNumber);
+                    FillSheet(pkg, dto.ItemName!, dto, Dto, reportNumber);
             }
             PackageWet.Save();
             PackagePhy.Save();
@@ -132,6 +132,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ExcelPackage pkg,
             string itemName,
             CheckListDto dto,
+            ExcelSubmitDto esDto,
             string reportNo)
         {
             #region 旧版
@@ -303,11 +304,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     }  
                     // 提前获取默认值或实际值
                     var wetParameter = wp ?? new WetParameterIso();
-                    var extraMap = PhyExtraMap.GetValueOrDefault(itemName, (wp, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>())(wp!, dto, reportNo);
+                    var extraMap = PhyExtraMap.GetValueOrDefault(itemName, (wp, dto, esDto,ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>())(wp!, dto, esDto, ws, reportNo);
                     // 使用foreach循环填充值
                     foreach (var kv in extraMap)
                     {
-                        ws.Cells[kv.Key].Value = kv.Value(wetParameter, dto, reportNo);
+                        ws.Cells[kv.Key].Value = kv.Value(wetParameter, dto, esDto, ws, reportNo);
                     }
                 }
             }
@@ -554,16 +555,34 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     map["BC1"] = (w, dto, reportNo) => reportNo;
                     map["BM40"] = (w, dto, reportNo) => "1";
+                    map["AX3"] = (w, dto, reportNo) => w!.WashingProcedure!;
+                    map["BY3"] = (w, dto, reportNo) => w!.Temperature!;
+                    map["BG4"] = (w, dto, reportNo) => w!.Ballast!;
+                    map["BF5"] = (w, dto, reportNo) => w!.DryProcedure!;
+                    map["BO5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["AR6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
                     map["P1"] = (w, dto, reportNo) => reportNo;
                     map["Z42"] = (w, dto, reportNo) => "1";
+                    map["I3"] = (w, dto, reportNo) => w!.WashingProcedure!;
+                    map["AK3"] = (w, dto, reportNo) => w!.Temperature!;
+                    map["T4"] = (w, dto, reportNo) => w!.Ballast!;
+                    map["S5"] = (w, dto, reportNo) => w!.DryProcedure!;
+                    map["AB5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 if (dto.sampleDescription!.Contains("Cap") || dto.sampleDescription!.Contains("Socks") || dto.sampleDescription!.Contains("Gloves"))
                 {
                     map["N1"] = (w, dto, reportNo) => reportNo;
                     map["Z47"] = (w, dto, reportNo) => "1";
+                    map["G3"] = (w, dto, reportNo) => w!.WashingProcedure!;
+                    map["AK3"] = (w, dto, reportNo) => w!.Temperature!;
+                    map["S4"] = (w, dto, reportNo) => w!.Ballast!;
+                    map["Q5"] = (w, dto, reportNo) => w!.DryProcedure!;
+                    map["Z5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A6"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
@@ -683,31 +702,32 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["D1"] = (w, dto, reportNo) => reportNo,
             },
         };
-        private static readonly Dictionary<string, Func<WetParameterIso,CheckListDto, string, Dictionary<string, Func<WetParameterIso,CheckListDto, string, string>>>> PhyExtraMap = new()
+        private static readonly Dictionary<string, Func<WetParameterIso,CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>>> PhyExtraMap = new()
         {
-            ["Grab Strength & Seam Slippage"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Grab Strength & Seam Slippage"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Seam Slippage of Garment Seams"] = (w, dto, reportNo) =>
+            ["Seam Slippage of Garment Seams"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (wp, dto, esDto, ws, reportNo) => esDto.ReportNumber!;
+                var sample = ws.Cells["A3"].Value?.ToString();
 
-                string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-
-                if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout))
+                var cellOrder = new List<string> { "A9", "A11", "A13", "A15", "A17", "A19", "A21", "A23", "A25" };
+                var reasonCellOrder = new List<string>();
+                if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
                 {
-                    map["M8"] = (w, dto, reportNo) => "√";
-                    map["AC8"] = (w, dto, reportNo) => "√";
+                    map["M8"] = (w, dto, esDto, ws, reportNo) => "√";
+                    map["AC8"] = (w, dto, esDto, ws, reportNo) => "√";
+                    reasonCellOrder = cellOrder.Select(c => "H" + c.Substring(1)).ToList();
                 }
-                if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout))
+                else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
                 {
-                    map["U8"] = (w, dto, reportNo) => "√"; 
-                    map["AK8"] = (w, dto, reportNo) => "√";
+                    map["U8"] = (w, dto, esDto, ws, reportNo) => "√";
+                    map["AK8"] = (w, dto, esDto, ws, reportNo) => "√";
+                    reasonCellOrder = cellOrder.Select(c => "P" + c.Substring(1)).ToList();
                 }
-
                 var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["Side"] = "Side Seam",
@@ -723,247 +743,271 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     ["Front Crotch"] = "Front Crotch Seam",
                     ["Cross"] = "Cross Seam",
                 };
-                // 2. 固定顺序的单元格列表
-                var cellOrder = new List<string>{"A9", "A11", "A13", "A15","A17","A19", "A21", "A23" ,"A25"};
-                var selectedParts = (component ?? "")
-                    .Split('-', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => s.Trim())
-                    .Where(k => descMap.ContainsKey(k))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList();
 
-                // 4. 按顺序依次填，发完为止
-                for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+                var seamInfos = esDto.SeamParameter
+                                  ?.FirstOrDefault(s => s.Sample == sample)   // 找到当前行样本
+                                  ?.LocationInfos
+                                  ?.Where(x => !string.IsNullOrWhiteSpace(x.Location)) // 去掉空Location
+                                  .ToList();
+                if (seamInfos?.Count > 0)
                 {
-                    string part = selectedParts[i];
-                    string cell = cellOrder[i];
-                    string desc = descMap[part];
-                    map[cell] = (w, dto, reportNo) => desc;
+                    for (int i = 0; i < seamInfos.Count && i < cellOrder.Count; i++)
+                    {
+                        string location = seamInfos[i].Location!.Trim();
+                        if (descMap.TryGetValue(location, out var desc))
+                        {
+                            string cell = cellOrder[i];
+                            map[cell] = (wp, dto, esDto, ws, reportNo) => desc;   // 填入对应描述
+                        }
+                    }
                 }
 
+                for (int i = 0; i < seamInfos!.Count && i < cellOrder.Count; i++)
+                {
+                    var info = seamInfos[i];
+                    string location = info.Location!.Trim();
+
+                    // 1. 填描述（原逻辑）
+                    if (descMap.TryGetValue(location, out var desc))
+                    {
+                        string cell = cellOrder[i];
+                        map[cell] = (wp, dto, esDto, ws, reportNo) => desc;
+                    }
+
+                    // 2. 当 IsNA == false 时，把 Reason 写到同行 J 列
+                    if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
+                    {
+                        string reasonCell = reasonCellOrder[i];
+                        string reason = info.Reason;          // 捕获局部变量
+                        map[reasonCell] = (wp, dto, esDto, ws, reportNo) => reason;
+                    }
+                }
                 return map;
             },
-            ["Tear Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Tear Strength"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Mass per Unit Area"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Mass per Unit Area"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["AD26"] = (w, dto, reportNo) => dto.Parameter!.Contains("Single")?"刻一个":"-",
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
+                ["AD26"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("Single")?"刻一个":"-",
             },
-            ["Wing Rip Tear Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Wing Rip Tear Strength"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Martindale Abrasion"] = (w, dto, reportNo) => 
+            ["Martindale Abrasion"] = (w, dto, esDto, ws, reportNo) => 
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                if(dto.sampleDescription!.Contains("Stretch")) map["A3"] = (w, dto, reportNo) => "{10000 rubs}";
-                else map["A3"] = (w, dto, reportNo) => "{≤150g/m²: 10000 rubs；150-250g/m²: 15000 rubs；≥250g/m²: 20000 rubs}";  
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                if(dto.sampleDescription!.Contains("Stretch")) map["A3"] = (w, dto, esDto, ws, reportNo) => "{10000 rubs}";
+                else map["A3"] = (w, dto, esDto, ws, reportNo) => "{≤150g/m²: 10000 rubs；150-250g/m²: 15000 rubs；≥250g/m²: 20000 rubs}";  
                 return map;
             },
-            ["Abrasion Home"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Abrasion Home"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Pilling Resistance"] = (w, dto, reportNo) =>
+            ["Pilling Resistance"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["D6"] = (w, dto, reportNo) => dto.Parameter!.Contains("18000")?"18000 revs":"7200 revs";
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                map["D6"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("18000")?"18000 revs":"7200 revs";
                 if (string.IsNullOrEmpty(w.Sensitive) == false)
                 {
-                    map["U4"] = (w, dto, reportNo) => "√";
-                    map["L43"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    map["U4"] = (w, dto, esDto, ws, reportNo) => "√";
+                    map["L43"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["J4"] = (w, dto, reportNo) => "√";
-                    map["G38"] = (w, dto, reportNo) => w!.WashingProcedure!;
-                    map["AK38"] = (w, dto, reportNo) => w!.Temperature!;
-                    map["Q39"] = (w, dto, reportNo) => w!.Ballast!;
-                    map["L40"] = (w, dto, reportNo) => w!.DryProcedure!;
-                    map["U40"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
-                    map["A41"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
+                    map["J4"] = (w, dto, esDto, ws, reportNo) => "√";
+                    map["G38"] = (w, dto, esDto, ws, reportNo) => w!.WashingProcedure!;
+                    map["AK38"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
+                    map["Q39"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
+                    map["P40"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
+                    map["Y40"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A41"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
-            ["Extension and Modulus"] = (w, dto, reportNo) =>
+            ["Extension and Modulus"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["C4"] = (w, dto, reportNo) => 
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                map["C4"] = (w, dto, esDto, ws, reportNo) => 
                 dto.Parameter!.Contains("4.0") ? "4.0"
                 : dto.Parameter!.Contains("1.5") ? "1.5" 
                 : dto.Parameter!.Contains("2.5") ? "2.5":"3.6";
-                map["E22"] = (w, dto, reportNo) => dto.Parameter!.Contains("10") ? "10" : "40";
+                map["E22"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("10") ? "10" : "40";
                 return map;
             },
-            ["Extension and Recovery"] = (w, dto, reportNo) =>
+            ["Extension and Recovery"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["C4"] = (w, dto, reportNo) => dto.Parameter!.Contains("4") ? "4.0" : "2.0";
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                map["C4"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("4") ? "4.0" : "2.0";
                 return map;
             },
-            ["Bursting Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Bursting Strength"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Spray Rating"] = (w, dto, reportNo) =>
+            ["Spray Rating"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                if (string.IsNullOrEmpty(w.Sensitive) == false)
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                map["V32"] = (w, dto, esDto, ws, reportNo) => dto.sampleDescription!.Contains("Teflon Coated")?"10"
+                : dto.sampleDescription.Contains("Coated") ? "5"
+                :"1";
+                if (string.IsNullOrWhiteSpace(w.Sensitive)==false)
                 {
-                    map["L46"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    map["L46"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["G41"] = (w, dto, reportNo) => w!.WashingProcedure!;
-                    map["AJ41"] = (w, dto, reportNo) => w!.Temperature!;
-                    map["Q42"] = (w, dto, reportNo) => w!.Ballast!;
-                    map["L43"] = (w, dto, reportNo) => w!.DryProcedure!;
-                    map["U43"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
-                    map["A44"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
+                    map["G41"] = (w, dto, esDto, ws, reportNo) => w!.WashingProcedure!;
+                    map["AJ41"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
+                    map["Q42"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
+                    map["P43"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
+                    map["Y43"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A44"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
-            ["Swiss Pilling"] = (w, dto, reportNo) =>
+            ["Swiss Pilling"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["H8"] = (w, dto, reportNo) => dto.Parameter!.Contains("500") ? "500revs" : "1000revs";
-                map["O8"] = (w, dto, reportNo) => dto.Parameter!.Contains("500") ? "1000revs" : "2000revs";
-                map["V8"] = (w, dto, reportNo) => dto.Parameter!.Contains("500") ? "2000revs" : "4000revs";
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                map["H8"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("500") ? "500revs" : "1000revs";
+                map["O8"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("500") ? "1000revs" : "2000revs";
+                map["V8"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("500") ? "2000revs" : "4000revs";
                 if (string.IsNullOrEmpty(w.Sensitive) == false)
                 {
-                    map["U4"] = (w, dto, reportNo) => "√";
-                    map["L42"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    map["U4"] = (w, dto, esDto, ws, reportNo) => "√";
+                    map["L42"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["J4"] = (w, dto, reportNo) => "√";
-                    map["G37"] = (w, dto, reportNo) => w!.WashingProcedure!;
-                    map["AK37"] = (w, dto, reportNo) => w!.Temperature!;
-                    map["Q38"] = (w, dto, reportNo) => w!.Ballast!;
-                    map["L39"] = (w, dto, reportNo) => w!.DryProcedure!;
-                    map["U39"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
-                    map["A40"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
+                    map["J4"] = (w, dto, esDto, ws, reportNo) => "√";
+                    map["G37"] = (w, dto, esDto, ws, reportNo) => w!.WashingProcedure!;
+                    map["AK37"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
+                    map["Q38"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
+                    map["P39"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
+                    map["Y39"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A40"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
-            ["Accelerotor Pile Loss"] = (w, dto, reportNo) =>
+            ["Accelerotor Pile Loss"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
                 if (string.IsNullOrEmpty(w.Sensitive) == false)
                 {
-                    map["L50"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    map["L50"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["G45"] = (w, dto, reportNo) => w!.WashingProcedure!;
-                    map["AK45"] = (w, dto, reportNo) => w!.Temperature!;
-                    map["Q46"] = (w, dto, reportNo) => w!.Ballast!;
-                    map["L47"] = (w, dto, reportNo) => w!.DryProcedure!;
-                    map["U47"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
-                    map["A48"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
+                    map["G45"] = (w, dto, esDto, ws, reportNo) => w!.WashingProcedure!;
+                    map["AK45"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
+                    map["Q46"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
+                    map["P47"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
+                    map["Y47"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A48"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
-            ["Attachment Strength"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Attachment Strength"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Moisture Management"] = (w, dto, reportNo) =>
+            ["Moisture Management"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["M48"] = (w, dto, reportNo) => reportNo;
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                map["M48"] = (w, dto, esDto, ws, reportNo) => reportNo;
                 if (string.IsNullOrEmpty(w.Sensitive) == false)
                 {
-                    map["L93"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    map["L93"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["G88"] = (w, dto, reportNo) => w!.WashingProcedure!;
-                    map["AK88"] = (w, dto, reportNo) => w!.Temperature!;
-                    map["Q89"] = (w, dto, reportNo) => w!.Ballast!;
-                    map["L90"] = (w, dto, reportNo) => w!.DryProcedure!;
-                    map["U90"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
-                    map["A91"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
+                    map["G88"] = (w, dto, esDto, ws, reportNo) => w!.WashingProcedure!;
+                    map["AK88"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
+                    map["Q89"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
+                    map["L90"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
+                    map["U90"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A91"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
-            ["Snagging Resistance"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Snagging Resistance"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Mass per Unit Length"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Mass per Unit Length"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Fabric Width"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Fabric Width"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Hydrostatic Head Test"] = (w, dto, reportNo) =>
+            ["Hydrostatic Head Test"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
                 if (string.IsNullOrEmpty(w.Sensitive) == false)
                 {
-                    map["L41"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    map["L41"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["G36"] = (w, dto, reportNo) => w!.WashingProcedure!;
-                    map["AJ36"] = (w, dto, reportNo) => w!.Temperature!;
-                    map["Q37"] = (w, dto, reportNo) => w!.Ballast!;
-                    map["L38"] = (w, dto, reportNo) => w!.DryProcedure!;
-                    map["U38"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
-                    map["A39"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
+                    map["G36"] = (w, dto, esDto, ws, reportNo) => w!.WashingProcedure!;
+                    map["AJ36"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
+                    map["Q37"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
+                    map["P38"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
+                    map["Y38"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A39"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
-            ["Air Permeability of Textile Fabrics"] = (w, dto, reportNo) =>
+            ["Air Permeability of Textile Fabrics"] = (w, dto, esDto, ws, reportNo) =>
             {
-                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();
-                map["M1"] = (w, dto, reportNo) => reportNo;
-                map["A3"] = (w, dto, reportNo) => dto.Standard!;
-                map["F5"] = (w, dto, reportNo) => "100";
-                map["E6"] = (w, dto, reportNo) => "20";
-                map["V8"] = (w, dto, reportNo) => dto.Parameter!.Contains("500") ? "2000revs" : "4000revs";
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
+                map["A3"] = (w, dto, esDto, ws, reportNo) => dto.Standard!;
+                map["F5"] = (w, dto, esDto, ws, reportNo) => "100";
+                map["E6"] = (w, dto, esDto, ws, reportNo) => "20";
+                map["V8"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("500") ? "2000revs" : "4000revs";
                 if (string.IsNullOrEmpty(w.Sensitive) == false)
                 {
-                    map["L34"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
+                    map["L34"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
                 else
                 {
-                    map["G29"] = (w, dto, reportNo) => w!.WashingProcedure!;
-                    map["AJ29"] = (w, dto, reportNo) => w!.Temperature!;
-                    map["Q30"] = (w, dto, reportNo) => w!.Ballast!;
-                    map["L31"] = (w, dto, reportNo) => w!.DryProcedure!;
-                    map["U31"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
-                    map["A32"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
+                    map["G29"] = (w, dto, esDto, ws, reportNo) => w!.WashingProcedure!;
+                    map["AJ29"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
+                    map["Q30"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
+                    map["P31"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
+                    map["Y31"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["A32"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },
-            ["Yarn Count"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Yarn Count"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
-                ["A3"]= (w, dto, reportNo) => dto.Standard!,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
+                ["A3"]= (w, dto, esDto, ws, reportNo) => dto.Standard!,
             },
-            ["Course and Wales"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Course and Wales"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
-            ["Ends & Picks"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            ["Ends & Picks"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, reportNo) => reportNo,
+                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
         };
 

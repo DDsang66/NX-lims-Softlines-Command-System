@@ -17,6 +17,7 @@
     public class SeamDescObject
     {
         public string? Sample { get; set; }
+        public string? Type { get; set; }
         public List<SeamLocationObject>? LocationInfos { get; set; }
     }
     public class SeamLocationObject

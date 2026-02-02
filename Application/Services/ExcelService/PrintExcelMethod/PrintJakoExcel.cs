@@ -9,6 +9,8 @@ using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
@@ -34,7 +36,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 Console.WriteLine($"{dto.ItemName} -> {dto.Type}");
                 var pkg = dto.Type == "Wet" ? PackageWet : PackagePhy;
                 if (TemplateSheetNames.ContainsKey(dto.ItemName!) || TemplateSheetNamesNormal.ContainsKey(dto.ItemName!))
-                    FillSheet(pkg, dto.ItemName!, dto, reportNumber);
+                    FillSheet(pkg, dto.ItemName!, dto,Dto, reportNumber);
             }
             PackageWet.Save();
             PackagePhy.Save();
@@ -45,6 +47,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ExcelPackage pkg,
             string itemName,
             CheckListDto dto,
+            ExcelSubmitDto esDto,
             string reportNo)
         {
             var tplName = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal).GetTemplateName(itemName, dto.sampleDescription!);
@@ -137,10 +140,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 else if (dto.Type == "Physics")
                 {
-                    var extraMap = PhyExtraMap.GetValueOrDefault(itemName, (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>())(dto, reportNo);
+                    var extraMap = PhyExtraMap.GetValueOrDefault(itemName, (dto, esDto, ws, reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>())(dto,esDto,ws, reportNo);
                     foreach (var kv in extraMap)
                     {
-                        ws.Cells[kv.Key].Value = kv.Value(dto, reportNo);
+                        ws.Cells[kv.Key].Value = kv.Value(dto,esDto,ws, reportNo);
                     }
                 }
             }
@@ -405,70 +408,523 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 return map;
             }
         };
-        private static readonly Dictionary<string, Func<CheckListDto, string, Dictionary<string, Func<CheckListDto, string, string>>>> PhyExtraMap = new()
+        private static readonly Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>>> PhyExtraMap = new()
         {
-            ["Weight"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
+            ["Weight"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["J1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => dto.Standard!
+                ["J1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!
             },
-            ["Pilling Resistance"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
+            ["Pilling Resistance"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["F3"] = (dto, reportNo) => dto.Standard!,
-                ["D4"] = (dto, reportNo) => dto.Parameter!
+                ["M1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["F3"] = (dto, esDto, ws,  reportNo) => dto.Standard!,
+                ["D4"] = (dto, esDto, ws,  reportNo) => dto.Parameter!
             },
-            ["Extension and Recovery"] = (dto, reportNo) =>
+            ["Extension and Recovery"] = (dto, esDto, ws,  reportNo) =>
             {
-                 var map = new Dictionary<string, Func<CheckListDto, string, string>>();
-                map["M1"] = (dto, reportNo) => reportNo;
-                map["A3"] = (dto, reportNo) => dto.Standard!;
+                 var map = new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (dto, esDto, ws,  reportNo) => reportNo;
+                map["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!;
                 if (dto.sampleDescription!.Contains("Woven"))
                 {
-                    map["A5"] = (dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
+                    map["A5"] = (dto, esDto, ws,  reportNo) => dto.sampleDescription!.Contains("Loop") ?
                     "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min"
                     : "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
                 }
                 else if (dto.sampleDescription!.Contains("Knit"))
                 {
-                    map["A5"] = (dto, reportNo) => dto.sampleDescription!.Contains("Loop") ?
+                    map["A5"] = (dto, esDto, ws,  reportNo) => dto.sampleDescription!.Contains("Loop") ?
                     "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
                     "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
                 }
-                map["F7"] = (dto, reportNo) => "3";
-                map["N7"] = (dto, reportNo) => "5";
+                map["F7"] = (dto, esDto, ws,  reportNo) => "3";
+                map["N7"] = (dto, esDto, ws,  reportNo) => "5";
                 return map;
             },
-            ["Abrasion Resistance"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
+            ["Abrasion Resistance"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => dto.Standard!,
-                ["C5"] = (dto, reportNo) => "9kPa",
-                ["I5"] = (dto, reportNo) => "30000r"
+                ["M1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!,
+                ["C5"] = (dto, esDto, ws,  reportNo) => "9kPa",
+                ["I5"] = (dto, esDto, ws,  reportNo) => "30000r"
             },
-            ["Snagging Resistance"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
+            ["Snagging Resistance"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["J21"] = (dto, reportNo) => dto.Standard!,
-                ["C23"] = (dto, reportNo) => "600"
+                ["M1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["J21"] = (dto, esDto, ws,  reportNo) => dto.Standard!,
+                ["C23"] = (dto, esDto, ws,  reportNo) => "600"
             },
-            ["Seam Slippage"] = (dto, reportNo) =>
+            #region
+            //["Seam Slippage"] = (dto, esDto, ws,  reportNo) =>
+            //{
+            //    var map = new Dictionary<string, Func<CheckListDto, string, string>>();
+            //    map["M1"] = (dto, reportNo) => reportNo;
+            //    if (dto.sampleDescription!.Contains("Fabric"))
+            //    {
+            //        map["A3"] = (dto, reportNo) => dto.Standard!;
+            //    }
+            //    else if (dto.sampleDescription!.Contains("Garment"))
+            //    {
+            //        string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+            //        string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+            //        map["J3"] = (dto, reportNo) => dto.Standard!;
+            //        if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (dto, reportNo) => "√";
+            //        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
+
+            //        var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            //        {
+            //            ["Side"] = "Side Seam",
+            //            ["Sleeve"] = "Sleeve Seam",
+            //            ["Armhole"] = "Armhole Seam",
+            //            ["Shoulder"] = "Shoulder Seam",
+            //            ["Armprit"] = "Armprit Seam",
+            //            ["Front Panel"] = "Front Panel Seam",
+            //            ["Back Panel"] = "Back Panel Seam",
+            //            ["OutSide"] = "Out-Side Seam",
+            //            ["InSide"] = "In-Side Seam",
+            //            ["Back Rise"] = "Back Rise Seam",
+            //            ["Front Crotch"] = "Front Crotch Seam",
+            //            ["Cross"] = "Cross Seam",
+            //        };
+            //        // 2. 固定顺序的单元格列表
+            //        var cellOrder = new List<string>{
+            //            "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
+            //        };
+            //        var selectedParts = (component ?? "")
+            //            .Split('-', StringSplitOptions.RemoveEmptyEntries)
+            //            .Select(s => s.Trim())
+            //            .Where(k => descMap.ContainsKey(k))
+            //            .Distinct(StringComparer.OrdinalIgnoreCase)
+            //            .ToList();
+
+            //        // 4. 按顺序依次填，发完为止
+            //        for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+            //        {
+            //            string part = selectedParts[i];
+            //            string cell = cellOrder[i];
+            //            string desc = descMap[part];
+            //            map[cell] = (dto, reportNo) => desc;
+            //        }
+            //    }
+            //    return map;
+            //},
+            //["Seam Strength"] = (dto, esDto, ws,  reportNo) =>
+            //{
+            //    var map = new Dictionary<string, Func< CheckListDto, string, string>>();
+            //    map["M1"] = (dto, reportNo) => reportNo;
+            //    if (dto.sampleDescription!.Contains("Garment")&&dto.sampleDescription!.Contains("Knit"))
+            //    {
+            //        string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+            //        string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+            //        map["J5"] = (dto, reportNo) => "ISO 13938-2:2019";
+            //        if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q6"] = (dto, reportNo) => "√";
+            //        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF6"] = (dto, reportNo) => "√";
+
+            //        var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            //        {
+            //            ["Side"] = "Side Seam",
+            //            ["Sleeve"] = "Sleeve Seam",
+            //            ["Armhole"] = "Armhole Seam",
+            //            ["Shoulder"] = "Shoulder Seam",
+            //            ["Armprit"] = "Armprit Seam",
+            //            ["Front Panel"] = "Front Panel Seam",
+            //            ["Back Panel"] = "Back Panel Seam",
+            //            ["OutSide"] = "Out-Side Seam",
+            //            ["InSide"] = "In-Side Seam",
+            //            ["Back Rise"] = "Back Rise Seam",
+            //            ["Front Crotch"] = "Front Crotch Seam",
+            //            ["Cross"] = "Cross Seam",
+            //        };
+            //        // 2. 固定顺序的单元格列表
+            //        var cellOrder = new List<string>{
+            //           "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18"
+            //        };
+            //        var selectedParts = (component ?? "")
+            //            .Split('-', StringSplitOptions.RemoveEmptyEntries)
+            //            .Select(s => s.Trim())
+            //            .Where(k => descMap.ContainsKey(k))
+            //            .Distinct(StringComparer.OrdinalIgnoreCase)
+            //            .ToList();
+
+            //        // 4. 按顺序依次填，发完为止
+            //        for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+            //        {
+            //            string part = selectedParts[i];
+            //            string cell = cellOrder[i];
+            //            string desc = descMap[part];
+            //            map[cell] = (dto, reportNo) => desc;
+            //        }
+            //    }
+            //    else if (dto.sampleDescription!.Contains("Garment"))
+            //    {
+            //        string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+            //        string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+            //        map["J18"] = (dto, reportNo) => dto.Standard!;
+            //        if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q19"] = (dto, reportNo) => "√";
+            //        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF19"] = (dto, reportNo) => "√";
+
+            //        var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            //        {
+            //            ["Side"] = "Side Seam",
+            //            ["Sleeve"] = "Sleeve Seam",
+            //            ["Armhole"] = "Armhole Seam",
+            //            ["Shoulder"] = "Shoulder Seam",
+            //            ["Armprit"] = "Armprit Seam",
+            //            ["Front Panel"] = "Front Panel Seam",
+            //            ["Back Panel"] = "Back Panel Seam",
+            //            ["OutSide"] = "Out-Side Seam",
+            //            ["InSide"] = "In-Side Seam",
+            //            ["Back Rise"] = "Back Rise Seam",
+            //            ["Front Crotch"] = "Front Crotch Seam",
+            //            ["Cross"] = "Cross Seam",
+            //        };
+            //        // 2. 固定顺序的单元格列表
+            //        var cellOrder = new List<string>{
+            //            "A20", "A21", "A22", "A23", "A24", "A25","A26", "A27","A28","A29", "A30", "A31"
+            //        };
+            //        var selectedParts = (component ?? "")
+            //            .Split('-', StringSplitOptions.RemoveEmptyEntries)
+            //            .Select(s => s.Trim())
+            //            .Where(k => descMap.ContainsKey(k))
+            //            .Distinct(StringComparer.OrdinalIgnoreCase)
+            //            .ToList();
+
+            //        // 4. 按顺序依次填，发完为止
+            //        for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+            //        {
+            //            string part = selectedParts[i];
+            //            string cell = cellOrder[i];
+            //            string desc = descMap[part];
+            //            map[cell] = (dto, reportNo) => desc;
+            //        }
+            //    }
+            //    return map;
+            //},
+            //["Bursting Strength"] = (dto, esDto, ws,  reportNo) =>
+            //{
+            //    var map = new Dictionary<string, Func<CheckListDto, string, string>>();
+            //    map["M1"] = ( dto, reportNo) => reportNo;
+            //    if (dto.sampleDescription!.Contains("Fabric")) map["I3"] = (dto, reportNo) => dto.Standard!;
+            //    else if (dto.sampleDescription!.Contains("Garment"))
+            //    {
+            //        string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
+            //        string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
+
+            //        map["J3"] = (dto, reportNo) => dto.Standard!;
+            //        if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = ( dto, reportNo) => "√";
+            //        if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
+
+            //        var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            //        {
+            //            ["Side"] = "Side Seam",
+            //            ["Sleeve"] = "Sleeve Seam",
+            //            ["Armhole"] = "Armhole Seam",
+            //            ["Shoulder"] = "Shoulder Seam",
+            //            ["Armprit"] = "Armprit Seam",
+            //            ["Front Panel"] = "Front Panel Seam",
+            //            ["Back Panel"] = "Back Panel Seam",
+            //            ["OutSide"] = "Out-Side Seam",
+            //            ["InSide"] = "In-Side Seam",
+            //            ["Back Rise"] = "Back Rise Seam",
+            //            ["Front Crotch"] = "Front Crotch Seam",
+            //            ["Cross"] = "Cross Seam",
+            //        };
+            //        // 2. 固定顺序的单元格列表
+            //        var cellOrder = new List<string>{
+            //            "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18", "A19"
+            //        };
+            //        var selectedParts = (component ?? "")
+            //            .Split('-', StringSplitOptions.RemoveEmptyEntries)
+            //            .Select(s => s.Trim())
+            //            .Where(k => descMap.ContainsKey(k))
+            //            .Distinct(StringComparer.OrdinalIgnoreCase)
+            //            .ToList();
+
+            //        // 4. 按顺序依次填，发完为止
+            //        for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+            //        {
+            //            string part = selectedParts[i];
+            //            string cell = cellOrder[i];
+            //            string desc = descMap[part];
+            //            map[cell] = (dto, reportNo) => desc;
+            //        }
+            //    }
+            //    return map;
+            //},
+            #endregion
+            ["Tensile Strength"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                var map = new Dictionary<string, Func<CheckListDto, string, string>>();
-                map["M1"] = (dto, reportNo) => reportNo;
-                if (dto.sampleDescription!.Contains("Fabric"))
+                ["M1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["A28"] = (dto, esDto, ws,  reportNo) => dto.Standard!
+            },
+            ["Tear Strength"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
+            {
+                ["M1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!
+            },
+            ["Water Repellency-Spray Test"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
+            {
+                ["M1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!
+            },
+            ["Water Resistance-Hydrostatic Pressure"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
+            {
+                ["M1"] = (dto, esDto, ws,  reportNo) => reportNo,
+                ["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!
+            },
+            ["Bursting Strength"] = (dto, esDto, ws,  reportNo) =>
+            {
+                var map = new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (dto, esDto, ws,  reportNo) => esDto.ReportNumber!;
+                if (dto.sampleDescription!.Contains("Fabric")) map["I3"] = (dto, esDto, ws,  reportNo) => dto.Standard!;
+                else if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    map["A3"] = (dto, reportNo) => dto.Standard!;
+                    map["J3"] = (dto, esDto, ws,  reportNo) => dto.Standard!;
+                    var sample = ws.Cells["D3"].Value?.ToString();
+
+                    var cellOrder = new List<string> { "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "A16", "A17", "A18", "A19" };
+                    var reasonCellOrder = new List<string>();
+                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    {
+                        map["Q4"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
+                    } 
+                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    {
+                        map["AF4"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
+                    } 
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+
+                    var seamInfos = esDto.SeamParameter
+                                      ?.FirstOrDefault(s => s.Sample == sample)   // 找到当前行样本
+                                      ?.LocationInfos
+                                      ?.Where(x => !string.IsNullOrWhiteSpace(x.Location)) // 去掉空Location
+                                      .ToList();
+                    if (seamInfos?.Count > 0)
+                    {
+                        for (int i = 0; i < seamInfos.Count && i < cellOrder.Count; i++)
+                        {
+                            string location = seamInfos[i].Location!.Trim();
+                            if (descMap.TryGetValue(location, out var desc))
+                            {
+                                string cell = cellOrder[i];
+                                map[cell] = (dto, esDto, ws,  reportNo) => desc;   // 填入对应描述
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < seamInfos!.Count && i < cellOrder.Count; i++)
+                    {
+                        var info = seamInfos[i];
+                        string location = info.Location!.Trim();
+
+                        // 1. 填描述（原逻辑）
+                        if (descMap.TryGetValue(location, out var desc))
+                        {
+                            string cell = cellOrder[i];
+                            map[cell] = (dto, esDto, ws,  reportNo) => desc;
+                        }
+
+                        // 2. 当 IsNA == false 时，把 Reason 写到同行 J 列
+                        if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
+                        {
+                            string reasonCell = reasonCellOrder[i];
+                            string reason = info.Reason;          // 捕获局部变量
+                            map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
+                        }
+                    }
+                }
+                return map;
+            },
+            ["Seam Slippage"] = (dto, esDto, ws,  reportNo) =>
+            {
+                var map = new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (dto, esDto, ws,  reportNo) => esDto.ReportNumber!;
+                if (dto.sampleDescription!.Contains("Fabric")) map["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!;
+                else if (dto.sampleDescription!.Contains("Garment"))
+                {
+                    map["J3"] = (dto, esDto, ws,  reportNo) => dto.Standard!;
+                    var sample = ws.Cells["D3"].Value?.ToString();
+
+                    var cellOrder = new List<string> { "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "A16" };
+                    var reasonCellOrder = new List<string>();
+                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    {
+                        map["Q4"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
+                    }
+                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    {
+                        map["AF4"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
+                    }
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+
+                    var seamInfos = esDto.SeamParameter
+                                      ?.FirstOrDefault(s => s.Sample == sample)   // 找到当前行样本
+                                      ?.LocationInfos
+                                      ?.Where(x => !string.IsNullOrWhiteSpace(x.Location)) // 去掉空Location
+                                      .ToList();
+                    if (seamInfos?.Count > 0)
+                    {
+                        for (int i = 0; i < seamInfos.Count && i < cellOrder.Count; i++)
+                        {
+                            string location = seamInfos[i].Location!.Trim();
+                            if (descMap.TryGetValue(location, out var desc))
+                            {
+                                string cell = cellOrder[i];
+                                map[cell] = (dto, esDto, ws,  reportNo) => desc;   // 填入对应描述
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < seamInfos!.Count && i < cellOrder.Count; i++)
+                    {
+                        var info = seamInfos[i];
+                        string location = info.Location!.Trim();
+
+                        // 1. 填描述（原逻辑）
+                        if (descMap.TryGetValue(location, out var desc))
+                        {
+                            string cell = cellOrder[i];
+                            map[cell] = (dto, esDto, ws,  reportNo) => desc;
+                        }
+
+                        // 2. 当 IsNA == false 时，把 Reason 写到同行 J 列
+                        if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
+                        {
+                            string reasonCell = reasonCellOrder[i];
+                            string reason = info.Reason;          // 捕获局部变量
+                            map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
+                        }
+                    }
+                }
+                return map;
+            },
+            ["Seam Strength"] = (dto, esDto, ws,  reportNo) =>
+            {
+                var map = new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["M1"] = (dto, esDto, ws,  reportNo) => reportNo;
+                if (dto.sampleDescription!.Contains("Garment") && dto.sampleDescription!.Contains("Knit"))
+                {
+                    map["J5"] = (dto, esDto, ws,  reportNo) => "ISO 13938-2:2019";
+                    var sample = ws.Cells["D3"].Value?.ToString();
+
+                    var cellOrder = new List<string> { "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "A16", "A17", "A18" };
+                    var reasonCellOrder = new List<string>();
+                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    {
+                        map["Q6"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
+                    }
+                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    {
+                        map["AF6"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
+                    }
+                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["Side"] = "Side Seam",
+                        ["Sleeve"] = "Sleeve Seam",
+                        ["Armhole"] = "Armhole Seam",
+                        ["Shoulder"] = "Shoulder Seam",
+                        ["Armprit"] = "Armprit Seam",
+                        ["Front Panel"] = "Front Panel Seam",
+                        ["Back Panel"] = "Back Panel Seam",
+                        ["OutSide"] = "Out-Side Seam",
+                        ["InSide"] = "In-Side Seam",
+                        ["Back Rise"] = "Back Rise Seam",
+                        ["Front Crotch"] = "Front Crotch Seam",
+                        ["Cross"] = "Cross Seam",
+                    };
+                    var seamInfos = esDto.SeamParameter
+                                      ?.FirstOrDefault(s => s.Sample == sample)   // 找到当前行样本
+                                      ?.LocationInfos
+                                      ?.Where(x => !string.IsNullOrWhiteSpace(x.Location)) // 去掉空Location
+                                      .ToList();
+                    if (seamInfos?.Count > 0)
+                    {
+                        for (int i = 0; i < seamInfos.Count && i < cellOrder.Count; i++)
+                        {
+                            string location = seamInfos[i].Location!.Trim();
+                            if (descMap.TryGetValue(location, out var desc))
+                            {
+                                string cell = cellOrder[i];
+                                map[cell] = (dto, esDto, ws,  reportNo) => desc;   // 填入对应描述
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < seamInfos!.Count && i < cellOrder.Count; i++)
+                    {
+                        var info = seamInfos[i];
+                        string location = info.Location!.Trim();
+
+                        // 1. 填描述（原逻辑）
+                        if (descMap.TryGetValue(location, out var desc))
+                        {
+                            string cell = cellOrder[i];
+                            map[cell] = (dto, esDto, ws,  reportNo) => desc;
+                        }
+
+                        // 2. 当 IsNA == false 时，把 Reason 写到同行 J 列
+                        if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
+                        {
+                            string reasonCell = reasonCellOrder[i];
+                            string reason = info.Reason;          // 捕获局部变量
+                            map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
+                        }
+                    }
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-
-                    map["J3"] = (dto, reportNo) => dto.Standard!;
-                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = (dto, reportNo) => "√";
-                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
-
+                    map["J18"] = (dto, esDto, ws,  reportNo) => dto.Standard!;
+                    var sample = ws.Cells["D3"].Value?.ToString();
+                    var cellOrder = new List<string> { "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A29", "A30", "A31" };
+                    var reasonCellOrder = new List<string>();
+                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    {
+                        map["Q19"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
+                    }
+                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    {
+                        map["AF19"] = (dto, esDto, ws, reportNo) => "√";
+                        reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
+                    }
                     var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
                         ["Side"] = "Side Seam",
@@ -484,192 +940,46 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         ["Front Crotch"] = "Front Crotch Seam",
                         ["Cross"] = "Cross Seam",
                     };
-                    // 2. 固定顺序的单元格列表
-                    var cellOrder = new List<string>{
-                        "A5", "A6", "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16"
-                    };
-                    var selectedParts = (component ?? "")
-                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => s.Trim())
-                        .Where(k => descMap.ContainsKey(k))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-                    // 4. 按顺序依次填，发完为止
-                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
+                    var seamInfos = esDto.SeamParameter
+                                      ?.FirstOrDefault(s => s.Sample == sample)   // 找到当前行样本
+                                      ?.LocationInfos
+                                      ?.Where(x => !string.IsNullOrWhiteSpace(x.Location)) // 去掉空Location
+                                      .ToList();
+                    if (seamInfos?.Count > 0)
                     {
-                        string part = selectedParts[i];
-                        string cell = cellOrder[i];
-                        string desc = descMap[part];
-                        map[cell] = (dto, reportNo) => desc;
+                        for (int i = 0; i < seamInfos.Count && i < cellOrder.Count; i++)
+                        {
+                            string location = seamInfos[i].Location!.Trim();
+                            if (descMap.TryGetValue(location, out var desc))
+                            {
+                                string cell = cellOrder[i];
+                                map[cell] = (dto, esDto, ws,  reportNo) => desc;   // 填入对应描述
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < seamInfos!.Count && i < cellOrder.Count; i++)
+                    {
+                        var info = seamInfos[i];
+                        string location = info.Location!.Trim();
+
+                        // 1. 填描述（原逻辑）
+                        if (descMap.TryGetValue(location, out var desc))
+                        {
+                            string cell = cellOrder[i];
+                            map[cell] = (dto, esDto, ws,  reportNo) => desc;
+                        }
+
+                        // 2. 当 IsNA == false 时，把 Reason 写到同行 J 列
+                        if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
+                        {
+                            string reasonCell = reasonCellOrder[i];
+                            string reason = info.Reason;          // 捕获局部变量
+                            map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
+                        }
                     }
                 }
                 return map;
-            },
-            ["Seam Strength"] = ( dto, reportNo) =>
-            {
-                var map = new Dictionary<string, Func< CheckListDto, string, string>>();
-                map["M1"] = (dto, reportNo) => reportNo;
-                if (dto.sampleDescription!.Contains("Garment")&&dto.sampleDescription!.Contains("Knit"))
-                {
-                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-
-                    map["J5"] = (dto, reportNo) => "ISO 13938-2:2019";
-                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q6"] = (dto, reportNo) => "√";
-                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF6"] = (dto, reportNo) => "√";
-
-                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["Side"] = "Side Seam",
-                        ["Sleeve"] = "Sleeve Seam",
-                        ["Armhole"] = "Armhole Seam",
-                        ["Shoulder"] = "Shoulder Seam",
-                        ["Armprit"] = "Armprit Seam",
-                        ["Front Panel"] = "Front Panel Seam",
-                        ["Back Panel"] = "Back Panel Seam",
-                        ["OutSide"] = "Out-Side Seam",
-                        ["InSide"] = "In-Side Seam",
-                        ["Back Rise"] = "Back Rise Seam",
-                        ["Front Crotch"] = "Front Crotch Seam",
-                        ["Cross"] = "Cross Seam",
-                    };
-                    // 2. 固定顺序的单元格列表
-                    var cellOrder = new List<string>{
-                       "A7", "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18"
-                    };
-                    var selectedParts = (component ?? "")
-                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => s.Trim())
-                        .Where(k => descMap.ContainsKey(k))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-                    // 4. 按顺序依次填，发完为止
-                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
-                    {
-                        string part = selectedParts[i];
-                        string cell = cellOrder[i];
-                        string desc = descMap[part];
-                        map[cell] = (dto, reportNo) => desc;
-                    }
-                }
-                else if (dto.sampleDescription!.Contains("Garment"))
-                {
-                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-
-                    map["J18"] = (dto, reportNo) => dto.Standard!;
-                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q19"] = (dto, reportNo) => "√";
-                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF19"] = (dto, reportNo) => "√";
-
-                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["Side"] = "Side Seam",
-                        ["Sleeve"] = "Sleeve Seam",
-                        ["Armhole"] = "Armhole Seam",
-                        ["Shoulder"] = "Shoulder Seam",
-                        ["Armprit"] = "Armprit Seam",
-                        ["Front Panel"] = "Front Panel Seam",
-                        ["Back Panel"] = "Back Panel Seam",
-                        ["OutSide"] = "Out-Side Seam",
-                        ["InSide"] = "In-Side Seam",
-                        ["Back Rise"] = "Back Rise Seam",
-                        ["Front Crotch"] = "Front Crotch Seam",
-                        ["Cross"] = "Cross Seam",
-                    };
-                    // 2. 固定顺序的单元格列表
-                    var cellOrder = new List<string>{
-                        "A20", "A21", "A22", "A23", "A24", "A25","A26", "A27","A28","A29", "A30", "A31"
-                    };
-                    var selectedParts = (component ?? "")
-                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => s.Trim())
-                        .Where(k => descMap.ContainsKey(k))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-                    // 4. 按顺序依次填，发完为止
-                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
-                    {
-                        string part = selectedParts[i];
-                        string cell = cellOrder[i];
-                        string desc = descMap[part];
-                        map[cell] = (dto, reportNo) => desc;
-                    }
-                }
-                return map;
-            },
-            ["Bursting Strength"] = ( dto, reportNo) =>
-            {
-                var map = new Dictionary<string, Func<CheckListDto, string, string>>();
-                map["M1"] = ( dto, reportNo) => reportNo;
-                if (dto.sampleDescription!.Contains("Fabric")) map["I3"] = (dto, reportNo) => dto.Standard!;
-                else if (dto.sampleDescription!.Contains("Garment"))
-                {
-                    string? component = SeamExtraHelper.GetExtraField<string>(dto, "component", objIndex: 0);
-                    string? layout = SeamExtraHelper.GetExtraField<string>(dto, "layout", objIndex: 0);
-
-                    map["J3"] = (dto, reportNo) => dto.Standard!;
-                    if (layout!.Contains("Shell") && !string.IsNullOrEmpty(layout)) map["Q4"] = ( dto, reportNo) => "√";
-                    if (layout.Contains("Lining") && !string.IsNullOrEmpty(layout)) map["AF4"] = (dto, reportNo) => "√";
-
-                    var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["Side"] = "Side Seam",
-                        ["Sleeve"] = "Sleeve Seam",
-                        ["Armhole"] = "Armhole Seam",
-                        ["Shoulder"] = "Shoulder Seam",
-                        ["Armprit"] = "Armprit Seam",
-                        ["Front Panel"] = "Front Panel Seam",
-                        ["Back Panel"] = "Back Panel Seam",
-                        ["OutSide"] = "Out-Side Seam",
-                        ["InSide"] = "In-Side Seam",
-                        ["Back Rise"] = "Back Rise Seam",
-                        ["Front Crotch"] = "Front Crotch Seam",
-                        ["Cross"] = "Cross Seam",
-                    };
-                    // 2. 固定顺序的单元格列表
-                    var cellOrder = new List<string>{
-                        "A8", "A9", "A10","A11", "A12","A13","A14", "A15", "A16","A17", "A18", "A19"
-                    };
-                    var selectedParts = (component ?? "")
-                        .Split('-', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(s => s.Trim())
-                        .Where(k => descMap.ContainsKey(k))
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
-                        .ToList();
-
-                    // 4. 按顺序依次填，发完为止
-                    for (int i = 0; i < selectedParts.Count && i < cellOrder.Count; i++)
-                    {
-                        string part = selectedParts[i];
-                        string cell = cellOrder[i];
-                        string desc = descMap[part];
-                        map[cell] = (dto, reportNo) => desc;
-                    }
-                }
-                return map;
-            },
-            ["Tensile Strength"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
-            {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["A28"] = (dto, reportNo) => dto.Standard!
-            },
-            ["Tear Strength"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
-            {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => dto.Standard!
-            },
-            ["Water Repellency-Spray Test"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
-            {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => dto.Standard!
-            },
-            ["Water Resistance-Hydrostatic Pressure"] = (dto, reportNo) => new Dictionary<string, Func<CheckListDto, string, string>>
-            {
-                ["M1"] = (dto, reportNo) => reportNo,
-                ["A3"] = (dto, reportNo) => dto.Standard!
             },
         };
 
