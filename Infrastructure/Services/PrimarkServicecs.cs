@@ -6,6 +6,7 @@ using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRep
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using System.Linq;
 using static NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper.PrimarkParameterMapper;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
@@ -54,7 +55,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         public async Task<object?>ParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
             // 确保samples不为null且至少有一个元素
-            var items = infoDto.items!.Where(x => x.samples != null && x.samples.Any() &&  x.samples !=""); 
+            var items = infoDto.items!.Where(x => x.samples != null && x.samples.Any() && x.samples !="").ToList();
 
             PrimarkParameterProvider paramHelper = new PrimarkParameterProvider(_helper, _repo);
 
@@ -63,9 +64,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             foreach (var item in items!)
             {
                 //分测点,逻辑已从CreateParamGeneratorAsync提出
-                string contactSample = infoDto.items!.Where(x => x.itemName == item.itemName).FirstOrDefault()!.samples!;
 
-                var samples = contactSample!.Split(',').Select(s => s.Trim()).ToArray();
+                var samples = item.samples!.Split(',').Select(s => s.Trim()).ToArray();
 
                 foreach (var sample in samples)
                 {
