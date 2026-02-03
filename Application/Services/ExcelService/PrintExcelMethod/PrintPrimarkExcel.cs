@@ -14,6 +14,7 @@ using System.Linq;
 using DocumentFormat.OpenXml.Office2010.CustomUI;
 using SkiaSharp;
 using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Drawing;
 
 
 
@@ -139,9 +140,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var template = pkg.Workbook.Worksheets[templateName];
 
                     // 2计算容量和Sheet数
-                    var allDisplayNames = group.Points.SelectMany(p => p.Expanded.Select(e => e.DisplayName)).ToList();
+                    var allDisplayNames = group.Points.SelectMany(p => p.Expanded.Select(e => e.DisplayName)).ToList();             //当前组的所有测点
 
-                    var capacity = GetCapacity(row.itemName!, row.standards!, allDisplayNames.Count, descValue);
+                    var cellAddrs = GetCellAddresses(row.itemName!, row.standards!, descValue);                                                      //先去拿到单元格地址
+
+                    var capacity = GetCapacity(row.itemName!, row.standards!, cellAddrs.Length, descValue);                          //计算容量
 
                     var sheetCnt = (int)Math.Ceiling(allDisplayNames.Count / (double)capacity);
 
@@ -571,6 +574,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             if (itemName == "TS Board Fit") return 2;
 
+            var offset = OffsetRule.GetValueOrDefault(itemName, 0);
+            
+            cellCount = offset > 0 ? cellCount / 2 : cellCount;
             // 默认按单元格数
             return cellCount;
         }
@@ -1385,7 +1391,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     ["M1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
                     ["A3"] = (wp, np, row, esDto, sample) => row.standards!,
-                    ["A17"] = (wp, np, row, esDto, sample) => row.standards!,
+                    ["A18"] = (wp, np, row, esDto, sample) => row.standards!,
                 },
                 ["Security of Attachment Buttons"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
@@ -1395,7 +1401,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["Security of Attachment Mechanically Applied Fasteners"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
                     ["M1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["A17"] = (wp, np, row, esDto, sample) => row.standards!,
+                    ["A18"] = (wp, np, row, esDto, sample) => row.standards!,
                 },
                 ["Sharp Edges Restrctions"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {

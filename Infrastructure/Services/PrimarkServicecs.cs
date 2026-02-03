@@ -54,7 +54,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
         public async Task<object?>ParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
             // 确保samples不为null且至少有一个元素
-            var items = infoDto.items!.Where(x => x.samples != null && x.samples.Any()); 
+            var items = infoDto.items!.Where(x => x.samples != null && x.samples.Any() &&  x.samples !=""); 
 
             PrimarkParameterProvider paramHelper = new PrimarkParameterProvider(_helper, _repo);
 

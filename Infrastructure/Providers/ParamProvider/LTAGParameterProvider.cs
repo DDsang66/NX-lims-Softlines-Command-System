@@ -155,6 +155,196 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null,
             },
+            ("Pilling Resistance", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Pilling Resistance", _, _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Program = WetParamHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80"
+                : p.WashingProcedure.Contains("Warm") ? "105"
+                : p.WashingProcedure.Contains("Hot") ? "120"
+                : "140",
+                Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                DryCondition = DryConditionHelper(p.DryProcedure!),
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Water Repellency-Spray Test", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Water Repellency-Spray Test", _, _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Program = WetParamHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80"
+                : p.WashingProcedure.Contains("Warm") ? "105"
+                : p.WashingProcedure.Contains("Hot") ? "120"
+                : "140",
+                Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                DryCondition = DryConditionHelper(p.DryProcedure!),
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Drying Rate of Fabrics", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Drying Rate of Fabrics", _, _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Program = WetParamHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80"
+                : p.WashingProcedure.Contains("Warm") ? "105"
+                : p.WashingProcedure.Contains("Hot") ? "120"
+                : "140",
+                Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                DryCondition = DryConditionHelper(p.DryProcedure!),
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Absorbency", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Absorbency", _, _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Program = WetParamHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80"
+                : p.WashingProcedure.Contains("Warm") ? "105"
+                : p.WashingProcedure.Contains("Hot") ? "120"
+                : "140",
+                Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                DryCondition = DryConditionHelper(p.DryProcedure!),
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Air Permeability", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Air Permeability", _, _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Program = WetParamHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80"
+                : p.WashingProcedure.Contains("Warm") ? "105"
+                : p.WashingProcedure.Contains("Hot") ? "120"
+                : "140",
+                Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                DryCondition = DryConditionHelper(p.DryProcedure!),
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
             _ => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,
@@ -185,13 +375,20 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         // ---------- 2. 映射表 ----------
         private static readonly Dictionary<(string Item, string? Condition, string? Condition1), string?> _map = new()
         {
-            [("Pilling Resistance", null, null)] = "30 min",
             [("CF to Light", null, null)] = "20AFU",
             [("Dye Transfer in Storage", null, null)] = "Option 1；Temperature：75°F；Time：48 houres",
             [("Abrasion Resistance", "25000", null)] = "Cycle：25000 rubs",
             [("Abrasion Resistance", "35000", null)] = "Cycle：35000 rubs",
             [("Abrasion Resistance", "15000", null)] = "Cycle：15000 rubs",
-
+            [("Extension and Recovery", "Woven", null)] = "Growth：5% after 30 mins； Recovery：85% minimum",
+            [("Extension and Recovery", "Knit", null)] = "Growth：7% after 30 min； Recovery：85% minimum",
+            [("Pilling Resistance", "Anti", null)] = "@30min；Original Sample & After 3 Washes",
+            [("Pilling Resistance", null, null)] = "@30min；",
+            [("Water Repellency-Spray Test", null, null)] = "Original and 20 Washes；",
+            [("Drying Rate of Fabrics", null, null)] = "Original, 5 & 10 Washes；30min；",
+            [("Absorbency", null, null)] = "Original, 5 & 10 Washes；",
+            [("Water Resistance-Hydrostatic Pressure", null, null)] = "Pressure：600 mmH2O；",
+            [("Air Permeability",null,null)] = "Original and 5 Washes",
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)

@@ -8,6 +8,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
         private static readonly Dictionary<string, Func<WetParameterAatcc, string, ParamDto>> Mappings = new()
         {
             ["CF to Washing"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, param),
+
         };
 
         public static ParamDto Map(string itemName, WetParameterAatcc p, string param = null)
