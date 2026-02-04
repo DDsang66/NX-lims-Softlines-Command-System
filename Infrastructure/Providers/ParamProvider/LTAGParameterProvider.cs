@@ -107,6 +107,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
+                DryCleanProcedure= p.DryProcedure??null,
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                                  p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
             },
             ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
@@ -367,6 +370,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     else if (infoDto.sampleDescription!.Contains("Bottom")|| infoDto.sampleDescription!.Contains("Denim")) condition = "35000";
                     if (infoDto.sampleDescription!.Contains("Shirts")) condition = "15000"; 
                     break;
+                case "Extension and Recovery":
+                    if (infoDto.sampleDescription!.Contains("Woven")&&standard.Contains("3107")) condition = "Woven";
+                    else if (infoDto.sampleDescription!.Contains("Knit") && standard.Contains("2594")) condition = "Knit";
+                    break;
+                case "Pilling Resistance":
+                    if (infoDto.sampleDescription!.Contains("Anti-Pilling")) condition = "Anti";
+                    break;
 
             }
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
@@ -387,7 +397,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Water Repellency-Spray Test", null, null)] = "Original and 20 Washes；",
             [("Drying Rate of Fabrics", null, null)] = "Original, 5 & 10 Washes；30min；",
             [("Absorbency", null, null)] = "Original, 5 & 10 Washes；",
-            [("Water Resistance-Hydrostatic Pressure", null, null)] = "Pressure：600 mmH2O；",
+            [("Water Resistance-Rain Test", null, null)] = "Pressure：600 mmH2O；",
             [("Air Permeability",null,null)] = "Original and 5 Washes",
         };
 

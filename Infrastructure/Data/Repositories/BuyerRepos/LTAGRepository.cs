@@ -77,7 +77,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
         {
             // 只处理指定 item 类型
-            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Water Resistance-Hydrostatic Pressure" }
+            if (!new[] { "CF to Washing", "DS to Washing", "DS to Dry-clean" , "Water Repellency-Spray Test", "Appearance", "Spirality/Skewing", "Pilling Resistance", "Drying Rate of Fabrics", "Absorbency", "Air Permeability" }
                  .Contains(itemName))
                 return default;
             var Param = await _db.WetParameterAatccs

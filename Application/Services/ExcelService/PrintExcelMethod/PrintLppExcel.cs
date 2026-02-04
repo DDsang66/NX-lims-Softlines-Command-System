@@ -604,7 +604,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.sampleDescription!.Contains("Garment") && dto.sampleDescription!.Contains("Knit"))
                 {
                     map["J5"] = (wp, dto, esDto, ws, reportNo) => "ISO 13938-2:2019";
-                    var sample = ws.Cells["D3"].Value?.ToString();
+                    var sample = ws.Cells["D5"].Value?.ToString();
 
                     var cellOrder = new List<string> { "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "A16", "A17", "A18" };
                     var reasonCellOrder = new List<string>();
