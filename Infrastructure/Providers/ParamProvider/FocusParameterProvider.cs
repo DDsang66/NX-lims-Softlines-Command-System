@@ -38,6 +38,33 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
                 SteelBallNum = 0
             },
+            ("CF to Washing", "5M" or "5G" or "5N", _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                Temperature = "50",
+                Program = "B2S",
+                SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 25
+            },
+            ("CF to Washing", "6M" or "6G" or "6N", _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                Temperature = "60",
+                Program = "C2S",
+                SteelBallNum = 25
+            },
+            ("CF to Washing", "7M" or "7G" or "7N", _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                Temperature = "70",
+                Program = "D2S",
+                SteelBallNum = 25
+            },
             ("DS to Washing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -45,7 +72,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("6") ? "60"
+                : p.WashingProcedure!.Contains("4") ? "40"
+                : p.WashingProcedure!.Contains("3") ? "30"
+                : p.WashingProcedure!.Contains("5") ? "50"
+                :"40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
@@ -61,7 +92,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("6") ? "60"
+                : p.WashingProcedure!.Contains("4") ? "40"
+                : p.WashingProcedure!.Contains("3") ? "30"
+                : p.WashingProcedure!.Contains("5") ? "50"
+                : "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
     : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
     : "Type III (100% Polyester)",
@@ -194,7 +229,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("6") ? "60"
+                : p.WashingProcedure!.Contains("4") ? "40"
+                : p.WashingProcedure!.Contains("3") ? "30"
+                : p.WashingProcedure!.Contains("5") ? "50"
+                : "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
 : "Type III (100% Polyester)",
@@ -210,7 +249,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("6") ? "60"
+                : p.WashingProcedure!.Contains("4") ? "40"
+                : p.WashingProcedure!.Contains("3") ? "30"
+                : p.WashingProcedure!.Contains("5") ? "50"
+                : "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
 : "Type III (100% Polyester)",
@@ -279,6 +322,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     if (infoDto.sampleDescription!.Contains("After Wash")) condition = "1 Wash";
                     else if (infoDto.sampleDescription!.Contains("After Dry-clean")) condition = "Dry-clean";
                     break;
+                case "Dimensional Stability to Ironing":
+                    if (string.IsNullOrWhiteSpace(infoDto.ironMethod!)) condition = "N/A";
+                    break;
             }
             return GetParameter(ItemName, condition, condition1);//返回一个string类型的Parameter
         }
@@ -315,6 +361,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Extension and Recovery", "Knit", "10")] = "Load: 10N",
             [("Extension and Recovery", "Knit", "14")] = "Load: 14N",
             [("Colour Fastness to Chlorinated Water", null, null)] = "20 mg/L",
+            [("Dimensional Stability to Ironing","N/A",null)] = "N/A",
         };
 
         private static string? GetParameter(string Item, string? Condition, string? Condition1)

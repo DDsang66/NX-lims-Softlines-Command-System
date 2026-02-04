@@ -10,6 +10,7 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using System.ComponentModel;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
+using System.Net.NetworkInformation;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.PrintExcelMethod
 {
@@ -351,7 +352,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
                 ["E4"] = (w, dto, reportNo) => "20"
             },
-            ["CF to Washing"]= (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>> 
+            ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
@@ -399,7 +400,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Sweat"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,       
+                ["A3"] = (w, dto, reportNo) => dto.Standard!,
                 ["J3"] = (w, dto, reportNo) => "√"
             },
             ["CF to Sea Water"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
@@ -411,7 +412,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["A40"] = (w, dto, reportNo) => dto.Standard!,
-                ["BB4"] = (w, dto, reportNo) => w.IronMethod!
+                ["BB4"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod!) == true ? "/ " : w.IronMethod!,
+                ["BT3"] = (w, dto, reportNo) =>dto.Parameter!.Contains("N/A") ? "N/A" : "-"
             },
             ["DS to Steaming"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -421,7 +423,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["DS to Dry-clean"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
-                ["AR3"] = (w, dto, reportNo) =>dto.Standard!,
+                ["AR3"] = (w, dto, reportNo) => dto.Standard!,
                 ["AW4"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal"
             },
             ["Spirality/Skewing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>

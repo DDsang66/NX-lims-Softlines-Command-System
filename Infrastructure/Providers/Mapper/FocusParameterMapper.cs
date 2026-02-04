@@ -25,6 +25,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
             ["Air Permeability"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
             ["Quick Dry"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
             ["Zipper Strength"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
+            ["Dimensional Stability to Ironing"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
         };
 
         public static ParamDto Map(string itemName, WetParameterIso p, string param = null)
