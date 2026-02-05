@@ -748,7 +748,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
                         {
                             string reasonCell = reasonCellOrder[i];
-                            string reason = info.Reason;          // 捕获局部变量
+                            string reason = "N/A；" + info.Reason;          // 捕获局部变量
                             map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
                         }
                     }
@@ -827,7 +827,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
                         {
                             string reasonCell = reasonCellOrder[i];
-                            string reason = info.Reason;          // 捕获局部变量
+                            string reason = "N/A；" + info.Reason;         // 捕获局部变量
                             map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
                         }
                     }
@@ -904,7 +904,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
                         {
                             string reasonCell = reasonCellOrder[i];
-                            string reason = info.Reason;          // 捕获局部变量
+                            string reason = "N/A；" + info.Reason;         // 捕获局部变量
                             map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
                         }
                     }
@@ -974,7 +974,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
                         {
                             string reasonCell = reasonCellOrder[i];
-                            string reason = info.Reason;          // 捕获局部变量
+                            string reason = "N/A；" + info.Reason;          // 捕获局部变量
                             map[reasonCell] = (dto, esDto, ws,  reportNo) => reason;
                         }
                     }

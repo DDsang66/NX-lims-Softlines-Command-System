@@ -251,8 +251,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Air Permeability"] = (n, m, l) => ExcelLPPMapper.MapAirPermeability(),
             ["Attachment Strength"] = (n, m, l) => ExcelLPPMapper.MapAttachmentStrength(),
             ["Quick Dry"] = (n, m, l) => ExcelLPPMapper.MapDryRate(),
-            ["Seam Slippage"] = (n, m, l) => ExcelLPPMapper.MapSeam(m),
-            ["Seam Strength"] = (n, m, l) => ExcelLPPMapper.MapSeam(m),
+            ["Seam Slippage"] = (n, m, l) => ExcelLPPMapper.MapSeam(n,m),
+            ["Seam Strength"] = (n, m, l) => ExcelLPPMapper.MapSeam(n,m),
 
             ["CF to Washing"] = (n, m, l) => ExcelLPPMapper.MapCFtoWashing(),
             ["CF to Rubbing"] = (n, m, l) => ExcelLPPMapper.MapCFtoRubbing(),
@@ -590,7 +590,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
                         {
                             string reasonCell = reasonCellOrder[i];
-                            string reason = info.Reason;          // 捕获局部变量
+                            string reason = "N/A；"+ info.Reason;          // 捕获局部变量
                             map[reasonCell] = (wp,dto, esDto, ws, reportNo) => reason;
                         }
                     }
@@ -667,7 +667,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
                         {
                             string reasonCell = reasonCellOrder[i];
-                            string reason = info.Reason;          // 捕获局部变量
+                            string reason = "N/A；" + info.Reason;       // 捕获局部变量
                             map[reasonCell] = (wp, dto, esDto, ws, reportNo) => reason;
                         }
                     }
@@ -737,7 +737,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (info.IsNA == true && !string.IsNullOrWhiteSpace(info.Reason))
                         {
                             string reasonCell = reasonCellOrder[i];
-                            string reason = info.Reason;          // 捕获局部变量
+                            string reason = "N/A；" + info.Reason;          // 捕获局部变量
                             map[reasonCell] = (wp, dto, esDto, ws, reportNo) => reason;
                         }
                     }

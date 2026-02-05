@@ -163,11 +163,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
                 "H8","O8","V8","AC8"
             };
         }
-        public static string[] MapSeam(string SampleDescription)
+        public static string[] MapSeam(string ItemName,string SampleDescription)
         {
             List<string>? map = null;
             if (SampleDescription.Contains("Fabric")) map = new List<string> { "A10", "A12" };
-            else if (SampleDescription.Contains("Garment") && SampleDescription.Contains("Knit")) map = new List<string> { "D5" };
+            else if (SampleDescription.Contains("Garment") && SampleDescription.Contains("Knit")&& ItemName.Contains("Seam Strength")) map = new List<string> { "D5" };
             else if (SampleDescription.Contains("Garment")) map = new List<string> { "D3" };
 
             return map?.ToArray() ?? new string[0];
