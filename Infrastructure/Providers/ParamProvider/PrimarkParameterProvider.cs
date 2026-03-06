@@ -758,7 +758,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         private string? ElogationHelper(List<FiberDto> fiberComposition, List<SampleInfoDescription> sampleDesc, string MenuName)
         {
             string? Result = "N/A";
-            var rate = _helper.CompositionRate(fiberComposition, "Elastane");
+            var rate = _helper.CompositionRate(fiberComposition, "Elastane")+_helper.CompositionRate(fiberComposition, "Spandex");
             if (rate == 0) return Result = "N/A";
             if (MenuName == "PTC07" || MenuName == "PTC08") return Result = "20";
             else if (MenuName == "PTC01" || MenuName == "PTC02" || MenuName == "PTC04")
