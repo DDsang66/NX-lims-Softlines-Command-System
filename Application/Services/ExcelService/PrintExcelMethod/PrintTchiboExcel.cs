@@ -85,7 +85,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             if (itemName == "CF to Hot Pressing") { capacity = 3; }// 特例处理，实际容量为3
             if (itemName == "Appearance") { capacity = 1; }
             if (itemName == "DS to Washing"&&dto.sampleDescription!.Contains("Garment")) { capacity = 1; }
-            int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
+            if (itemName == "Absorbency") { capacity = 6; }
+                int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
 
             List<ExcelWorksheet> sheets = new List<ExcelWorksheet>();
@@ -552,13 +553,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["M1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
                 ["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
-                ["A20"] = (wp, dto, esDto, ws, reportNo) => "ISO 5077:2007 / ISO 3759:2011 / ISO 6330:2021",
-                ["J21"] = (wp, dto, esDto, ws, reportNo) => wp.Temperature!,
-                ["Q21"] = (wp, dto, esDto, ws, reportNo) => wp.Detergent!,
-                ["E22"] = (wp, dto, esDto, ws, reportNo) => wp.WashingProcedure!,
-                ["AC22"] = (wp, dto, esDto, ws, reportNo) => wp.DryProcedure!,
-                ["A23"] = (wp, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!,
-                ["Z23"] = (wp, dto, esDto, ws, reportNo) => wp.Program!
+                ["A30"] = (wp, dto, esDto, ws, reportNo) => "ISO 5077:2007 / ISO 3759:2011 / ISO 6330:2021",
+                ["J31"] = (wp, dto, esDto, ws, reportNo) => wp.Temperature!,
+                ["Q31"] = (wp, dto, esDto, ws, reportNo) => wp.Detergent!,
+                ["E32"] = (wp, dto, esDto, ws, reportNo) => wp.WashingProcedure!,
+                ["AC32"] = (wp, dto, esDto, ws, reportNo) => wp.DryProcedure!,
+                ["A33"] = (wp, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!,
+                ["Z33"] = (wp, dto, esDto, ws, reportNo) => wp.Program!
             },
             ["Attachment Strength"] = (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
@@ -579,7 +580,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             ["CF to Perspiration"] = 6,
             ["DS to Washing"] = 4,
-            ["Water Repellency-Spray Test"] = 3
+            ["Water Repellency-Spray Test"] = 3,
+            ["Absorbency"]= 6,
         };
         private void WriteSamples(
             ExcelWorksheet ws,
