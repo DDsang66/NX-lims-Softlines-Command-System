@@ -95,7 +95,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             int capacity = offset > 0 ? cellAddrs.Length / 2 : cellAddrs.Length; // 根据是否偏移计算每张 Sheet 的实际容量
             if (itemName == "Air Permeability"&&dto.sampleDescription!.Contains("Breathability")) { capacity = 2; }// 特例处理，实际容量为3
             if (itemName == "Appearance"||itemName=="Print Durability") { capacity = 1; }
-            if (itemName == "DS to Washing" && !dto.sampleDescription!.Contains("Fabric")) { capacity = 1; }
+            if (itemName == "DS to Washing" && !dto.sampleDescription!.Contains("Fabric")&& !dto.sampleDescription!.Contains("HomeTextile")) { capacity = 1; }
             int sheetCnt = (int)Math.Ceiling(samples!.Length / (double)capacity);
 
 
@@ -207,6 +207,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["DS to Washing"] = new Dictionary<string[], string>
             {
                 {new[] { "Fabric" }, "DStoWashing-F" },
+                {new[] { "HomeTextile" }, "DStoWashing-F" },
                 {new[] { "Garment" }, "DStoWashing-G" },
                 {new[] { "Socks" }, "DStoWashing-Acc" },
                 {new[] { "Gloves" }, "DStoWashing-Acc" },
@@ -318,6 +319,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["B4"] = (w, dto, reportNo) => w.Program!,
                 ["E4"] = (w, dto, reportNo) => w.Temperature!,
                 ["L5"] = (w, dto, reportNo) => w.SteelBallNum!.ToString()!,
+                ["B10"] = (w, dto, reportNo) => dto.Parameter!.Contains("LyoW") ? "Regenerated cellulose" : "Acetate"!,
             },
             ["CF to Rubbing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -328,11 +330,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A25"] = (w, dto, reportNo) => dto.Standard!,
+                ["B31"] = (w, dto, reportNo) => dto.Parameter!.Contains("LyoW") ? "Regenerated cellulose" : "Acetate"!,
             },
             ["CF to Perspiration"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
+                ["B8"] = (w, dto, reportNo) => dto.Parameter!.Contains("LyoW")? "Regenerated cellulose" : "Acetate"!,
+                ["B18"] = (w, dto, reportNo) => dto.Parameter!.Contains("LyoW") ? "Regenerated cellulose" : "Acetate"!,
             }
         };
 

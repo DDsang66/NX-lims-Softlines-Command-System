@@ -35,7 +35,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             #region 附加项配置
             // 1. 检查并添加 Mass Per Unit Area
             var massPerUnitAreaRow = checkLists.FirstOrDefault(row =>
-                new[] { "Tear Strength", "Grab Strength & Seam Slippage", "Seam Slippage of Garment Seams","Bursting Strength" }
+                new[] { "Tear Strength", "Grab Strength & Seam Slippage", "Seam Slippage of Garment Seams","Bursting Strength", "Martindale Abrasion" }
                     .Contains(row.ItemName));
 
             if (massPerUnitAreaRow != null)
@@ -948,7 +948,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             ["Mass per Unit Length"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["M1"] = (w, dto, esDto, ws, reportNo) => reportNo,
+                ["J1"] = (w, dto, esDto, ws, reportNo) => reportNo,
             },
             ["Fabric Width"] = (w, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {

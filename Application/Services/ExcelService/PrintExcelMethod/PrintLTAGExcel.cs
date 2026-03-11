@@ -211,7 +211,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Bonding Strength"] = "Peel Bond",
             ["Zipper Strength"] = "Zipper Strength",
             ["Tensile Strength"] = "Tensile Strength",
-            ["Tear Strength"] = "Tear Strength",
+            ["Tear Strength"] = "Tearing Strength",
             ["Torque & Tension"] = "Torque&Tension",
             ["Small Parts"] = "Torque&Tension",
             ["Air Permeability"] = "Air Permeability",
@@ -460,7 +460,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     map["BC1"] = (w, dto, reportNo) => reportNo;
                     map["AR6"] = (w, dto, reportNo) => "√";
-                    map["AU6"] = (w, dto, reportNo) => dto.Standard!;
+                    map["AU6"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Fabric")?"AATCC TM135-2018t":"AATCC TM150-2018t"!;
                     map["BI7"] = (w, dto, reportNo) => w.Cycle + " Cycle";
                     map["BY6"] = (w, dto, reportNo) => w.Temperature!;
                     map["BJ6"] = (w, dto, reportNo) => w.Program!;
@@ -468,6 +468,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["BP7"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["BO6"] = (w, dto, reportNo) => w.DryCondition!;
                     map["BW7"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
+                    map["AR10"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                     map["BN23"] = (w, dto, reportNo) => w.IronMethod!;
 
                 }
@@ -477,6 +478,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AR9"] = (w, dto, reportNo) => "√";
                     map["BL9"] = (w, dto, reportNo) => w.Sensitive == "Y" ? "Sensitive" : "Normal";
                     map["BN23"] = (w, dto, reportNo) => w.IronMethod!;
+                    map["AR10"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
             },

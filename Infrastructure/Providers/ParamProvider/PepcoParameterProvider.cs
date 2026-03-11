@@ -157,6 +157,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 else if (infoDto.sampleDescription.Contains("Breathability")) Condition = "After 3 Wash";
                 else Condition = null;
             }
+            if (ItemName == "CF to Perspiration")
+            {
+                if (infoDto.sampleDescription!.Contains("HomeTextile")) Condition = "Common";
+                else Condition = "LyoW";
+            }
+            if (ItemName == "CF to Water")
+            {
+                if (infoDto.sampleDescription!.Contains("HomeTextile")) Condition = "Common";
+                else Condition = "LyoW";
+            }
+            if (ItemName == "CF to Washing")
+            {
+                if (infoDto.sampleDescription!.Contains("HomeTextile")) Condition = "Common";
+                else Condition = "LyoW";
+            }
             return GetParameter(ItemName, Condition);//返回一个string类型的Parameter
         }
 
@@ -174,6 +189,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Water Repellency-Spray Test", null)] = "Water-Resistant Test as Recevied; Water-Repllent Test After 3 Wash.",
             [("Seam Slippage", null)] = "The negative load depends on the basis weight",
             [("Drying Rate of Fabrics", null)] = "As Received",
+            [("CF to Perspiration", "Common")] = "Multi-Fibre:DW",
+            [("CF to Perspiration", "LyoW")] = "Multi-Fibre: LyoW",
+            [("CF to Water", "Common")] = "Multi-Fibre:DW",
+            [("CF to Water", "LyoW")] = "Multi-Fibre: LyoW",
+            [("CF to Washing", "Common")] = "Multi-Fibre:DW",
+            [("CF to Washing", "LyoW")] = "Multi-Fibre: LyoW",
         };
 
         private static string? GetParameter(string item, string? lv)

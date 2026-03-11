@@ -130,6 +130,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
+                Detergent = p.Detergent!.Contains("Mild Detergent") ? "Woolite Detergent" : "60g Tide powder",
                 Temperature =
                 p.WashingProcedure!.Contains("Cold") ? "80" : "105",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,

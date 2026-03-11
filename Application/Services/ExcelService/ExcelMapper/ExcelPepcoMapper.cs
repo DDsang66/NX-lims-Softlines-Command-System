@@ -27,13 +27,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         public static string[] MapDStoWashing(string sampleDescription)
         {
             List<string> stringMap = null;
-            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap", "HomeTextile" }
             .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
                 "Garment" => new List<string> { "G10" },
                 "Fabric" => new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" },
+                "HomeTextile" => new List<string> { "AZ8", "BG8", "BN8", "BU8", "AW12", "BO12", "AW23", "BO23" },
                 "Socks" => new List<string> { "F10" },
                 "Gloves" => new List<string> { "F19" },
                 "Cap" => new List<string> { "F28" },
@@ -68,10 +69,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             switch (ItemName)
             {
                 case "CF to Water":
-                    map = new List<string> { "D26", "F26", "H26", "J26", "L26", "N26" };
+                    map = new List<string> { "D28", "F28", "H28", "J28", "L28", "N28" };
                     break;
                 case "CF to Perspiration":
-                    map = new List<string> { "D5", "F5", "H5", "J5", "L5", "N5", "D14", "F14", "H14", "J14", "L14", "N14" };
+                    map = new List<string> { "D5", "F5", "H5", "J5", "L5", "N5", "D15", "F15", "H15", "J15", "L15", "N15" };
                     break;
                 default: break;
             }
@@ -161,13 +162,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
 
             List<string> stringMap = null;
-            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap", "HomeTextile" }
             .FirstOrDefault(key => SampleDescription?.Contains(key) == true);
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
                 "Garment" => new List<string> { "W8","AG10" },
                 "Fabric" => new List<string>  {"AZ13","BR13","AZ24","BR24"  },
+                "HomeTextile" => new List<string> { "AZ13", "BR13", "AZ24", "BR24" },
                 "Socks" => new List<string> { "W8", "AG10" },
                 "Gloves" => new List<string> { "W17", "AG19" },
                 "Cap" => new List<string> { "W26", "AG28" },
