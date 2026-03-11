@@ -112,7 +112,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             // 定义固定的单元格地址映射
             return new string[]
             {
-                "A10","A11","A12"
+                "A29","A30","A31"
                 // 可以根据需要添加更多固定的单元格地址
             };
         }
