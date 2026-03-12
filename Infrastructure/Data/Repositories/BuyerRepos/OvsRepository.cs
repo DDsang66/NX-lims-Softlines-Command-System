@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
@@ -9,103 +10,256 @@ using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos
 {
         //与数据库交互
-        public class OvsRepository : IRepository
+        public class OvsRepository 
         {
-            private readonly LabDbContextSec _db;
-            private readonly FiberContentHelper _helper;
-            public OvsRepository(LabDbContextSec db, FiberContentHelper helper)
-            {
-                _db = db;
-                _helper = helper;
-            }
-
-            public async Task<List<CheckListDto>?> GetCheckListAsync(dynamic input)
-            {
-                try
-                {
-                string menuName = input.Trim();
-
-                // 先全表拉到内存
-                var allMenus = await _db.OvsMenus.AsNoTracking().ToListAsync();
-
-                // 精确匹配
-                var hitMenus = allMenus
-                    .Where(m => m.BuyerTable!
-                        .Split(',')
-                        .Select(s => s.Trim())
-                        .Contains(menuName, StringComparer.OrdinalIgnoreCase))
-                    .ToList();
-
-                if (!hitMenus.Any()) return null;
-
-                var checkLists = hitMenus
-                    .Where(m => m.StandardName != null)
-                    .Select(m => new CheckListDto
-                    {
-                        MenuName = menuName,
-                        ItemName = m.ItemName,
-                        Standard = m.StandardName,
-                        Type = m.Type,
-                        Parameter = null
-                    })
-                    .ToList();
-                checkLists = checkLists.OrderBy(cl => cl.ItemName).ToList();
-
-                    return checkLists;
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($" {ex.Message}");
-                }
-                return null;
-            }
-
-        public async Task<T?> GetOrCreateWetParamsAsync<T>(ParamsInput input, string itemName) where T : IWetParam, new()
+        private readonly LabDbContextSec _db;
+        private readonly FiberContentHelper _helper;
+        public OvsRepository(LabDbContextSec db, FiberContentHelper helper)
         {
-            // 只处理指定 item 类型
-            if (!new[] { "Colour Fastness to Washing", "Dimensional Stability to Washing", "Accelerated Ageing(Stroage) Test" ,
-                "Moisture Management","Pilling Resistance","Pilling Resistance","Bursting Strength","Seam Slippage", "Vertical Wicking","Dimensional Stability to Dry-Cleaning"}
-                 .Contains(itemName))
-                    return default;
-                var Param = await _db.WetParameterIsos
-                                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == input.OrderNumber);
-                OvsParameterProvider wetParam = new OvsParameterProvider(_helper);
-                if (Param != null)
+            _db = db;
+            _helper = helper;
+        }
+
+
+        /// <summary>
+        /// 获取基础CheckList
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public async Task<List<CheckListDto>?> GetCheckListAsync(dynamic input)
+        {
+            try
+            {
+                string menuName = input;
+                var Menu = await _db.OvsMenus.Where(m => m.BuyerTable!.Contains(menuName)).ToListAsync();
+                if (Menu == null) return null;
+
+                var checkLists = new List<CheckListDto>();
+                foreach (var m in Menu)
                 {
-                    var updatedParam = wetParam.CreateWetParameters(input);
-                    updatedParam.ParamId = Param.ParamId;
-                    _db.Entry(Param).CurrentValues.SetValues(updatedParam);
-                    await _db.SaveChangesAsync();
-                    Param = updatedParam;
-                }
-                else
-                {
-                    var newParam = new WetParameterIso//没有找到对应的对象，随即构造一个
+                    try
                     {
-                        Standard = input.Standard,
-                        Sensitive = "N",
-                        ReportNumber = input.OrderNumber!,
-                        ContactItem = itemName
-                    };
-                    Param = wetParam.CreateWetParameters(input);
-                    foreach (var prop in typeof(WetParameterIso).GetProperties())
-                    {
-                        if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段，因为它是自增的
+                        if (m.StandardName != null)
                         {
-                            var value = prop.GetValue(Param);
-                            if (value != null)
+                            checkLists.Add(new CheckListDto
                             {
-                                prop.SetValue(newParam, value);
-                            }
+                                MenuName = menuName,
+                                ItemName = m.ItemName,
+                                Standard = m.StandardName,
+                                Type = m.Type,
+                                Parameter = null
+                            });
+
                         }
                     }
-
-                    await _db.WetParameterIsos.AddAsync(newParam);
-                    await _db.SaveChangesAsync();
-                    Param = newParam;
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error processing standard {m.StandardName}: {ex.Message}");
+                    }
                 }
-                return (T)(object)Param;//返回WetParameters类型的对象
+                checkLists = checkLists.OrderBy(cl => cl.Standard).ToList();
+
+                return checkLists;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($" {ex.Message}");
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 新建WetParams
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns> WetParameterIso</returns>
+        public async Task<WetParameterIso> CreateWetParamAsync(ParamsInput input)
+        {
+            var newParam = new WetParameterIso//构造一个基础对象
+            {
+                Standard = input.Standard,
+                Sensitive = "N",
+                ReportNumber = input.OrderNumber!,
+                ContactItem = input.ItemName,
+                ContactBuyer = "Ovs"
+            };
+            await _db.WetParameterIsos.AddAsync(newParam);
+            await _db.SaveChangesAsync();
+            return newParam!;
+        }
+
+
+        /// <summary>
+        /// 获取WetParams
+        /// </summary>
+        /// <param name="reportNum"></param>
+        /// <param name="itemName"></param>
+        /// <returns></returns>
+        public async Task<WetParameterIso> GetWetParamAsync(string reportNum, string itemName, string sample)
+        {
+            var Param = await _db.WetParameterIsos
+                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum && p.ContactSample == sample);
+            return Param!;
+        }
+
+
+        /// <summary>
+        /// 更新WetParam
+        /// </summary>
+        /// <param name="newParam"></param>
+        /// <param name="exitParam"></param>
+        public async Task UpdateWetParamAsync(WetParameterIso newParam, WetParameterIso exitParam)
+        {
+            foreach (var prop in typeof(WetParameterIso).GetProperties())
+            {
+                if (prop.CanWrite && prop.Name != "ParamId") // 跳过主键字段
+                {
+                    var value = prop.GetValue(newParam);
+                    if (value != null)
+                    {
+                        prop.SetValue(exitParam, value);
+                    }
+                }
+            }
+
+            _db.WetParameterIsos.Update(exitParam);
+            await _db.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// 新建NormalParams
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns> WetParameterIso</returns>
+        public async Task<NormalParameter> CreateNormalParamAsync(string reprortNum, string itemName, string sample)
+        {
+            var snowflake = new SnowflakeIdGenerator();
+            long snowId = snowflake.NextId();
+            var newParam = new NormalParameter//构造一个基础对象
+            {
+                ParamId = snowId.ToString(),
+                ReportNumber = reprortNum,
+                ContactItem = itemName,
+                ContactSample = sample,
+                ContactBuyer = "Ovs"
+            };
+            await _db.NormalParameters.AddAsync(newParam);
+            await _db.SaveChangesAsync();
+            return newParam!;
+        }
+
+
+        /// <summary>
+        /// 获取NormaltParam
+        /// </summary>
+        /// <param name="reportNum"></param>
+        /// <param name="itemName"></param>
+        /// <returns></returns>
+        public async Task<NormalParameter> GetNormalParamAsync(string reportNum, string itemName, string sample)
+        {
+            var Param = await _db.NormalParameters
+                  .FirstOrDefaultAsync(p => p.ContactItem == itemName && p.ReportNumber == reportNum && p.ContactSample == sample && p.ContactBuyer == "Ovs");
+            return Param!;
+        }
+
+        /// <summary>
+        /// 更新WetParam
+        /// </summary>
+        /// <param name="newParam"></param>
+        /// <param name="exitParam"></param>
+        public async Task UpdateNormalParamAsync(string newParam, NormalParameter exitParam)
+        {
+            exitParam.ExtraParam = newParam;
+            _db.NormalParameters.Update(exitParam);
+            await _db.SaveChangesAsync();
+        }
+
+
+        /// <summary>
+        /// 根据样品代码、报告编号和购买者信息获取单个样品信息
+        /// </summary>
+        /// <param name="sampleName">样品代码</param>
+        /// <param name="reportNumber">报告编号</param>
+        /// <param name="buyer">购买者联系方式</param>
+        /// <returns>返回找到的SampleInfo对象，如果未找到则返回null</returns>
+        /// <exception cref="ArgumentException">当输入参数为空或null时抛出</exception>
+        public async Task<SampleInfo> GetSampleByNameAsync(string sampleName, string reportNumber, string buyer)
+        {
+            // 参数验证
+            if (string.IsNullOrWhiteSpace(sampleName))
+                throw new ArgumentException("样品代码不能为空", nameof(sampleName));
+            if (string.IsNullOrWhiteSpace(reportNumber))
+                throw new ArgumentException("报告编号不能为空", nameof(reportNumber));
+            if (string.IsNullOrWhiteSpace(buyer))
+                throw new ArgumentException("购买者信息不能为空", nameof(buyer));
+
+            try
+            {
+                var sampleInfo = await _db.SampleInfos
+                    .FirstOrDefaultAsync(s => s.SampleCode == sampleName &&
+                                            s.ReportNumber == reportNumber &&
+                                            s.ContactBuyer == buyer);
+
+                return sampleInfo;
+            }
+            catch (Exception ex)
+            {
+                throw; // 可以选择重新抛出或返回null，取决于业务需求
             }
         }
+
+        /// <summary>
+        /// 根据样品代码、报告编号和购买者信息获取单个样品信息
+        /// </summary>
+        /// <param name="sampleDescObject"></param>
+        /// <param name="reportNum"></param>
+        /// <param name="buyer"></param>
+        /// <returns></returns>
+        public async Task<List<SampleInfoDescription>> GetSampleInfoDescription(SampleInfo sampleInfo, string reportNum, string buyer)
+        {
+            var sampleDescObj = await _db.SampleInfoDescriptions
+                .Where(s => s.SampleId == sampleInfo.IdSample)
+                .ToListAsync();
+            return sampleDescObj;
+        }
+
+        /// <summary>
+        /// 保存SampleInfo
+        /// </summary>
+        /// <param name="sampleDescObject"></param>
+        /// <param name="reportNum"></param>
+        /// <param name="buyer"></param>
+        public async Task SaveSampleInfo(SampleDescObject sampleDescObject, string reportNum, string buyer)
+        {
+            var snowflake = new SnowflakeIdGenerator();
+            long snowId = snowflake.NextId();
+            var sampleInfo = new SampleInfo
+            {
+                IdSample = snowId.ToString(),
+                DescriptionId = snowId.ToString(),
+                SampleCode = sampleDescObject.sample!,
+                ContactBuyer = buyer,
+                ReportNumber = reportNum
+            };
+            _db.SampleInfos.Add(sampleInfo);
+            foreach (var item in sampleDescObject.description!)
+            {
+                snowId = snowflake.NextId();
+                if (item.propertyName != null && item.value != null)
+                {
+                    var desc = new SampleInfoDescription
+                    {
+                        IdDescription = snowId.ToString(),
+                        SampleId = sampleInfo.IdSample,
+                        PropertyName = item.propertyName,
+                        PropertyValue = item.value,
+                    };
+                    _db.SampleInfoDescriptions.Add(desc);
+                }
+            }
+
+            await _db.SaveChangesAsync();
+        }
     }
+}
 

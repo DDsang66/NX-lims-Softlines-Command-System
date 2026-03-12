@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using static NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper.OvsParameterMapper;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Services
 {
@@ -18,10 +18,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
             _repo = repo;
             _helper = helper;
         }
-
-
         /// <summary>
-        /// 根据传入的参数，生成对应的参数
+        /// 生成CheckList服务
         /// </summary>
         /// <param name="infoDto"></param>
         /// <returns></returns>
@@ -43,40 +41,67 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Services
                 })
                 .ToList();
 
-            return groupedCheckLists;//去重后，返回给Ovs类
+            return groupedCheckLists;//去重后
         }
 
-
         /// <summary>
-        /// 根据传入的参数，生成对应的参数
+        /// 生成参数服务
         /// </summary>
         /// <param name="infoDto"></param>
         /// <returns></returns>
-        public async Task<object?> ShowParameterAsync([FromBody] RequiredInfoDto infoDto)
+        public async Task<object?> ParameterAsync([FromBody] RequiredInfoDto infoDto)
         {
-            var items = infoDto.items;
+            // 确保samples不为null且至少有一个元素
+            var items = infoDto.items!.Where(x => x.samples != null && x.samples.Any() && x.samples != "").ToList();
 
-            OvsParameterProvider helper = new OvsParameterProvider(_helper);
+            OvsParameterProvider paramHelper = new OvsParameterProvider(_helper, _repo);
 
-            try
+            await SaveSampleInfo(infoDto.sampleDescripBoundSingle!, infoDto.reportNumber!, infoDto.buyer!);
+
+            foreach (var item in items!)
             {
-                var dtos = new List<object>();
-                foreach (var item in items!)
+                //分测点,逻辑已从CreateParamGeneratorAsync提出
+
+                var samples = item.samples!.Split(',').Select(s => s.Trim()).ToArray();
+
+                foreach (var sample in samples)
                 {
-                    var wetParams = await _repo.GetOrCreateWetParamsAsync<WetParameterIso>(
-                        new ParamsInput().CreateParamsInput(infoDto, item.itemName!.ToString(), item.standards!.ToString()), item.itemName!);
-                    
-                    string? param = await helper.CreateParameters(infoDto, item.itemName!, item.standards!)!;
-                    
-                    dtos.Add(OvsParameterMapper.Map(item.itemName!, wetParams ?? new WetParameterIso { ContactItem = item.itemName!, Standard = item.standards }, param!));
+                    var (wetParam, normalParam) = await paramHelper.CreateParamGeneratorAsync(infoDto, item.itemName!, item.standards!, sample);
+
+                    OvsParameterMapperMethod.Map(item.itemName!, item.standards!, sample, wetParam, normalParam);
+                    //这里改成动态去数据库去生成好的参数，最后注入到dto返回给前端
                 }
-                return dtos;
             }
-            catch (Exception ex)
+            var dtos = OvsParameterMapperMethod.GetAllDtos();
+
+            OvsParameterMapperMethod.ClearCache();
+
+            return dtos;
+        }
+
+        /// <summary>
+        /// 保存SampleInfo服务
+        /// </summary>
+        /// <param name="sampleDescObjects"></param>
+        /// <param name="reportNum"></param>
+        /// <param name="buyer"></param>
+        private async Task SaveSampleInfo(List<SampleDescObject> sampleDescObjects, string reportNum, string buyer)
+        {
+            // 检查输入参数是否为空
+            if (sampleDescObjects == null || !sampleDescObjects.Any())
             {
-                System.Diagnostics.Debug.WriteLine($"{ex.Message}");
+                return; // 或者抛出新的 ArgumentNullException(nameof(sampleDescObjects));
             }
-            return null;
+            foreach (var item in sampleDescObjects)
+            {
+                var sampleObject = new SampleDescObject();
+
+                sampleObject.sample = item.sample;
+
+                sampleObject.description = item.description;
+
+                await _repo.SaveSampleInfo(sampleObject, reportNum, buyer);
+            }
         }
     }
 }

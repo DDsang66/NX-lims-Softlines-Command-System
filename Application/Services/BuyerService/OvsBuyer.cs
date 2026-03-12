@@ -8,9 +8,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.BuyerService
 {
     public class OvsBuyer : IBuyer
     {
-        private readonly OvsService _service;
+        private readonly OldOvsService _service;
 
-        public OvsBuyer(OvsService service)
+        public OvsBuyer(OldOvsService service)
         {
             _service = service;
         }

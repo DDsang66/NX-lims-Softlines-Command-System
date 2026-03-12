@@ -43,7 +43,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                 case "next":
                     return new NextBuyer(new NextService(new NextRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "ovs":
-                    return new OvsBuyer(new OvsService(new OvsRepository(_dbContext, _fiberHelper), _fiberHelper));
+                    return new OvsBuyer(new OldOvsService(new OvsRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "lpp":
                     return new LPPBuyer(new LPPService(new LPPRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "woolworth":

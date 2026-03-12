@@ -1,49 +1,108 @@
-﻿using NX_lims_Softlines_Command_System.Application.DTO;
+﻿using DocumentFormat.OpenXml.InkML;
+using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+using System.Collections.Concurrent;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
 {
     public class OvsParameterMapper
     {
-        private static readonly Dictionary<string, Func<WetParameterIso, string, ParamDto>> Mappings = new()
+        public static class OvsParameterMapperMethod
         {
-            ["Colour Fastness to Washing"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
-            ["Dimensional Stability to Washing"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
-            ["Dimensional Stability to Dry-Cleaning"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, p.Sensitive, null, null, param),
-            ["Accelerated Ageing(Stroage) Test"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
-            ["Moisture Management"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, param),
-            ["Pilling Resistance"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, param),
-            ["Bursting Strength"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, param),
-            ["Seam Slippage"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, param),
-            ["Vertical Wicking"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, param),
-            ["Colour Fastness to Rubbing on Leather"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Colour Fastness to Light"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Colour Fastness to Chlorinated Water"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Appearance after Washing/Dry-Cleaning"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Calculation of Color Differences"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Movement after Washing"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Water Permeability/Hydrostatic Head"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Water Repellency"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Air Permeability"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Absorbency"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Abrasion Resistance"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Bursting Strength"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Stretch & Recovery"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Tensile Strength"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Tear Strength"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Bursting Strength"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-            ["Drying Rate"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-        };
+            public static ICollection<ParamResponseDto> GetAllDtos()
+  => _cache.Values;
 
-        public static ParamDto Map(string itemName, WetParameterIso p, string param = null)
-        {
-            if (Mappings.TryGetValue(itemName, out var mapping))
+            public static void ClearCache() => _cache.Clear();
+
+            /* 缓存：key = (itemName, standard) */
+            private static readonly ConcurrentDictionary<(string itemName, string standard), ParamResponseDto> _cache = new();
+
+            /* 新映射签名 */
+            private static readonly Dictionary<string, Action<WetParameterIso, JsonObject, ParamResponseDto, string>> Mappings
+                = new();
+
+            /* 静态构造函数：一次性填表 */
+            static OvsParameterMapperMethod()
             {
-                return mapping(p, param);
+
+
+
+
+
+
             }
 
-            // 默认映射
-            return new(p.ContactItem!, p.ReportNumber, null, null, null, null, null, null, null, null, null, null, null);
+
+
+            /* 统一入口 */
+            public static ParamResponseDto Map(string itemName,
+                                           string standard,
+                                           string sample,
+                                           WetParameterIso p,
+                                           NormalParameter param)
+            {
+                JsonObject? normalJson = JsonNode.Parse(param.ExtraParam ?? "{}")?.AsObject();
+                var key = (itemName, standard);
+                var dto = _cache.GetOrAdd(key, k =>
+                    new ParamResponseDto(k.itemName, k.standard, new List<SampleParam>()));
+
+                if (Mappings.TryGetValue(itemName, out var branch))
+                    branch(p, normalJson!, dto, sample);
+                else
+                    DefaultMapping(normalJson!, dto, sample);
+
+                return dto;
+            }
+
+            /* 兜底分支 */
+            private static void DefaultMapping(JsonObject normalJson, ParamResponseDto dto, string sample)
+            {
+                AddSample(dto, sample, normalJson, null);
+            }
+
+            /* 线程安全追加 */
+            private static void AddSample(ParamResponseDto dto, string sample, JsonObject normal, JsonObject? wet)
+            {
+                lock (dto.Param)
+                {
+                    dto.Param.Add(new SampleParam
+                    {
+                        Sample = sample,
+                        NormalParam = normal,
+                        WetParam = wet
+                    });
+                }
+            }
+
+            /* 根据参数名，返回对应的 JSON 对象 */
+            private static JsonObject BuildWetJson(WetParameterIso p, params string[] keys)
+            {
+                var jo = new JsonObject();
+                foreach (var k in keys)
+                {
+                    object? val = k switch
+                    {
+                        "Temperature" => p.Temperature,
+                        "Program" => p.Program,
+                        "SteelBall" => p.SteelBallNum,
+                        "Ballast" => p.Ballast,
+                        "SCI" => p.SpecialCareInstruction,
+                        "DryProcedure" => p.DryProcedure,
+                        "WashingProcedure" => p.WashingProcedure,
+                        "Sensitive" => p.Sensitive,
+                        "AfterWash" => p.AfterWash,
+                        "Iron" => p.Iron,
+                        _ => null
+                    };
+                    if (val != null)
+                        jo[k] = JsonNode.Parse(JsonSerializer.Serialize(val));
+                }
+                return jo;
+            }
+
         }
+      
     }
 }
