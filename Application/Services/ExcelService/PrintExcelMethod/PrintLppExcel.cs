@@ -89,6 +89,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         .Select(s => s.Trim())
                         .SelectMany(s => new[] { $"{s}-3 Wash" }));
                 }
+                if (itemName == "Spirality/Skewing")
+                {
+                    afterWash = string.Join(", ", dto.Sample!
+                        .Split(',')
+                        .Select(s => s.Trim())
+                        .SelectMany(s => new[] { $"{s}-1 Wash" }));
+                }
                 string? iron = wp!.Iron;
                 string? ironMethod = wp!.IronMethod;
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
@@ -213,7 +220,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Sweat"] = "CFtoSaliva&Sweat",
             ["CF to Chlorinated Water"] = "CFtoOrganic&Cl",
             ["CF to Organic Solvents"] = "CFtoOrganic&Cl",
-            ["Spirality/Skewing"] = "Spirality-G",
         };
         private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
@@ -236,6 +242,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 { new[]{"Knit","Garment" },"Seam Bursting"},
                 { new[]{"Garment" },"Seam Slippage&Strength-G"},
             },
+            ["Spirality/Skewing"]  = new Dictionary<string[], string>
+            {  
+                { new[] {"Fabric"} , "Spirality-F" },
+                { new[] {"Garment"} , "Spirality-G" },
+            }
         };
         private static readonly Dictionary<string, Func<string, string, string,string[]>> CellMapper = new()
         {
@@ -265,7 +276,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Sweat"] = (n, m, l) => ExcelLPPMapper.MapCFtoSalivaSweat(),
             ["CF to Chlorinated Water"] = (n, m, l) => ExcelLPPMapper.MapCFtoCl(),
             ["CF to Organic Solvents"] = (n, m, l) => ExcelLPPMapper.MapCFtoOrganic(),
-            ["Spirality/Skewing"] = (n, m, l) => ExcelLPPMapper.MapSpirality(),
+            ["Spirality/Skewing"] = (n, m, l) => ExcelLPPMapper.MapSpirality(l),
             ["DS to Washing"] = (n, m, l) => ExcelLPPMapper.MapDStoWashing(m),
         };
         //取洗涤遍数映射地址的函数
@@ -387,6 +398,33 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
                 ["A35"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
+            },
+            ["Spirality/Skewing"] = (wp, dto, esDto, ws, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                if (dto.sampleDescription!.Contains("Fabric"))
+                {
+                    map["P1"] = (wp, dto, esDto, ws, reportNo) => reportNo;
+                    map["A3"] = (wp, dto, esDto, ws, reportNo) => "ISO 16322-2:2021 Method 1, Option 1";
+                    map["I34"] = (wp, dto, esDto, ws, reportNo) => wp.WashingProcedure!;
+                    map["AL34"] = (wp, dto, esDto, ws, reportNo) => wp.Temperature!;
+                    map["S35"] = (wp, dto, esDto, ws, reportNo) => wp.Ballast!;
+                    map["V36"] = (wp, dto, esDto, ws, reportNo) => wp.DryProcedure!;
+                    map["AE36"] = (wp, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(wp.Iron!) == true ? "/ Iron" : wp.IronMethod!;
+                    map["A37"] = (wp, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
+                }
+                else if (dto.sampleDescription!.Contains("Garment"))
+                {
+                    map["P1"] = (wp, dto, esDto, ws, reportNo) => reportNo;
+                    map["A3"] = (wp, dto, esDto, ws, reportNo) => "ISO 16322-3:2021 Method 2, Option 3";
+                    map["I33"] = (wp, dto, esDto, ws, reportNo) => wp.WashingProcedure!;
+                    map["AJ33"] = (wp, dto, esDto, ws, reportNo) => wp.Temperature!;
+                    map["S34"] = (wp, dto, esDto, ws, reportNo) => wp.Ballast!;
+                    map["V35"] = (wp, dto, esDto, ws, reportNo) => wp.DryProcedure!;
+                    map["AE35"] = (wp, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(wp.Iron!) == true ? "/ Iron" : wp.IronMethod!;
+                    map["A36"] = (wp, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
+                }
+                return map;
             },
         };
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>>> PhyExtraMap = new()

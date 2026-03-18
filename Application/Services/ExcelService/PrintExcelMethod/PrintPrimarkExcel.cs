@@ -1387,11 +1387,18 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["F7"] = (wp, np, row, esDto, sample) => "36";
                     return map;
                 },
-                ["Security of Attachment"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
+                ["Security of Attachment"] = (wp, np, row, esDto, sample) =>
                 {
-                    ["M1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["A3"] = (wp, np, row, esDto, sample) => row.standards!,
-                    ["A18"] = (wp, np, row, esDto, sample) => row.standards!,
+                    var map = new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>();
+                    map["M1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
+                    if (row.standards!.Contains("17394-2")) map["A3"] = (wp, np, row, esDto, sample) => row.standards!;
+                    else if (row.standards!.Contains("17394-3")) map["A18"] = (wp, np, row, esDto, sample) => row.standards!;
+                    else 
+                    {
+                        map["A3"] = (wp, np, row, esDto, sample) => row.standards!;
+                        map["A18"] = (wp, np, row, esDto, sample) => row.standards!;
+                    }
+                    return map;
                 },
                 ["Security of Attachment Buttons"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {

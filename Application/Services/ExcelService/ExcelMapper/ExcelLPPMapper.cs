@@ -125,14 +125,21 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
                 // 可以根据需要添加更多固定的单元格地址
             };
         }
-        public static string[] MapSpirality()
+        public static string[] MapSpirality(string sampleDesc)
         {
+
+            List<string> stringMap = null;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+            .FirstOrDefault(key => sampleDesc?.Contains(key) == true);
             // 定义固定的单元格地址映射
-            return new string[]
+            stringMap = matched switch
             {
-                "A10","A11","A12"
-                // 可以根据需要添加更多固定的单元格地址
+                "Garment" => new List<string> { "A29", "A30", "A31" },
+                "Fabric" => new List<string> { "A10", "A11", "A12" },
+                _ => new List<string> {" A10", "A11", "A12"}
             };
+            return stringMap?.ToArray() ?? new string[0];
+            // 定义固定的单元格地址映射
         }
         #endregion
         //Physics

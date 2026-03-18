@@ -23,7 +23,7 @@ namespace NX_lims_Softlines_Command_System
     public class Program
     {
         public static void Main(string[] args)
-        {
+       {
             var builder = WebApplication.CreateBuilder(args);
             var jwt = builder.Configuration.GetSection("Jwt");
 
