@@ -8,9 +8,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.BuyerService
 {
     public class OvsBuyer : IBuyer
     {
-        private readonly OldOvsService _service;
+        private readonly OvsService _service;
 
-        public OvsBuyer(OldOvsService service)
+        public OvsBuyer(OvsService service)
         {
             _service = service;
         }
@@ -31,7 +31,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.BuyerService
         }
         public Task<object?> ShowParameter([FromBody] RequiredInfoDto infoDto)
         {
-            return _service.ShowParameterAsync(infoDto);
+            return _service.ParameterAsync(infoDto);
         }
     }
 }

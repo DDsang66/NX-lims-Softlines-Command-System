@@ -38,7 +38,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 new[] { "Tear Strength", "Grab Strength & Seam Slippage", "Seam Slippage of Garment Seams","Bursting Strength", "Martindale Abrasion" }
                     .Contains(row.ItemName));
 
-            if (massPerUnitAreaRow != null)
+            if (massPerUnitAreaRow != null && checkLists.FirstOrDefault(row =>row.ItemName=="Mass per Unit Area" )==null)
             {
                 checkLists.Add(new CheckListDto
                 {
@@ -814,7 +814,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
                 map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
                 map["D6"] = (w, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("18000")?"18000 revs":"7200 revs";
-                if (string.IsNullOrEmpty(w.Sensitive) == false)
+                if (string.IsNullOrEmpty(w.DryCleanProcedure) == false)
                 {
                     map["U4"] = (w, dto, esDto, ws, reportNo) => "√";
                     map["L43"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";
@@ -826,7 +826,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["AK38"] = (w, dto, esDto, ws, reportNo) => w!.Temperature!;
                     map["Q39"] = (w, dto, esDto, ws, reportNo) => w!.Ballast!;
                     map["P40"] = (w, dto, esDto, ws, reportNo) => w!.DryProcedure!;
-                    map["Y40"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!;
+                    map["Y40"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/ Iron" : w.IronMethod!;
                     map["A41"] = (w, dto, esDto, ws, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;

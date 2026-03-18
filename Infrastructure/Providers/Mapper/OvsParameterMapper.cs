@@ -26,12 +26,136 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
             /* 静态构造函数：一次性填表 */
             static OvsParameterMapperMethod()
             {
+                /* 温度+程序+钢球 */
+                Mappings["Colour Fastness to Washing"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Program", "SteelBallNum");
+                    AddSample(dto, sample, normalJson, wet);
+                };
 
+                /* 温度+配重+SCI+干法+洗程 */
+                Mappings["Dimensional Stability to Washing"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Ballast", "SpecialCareInstruction", "DryProcedure", "WashingProcedure");
+                    AddSample(dto, sample, normalJson, wet);
+                };
 
+                /* 敏感+param(旧最后一个字段) → param 进 WetParam */
+                Mappings["Dimensional Stability to Dry-Cleaning"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Sensitive");
+                    AddSample(dto, sample, normalJson, wet);  // param 已在 normalJson 里，但原逻辑 param 是最后一个字段，这里按原逻辑处理
+                };
 
+                /* 温度+配重+SCI+干法+洗程 */
+                Mappings["Accelerated Ageing(Stroage) Test"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Ballast", "SpecialCareInstruction", "DryProcedure", "WashingProcedure");
+                    AddSample(dto, sample, normalJson, wet);
+                };
 
+                /* 温度+配重+SCI+干法+洗程+param(旧最后一个字段) */
+                Mappings["Moisture Management"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Ballast", "SpecialCareInstruction", "DryProcedure", "WashingProcedure");
+                    AddSample(dto, sample, normalJson, wet);  // param 已在 normalJson 里
+                };
 
+                /* 同上 */
+                Mappings["Pilling Resistance"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Ballast", "SpecialCareInstruction", "DryProcedure", "WashingProcedure");
+                    AddSample(dto, sample, normalJson, wet);
+                };
 
+                /* 温度+配重+SCI+干法+洗程+param(旧最后一个字段) */
+                Mappings["Bursting Strength"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Ballast", "SpecialCareInstruction", "DryProcedure", "WashingProcedure");
+                    AddSample(dto, sample, normalJson, wet);
+                };
+
+                /* 同上 */
+                Mappings["Seam Slippage"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Ballast", "SpecialCareInstruction", "DryProcedure", "WashingProcedure");
+                    AddSample(dto, sample, normalJson, wet);
+                };
+
+                /* 同上 */
+                Mappings["Vertical Wicking"] = (p, normalJson, dto, sample) =>
+                {
+                    var wet = BuildWetJson(p, "Temperature", "Ballast", "SpecialCareInstruction", "DryProcedure", "WashingProcedure");
+                    AddSample(dto, sample, normalJson, wet);
+                };
+
+                /* 仅 param(旧最后一个字段) → 全部 null，只有 param */
+                Mappings["Colour Fastness to Rubbing on Leather"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Colour Fastness to Light"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Colour Fastness to Chlorinated Water"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Appearance after Washing/Dry-Cleaning"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Calculation of Color Differences"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Movement after Washing"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Water Permeability/Hydrostatic Head"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Water Repellency"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Air Permeability"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Absorbency"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Abrasion Resistance"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) - 注意：原文件中有重复定义 */
+                Mappings["Bursting Strength"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Stretch & Recovery"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Tensile Strength"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Tear Strength"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) - 注意：原文件中有重复定义 */
+                Mappings["Bursting Strength"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
+
+                /* 仅 param(旧最后一个字段) */
+                Mappings["Drying Rate"] = (p, normalJson, dto, sample) =>
+                    AddSample(dto, sample, normalJson, null);
             }
 
 

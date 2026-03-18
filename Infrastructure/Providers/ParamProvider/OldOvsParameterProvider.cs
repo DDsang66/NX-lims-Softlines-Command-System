@@ -356,10 +356,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
             [("Colour Fastness to Chlorinated Water", "50", null)] = "50ppm",
             [("Colour Fastness to Chlorinated Water", "20", null)] = "20ppm",
+
             [("Dimensional Stability to Dry-Cleaning", null, null)] = "Commercial Cycle",
             [("Appearance after Washing/Dry-Cleaning", null, null)] = "Same Test Method as Dimensional Stability",
             [("Calculation of Color Differences", null, null)] = "∆E - D65 and TL84",
             [("Movement after Washing", null, null)] = "TM179 Option1, Test Method Same as Dimensional Stability",
+
             [("Water Permeability/Hydrostatic Head", "1800", null)] = "Press: 1800mmH2O，Original Sample",
             [("Water Permeability/Hydrostatic Head", "2000", "3 Cycle")] = "Press: 2000mmH2O，After 3 Cycles",
             [("Water Permeability/Hydrostatic Head", "2000", "5 Cycle")] = "Press: 2000mmH2O，After 5 Cycles",
@@ -367,17 +369,23 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Water Permeability/Hydrostatic Head", "3000", null)] = "Press: 3000mmH2O，After 5 Cycles",
             [("Water Permeability/Hydrostatic Head", "5000", "3 Cycle")] = "Press: 5000mmH2O，After 3 Cycles",
             [("Water Permeability/Hydrostatic Head", "5000", "5 Cycle")] = "Press: 5000mmH2O，After 5 Cycles",
+
             [("Water Repellency", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
             [("Water Repellency", "1 Cycle", "DC")] = "After 1 Cycle；Dry Cleaning Cycle. ",
             [("Water Repellency", "5 Cycle", null)] = "After 5 Cycle；4N@40°C. ",
             [("Water Repellency", "Original Sample", null)] = "Original Sample",
-            [("Air Permeability", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
+
+            [("Air Permeability", "3 Cycle", null)] = "After 3 Cycle；4N@40°C. ",
             [("Air Permeability", "5 Cycle", null)] = "After 5 Cycle；4N@40°C. ",
+
             [("Absorbency","Original Sample",null)] = "Original Sample",
             [("Absorbency", "1 Cycle", null)] = "After 1 Cycle；4N@40°C. ",
+
             [("Moisture Management", null, null)] = "After 1 Cycle",
+
             [("Pilling Resistance","ICI",null)]= "Evaluation at 7.200 and 10.800 revs",
             [("Pilling Resistance", "Martindale", null)] = "Tex-tex Evaluation at 500, 1000 and 2000 revs",
+
             [("Abrasion Resistance", "3", null)] = "Load: 3KPa；CC ≥ 3-4 at 10000 revs；No noticeable changes at 20000 revs ",
             [("Abrasion Resistance", "12", null)] = "Load:12KPa；Evaluation at 20000 revs；CC ≥ 3-4 at 3.000 revs",
             [("Abrasion Resistance", "9", "10000")] = "Load: 9KPa；Evaluation at 10000 revs；CC ≥ 3-4 at 3.000 revs",
@@ -385,9 +393,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Abrasion Resistance", "9", "20000")] = "Load: 9KPa；Evaluation at 20000 revs；CC ≥ 3-4 at 3.000 revs",
             [("Abrasion Resistance", "9", "30000")] = "Load: 9KPa；Evaluation at 30000 revs；CC ≥ 3-4 at 3.000 revs",
             [("Abrasion Resistance","N/A",null)] = "N/A",
+
             [("Bursting Strength", "N/A", null)] = "N/A",
             [("Bursting Strength", null, "After Wash")] = "After 1 Hand Cycle",
             [("Bursting Strength", null, "Unit Weight")] = "Need additional unit weight",
+
             [("Seam Slippage", "N/A", null)] = "N/A",
             [("Seam Slippage", null, "After Wash")] = "After 1 Hand Cycle",
             [("Seam Slippage", null, "Unit Weight")] = "Need additional unit weight",
@@ -399,7 +409,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Tear Strength", "120", null)] = " { Fabric up to 200 g/m2: ≥ 120 N; Fabric over 200 g/m2: ≥ 170 N }",
             [("Tear Strength", "120", null)] = " {Fabric up to 120 g/m2: ≥ 10 N; Fabric over 120 g/m2: ≥ 15 N}",
             [("Tear Strength", null, "N/A")] = " N/A",
-            [("Bursting Strength", "N/A", null)] = "N/A",
             [("Drying Rate", null, null)] = "After 30 mins",
         };
 

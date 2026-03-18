@@ -56,6 +56,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Program = "900r",
                 AfterWash = "After 1 Wash"
             },
+            ("DS to Dry-clean", _, _) => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Sensitive = (p.DCProcedure == "DC Normal" || p.DCProcedure == "Petroleum DC Normal") && _helper.IsCompositionExist("Animal", p.FiberContent!) == true ||
+                      p.DCProcedure == "DC Sensitive" || p.DCProcedure == "Petroleum DC Sensitive" ? "Y" : "N",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null
+            },
             ("Appearance", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,

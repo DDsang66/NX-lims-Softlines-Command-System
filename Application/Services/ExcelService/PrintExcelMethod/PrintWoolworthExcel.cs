@@ -198,6 +198,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Sweat"] = "CFtoSaliva&Sweat",
             ["CF to Chlorinated Water"] = "CFtoPWCl",
             ["Spirality/Skewing"] = "Spirality",
+            ["DS to Dry-clean"] = "DStoDryclean",
         };
         private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
@@ -250,6 +251,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["DS to Washing"] = (n, m) => ExcelWoolworthMapper.MapDStoWashing(m),
             ["Appearance"] = (n, m) => ExcelWoolworthMapper.MapAppearance(),
             ["Spirality/Skewing"] = (n, m) => ExcelWoolworthMapper.MapSpirality(),
+            ["DS to Dry-clean"] = (n, m) => ExcelWoolworthMapper.MapDStoDC()
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
@@ -306,6 +308,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["R35"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!,
                 ["A36"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!,
                 ["AD35"] = (w, dto, reportNo) => w.Program!,
+            },
+            ["DS to Dry-clean"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>> 
+            {
+                ["BC1"] = (w, dto, reportNo) => reportNo,
+                ["AR3"] = (w, dto, reportNo) => (dto.Standard ?? "").Replace(",", " / ").TrimEnd(' ', '/'),
+                ["AW4"] = (w, dto, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal"
             },
             ["Appearance"] = (w, dto, reportNo) => new Dictionary<string, Func< WetParameterIso,CheckListDto,string, string>>
             {
@@ -703,7 +711,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         {
             ["CF to Perspiration"] = 6,
             ["DS to Washing"] = 4,
-            ["Water Repellency-Spray Test"] = 3
+            ["Water Repellency-Spray Test"] = 3,
+            ["DS to Dry-clean"] = 4,
         };
         private void WriteSamples(
             ExcelWorksheet ws,

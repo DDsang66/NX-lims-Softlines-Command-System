@@ -177,6 +177,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Pilling Resistance"] = "Pilling Resistance",
             ["Zipper Strength"] = "Zipper Strength",
             ["Water Resistance-Hydrostatic Pressure"] = "Hydroatatic",
+            ["Water Repellency-Spray Test"] = "WaterRepellency",
             ["Air Permeability"] = "Air Permeability",
             ["Attachment Strength"] = "Attachment Strength",
             ["Density"] = "Density",
@@ -229,6 +230,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Air Permeability"] = (_, _) => ExcelKikMapper.MapAir(),
             ["Attachment Strength"] = (_, _) => ExcelKikMapper.MapAttachment(),
             ["Density"] = (_, _) => ExcelKikMapper.MapDensity(),
+             ["Water Repellency-Spray Test"]  = (_, _) => ExcelKikMapper.MapSpray(),
 
             ["Spirality/Skewing"] = (_, _) => ExcelKikMapper.MappSpirality(),
             ["Determination of Size"] = (_, _) => ExcelKikMapper.DeterminationOfSize(),
@@ -400,6 +402,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["M1"] = (w, dto, reportNo) => reportNo,
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
             },
+             ["Water Repellency-Spray Test"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+             {
+                 ["M1"] = (w, dto, reportNo) => reportNo,
+                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
+             },
             ["Water Resistance-Hydrostatic Pressure"] = (w, dto, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>();

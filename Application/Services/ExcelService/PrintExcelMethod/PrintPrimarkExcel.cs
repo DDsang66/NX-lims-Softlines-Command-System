@@ -395,6 +395,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         point.Bag.WetParam as WetParameterIso
                     );
                     var washNames = washResult.samples;
+                    if (row.itemName == "Spirality" && row.standards == "PM01") washNames = [];
                     var afMap = washResult.afterWashMap;
                     // 2.3 合并填入
                     point.Expanded = MergeTwoExpansions(specialNames, washNames, point.Code);
@@ -441,8 +442,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 判断是否需要水洗扩展
             var needExpand = itemName is "Stability to Dry Cleaning" or "Stability to Washing"
                 or "Appearance-Common" or "Security of Attachment(Wash)" or "Easycare/Non-Iron"
-                || (itemName == "Appearance" && standard != "PM01")
-                || (itemName == "Spirality" && standard != "PM01");
+                || (itemName == "Appearance" && standard != "PM01");
 
             // 不需要扩展，返回原始样本
             if (!needExpand)
@@ -467,7 +467,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             string originalCode)
         {
             var result = new List<ExpandedPoint>();
-
+            
             // 情况1：只有特殊扩展，无水洗扩展
             if (washNames == null || washNames.Length == 0)
             {
@@ -544,7 +544,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 "Torque & Tension" => standard switch
                 {
                     _ when standard.Contains("16 CFR 1500.51-53") => "Torque&Tension",
-                    _ when standard.Contains("EN 71-1:2024+A1:2018") => "Attachment Strength",
+                    _ when standard.Contains("EN 71-1:2024+A1:2018") => "Torque&Tension-EN 71",
                     _ => "Torque & Tension"
                 },
                 _ => templateName // 或根据描述值组合
@@ -810,7 +810,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             [("Torque & Tension")] = new Dictionary<string[], string>
             {
-                {new[] { "EN 71-1:2024+A1:2018" }, "Attachment Strength" },
+                {new[] { "EN 71-1:2024+A1:2018" }, "Torque&Tension-EN 71" },
             },
             [("Spirality")] = new Dictionary<string[], string>
             {
@@ -1046,13 +1046,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     ["D1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
                     ["A29"] = (wp, np, row, esDto, sample) => row.standards!,
-                    ["L30"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("N/A") ? "N/A" : "-",
+                    //["L30"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("N/A") ? "N/A" : "-",
                 },
                 ["Colour Fastness to Non Chlorine Bleach"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
                     ["D1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
                     ["A29"] = (wp, np, row, esDto, sample) => row.standards!,
-                    ["L30"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("N/A") ? "N/A" : "-",
+                    //["L30"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("N/A") ? "N/A" : "-",
                 },
                 ["Colour Fastness to Dry Cleaning"] = (wp, np, row, esDto, sample) =>
                 {
@@ -1504,14 +1504,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var map = new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>();
                     map["M1"] = (wp, np, row, esDto, sample)  => esDto.ReportNumber!;
                     if (row.standards!.Contains("ASTM F963-23")) map["A3"] = (wp, np, row, esDto, sample) => row.standards!;
-                    else if (row.standards!.Contains("EN 71-1:2014+A1:2018 8.4")) map["A17"] = (wp, np, row, esDto, sample) => row.standards!;
+                    else if (row.standards!.Contains("EN 71-1:2014+A1:2018 8.4")) map["A18"] = (wp, np, row, esDto, sample) => row.standards!;
                     return map;
                 },
                 ["Torque & Tension"] = (wp, np, row, esDto, sample) =>
                 {
                     var map = new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>();
                     map["M1"] = (wp, np, row, esDto, sample)  => esDto.ReportNumber!;
-                    if (row.standards! == "EN 71-1:2014+A1:2018 8.4") map["A17"] = (wp, np, row, esDto, sample) => row.standards!;
                     return map;
                 },
                 ["Bursting Strength"] = (wp, np, row, esDto, sample) => 

@@ -147,7 +147,13 @@
                 "A10", "A12","A18","A20"
             };
         }
-
+        public static string[] MapSpray()
+        {
+            return new string[]
+            {
+                "A8",  "A9",  "A10"
+            };
+        }
         public static string[] MapAir()
         {
             return new string[]

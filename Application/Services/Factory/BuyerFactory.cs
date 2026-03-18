@@ -4,7 +4,6 @@ using NX_lims_Softlines_Command_System.Infrastructure.Services;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using Microsoft.AspNetCore.Cors.Infrastructure;
 
 namespace NX_lims_Softlines_Command_System.Application.Services.Factory
 {
@@ -43,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.Factory
                 case "next":
                     return new NextBuyer(new NextService(new NextRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "ovs":
-                    return new OvsBuyer(new OldOvsService(new OvsRepository(_dbContext, _fiberHelper), _fiberHelper));
+                    return new OvsBuyer(new OvsService(new OvsRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "lpp":
                     return new LPPBuyer(new LPPService(new LPPRepository(_dbContext, _fiberHelper), _fiberHelper));
                 case "woolworth":

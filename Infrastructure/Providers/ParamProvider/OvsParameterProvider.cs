@@ -85,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             /*----------------------------------------------------------------------------------------------------------------------------*/
 
             //通用参数生成逻辑,调用规则字典把相关的测点信息、测试条件、测试方法传入，最后输出参数
-            var normalParameter = await CreatNormalParameters(sampleDesc, sample, itemName, infoDto, fiberContent);
+            var normalParameter = await CreatNormalParameters(sampleDesc, sample, itemName,standard, infoDto, fiberContent);
 
             normalParam = normalParameter;
 
@@ -131,6 +131,30 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     : "Type III (100% Polyester)",
                     SpecialCareInstruction = p.Sci ?? null,
                     AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                    Iron = p.Iron ?? null,
+                    IronMethod = p.IronMethod ?? null,
+                },
+                ("Movement after Washing",_,_,_) => new WetParameterIso 
+                {
+                    ContactItem = p.ItemName,
+                    ContactSample = sample,
+                    Standard = p.Standard,
+                    ReportNumber = p.OrderNumber!,
+                    Program = WetParamTransfer(p.WashingProcedure!),
+                    WashingProcedure = p.WashingProcedure,
+                    DryProcedure = p.DryProcedure,
+                    Temperature =
+                p.WashingProcedure!.Contains("Cold") ? "80"
+                : p.WashingProcedure.Contains("Warm") ? "105"
+                : p.WashingProcedure.Contains("Hot") ? "120"
+                : "140",
+                    Ballast = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                    Bleach = DryConditionTransfer(p.DryProcedure!),
+                    AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                    SpecialCareInstruction = p.Sci ?? null,
                     Iron = p.Iron ?? null,
                     IronMethod = p.IronMethod ?? null,
                 },
@@ -314,6 +338,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     IronMethod = p.IronMethod ?? null,
                     AfterWash = "1 Cycle",
                 },
+
                 _ => new WetParameterIso
                 {
                     ContactItem = p.ItemName,
@@ -334,6 +359,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             List<SampleInfoDescription> sampleDesc,
             string sample,
             string itemName,
+            string standard,
             RequiredInfoDto infoDto,
             List<FiberDto>? fiberContent)
         {
@@ -344,36 +370,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             //规则处理器
             switch (itemName)
             {
-                case "Accelerotor":
-                    condition = FetchSamplePropertyValue(sampleDesc, "Surface Morphology(Only for Accelerotor)");
-                    param = condition switch
-                    {
-                        string s when s.Contains("Velvet") => @"{""Time"":""3min"",""Cycle"":""2000R.P.M""}",
-                        string s when s.Contains("Corduroy") || s.Contains("Velour") => @"{""Time"":""5min"",""Cycle"":""2000R.P.M""}",
-                        _ => @"{""Time"":""5min"",""Cycle"":""2000R.P.M""}"
-                    };
-                    break;
-                case "Colour Fastness to Water":
-                    condition = FetchSamplePropertyValue(sampleDesc, "Color");
-                    param = condition switch
-                    {
-                        string s when s.Contains("White") && s.Contains("Cream") => @"{""IsApplicable"":""N/A"",""Cross"":""Cross Staning"",""Remark"":""Multi-Fibre Type:LyoW""}",
-                        _ => @"{""IsApplicable"":""Yes"",""Cross"":""Cross Staning"",""Remark"":""Multi-Fibre Type:LyoW""}"
-                    };
-                    break;
-                case "Martindale Abrasion":
-                    if (infoDto.menuName == "PTC03" || infoDto.menuName == "PTC04" || infoDto.menuName == "PTC37") condition = "no change shade";
-                    param = condition switch
-                    {
-                        string s when s.Contains("no change shade") => @"{""Load"":""9KPa"",""UnitWeight"":""{< 200g / m²：10000 rubs；201~270g / m²：15000 rubs；271~390g / m²：18000 rubs；> 390g / m²：20000 rubs}""}",
-                        _ => @"{""Load"":""9KPa"",""ShadeChange"":""@ 5000 revs"",""UnitWeight"":""{<100g/m²：10000 rubs；101~199g/m²：15000 rubs；>200g/m²：20000 rubs}""}",
-                    };
-                    break;
-
-
-
-
-
                 case "Colour Fastness to Rubbing on Leather":
                     condition = infoDto.menuName;
                     param = condition switch
@@ -418,9 +414,187 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     condition = FetchSamplePropertyValue(sampleDesc, "Apparel Type");
                     param = condition switch
                     {
-                        string s when s.Contains("Swimwear") || infoDto.menuName!.Contains("LG") => @"{""Concentration"":""50mg/L""}",
-                        _ => @"{""Concentration"":""20mg/L""}"
+                        string s when s.Contains("Swimwear") || infoDto.menuName!.Contains("LG") => @"{""Concentration"":""50ppm""}",
+                        _ => @"{""Concentration"":""20ppm""}"
                     };
+                    break;
+                case "Water Permeability/Hydrostatic Head":
+                    condition = infoDto.menuName switch
+                    {
+                        "A-Act" => "3000",
+                        "A" when infoDto.sampleDescription!.Contains("Garment") => "1800",
+                        "A-SKI wear" or "I-SKI wear" => infoDto.sampleDescription!.Contains("With Membrane") ? "2000" : "5000",
+                        _ => "N/A"
+                    };
+                    condition1 = infoDto.menuName switch
+                    {
+                        "A-SKI wear" => "5 Cycle",
+                        "I-SKI wear" => "3 Cycle",
+                        "PP-Period Panties" => "1 Cycle",
+                        _ => null
+                    };
+                    param = condition switch
+                    {
+                        string s when s.Contains("1800") => @"{""Water Pressure"":""1800mmH2O"",""Washing Cycle"":""Original Sample""}",
+                        string s when s.Contains("2000") && condition1!.Contains("3 Cycle") => @"{""Water Pressure"":""2000mmH2O"",""Washing Cycle"":""After 3 Cycle""}",
+                        string s when s.Contains("2000") && condition1!.Contains("5 Cycle")=> @"{""Water Pressure"":""2000mmH2O"",""Washing Cycle"":""After 5 Cycle""}",
+                        string s when s.Contains("3000") && condition1!.Contains("1 Cycle") => @"{""Water Pressure"":""3000mmH2O"",""Washing Cycle"":""After 1 Cycle""}",
+                        string s when s.Contains("3000") => @"{""Water Pressure"":""3000mmH2O"",""Washing Cycle"":""After 5 Cycle""}",
+                        string s when s.Contains("5000") && condition1!.Contains("3 Cycle") => @"{""Water Pressure"":""5000mmH2O"" ,""Washing Cycle"":""After 3 Cycle""}",
+                        string s when s.Contains("5000") && condition1!.Contains("5 Cycle")=> @"{""Water Pressure"":""5000mmH2O"",""Washing Cycle"":""After 5 Cycle""}",
+                        _ => @"{""Water Pressure"":""N/A""}"
+                    };
+                    break;
+                case "Water Repellency":
+                    condition = infoDto.menuName switch
+                    {
+                        "A" => "1 Cycle",
+                        "A1" => "1 Cycle",
+                        "E" => "1 Cycle",
+                        "UM-Umbrellas" => "Original Sample",
+                        "A-SKI wear" or "A-Act" => "5 Cycle",
+                        _ => "N/A"
+                    };
+                    condition1 = infoDto.menuName switch
+                    {
+                        "E" => "DC",
+                        _ => null
+                    };
+                    param = condition switch 
+                    {
+                        string s when s.Contains("1 Cycle") => @"{""Washing Cycle"":""After 1 Cycle"", ""WashingProcedure"":""4N@40°C""}",
+                        string s when s.Contains("5 Cycle") => @"{""Washing Cycle"":""After 5 Cycle"", ""WashingProcedure"":""4N@40°C""}",
+                        string s when s.Contains("Original Sample") => @"{""Washing Cycle"":""Original Sample""}",
+                        _ when condition1 != null && condition1.Contains("DC") => @"{""Washing Cycle"":""After 1 Cycle"", ""WashingProcedure"":""Dry Cleaning Cycle""}",
+                        _ => @"{""Washing Cycle"":""N/A""}"
+                    };
+                    break;
+                case "Air Permeability":
+                    param = infoDto.menuName switch
+                    {
+                        "I-SKI wear" => @"{""Washing Cycle"":""After 3 Cycle"", ""WashingProcedure"":""4N@40°C""}",
+                        _ => @"{""Washing Cycle"":""After 5 Cycle"", ""WashingProcedure"":""4N@40°C""}",
+                    };
+                    break;
+
+                case "Absorbency":
+                    condition = (infoDto.menuName == "HTL-Y-Slipper") ? "Original Sample" : "1 Cycle";
+                    param = condition switch
+                    {
+                        "Original Sample" => @"{""Washing Cycle"":""Original Sample""}",
+                        "1 Cycle" => @"{""Washing Cycle"":""After 1 Cycle"", ""WashingProcedure"":""4N@40°C""}",
+                        _ => @"{""Washing Cycle"":""N/A""}"
+                    };
+                    break;
+                case "Pilling Resistance":
+                    if (standard.Contains("12945-1")) condition = "ICI";
+                    else if (standard.Contains("12945-2")) condition = "Martindale";
+                    param = condition switch
+                    {
+                        "ICI" => @"{""Test Method"":""ICI Pilling Box"",""Evaluation"":""7,200 and 10,800 revs""}",
+                        "Martindale" => @"{""Test Method"":""Martindale Pilling"",""Evaluation"":""500, 1000 and 2000 revs""}",
+                        _ => @"{""Test Method"":""N/A""}"
+                    };
+                    break;
+                case "Abrasion Resistance":
+                    condition = infoDto.menuName switch
+                    {
+                        "E" => "3",
+                        "UPF-T" => "12",
+                        _ => "9"
+                    };
+                    condition1 = infoDto.menuName switch
+                    {
+                        "J-SKI wear" or "J-Act" or "J" => "15000",
+                        "I-SKI wear" or "A-SKI wear" or "C" => "30000",
+                        "UPF-T" or "A-Act" or "A" or "A1" or "B" or "F" or "P" or "T" or "U" or "HTL-S-SPA&Sea Towel" => "20000",
+                        _ => "10000"
+                    };
+                    param = (condition, condition1) switch
+                    {
+                        ("3", null) => @"{""Load"":""3KPa"", ""Evaluation"":""CC ≥ 3-4 at 10000 revs; No noticeable changes @ 20000 revs""}",
+                        ("12", null) => @"{""Load"":""12KPa"", ""Evaluation"":""Evaluation at 20000 revs; CC ≥ 3-4 @ 3000 revs""}",
+                        ("9", "10000") => @"{""Load"":""9KPa"", ""Evaluation"":""Evaluation at 10000 revs; CC ≥ 3-4 @ 3000 revs""}",
+                        ("9", "15000") => @"{""Load"":""9KPa"", ""Evaluation"":""Evaluation at 15000 revs; CC ≥ 3-4 @ 3000 revs""}",
+                        ("9", "20000") => @"{""Load"":""9KPa"", ""Evaluation"":""Evaluation at 20000 revs; CC ≥ 3-4 @ 3000 revs""}",
+                        ("9", "30000") => @"{""Load"":""9KPa"", ""Evaluation"":""Evaluation at 30000 revs; CC ≥ 3-4 @ 3000 revs""}",
+                        ("N/A", null) => @"{""Load"":""N/A"", ""Evaluation"":""N/A""}",
+                        _ => @"{""Load"":""9KPa"", ""Evaluation"":""Evaluation at 10000 revs; CC ≥ 3-4 @ 3000 revs""}" // 默认匹配 9,10000
+                    };
+                    break;
+                case "Bursting Strength":
+                    var fabricType = FetchSamplePropertyValue(sampleDesc, "State");
+
+                    // 判断是否为 Knit
+                    var isKnit = fabricType?.Contains("Knit") == true;
+
+                    // 判断是否含 Silk
+                    var hasSilk = _helper.CompositionRate(fiberContent!, "Silk") > 0;
+
+                    param = (isKnit, hasSilk) switch
+                    {
+                        (false, _) => @"{""IsAcceptable"":""N/A""}",  // 不是 Knit，返回 N/A
+                        (true, true) => @"{""IsAcceptable"":""Y"",""WashingProcedure"":""After 1 Hand Cycle"",""Remark"":""Need additional unit weight""}", 
+                        _ => @"{""Result"":""N/A""}"
+                    };
+                    break;
+                case "Seam Slippage":
+                    fabricType = FetchSamplePropertyValue(sampleDesc, "Structure");
+
+                    // 判断是否为 Knit
+                     isKnit = fabricType?.Contains("Knit") == true;
+
+                    // 判断是否含 Silk
+                    hasSilk = _helper.CompositionRate(fiberContent!, "Silk") > 0;
+
+                    param = (isKnit, hasSilk) switch
+                    {
+                        (false, _) => @"{""IsAcceptable"":""N/A""}",  // 不是 Knit，返回 N/A
+                        (true, true) => @"{""IsAcceptable"":""Y"",""WashingProcedure"":""After 1 Hand Cycle"",""Remark"":""Need additional unit weight""}",
+                        _ => @"{""Result"":""N/A""}"
+                    };
+                    break;
+                case "Stretch & Recovery":
+                    if (FetchSamplePropertyValue(sampleDesc,"Structure")!="Woven") condition = "N/A";
+                    if (_helper.CompositionRate(fiberContent!, "Spandex") == 0|| _helper.CompositionRate(fiberContent!, "Elastane") == 0) condition = "N/A";
+                    param = condition switch
+                    {
+                        "N/A" => @"{""IsAcceptable"":""N/A""}",
+                        _ => @"{""IsAcceptable"":""Y"", ""Remark"":""Stretch: ≥ 15%/Residual Extension: ≤ 5%""}"
+                    };
+                    break;
+                case "Tensile Strength":
+                    param = @"{""TestMethod"":""Grab Method"",""Remark"":""Need additional unit weight""}";
+                    break;
+                case "Tear Strength":
+                    if (FetchSamplePropertyValue(sampleDesc, "Structure") != "Woven") condition = "N/A";
+                    param = condition switch
+                    {
+                        "N/A" => @"{""IsAcceptable"":""N/A""}",
+                        _ => @"{""IsAcceptable"":""Y"",
+                                      ""Remark"":""{ Fabric up to 200 g/m2: ≥ 10 N; Fabric over 200 g/m2: ≥ 15 N };
+                                                           { Fabric up to 200 g/m2: ≥ 15 N; Fabric over 200 g/m2: ≥ 20 N };
+                                                           { Fabric up to 200 g/m2: ≥ 120 N; Fabric over 200 g/m2: ≥ 170 N };
+                                                           {Fabric up to 120 g/m2: ≥ 10 N; Fabric over 120 g/m2: ≥ 15 N}""}"
+                    };
+                    break;
+                case "Drying Rate":
+                    param = @"{""Time"":""After 30 mins""}";
+                    break;
+                case "Moisture Management":
+                    param = @"{""WashingCycle"":""After 1 Cycle""}";
+                    break;
+                case "Calculation of Color Differences":
+                    param = @"{""TestMethod"":""∆E - D65 and TL84""}";
+                    break;
+                case "Movement after Washing":
+                    param = @"{""TestMethod"":""TM179 Option1, Test Method Same as Dimensional Stability""}";
+                    break;
+                case "Appearance after Washing/Dry-Cleaning":
+                    param = @"{""TestMethod"":""Same Test Method as Dimensional Stability""}";
+                    break;
+                case "Dimensional Stability to Dry-Cleaning":
+                    param = @"{""TestMethod"":""Commercial Cycle""}";
                     break;
             }
 
@@ -501,6 +675,42 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             if (_helper.IsCompositionSourceExist("Animal", fiberComposition) > 0) return "Flat Dry";
             else return "Tumble Dry";
         }
+
+
+
+        private string? WetParamTransfer(string WashingProcedure)
+        {
+            if (WashingProcedure == null) return null;
+            string part_1 = "";
+            string part_2 = "";
+            part_1 =
+            WashingProcedure!.Contains("N") ? "(1)"
+            : WashingProcedure.Contains("G") ? "(2)"
+            : WashingProcedure.Contains("M") ? "(3)"
+            : WashingProcedure.Contains("H") ? "HandWash"
+            : "";
+            part_2 =
+                WashingProcedure!.Contains("3") ? "II"
+                : WashingProcedure.Contains("4") ? "III"
+                : WashingProcedure.Contains("5") ? "IV"
+                : "V";
+            string program = part_1 + part_2;
+            return program;
+        }
+
+        private string? DryConditionTransfer(string DryProcedure)
+        {
+            if (DryProcedure == null) return null;
+            string program = "";
+            program =
+                DryProcedure!.Contains("Low") ? "A(ii)"
+                : DryProcedure.Contains("Line Dry") ? "B"
+                : DryProcedure.Contains("Flat Dry") ? "D"
+                : "A(i)";
+            return program;
+        }
+
+
 
         /*----------------------------------------------------------------------------------------------------------------------------*/
 

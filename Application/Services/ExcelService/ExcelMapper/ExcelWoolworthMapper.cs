@@ -14,7 +14,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
                 // 可以根据需要添加更多固定的单元格地址
             };
         }
-
+        public static string[] MapDStoDC()
+        {
+            return new string[]
+            {
+                "AZ6", "BG6", "BN6", "BU6","AW10","BO10","AW21","BO21"
+            };
+        }
         public static string[] MapDStoWashing(string sampleDescription)
         {
             List<string> stringMap = null;
