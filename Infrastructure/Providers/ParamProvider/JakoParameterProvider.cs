@@ -46,13 +46,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "Cotton procedure" : "Minimum iron procedure",
+                WashingProcedure =await MillerMachineHelper(p.WashingProcedure!,p.SampleDescription!,p.FiberContent!),
                 DryProcedure = /*(p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ? */
-                !string.IsNullOrEmpty(p.DCProcedure) ? p.DCProcedure : "Tumble Dry",
+                p.SampleDescription!.Contains("Care Label")?p.DryProcedure: "Tumble Dry",
                 Temperature = /*(p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ?*/
                 p.WashingProcedure!.Contains("3") ? "30" : "40",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
-                Program = _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
+                Program = p.SampleDescription!.Contains("Care Label") ? "900 rpm":
+                _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash",
                 SpecialCareInstruction = p.Sci ?? null,
@@ -178,6 +179,28 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             if (_map.TryGetValue((menu, item, null, null), out var fallback)) return fallback;
 
             return null!;
+        }
+
+
+        private async Task<string> MillerMachineHelper(string WashingProcedure, string SampleDesc, List<FiberDto> fiberContent )
+        {
+            var washProcedure = string.Empty;
+            if (WashingProcedure != null && SampleDesc.Contains("Follow Wash Care Label"))
+            {
+                washProcedure = WashingProcedure!.Contains("N") ? "Cotton procedure"
+                : WashingProcedure!.Contains("M") ? "Minimum iron procedure"
+                : WashingProcedure!.Contains("G") ? "Delicates procedure"
+                : WashingProcedure!.Contains("G") ? "Wollens procedure"
+                : "Cotton procedure";
+            }
+            else 
+            {
+                if (_helper.MaxComposition(fiberContent)=="Cotton") washProcedure = "Cotton procedure";
+                else if (await _helper.MaxCompositionType(fiberContent) == "Synthetic") washProcedure = "Minimum iron procedure";
+                else washProcedure = "Minimum iron procedure";
+            }
+
+            return washProcedure;
         }
     }
 }

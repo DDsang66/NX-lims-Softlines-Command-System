@@ -83,37 +83,40 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         /// <param name="pkgPhy"></param>
         public void PrintJsonData(ExcelSubmitDto esDto, ExcelPackage pkgWet, ExcelPackage pkgPhy)
         {
-
-            foreach (var row in esDto.NewSelectedRows!)
+            if (esDto.NewSelectedRows!.FirstOrDefault(row => row.itemName == "Mass per Unit Area") == null) 
             {
-                var sampleList = row.samples!.Split(',').Select(s => s.Trim()).ToList();
-
-                var needMass = new[] { "Seam Slippage", "Seam Strength", "Tear Strength", "Tensile Strength",
-        "Martindale Abrasion", "Back Pocket Application Strength", "Belt Loop Application Strength" }
-                    .Contains(row.itemName);
-
-                if (!needMass) continue;
-
-                esDto.NewSelectedRows.Add(new NewSelectedRows
+                foreach (var row in esDto.NewSelectedRows!)
                 {
-                    itemName = "Mass per Unit Area",
-                    standards = "BS EN 12127:1998",
-                    parameters = sampleList.Select(s => new Params
+                    var sampleList = row.samples!.Split(',').Select(s => s.Trim()).ToList();
+
+                    var needMass = new[] { "Seam Slippage", "Seam Strength", "Tear Strength", "Tensile Strength",
+        "Martindale Abrasion", "Back Pocket Application Strength", "Belt Loop Application Strength" }
+                        .Contains(row.itemName);
+
+                    if (!needMass) continue;
+
+                    esDto.NewSelectedRows.Add(new NewSelectedRows
                     {
-                        sample = s,
-                        normalParam = "Single unit weight"
-                    }).ToList(),
-                    types = "Physics",
-                    samples = row.samples,
-                });
-                break;
-            }//单克重拓展
+                        itemName = "Mass per Unit Area",
+                        standards = "BS EN 12127:1998",
+                        parameters = sampleList.Select(s => new Params
+                        {
+                            sample = s,
+                            normalParam = "Single unit weight"
+                        }).ToList(),
+                        types = "Physics",
+                        samples = row.samples,
+                    });
+                    break;
+                }//单克重拓展
+            }
 
             //主逻辑循环
+            int groupIndex = 0;// 将groupIndex移到项目循环外部，使其在所有项目中持续递增
+
             foreach (var row in esDto.NewSelectedRows!)
             {
                 //用于获取测点组索引，方便sheet命名
-                int groupIndex = 0;
 
                 var pkg = row.types == "Wet" ? pkgWet : pkgPhy;
 
@@ -121,25 +124,25 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
                 foreach (var group in groups)
                 {
-                    // 组内代表点（第一个）
+                    //组内代表点（第一个）
                     var representative = group.Points.First();
-                    // 获取水洗映射
+                    //获取水洗映射
                     var afMap = group.Points.FirstOrDefault()?.AfterWashMap;
 
-                    // 获取描述值（如有需要）
+                    //获取描述值（如有需要）
                     var descValue = GetDescValue(representative.Code, "State", esDto);
 
-                    // 1选择模板
+                    //1选择模板
                     var selector = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal);
 
                     var templateName = selector.GetTemplateName(row.itemName!, descValue!);
 
                     templateName = SelectTemplate(row.itemName!, row.standards!, templateName);
 
-                    // 在当前测点组获取模板Sheet
+                    //在当前测点组获取模板Sheet
                     var template = pkg.Workbook.Worksheets[templateName];
 
-                    // 2计算容量和Sheet数
+                    //2计算容量和Sheet数
                     var allDisplayNames = group.Points.SelectMany(p => p.Expanded.Select(e => e.DisplayName)).ToList();             //当前组的所有测点
 
                     var cellAddrs = GetCellAddresses(row.itemName!, row.standards!, descValue);                                                      //先去拿到单元格地址
@@ -149,7 +152,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var sheetCnt = (int)Math.Ceiling(allDisplayNames.Count / (double)capacity);
 
                     var sheets = new List<ExcelWorksheet> { template };
-                    for (int i = 1; i < sheetCnt; i++)
+                    for (int i = 0; i < sheetCnt; i++)
                     {
                         string name = $"{templateName}_G{groupIndex}_{i + 1}";  // 加组索引，避免多组命名冲突
                         sheets.Add(pkg.Workbook.Worksheets.Any(ws => ws.Name == name)
@@ -157,20 +160,19 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                             : pkg.Workbook.Worksheets.Copy(templateName, name));
                     }
 
-                    // 3切片
+                    //3切片
                     var slices = BuildSlices(allDisplayNames, capacity);
 
-                    // 每张Sheet填一个切片
+                    //每张Sheet填一个切片
                     for (int idx = 0; idx < slices.Count; idx++)
                     {
-                        FillSlice(sheets[idx], slices[idx], group, row, esDto.ReportNumber!,esDto, afMap);
+                        FillSlice(sheets[idx], slices[idx], group, row, esDto.ReportNumber!, esDto, afMap);
                     }
 
                     groupIndex++;//用于获取测点组索引，方便sheet命名
                 }
-
-            }
-
+                groupIndex = 0;//重置组索引，以便下一个项目重新开始
+            } 
             pkgWet.Save();
             pkgPhy.Save();
         }
@@ -732,8 +734,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Peel Bond"] = "Peel Bond",
             ["Pile Retention"] = "PM03PM05",
             ["Quick Dry"] = "DryingRate",
-            ["Residual Elongation"] = "Stretch&Recovery of Elastic",
-            ["Residual Elongation SHAPEWEAR"] = "Stretch&Recovery of Elastic",
+            ["Residual Elongation"] = "Elongation",
+            ["Residual Elongation SHAPEWEAR"] = "Elongation",
             ["Security of Attachment"] = "Attachment Strength",
             ["Security of Attachment Buttons"] = "Attachment Strength",
             ["Security of Attachment Mechanically Applied Fasteners"] = "Attachment Strength",
@@ -743,7 +745,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Shower Resistant Claims Spray Rating"] = "WaterRepellency",
             ["Tear Strength"] = "Tearing Strength",
             ["Tensile Strength"] = "Tensile Strength",
-            ["Unrecovered Elongation"] = "Stretch&Recovery of Elastic",
+            ["Unrecovered Elongation"] = "Elongation",
             ["Waterproof Claims Hydrostatic Head"] = "Hydrostatichead",
             ["Wind Resistant Claims Air Permeability"] = "Air Permeability",
             ["Zip Fasteners"] = "ZipperStrength",
@@ -953,8 +955,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["AX4"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["BX4"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["BF5"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["BI6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["BR6"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["AR6"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["BM6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["BV6"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["AR7"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
                     }
                     else if (GetDescValue(sample, "State", esDto)!.Contains("Garment"))
@@ -964,8 +967,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["I4"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["AJ4"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["S5"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["V6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["AE6"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["A6"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["Y6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["AH6"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["A7"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
 
                         map["P52"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
@@ -973,8 +977,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["I55"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["AJ55"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["S56"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["V57"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["AE57"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["A57"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["Y57"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["AH57"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["A58"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
                     }
                     else if (GetDescValue(sample, "State", esDto)!.Contains("Cap")
@@ -986,8 +991,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["G4"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["AL4"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["R5"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["T6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["AD6"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["A6"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["Y6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["AH6"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["A7"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
 
                         map["N56"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
@@ -995,8 +1001,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["G59"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["AL59"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["R60"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["T61"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["AD61"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["A61"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["Y61"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["AH61"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["A62"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
 
                     }
@@ -1012,8 +1019,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["AX4"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["BX4"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["BF5"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["BI6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["BR6"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["AR6"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["BM6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["BV6"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["AR7"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
                     }
                     else if (GetDescValue(sample, "State", esDto)!.Contains("Garment"))
@@ -1023,8 +1031,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["I4"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["AJ4"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["S5"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["V6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["AE6"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["A6"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["Y6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["AH6"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["A7"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
                     }
                     else if (GetDescValue(sample, "State", esDto)!.Contains("Cap")
@@ -1036,8 +1045,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["G4"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
                         map["AL4"] = (wp, np, row, esDto, sample) => wp.Temperature!;
                         map["R5"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["T6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["AD6"] = (wp, np, row, esDto, sample) => "/ Iron";
+                        map["A6"] = (wp, np, row, esDto, sample) => wp.Detergent!;
+                        map["Y6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
+                        map["AH6"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["A7"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
                     }
                     return map;
@@ -1131,7 +1141,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["Dye Transfer in Storage"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
                     ["BC1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["AR3"] = (wp, np, row, esDto, sample) =>  row.standards!,
+                    ["AR3"] = (wp, np, row, esDto, sample) => row.standards!,
                     ["AY4"] = (wp, np, row, esDto, sample) => "30",
                     ["BE4"] = (wp, np, row, esDto, sample) => "48"
                 },
@@ -1142,10 +1152,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     switch (row.standards)
                     {
                         case "AATCC TM124-2018te":
-                            map["AR4"] = (wp, np, row, esDto, sample) =>  row.standards!;
+                            map["AR4"] = (wp, np, row, esDto, sample) => row.standards!;
                             break;
                         case "ISO7769:2009":
-                            map["AR23"] = (wp, np, row, esDto, sample) =>  row.standards!;
+                            map["AR23"] = (wp, np, row, esDto, sample) => row.standards!;
                             break;
                     }
                     return map;
@@ -1153,12 +1163,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["Phenolic Yellowing"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
                     ["BC1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["AR3"] = (wp, np, row, esDto, sample) =>  row.standards!,
+                    ["AR3"] = (wp, np, row, esDto, sample) => row.standards!,
                 },
                 ["Print / Motif / Flock Durability"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
                     ["BC1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["AR3"] = (wp, np, row, esDto, sample) =>  row.standards!,
+                    ["AR3"] = (wp, np, row, esDto, sample) => row.standards!,
                     ["AU48"] = (wp, np, row, esDto, sample) => wp.DryProcedure!,
                 },
                 ["Print Durability"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
@@ -1171,12 +1181,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     ["BC1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
                     ["AR4"] = (wp, np, row, esDto, sample) => row.standards!,
-                    ["AX52"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!,
-                    ["BW52"] = (wp, np, row, esDto, sample) => wp.Temperature!,
-                    ["BF53"] = (wp, np, row, esDto, sample) => wp.Ballast!,
-                    ["BH54"] = (wp, np, row, esDto, sample) => wp.DryProcedure!,
-                    ["BQ54"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.Iron!) == true ? "/ Iron" : wp.IronMethod!,
-                    ["AR55"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!
+                    ["AR54"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction) ? "-" : wp.SpecialCareInstruction
                 },
                 ["Stability to Dry Cleaning"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {

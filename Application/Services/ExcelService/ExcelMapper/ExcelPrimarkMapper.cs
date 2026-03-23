@@ -255,7 +255,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                "A8", "A15"
+                "A8"
             };
         }
         public static string[] MapRepellency(string SampleDescription)

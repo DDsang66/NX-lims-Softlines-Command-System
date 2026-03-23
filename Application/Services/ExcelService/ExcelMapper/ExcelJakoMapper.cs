@@ -161,10 +161,10 @@
             switch (ItemName)
             {
                 case "CF to Sublimation in Storage":
-                    stringMap = new List<string> { "D5", "F5", "H5", "L5", "N5", "P5" };
+                    stringMap = new List<string> { "D47", "F47", "H47", "L47", "N47", "P47" };
                     break;
                 case "CF to Hot Pressing":
-                    stringMap = new List<string> { "D16", "F16", "H16", "L16", "N16", "P16" };
+                    stringMap = new List<string> { "F34", "H34", "J34", "L34", "N34", "P34" };
                     break;
                 default: break;
             }

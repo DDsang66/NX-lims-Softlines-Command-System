@@ -234,32 +234,72 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Buye
         /// <param name="buyer"></param>
         public async Task SaveSampleInfo(SampleDescObject sampleDescObject, string reportNum, string buyer)
         {
+            var entities = await _db.SampleInfos
+                .Where(x => x.ReportNumber == reportNum && x.SampleCode==sampleDescObject.sample).ToListAsync();
             var snowflake = new SnowflakeIdGenerator();
             long snowId = snowflake.NextId();
-            var sampleInfo = new SampleInfo
+            if (entities.Count == 0)
             {
-                IdSample = snowId.ToString(),
-                DescriptionId = snowId.ToString(),
-                SampleCode = sampleDescObject.sample!,
-                ContactBuyer = buyer,
-                ReportNumber = reportNum
-            };
-            _db.SampleInfos.Add(sampleInfo);
-            foreach (var item in sampleDescObject.description!)
-            {
-                snowId = snowflake.NextId();
-                if (item.propertyName != null && item.value != null) 
+                var sampleInfo = new SampleInfo
                 {
-                    var desc = new SampleInfoDescription
+                    IdSample = snowId.ToString(),
+                    DescriptionId = snowId.ToString(),
+                    SampleCode = sampleDescObject.sample!,
+                    ContactBuyer = buyer,
+                    ReportNumber = reportNum
+                };
+                _db.SampleInfos.Add(sampleInfo);
+                foreach (var item in sampleDescObject.description!)
+                {
+                    snowId = snowflake.NextId();
+                    if (item.propertyName != null && item.value != null)
                     {
-                        IdDescription = snowId.ToString(),
-                        SampleId = sampleInfo.IdSample,
-                        PropertyName = item.propertyName,
-                        PropertyValue = item.value,
-                    };
-                    _db.SampleInfoDescriptions.Add(desc);
+                        var desc = new SampleInfoDescription
+                        {
+                            IdDescription = snowId.ToString(),
+                            SampleId = sampleInfo.IdSample,
+                            PropertyName = item.propertyName,
+                            PropertyValue = item.value,
+                        };
+                        _db.SampleInfoDescriptions.Add(desc);
+                    }
                 }
             }
+            else
+            {
+                foreach (var existingSample in entities)
+                {
+                    var existingSampleId = existingSample.IdSample;
+
+                    // 1. 删除该 Sample 的所有旧 Descriptions
+                    var oldDescriptions = await _db.SampleInfoDescriptions
+                        .Where(x => x.SampleId == existingSampleId)
+                        .ToListAsync();
+                    _db.SampleInfoDescriptions.RemoveRange(oldDescriptions);
+
+                    // 2. 更新主表信息
+                    existingSample.SampleCode = sampleDescObject.sample!;
+                    existingSample.ContactBuyer = buyer;
+
+                    // 3. 为该 Sample 插入新的 Descriptions
+                    foreach (var item in sampleDescObject.description!)
+                    {
+                        snowId = snowflake.NextId();
+                        if (item.propertyName != null && item.value != null)
+                        {
+                            var desc = new SampleInfoDescription
+                            {
+                                IdDescription = snowId.ToString(),
+                                SampleId = existingSampleId,
+                                PropertyName = item.propertyName,
+                                PropertyValue = item.value,
+                            };
+                            _db.SampleInfoDescriptions.Add(desc);
+                        }
+                    }
+                }
+            }
+
 
             await _db.SaveChangesAsync();
         }

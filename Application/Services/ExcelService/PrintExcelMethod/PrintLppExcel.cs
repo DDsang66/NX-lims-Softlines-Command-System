@@ -405,7 +405,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
                     map["P1"] = (wp, dto, esDto, ws, reportNo) => reportNo;
-                    map["A3"] = (wp, dto, esDto, ws, reportNo) => "ISO 16322-2:2021 Method 1, Option 1";
+                    map["A3"] = (wp, dto, esDto, ws, reportNo) => "ISO 16322-2:2021 Method A, Option 1";
                     map["I34"] = (wp, dto, esDto, ws, reportNo) => wp.WashingProcedure!;
                     map["AL34"] = (wp, dto, esDto, ws, reportNo) => wp.Temperature!;
                     map["S35"] = (wp, dto, esDto, ws, reportNo) => wp.Ballast!;

@@ -152,18 +152,18 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         }
         private static readonly Dictionary<string, string> TemplateSheetNamesNormal = new()
         {
-            ["CF to Washing"] = "CFtoWashing&Rubbing&Light",
-            ["CF to Rubbing"] = "CFtoWashing&Rubbing&Light",
-            ["CF to Light"] = "CFtoWashing&Rubbing&Light",
-            ["CF to Light and Perspiration"] = "CFtoWashing&Rubbing&Light",
+            ["CF to Washing"] = "CFtoWRSL",
+            ["CF to Rubbing"] = "CFtoWRSL",
+            ["CF to Light"] = "CFtoWRSL",
+            ["CF to Light and Perspiration"] = "CFtoWRSL",
             ["CF to Perspiration"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Water"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Dry-clean"] = "CFtoPerspiration&Water&Dryclean",
-            ["CF to Sublimation in Storage"] = "CFtoSublimation&Ironing",
-            ["CF to Hot Pressing"] = "CFtoSublimation&Ironing",
-            ["CF to Sea Water"] = "CFtoCl&Sea&Yellow",
-            ["CF to Chlorinated Water"] = "CFtoCl&Sea&Yellow",
-            ["Phenolic Yellowing"] = "CFtoCl&Sea&Yellow",
+            ["CF to Sublimation in Storage"] = "CFtoWRSL",
+            ["CF to Hot Pressing"] = "CFtoCSYI",
+            ["CF to Sea Water"] = "CFtoCSYI",
+            ["CF to Chlorinated Water"] = "CFtoCSYI",
+            ["Phenolic Yellowing"] = "CFtoCSYI",
             ["Print Durability For JAKO"] = "Print Durability",
             ["Heat Press Test For JAKO"] = "Heat Pressing Test",
             ["Weight"] = "Weight",
@@ -279,7 +279,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["L5"] = (w, dto, reportNo) => w.Temperature!;
                     map["Y6"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["E7"] = (w, dto, reportNo) => w.Program!.Contains("1:50h") == true ? "1:50h" : w.Program.Contains("1:20h") == true ? "1:20h" : "1h";
-                    map["U7"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : "600 rpm";
+                    map["U7"] = (w, dto, reportNo) => w.Program!.Contains("1400") == true ? "1400rpm" : w.Program.Contains("1200") == true ? "1200 rpm" : w.Program.Contains("600") == true ? "600 rpm":"900";
                     map["A8"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }
                 return map;
@@ -304,16 +304,16 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Sublimation in Storage"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["D4"] = (w, dto, reportNo) => w.Temperature!,
-                ["G4"] = (w, dto, reportNo) => "48",
-                ["C7"] = (w, dto, reportNo) => w.Ballast!
+                ["A45"] = (w, dto, reportNo) => dto.Standard!,
+                ["D46"] = (w, dto, reportNo) => w.Temperature!,
+                ["G46"] = (w, dto, reportNo) => "48",
+                ["C49"] = (w, dto, reportNo) => w.Ballast!
             },
             ["CF to Hot Pressing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
-                ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A12"] = (w, dto, reportNo) => dto.Standard!,
-                ["E13"] = (w, dto, reportNo) => w.Temperature!,
+                ["G1"] = (w, dto, reportNo) => reportNo,
+                ["A30"] = (w, dto, reportNo) => dto.Standard!,
+                ["E31"] = (w, dto, reportNo) => w.Temperature!,
                 //["L13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.IronMethod) ? "N/A" : null,
 
             },

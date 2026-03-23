@@ -420,14 +420,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactSample = sample,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                DryProcedure = p.DryProcedure,
+                DryProcedure = "Tumble dry",
                 SpecialCareInstruction = p.Sci,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
-                : "Type III (100% Polyester)",
                 Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
                 WashingProcedure = p.WashingProcedure,
-                Detergent = DetergentHelper(p.Detergent, sampleDesc!, p.WashingProcedure),
+                Detergent = "ECE(A)",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
@@ -542,13 +539,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     break;
                 case "Martindale Pilling":
                     condition = PillingHelper(fiberContent!, FetchSamplePropertyValue(sampleDesc, "Fiber Type(Only for Pilling Resistance)"), infoDto.menuName!);
-                    param = condition switch
-                    {
-                        string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
-                        string s when FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || infoDto.menuName == "PTC01" => @"{""Cycle"":""2000 revs""}",
-                        string s when infoDto.menuName == "PTC07" || infoDto.menuName == "PTC08" || infoDto.menuName == "PTC09" || infoDto.menuName == "PTC10" || infoDto.menuName == "PTC11" || infoDto.menuName == "PTC12" => @"{""Cycle"":""500 revs""}",
-                        _ => @"{""Cycle"":""500 revs""}",
-                    };
+                    if ( !string.IsNullOrEmpty(condition) && condition.Contains("N/A"))
+                        param = @"{""IsApplicable"":""N/A""}";
+                    else if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || infoDto.menuName == "PTC01")
+                        param = @"{""Cycle"":""2000 revs"",""IsApplicable"":""Y""}";
+                    else if (infoDto.menuName is "PTC07" or "PTC08" or "PTC09" or "PTC10" or "PTC11" or "PTC12")
+                        param = @"{""Cycle"":""500 revs"",""IsApplicable"":""Y""}";
+                    else
+                        param = @"{""Cycle"":""500 revs"",""IsApplicable"":""Y""}";
                     break;
                 case "Residual Elongation":
                     condition = ElogationHelper(fiberContent!, sampleDesc, infoDto.menuName!);
@@ -559,8 +557,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                         string s when s.Contains("20") => @"{""Load"":""20N""}",
                         string s when s.Contains("25") => @"{""Load"":""25N""}",
                         string s when s.Contains("30") => @"{""Load"":""30N""}",
-                        string s when s.Contains("40") => @"{""Load"":""140N""}",
-                        _ => @"{""Load"":""140N""}"
+                        string s when s.Contains("40") => @"{""Load"":""40N""}",
+                        _ => @"{""Load"":""40N""}"
                     };
                     break;
                 case "Tear Strength":
@@ -790,10 +788,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
         private string? DetergentHelper(string? detergent, List<SampleInfoDescription> sampleDesc, string WashingProcedure)
         {
-            if (string.IsNullOrEmpty(detergent) == false && detergent == "Mild Detergent") return "20g Mild Detergent";
-            if ((FetchSamplePropertyValue(sampleDesc, "Color").Contains("White") || FetchSamplePropertyValue(sampleDesc, "Color").Contains("Cream"))) return "20g 77%IEC(A) + 3%TAED + 20%Sodium Perborate";
+            if (string.IsNullOrEmpty(detergent) == false && detergent == "Mild Detergent") return "Mild Detergent";
             if (WashingProcedure.Contains("H")) return "60mL PERWOLL liquid for hand wash(4H)";
-            return "20g 77%ECE(A)+ 3%TAED + 20%Sodium Perborate";
+            if ((FetchSamplePropertyValue(sampleDesc, "Color").Contains("White") || FetchSamplePropertyValue(sampleDesc, "Color").Contains("Cream"))) return "77%IEC(A)+3%TAED+20%Sodium Perborate";
+            return "77%ECE(A)+3%TAED+20%Sodium Perborate";
         }
 
         private string? AfterWashingHelper(string? AfterWashing)
