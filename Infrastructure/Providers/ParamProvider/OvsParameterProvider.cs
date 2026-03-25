@@ -21,10 +21,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         public static readonly string[] WetTestItems = new[]
         {
             "Colour Fastness to Washing",
+            "Appearance after Washing/Dry-Cleaning",
             "Dimensional Stability to Washing",
             "Dimensional Stability to Dry-Cleaning",
             "Accelerated Ageing(Stroage) Test",
             "Moisture Management",
+            "Movement after Washing",
             "Pilling Resistance",
             "Bursting Strength",
             "Seam Slippage",
@@ -129,6 +131,24 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
                     : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                     : "Type III (100% Polyester)",
+                    SpecialCareInstruction = p.Sci ?? null,
+                    AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                    Iron = p.Iron ?? null,
+                    IronMethod = p.IronMethod ?? null,
+                },
+                ("Appearance after Washing/Dry-Cleaning", _, _, _) => new WetParameterIso
+                {
+                    ContactItem = p.ItemName,
+                    ContactSample = sample,
+                    Standard = p.Standard,
+                    ReportNumber = p.OrderNumber!,
+                    WashingProcedure = WashingProcedureBuilder(p.WashingProcedure, p.MenuName!, fiberContent!),
+                    Temperature = WashingProcedureBuilder(p.WashingProcedure, p.MenuName!, fiberContent!).Contains("6") ? "60"
+    : WashingProcedureBuilder(p.WashingProcedure, p.MenuName!, fiberContent!).Contains("3") ? "30" : "40",
+                    DryProcedure = DryProcedureBuilder(p.DryProcedure, p.MenuName!, fiberContent!),
+                    Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
+    : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
+    : "Type III (100% Polyester)",
                     SpecialCareInstruction = p.Sci ?? null,
                     AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                     Iron = p.Iron ?? null,
@@ -328,11 +348,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     Standard = p.Standard,
                     ReportNumber = p.OrderNumber!,
                     WashingProcedure = "6N",
-                    Temperature = "60",
+                    Program = WetParamTransfer("6N"),
+                    Temperature = "60", 
+                    DryCleanProcedure = DryConditionTransfer(((p.MenuName == "O" || p.MenuName == "T") ? p.DryProcedure! : "Tumble Dry")),
                     DryProcedure = (p.MenuName == "O" || p.MenuName == "T") ? p.DryProcedure : "Tumble Dry",
-                    Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
-                    : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
-                    : "Type III (100% Polyester)",
+                    Bleach = "Normal",
                     SpecialCareInstruction = p.Sci ?? null,
                     Iron = p.Iron ?? null,
                     IronMethod = p.IronMethod ?? null,
@@ -422,8 +442,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     condition = infoDto.menuName switch
                     {
                         "A-Act" => "3000",
-                        "A" when infoDto.sampleDescription!.Contains("Garment") => "1800",
-                        "A-SKI wear" or "I-SKI wear" => infoDto.sampleDescription!.Contains("With Membrane") ? "2000" : "5000",
+                        "A" when FetchSamplePropertyValue(sampleDesc, "State").Contains("Garment") => "1800",
+                        "A-SKI wear" or "I-SKI wear" => FetchSamplePropertyValue(sampleDesc, "State").Contains("With Membrane") ? "20000" : "5000",
                         _ => "N/A"
                     };
                     condition1 = infoDto.menuName switch
@@ -436,8 +456,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     param = condition switch
                     {
                         string s when s.Contains("1800") => @"{""Water Pressure"":""1800mmH2O"",""Washing Cycle"":""Original Sample""}",
-                        string s when s.Contains("2000") && condition1!.Contains("3 Cycle") => @"{""Water Pressure"":""2000mmH2O"",""Washing Cycle"":""After 3 Cycle""}",
-                        string s when s.Contains("2000") && condition1!.Contains("5 Cycle")=> @"{""Water Pressure"":""2000mmH2O"",""Washing Cycle"":""After 5 Cycle""}",
+                        string s when s.Contains("2000") && condition1!.Contains("3 Cycle") => @"{""Water Pressure"":""20000mmH2O"",""Washing Cycle"":""After 3 Cycle""}",
+                        string s when s.Contains("2000") && condition1!.Contains("5 Cycle")=> @"{""Water Pressure"":""20000mmH2O"",""Washing Cycle"":""After 5 Cycle""}",
                         string s when s.Contains("3000") && condition1!.Contains("1 Cycle") => @"{""Water Pressure"":""3000mmH2O"",""Washing Cycle"":""After 1 Cycle""}",
                         string s when s.Contains("3000") => @"{""Water Pressure"":""3000mmH2O"",""Washing Cycle"":""After 5 Cycle""}",
                         string s when s.Contains("5000") && condition1!.Contains("3 Cycle") => @"{""Water Pressure"":""5000mmH2O"" ,""Washing Cycle"":""After 3 Cycle""}",
@@ -445,7 +465,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                         _ => @"{""Water Pressure"":""N/A""}"
                     };
                     break;
-                case "Water Repellency":
+                case "Spray Test":
                     condition = infoDto.menuName switch
                     {
                         "A" => "1 Cycle",
@@ -556,11 +576,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     break;
                 case "Stretch & Recovery":
                     if (FetchSamplePropertyValue(sampleDesc,"Structure")!="Woven") condition = "N/A";
-                    if (_helper.CompositionRate(fiberContent!, "Spandex") == 0|| _helper.CompositionRate(fiberContent!, "Elastane") == 0) condition = "N/A";
+                    var content = _helper.CompositionRate(fiberContent!, "Spandex") + _helper.CompositionRate(fiberContent!, "Elastane");
+                    if (content == 0) condition = "N/A";
                     param = condition switch
                     {
                         "N/A" => @"{""IsAcceptable"":""N/A""}",
-                        _ => @"{""IsAcceptable"":""Y"", ""Remark"":""Stretch: ≥ 15%/Residual Extension: ≤ 5%""}"
+                        _ => @"{""IsAcceptable"":""Y"",""Load"":""30N"", ""Remark"":""Stretch: ≥ 15%/Residual Extension: ≤ 5%""}"
                     };
                     break;
                 case "Tensile Strength":
@@ -575,7 +596,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                                       ""Remark"":""{ Fabric up to 200 g/m2: ≥ 10 N; Fabric over 200 g/m2: ≥ 15 N };
                                                            { Fabric up to 200 g/m2: ≥ 15 N; Fabric over 200 g/m2: ≥ 20 N };
                                                            { Fabric up to 200 g/m2: ≥ 120 N; Fabric over 200 g/m2: ≥ 170 N };
-                                                           {Fabric up to 120 g/m2: ≥ 10 N; Fabric over 120 g/m2: ≥ 15 N}""}"
+                                                           { Fabric up to 120 g/m2: ≥ 10 N; Fabric over 120 g/m2: ≥ 15 N}""}"
                     };
                     break;
                 case "Drying Rate":

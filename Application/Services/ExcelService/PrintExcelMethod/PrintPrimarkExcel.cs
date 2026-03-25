@@ -791,7 +791,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             [("Seam Strength")] = new Dictionary<string[], string>
             {
                 {new[] { "Fabric" }, "Seam Slippage&Strength" },
-                {new[] { "Garment" },"Seam Slippage&Strength-G"},
+                {new[] { "Garment","Knit" },"Bursting Strength-G"},
+                {new[] { "Garment" },"Seam Slippage&Strength-G"}
             },
             [("Bursting Strength")] = new Dictionary<string[], string>
             {
@@ -1440,15 +1441,41 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     ["S21"] = (wp, np, row, esDto, sample) => wp.DryProcedure!,
                     ["AB21"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.Iron) ? "/ Iron" : wp.IronMethod!
                 },
-                ["Tear Strength"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
+                ["Tear Strength"] = (wp, np, row, esDto, sample) => 
                 {
-                    ["M1"] = (wp, np, row, esDto, sample)  => esDto.ReportNumber!,
-                    ["A3"] = (wp, np, row, esDto, sample) => row.standards!,
+                    var map = new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>();
+                    map["M1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
+                    map["A3"] = (wp, np, row, esDto, sample) => row.standards!;
+                    map["AC4"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("N/A") ? "N/A":"-";
+                    if (GetDescValue(sample, "Stretch Direction for Tensile and Tear", esDto)!.Contains("Warp"))
+                    {
+                        map["V9"] = (wp, np, row, esDto, sample) => "N/A";
+                        map["AA9"] = (wp, np, row, esDto, sample) => "经向存在弹性丝，N/A";
+                    }
+                    if (GetDescValue(sample, "Stretch Direction for Tensile and Tear", esDto)!.Contains("Weft"))
+                    {
+                        map["V9"] = (wp, np, row, esDto, sample) => "N/A";
+                        map["AA9"] = (wp, np, row, esDto, sample) => "纬向存在弹性丝，N/A";
+                    }
+                    return map;
                 },
-                ["Tensile Strength"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
+                ["Tensile Strength"] = (wp, np, row, esDto, sample) =>
                 {
-                    ["M1"] = (wp, np, row, esDto, sample)  => esDto.ReportNumber!,
-                    ["A3"] = (wp, np, row, esDto, sample) => row.standards!,
+                    var map = new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>();
+                    map["M1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
+                    map["A3"] = (wp, np, row, esDto, sample) => row.standards!;
+                    map["AC3"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("N/A") ? "N/A" : "-";
+                    if (GetDescValue(sample, "Stretch Direction for Tensile and Tear", esDto)!.Contains("Warp"))
+                    {
+                        map["S6"] = (wp, np, row, esDto, sample) => "N/A";
+                        map["X6"] = (wp, np, row, esDto, sample) => "经向存在弹性丝，N/A";
+                    }
+                    if (GetDescValue(sample, "Stretch Direction for Tensile and Tear", esDto)!.Contains("Weft"))
+                    {
+                        map["S8"] = (wp, np, row, esDto, sample) => "N/A";
+                        map["X7"] = (wp, np, row, esDto, sample) => "纬向存在弹性丝，N/A";
+                    }
+                    return map;
                 },
                 ["Unrecovered Elongation"] = (wp, np, row, esDto, sample) =>
                 {
