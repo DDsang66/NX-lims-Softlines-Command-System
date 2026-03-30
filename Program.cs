@@ -17,6 +17,10 @@ using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.FeedBackRepos;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.RenderRepos;
+using NX_lims_Softlines_Command_System.Application;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure;
+using NX_lims_Softlines_Command_System.src.Domain;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -27,6 +31,11 @@ namespace NX_lims_Softlines_Command_System
             var builder = WebApplication.CreateBuilder(args);
             var jwt = builder.Configuration.GetSection("Jwt");
 
+            builder.Services.AddAutoRegister(
+                ApplicationAssemblyMarker.Assembly,
+                InfrastructureAssemblyMarker.Assembly,
+                DomainAssemblyMarker.Assembly
+                );
 
             // Add services to the container.
             var licenseType = builder.Configuration.GetValue<string>("EPPlus:License");
@@ -81,7 +90,7 @@ namespace NX_lims_Softlines_Command_System
                                        "http://192.168.3.6:82",
                                        "http://192.168.3.6:81",
                                        "http://192.168.3.6:5051",
-                                        "http://192.168.3.6:5173",
+                                        "http://192.168.76.8:5173",
                                        "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
@@ -91,24 +100,12 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-
-            //builder.Services.AddDbContext<LabDbContext>(options =>
-            //    options.UseSqlServer(builder.Configuration.GetConnectionString("LabCommandTestEntities")));
-
             builder.Services.AddDbContext<LabDbContextSec>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("NX-limsLabCommandSys")));
 
-
-
             var app = builder.Build();
             app.UseStaticFiles();
-            // 确保静态文件中间件已启用
-            // Configure the HTTP request pipeline.
-            //if (app.Environment.IsDevelopment())
-            //{
-            //    app.UseSwagger();
-            //    app.UseSwaggerUI();
-            //}
+
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -125,16 +122,21 @@ namespace NX_lims_Softlines_Command_System
                     await context.Response.WriteAsync("Client closed request");
                     return;
                 }
-                // 其他异常继续原有处理
             }));
 
 
             app.UseRouting();
+
             app.UseHttpsRedirection();
+
             app.UseCors("VueDev");
+
             app.UseAuthentication();
+
             app.UseAuthorization();
+
             app.MapControllers();
+
             app.Run();
         }
     }

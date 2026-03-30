@@ -148,7 +148,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         {
             // 根据 fileId 找到实际文件路径
 
-            var filePath = Path.Combine(_env.WebRootPath, "ExcelModel", fileName);
+            var filePath = Path.Combine(_env.WebRootPath, "ExcelModel\\SavingExcel", fileName);
             // 返回文件流，Content-Type 必须正确
             return PhysicalFile(
                 filePath,

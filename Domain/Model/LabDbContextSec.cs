@@ -28,6 +28,8 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<CustomerService> CustomerServices { get; set; }
 
+    public virtual DbSet<ExcelAddress> ExcelAddresses { get; set; }
+
     public virtual DbSet<Feedback> Feedbacks { get; set; }
 
     public virtual DbSet<Item> Items { get; set; }
@@ -87,8 +89,9 @@ public partial class LabDbContextSec : DbContext
 
         modelBuilder.Entity<Applications>(entity =>
         {
-            entity.ToTable("application");
             entity.HasKey(e => e.ApplicationId);
+            entity.ToTable("application");
+
             entity.Property(e => e.ApplicationId)
                 .ValueGeneratedNever()
                 .HasColumnName("application_id");
@@ -235,6 +238,30 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("customer_service");
+        });
+
+        modelBuilder.Entity<ExcelAddress>(entity =>
+        {
+            entity.HasKey(e => e.IdExcelAddress);
+            entity.ToTable("excel_address");
+            entity.Property(e => e.ReportNumber)
+            .HasMaxLength(50)
+            .IsUnicode(false)
+            .HasColumnName("report_number");
+
+            entity.Property(e => e.Address)
+                .HasMaxLength(125)
+                .IsUnicode(false)
+                .HasColumnName("address");
+            entity.Property(e => e.IdExcelAddress).HasColumnName("id_excel_address");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken()
+                .HasColumnName("row_version");
+            entity.Property(e => e.Status)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("status");
         });
 
         modelBuilder.Entity<Feedback>(entity =>

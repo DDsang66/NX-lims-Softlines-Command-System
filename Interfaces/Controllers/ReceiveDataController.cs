@@ -3,6 +3,7 @@ using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
+using NX_lims_Softlines_Command_System.Domain.Model;
 using System.Diagnostics;
 using System.IO.Compression;
 
@@ -17,17 +18,19 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         private readonly IWebHostEnvironment _env;
         private readonly ExcelHelper _excel;
         private readonly IPrintExcelStrategyFactory _factory;
-        public ReceiveDataController(IWebHostEnvironment env, ExcelHelper excel, IPrintExcelStrategyFactory factory)
+        private LabDbContextSec _db;
+        public ReceiveDataController(IWebHostEnvironment env, ExcelHelper excel, IPrintExcelStrategyFactory factory, LabDbContextSec db)
         {
             _env = env;
             _excel = excel;
             _factory = factory;
+            _db = db;
         }
 
         [HttpPost("showExcel")]
         public async Task<IActionResult> ShowExcel([FromBody] ExcelSubmitDto dto)
         {
-            ReceiveDataHelper helper = new ReceiveDataHelper(_excel, _env, _factory);
+            ReceiveDataHelper helper = new ReceiveDataHelper(_excel, _env, _factory,_db);
             var (wetOut, phyOut) = await helper.Helper(dto);
             var files = new[] { wetOut, phyOut }.Where(System.IO.File.Exists).ToList();
             if (!files.Any())
