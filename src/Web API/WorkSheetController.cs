@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Service;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API
 {
@@ -14,6 +16,13 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             _excelAppService = excelAppService;
         }
 
+        /// <summary>
+        /// 获取 Excel 文件访问信息
+        /// </summary>
+        /// <param name="repo"></param>
+        /// <param name="buyer"></param>
+        /// <param name="group"></param>
+        /// <returns></returns>
         [HttpGet("excelurl")]
         public async Task<IActionResult> GetExcelUrl(string repo, string buyer, string group)
         {
@@ -33,6 +42,12 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
                    : BadRequest(new { message = result.Error });
         }
 
+        /// <summary>
+        /// 下载 Excel 文件
+        /// </summary>
+        /// <param name="fileName"></param>
+        /// <param name="repoNum"></param>
+        /// <returns></returns>
         [HttpGet("{repoNum}/{fileName}/download")]
         public  IActionResult Download(string fileName,string repoNum)
         {
@@ -44,6 +59,38 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
                 fileDownloadName: fileName,
                 enableRangeProcessing: true  // 支持断点续传
             );
+        }
+
+        /// <summary>
+        /// OnlyOffice 回调接口
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost("callback")]
+        public async Task<IActionResult> Callback()
+        {
+            // 先读取请求体看看状态
+            using var reader = new StreamReader(Request.Body);
+            var body = await reader.ReadToEndAsync();
+
+            // 简单记录日志，方便调试
+            Console.WriteLine($"OnlyOffice Callback: {body}");
+
+            // 必须返回 error: 0，否则 OnlyOffice 认为失败
+            return Ok(new { error = 0 });
+        }
+
+
+        /// <summary>
+        /// 接收 OnlyOffice saveAs 保存的文件
+        /// </summary>
+        [HttpPost("save-from-url")]
+        public async Task<Result> SaveFromUrl([FromBody] SaveAsRequest request)
+        {
+            var result = await _excelAppService.SaveAsExcelAccessInfoAsync(request);
+
+            return result.IsSuccess ?
+                Result.Ok()
+                : Result.Fail(result.Error);
         }
     }
 }
