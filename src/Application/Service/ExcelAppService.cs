@@ -15,8 +15,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
     {
         private readonly IWebHostEnvironment _env;
         private readonly IFileHashService _hashService;
-        private readonly IServerConfig _serverConfig; // 注入接口
-        private readonly IExcelAddressRepository _excelRepo; // 注入接口
+        private readonly IServerConfig _serverConfig; 
+        private readonly IExcelAddressRepository _excelRepo; 
 
         public ExcelAppService(IWebHostEnvironment env, IFileHashService hashService, IServerConfig serviceConfig, IExcelAddressRepository excelAddressRepository)
         {

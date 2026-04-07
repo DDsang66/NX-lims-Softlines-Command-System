@@ -21,6 +21,9 @@ using NX_lims_Softlines_Command_System.Application;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure;
 using NX_lims_Softlines_Command_System.src.Domain;
+using AutoMapper;
+using Mapster;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -36,6 +39,11 @@ namespace NX_lims_Softlines_Command_System
                 InfrastructureAssemblyMarker.Assembly,
                 DomainAssemblyMarker.Assembly
                 );
+
+            TypeAdapterConfig.GlobalSettings.Scan(typeof(Program).Assembly);
+
+            builder.Services.AddMapster();
+
 
             // Add services to the container.
             var licenseType = builder.Configuration.GetValue<string>("EPPlus:License");
@@ -102,6 +110,9 @@ namespace NX_lims_Softlines_Command_System
 
             builder.Services.AddDbContext<LabDbContextSec>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("NX-limsLabCommandSys")));
+
+            builder.Services.AddDbContext<dbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("NX-lims")));
 
             var app = builder.Build();
             app.UseStaticFiles();
