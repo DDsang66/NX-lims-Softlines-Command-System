@@ -20,9 +20,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.QueryService
         /// 获取买方列表
         /// </summary>
         /// <returns></returns>
-        public async Task<List<BuyerListDto>> GetBuyerListAsync() 
+        public async Task<List<BuyerListDto>> GetBuyerListAsync(CancellationToken ct) 
         {
-            var buyerList = await _buyerRepository.GetBuyerListAsync();
+            var buyerList = await _buyerRepository.GetBuyerListAsync(ct);
 
             var dtoList = _mapper.Map<List<BuyerListDto>>(buyerList);
 

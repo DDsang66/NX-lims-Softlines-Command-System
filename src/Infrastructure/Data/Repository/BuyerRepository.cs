@@ -16,9 +16,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// 获取买家信息
         /// </summary>
         /// <returns></returns>
-        public async Task<List<BasicBuyer>> GetBuyerListAsync() 
+        public async Task<List<BasicBuyer>> GetBuyerListAsync(CancellationToken ct) 
         {
-            var buyers = await _context.BasicBuyers.ToListAsync();
+            var buyers = await _context.BasicBuyers.ToListAsync(ct);
 
             return buyers;
         }

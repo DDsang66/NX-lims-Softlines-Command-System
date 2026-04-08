@@ -21,9 +21,9 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.Buyer
         /// </summary>
         /// <returns></returns>
         [HttpGet("buyer-list")]
-        public async Task<Result<List<BuyerListDto>>> BuyerListAsync()
+        public async Task<Result<List<BuyerListDto>>> BuyerListAsync(CancellationToken ct)
         {
-            var result = await _buyerQueryAppService.GetBuyerListAsync();
+            var result = await _buyerQueryAppService.GetBuyerListAsync(ct);
 
             return Result<List<BuyerListDto>>.Ok(result);
         }
