@@ -51,7 +51,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
                 Mappings["Dimensional and Bra Wire Casing Stability"] = (p, normalJson, dto, sample) =>
                 {
                     var wet = BuildWetJson(p, "Temperature", "Program", "Ballast", "SCI",
-                                               "DryProcedure", "WashingProcedure", "AfterWash");
+                                               "DryProcedure", "WashingProcedure", "AfterWash", "Detergent");
                     AddSample(dto, sample, normalJson, wet);
                 };
 
@@ -59,7 +59,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
                 Mappings["Martindale Pilling"] = (p, normalJson, dto, sample) =>
                 {
                     var wet = BuildWetJson(p, "Temperature", "Program", "Ballast", "SCI",
-                                               "DryProcedure", "WashingProcedure", "AfterWash");
+                                               "DryProcedure", "WashingProcedure", "AfterWash", "Detergent");
                     AddSample(dto, sample, normalJson, wet);   // param 已在 normalJson 里
                 };
 
@@ -89,14 +89,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
                 Mappings["Spirality"] = (p, normalJson, dto, sample) =>
                 {
                     var wet = BuildWetJson(p, "Temperature", "Program", "Ballast", "SCI",
-                                               "DryProcedure", "WashingProcedure", "AfterWash");
+                                               "DryProcedure", "WashingProcedure", "AfterWash", "Detergent");
                     AddSample(dto, sample, normalJson, wet);
                 };
 
                 Mappings["Stability to Washing"] = (p, normalJson, dto, sample) =>
                 {
                     var wet = BuildWetJson(p, "Temperature", "Program", "Ballast", "SCI",
-                                               "DryProcedure", "WashingProcedure", "AfterWash");
+                                               "DryProcedure", "WashingProcedure", "AfterWash", "Detergent");
                     AddSample(dto, sample, normalJson, wet);
                 };
 
@@ -110,7 +110,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
                 Mappings["Dimensional Stability"] = (p, normalJson, dto, sample) =>
                 {
                     var wet = BuildWetJson(p, "Temperature", "Program", "Ballast", "SCI",
-                                               "DryProcedure", "WashingProcedure", "AfterWash");
+                                               "DryProcedure", "WashingProcedure", "AfterWash", "Detergent");
                     AddSample(dto, sample, normalJson, wet);
                 };
 
@@ -249,6 +249,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
                         "WashingProcedure" => p.WashingProcedure,
                         "Sensitive" => p.Sensitive,
                         "AfterWash" => p.AfterWash,
+                        "Detergent" => p.Detergent,
                         "Iron" => p.Iron,
                         _ => null
                     };

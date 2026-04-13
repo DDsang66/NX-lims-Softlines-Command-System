@@ -972,16 +972,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["Y6"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
                         map["AH6"] = (wp, np, row, esDto, sample) => "/ Iron";
                         map["A7"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
-
-                        map["P52"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
-                        map["A54"] = (wp, np, row, esDto, sample) => "BS EN ISO 5077:2008/BS EN ISO 3759:2011/BS EN ISO 6330:2021";
-                        map["I55"] = (wp, np, row, esDto, sample) => wp.WashingProcedure!;
-                        map["AJ55"] = (wp, np, row, esDto, sample) => wp.Temperature!;
-                        map["S56"] = (wp, np, row, esDto, sample) => wp.Ballast!;
-                        map["A57"] = (wp, np, row, esDto, sample) => wp.Detergent!;
-                        map["Y57"] = (wp, np, row, esDto, sample) => wp.DryProcedure!;
-                        map["AH57"] = (wp, np, row, esDto, sample) => "/ Iron";
-                        map["A58"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!) == true ? "-" : wp.SpecialCareInstruction!;
                     }
                     else if (GetDescValue(sample, "State", esDto)!.Contains("Cap")
                     || GetDescValue(sample, "State", esDto)!.Contains("Socks")
@@ -1197,22 +1187,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["Appearance"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
                     ["BC1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["CM1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["BC57"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["CM57"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["BC114"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["CM114"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["BC171"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
-                    ["CM171"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
+                    ["CW1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
+                    ["BC60"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
+                    ["CW60"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
                     ["AR3"] = (wp, np, row, esDto, sample) => "BS EN ISO 6330 & PM01"!,
-                    ["CB3"] = (w, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
-                    ["AR59"] = (w, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
-                    ["CB59"] = (w, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
-                    ["AR116"] = (wp, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
-                    ["CB116"] = (wp, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
-                    ["AR173"] = (wp, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
-                    ["CB173"] = (wp, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
-                    ["C1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!,
+                    ["CL3"] = (w, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
+                    ["AR62"] = (w, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
+                    ["CL62"] = (w, np, row, esDto, sample) => "BS EN ISO 6330 & PM01",
                 },
                 ["Colour Change and Staining"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
                 {
@@ -1646,7 +1627,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (sample.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
                         {
                             map["Q4"] = (wp, np, row, esDto, sample) => "√";
-                            if (sample.Contains("Shell")) reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
+                            reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
                         }
                         if (sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
                         {
@@ -1729,7 +1710,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         if (sample.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
                         {
                             map["Q19"] = (wp, np, row, esDto, sample) => "√";
-                            if (sample.Contains("Shell")) reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
+                            reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
                         }
                         if (sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
                         {
