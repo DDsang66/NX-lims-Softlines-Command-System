@@ -15,8 +15,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
     {
         private readonly IWebHostEnvironment _env;
         private readonly IFileHashService _hashService;
-        private readonly IServerConfig _serverConfig; // 注入接口
-        private readonly IExcelAddressRepository _excelRepo; // 注入接口
+        private readonly IServerConfig _serverConfig; 
+        private readonly IExcelAddressRepository _excelRepo; 
 
         public ExcelAppService(IWebHostEnvironment env, IFileHashService hashService, IServerConfig serviceConfig, IExcelAddressRepository excelAddressRepository)
         {
@@ -34,7 +34,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// <param name="group"></param>
         /// <returns></returns>
         /// <exception cref="FileNotFoundException"></exception>
-        public async Task<Result<ExcelUrlResponseDto>> GetExcelAccessInfoAsync(string repo, string buyer, string group)
+        public async Task<Result<ExcelUrlResponseDto>> GetExcelAccessInfoAsync(string repo, string buyer, string group, CancellationToken ct)
         {
 
             if (string.IsNullOrEmpty(repo) || string.IsNullOrEmpty(buyer) || string.IsNullOrEmpty(group))
@@ -43,7 +43,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             // 定义正则表达式：匹配类似 "87.405.26..01" 这种包含 ".." 的不完整格式
             // \d+ 匹配数字，\. 匹配点，\.\. 匹配两个连续的点
             // demo中暂定为无单号则传出模板文件路径，后续根据实际情况调整
-            var filePath = await GetExcelFilePathAsync(repo, buyer, group);
+            var filePath = await GetExcelFilePathAsync(repo, buyer, group,ct);
 
             if (!File.Exists(filePath) || string.IsNullOrEmpty(filePath))  return Result<ExcelUrlResponseDto>.Fail($"文件不存在或未找到匹配路径: {filePath}");
            
@@ -72,14 +72,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// </summary>
         /// <param name="saveAsRequest"></param>
         /// <returns></returns>
-        public async Task<Result> SaveAsExcelAccessInfoAsync(SaveAsRequest saveAsRequest) 
+        public async Task<Result> SaveAsExcelAccessInfoAsync(SaveAsRequest saveAsRequest, CancellationToken ct) 
         {
             // 从 OnlyOffice 的临时 URL 下载文件
             using var httpClient = new HttpClient();
 
             var fileBytes = await httpClient.GetByteArrayAsync(saveAsRequest.fileUrl);
 
-            var filePath = await GetExcelFilePathAsync(saveAsRequest.reportNum, saveAsRequest.buyer, saveAsRequest.group);
+            var filePath = await GetExcelFilePathAsync(saveAsRequest.reportNum, saveAsRequest.buyer, saveAsRequest.group,ct);
 
             if (string.IsNullOrEmpty(filePath)) return Result.Fail("未找到匹配的 Excel 文件路径");
 
@@ -121,7 +121,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// <param name="buyer"></param>
         /// <param name="group"></param>
         /// <returns></returns>
-        private async Task<string> GetExcelFilePathAsync(string repo, string buyer, string group)
+        private async Task<string> GetExcelFilePathAsync(string repo, string buyer, string group, CancellationToken ct)
         {
             var isIncompleteRepo = Regex.IsMatch(repo, @"\.\.");
             string filePath;
@@ -136,7 +136,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             else
             {
                 var searchDir = Path.Combine(_env.WebRootPath, "ExcelModel\\SavingExcel");
-                var fileName = await _excelRepo.GetFilePathAsync(repo, buyer, group.ToUpper());
+                var fileName = await _excelRepo.GetFilePathAsync(repo, buyer, group.ToUpper(),ct);
 
                 if (string.IsNullOrWhiteSpace(fileName))
                     return null;

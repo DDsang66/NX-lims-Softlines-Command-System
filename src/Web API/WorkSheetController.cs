@@ -24,14 +24,22 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="group"></param>
         /// <returns></returns>
         [HttpGet("excelurl")]
+<<<<<<< HEAD
         public async Task<IActionResult> GetExcelUrl(string repo, string buyer, string group)
+=======
+        public async Task<IActionResult> GetExcelUrl(string repo, string buyer, string group, CancellationToken ct)
+>>>>>>> a165edfa3a67107084b86ae3ea4e30814c7f9bc4
         {
             // 1. 参数校验（可以移到 FluentValidation）
             if (string.IsNullOrEmpty(repo) || string.IsNullOrEmpty(buyer) || string.IsNullOrEmpty(group))
                 return BadRequest(new { success = false, message = "参数不能为空" });
 
             // 2. 调用应用服务获取结果
+<<<<<<< HEAD
             var result = await _excelAppService.GetExcelAccessInfoAsync(repo, buyer, group);
+=======
+            var result = await _excelAppService.GetExcelAccessInfoAsync(repo, buyer, group, ct);
+>>>>>>> a165edfa3a67107084b86ae3ea4e30814c7f9bc4
 
             // 3. 审计（可以在 ActionFilter 中做，或者在这里显式调用）
             //await _auditService.LogAsync("ExcelAccess", new { repo, buyer, group, result.FileKey });
@@ -84,9 +92,15 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// 接收 OnlyOffice saveAs 保存的文件
         /// </summary>
         [HttpPost("save-from-url")]
+<<<<<<< HEAD
         public async Task<Result> SaveFromUrl([FromBody] SaveAsRequest request)
         {
             var result = await _excelAppService.SaveAsExcelAccessInfoAsync(request);
+=======
+        public async Task<Result> SaveFromUrl([FromBody] SaveAsRequest request, CancellationToken ct)
+        {
+            var result = await _excelAppService.SaveAsExcelAccessInfoAsync(request,ct);
+>>>>>>> a165edfa3a67107084b86ae3ea4e30814c7f9bc4
 
             return result.IsSuccess ?
                 Result.Ok()

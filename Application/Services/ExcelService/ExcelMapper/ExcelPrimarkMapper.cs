@@ -33,12 +33,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
-                "Garment" => new List<string> { "G10","G61" },
+                "Garment" => new List<string> { "G9" },
                 "Fabric" => new List<string> { "AZ8", "AW12", "BO12", "AW23", "BO23" },
                 "Socks" => new List<string> { "F10" ,"F65"},
                 "Gloves" => new List<string> { "F19","F74" },
                 "Cap" => new List<string> { "F28","F83" },
-                _ => new List<string> { "G10", "G61" }
+                _ => new List<string> { "G9" }
             };
             return stringMap?.ToArray() ?? new string[0];
         }
@@ -112,7 +112,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             switch (standard)
             {
                 case "PM01":
-                    stringMap = new List<string> { "BH4","DA4", "BL11", "BH60", "DA60", "BL67", "BH117", "DA117", "BL124", "BH174", "DA174", "BL181" };
+                    stringMap = new List<string> {"BO4","BV63", "DI4","DP63"};
                     break;
                 default: stringMap = new List<string> { "BH4", "DA4", "BL11" };
                     break;
