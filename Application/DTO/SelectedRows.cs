@@ -1,0 +1,33 @@
+﻿namespace NX_lims_Softlines_Command_System.Application.DTO
+{
+    public class SelectedRows
+    {
+        public string? itemName { get; set; }
+        public string? standards { get; set; }
+        public string? parameters { get; set; }
+        public string? types { get; set; }
+        public string? samples { get; set; }
+        public bool? selected { get; set; }
+        public object? extra { get; set; }
+    }
+
+
+
+    public class NewSelectedRows
+    {
+        public string? itemName { get; set; }
+        public string? standards { get; set; }
+        public List<Params>? parameters { get; set; }
+        public string? types { get; set; }
+        public string? samples { get; set; }
+        public bool? selected { get; set; }
+    }
+
+
+    public class Params 
+    {
+        public string? sample { get; set; }
+        public object? normalParam { get; set; }
+        public object? wetParam { get; set; }
+    }
+}

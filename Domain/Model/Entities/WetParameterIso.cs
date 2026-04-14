@@ -1,0 +1,50 @@
+﻿using NX_lims_Softlines_Command_System.Domain.Model.Interface;
+using System;
+using System.Collections.Generic;
+
+namespace NX_lims_Softlines_Command_System.Domain.Model.Entities;
+
+public partial class WetParameterIso: IWetParam
+{
+    public int ParamId { get; set; }
+
+    public string ReportNumber { get; set; } = null!;
+
+    public string? ContactBuyer { get; set; }
+
+    public string? ContactItem { get; set; }
+
+    public string? ContactSample { get; set; }
+
+    public string? Standard { get; set; }
+
+    public string? WashingProcedure { get; set; }
+
+    public string? DryCleanProcedure { get; set; }
+
+    public string? DryProcedure { get; set; }
+
+    public string? SpecialCareInstruction { get; set; }
+
+    public string? Program { get; set; }
+
+    public string? Bleach { get; set; }
+
+    public string? Iron { get; set; }
+
+    public string? IronMethod { get; set; }
+
+    public string? Temperature { get; set; }
+
+    public int? SteelBallNum { get; set; }
+
+    public string? SteelBallType { get; set; }
+
+    public string? Detergent { get; set; }
+
+    public string? Ballast { get; set; }
+
+    public string? AfterWash { get; set; }
+
+    public string? Sensitive { get; set; }
+}

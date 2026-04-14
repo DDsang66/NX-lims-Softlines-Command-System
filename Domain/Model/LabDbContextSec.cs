@@ -1,0 +1,1020 @@
+﻿using System;
+using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+
+namespace NX_lims_Softlines_Command_System.Domain.Model;
+
+public partial class LabDbContextSec : DbContext
+{
+    public LabDbContextSec()
+    {
+    }
+
+    public LabDbContextSec(DbContextOptions<LabDbContextSec> options)
+        : base(options)
+    {
+    }
+
+    public virtual DbSet<AdidasMethodItemMap> AdidasMethodItemMaps { get; set; }
+
+    public virtual DbSet<Applications> Applications { get; set; }
+
+    public virtual DbSet<AuditChange> AuditChanges { get; set; }
+
+    public virtual DbSet<Composition> Compositions { get; set; }
+
+    public virtual DbSet<CompositionNew> CompositionNews { get; set; }
+
+    public virtual DbSet<CustomerService> CustomerServices { get; set; }
+
+    public virtual DbSet<ExcelAddress> ExcelAddresses { get; set; }
+
+    public virtual DbSet<Feedback> Feedbacks { get; set; }
+
+    public virtual DbSet<Item> Items { get; set; }
+
+    public virtual DbSet<LabTestInfo> LabTestInfos { get; set; }
+
+    public virtual DbSet<Menu> Menus { get; set; }
+
+    public virtual DbSet<NextMenu> NextMenus { get; set; }
+
+    public virtual DbSet<NormalParameter> NormalParameters { get; set; }
+
+    public virtual DbSet<OvsMenu> OvsMenus { get; set; }
+
+    public virtual DbSet<PrimarkMenu> PrimarkMenus { get; set; }
+
+    public virtual DbSet<SampleDescription> SampleDescriptions { get; set; }
+
+    public virtual DbSet<SampleInfo> SampleInfos { get; set; }
+
+    public virtual DbSet<SampleInfoDescription> SampleInfoDescriptions { get; set; }
+
+    public virtual DbSet<Standard> Standards { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserProfile> UserProfiles { get; set; }
+
+    public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
+
+    public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
+
+    // Fiber Analysis entities
+    public virtual DbSet<FiberDatabase> FiberDatabases { get; set; }
+
+    public virtual DbSet<FiberWorksheet> FiberWorksheets { get; set; }
+
+    public virtual DbSet<FiberWorksheetDetail> FiberWorksheetDetails { get; set; }
+
+    public virtual DbSet<FiberWorksheetResult> FiberWorksheetResults { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AdidasMethodItemMap>(entity =>
+        {
+            entity.HasKey(e => e.MethodId);
+
+            entity.ToTable("adidas_method_item_map");
+
+            entity.Property(e => e.MethodId)
+                .ValueGeneratedNever()
+                .HasColumnName("method_id");
+            entity.Property(e => e.MethodCode)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("method_code");
+            entity.Property(e => e.MethodName)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("method_name");
+            entity.Property(e => e.Type)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<Applications>(entity =>
+        {
+            entity.HasKey(e => e.ApplicationId);
+            entity.ToTable("application");
+
+            entity.Property(e => e.ApplicationId)
+                .ValueGeneratedNever()
+                .HasColumnName("application_id");
+            entity.Property(e => e.Applicant)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("applicant");
+            entity.Property(e => e.Express)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("express");
+            entity.Property(e => e.Reason)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("reason");
+            entity.Property(e => e.Remark)
+                .HasColumnType("text")
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.TestGroup)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("test_group");
+            entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
+        });
+
+        modelBuilder.Entity<AuditChange>(entity =>
+        {
+            entity.HasKey(e => e.ChangeRecordId);
+
+            entity.ToTable("audit_change");
+
+            entity.Property(e => e.ChangeRecordId)
+                .ValueGeneratedNever()
+                .HasColumnName("change_record_id");
+            entity.Property(e => e.ChangePerson)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("change_person");
+            entity.Property(e => e.ChangeTime).HasColumnName("change_time");
+            entity.Property(e => e.ColumnName)
+                .HasMaxLength(50)
+                .HasColumnName("column_name");
+            entity.Property(e => e.NewValue)
+                .HasMaxLength(50)
+                .HasColumnName("new_value");
+            entity.Property(e => e.OldValue)
+                .HasMaxLength(50)
+                .HasColumnName("old_value");
+            entity.Property(e => e.Remark)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.TestGroup)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("test_group");
+        });
+
+        modelBuilder.Entity<Composition>(entity =>
+        {
+            entity.HasKey(e => e.FiberId);
+
+            entity.ToTable("composition");
+
+            entity.Property(e => e.FiberId)
+                .ValueGeneratedNever()
+                .HasColumnName("fiber_id");
+            entity.Property(e => e.FiberDescripe)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("fiber_descripe");
+            entity.Property(e => e.FiberName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("fiber_name");
+            entity.Property(e => e.FiberSource)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("fiber_source");
+            entity.Property(e => e.FiberType)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("fiber_type");
+        });
+
+        modelBuilder.Entity<CompositionNew>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToTable("composition_new");
+
+            entity.Property(e => e.CompositionNameChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("composition_nameCHN");
+            entity.Property(e => e.CompositionNameEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("composition_nameEN");
+            entity.Property(e => e.IdComposition).HasColumnName("id_composition");
+            entity.Property(e => e.PrimaryCategoryChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("primary_categoryCHN");
+            entity.Property(e => e.PrimaryCategoryEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("primary_categoryEN");
+            entity.Property(e => e.SecondaryClassificationChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("secondary_classificationCHN");
+            entity.Property(e => e.SecondaryClassificationEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("secondary_classificationEN");
+            entity.Property(e => e.TertiaryClassificationChn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("tertiary_classificationCHN");
+            entity.Property(e => e.TertiaryClassificationEn)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("tertiary_classificationEN");
+        });
+
+        modelBuilder.Entity<CustomerService>(entity =>
+        {
+            entity.ToTable("customer_service");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.CustomerService1)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("customer_service");
+        });
+
+        modelBuilder.Entity<ExcelAddress>(entity =>
+        {
+            entity.HasKey(e => e.IdExcelAddress);
+            entity.ToTable("excel_address");
+            entity.Property(e => e.ReportNumber)
+            .HasMaxLength(50)
+            .IsUnicode(false)
+            .HasColumnName("report_number");
+
+            entity.Property(e => e.Address)
+                .HasMaxLength(125)
+                .IsUnicode(false)
+                .HasColumnName("address");
+            entity.Property(e => e.IdExcelAddress).HasColumnName("id_excel_address");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken()
+                .HasColumnName("row_version");
+            entity.Property(e => e.Status)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("status");
+        });
+
+        modelBuilder.Entity<Feedback>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_feeback");
+
+            entity.ToTable("feedback");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.Applicant)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasComment("申请人")
+                .HasColumnName("applicant");
+            entity.Property(e => e.CreateTime)
+                .HasComment("提交时间")
+                .HasColumnName("create_time");
+            entity.Property(e => e.FeedbackDetail)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasComment("反馈详情")
+                .HasColumnName("feedback_detail");
+            entity.Property(e => e.IsDone)
+                .HasMaxLength(5)
+                .IsUnicode(false)
+                .HasComment("是否解决")
+                .HasColumnName("is_done");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValueSql("((0))")
+                .HasComment("状态")
+                .HasColumnName("status");
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasDefaultValueSql("((3))")
+                .HasComment("类型（建议、BUG）")
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<Item>(entity =>
+        {
+            entity.HasKey(e => e.ItemIndex);
+
+            entity.ToTable("item");
+
+            entity.Property(e => e.ItemIndex)
+                .ValueGeneratedNever()
+                .HasColumnName("item_index");
+            entity.Property(e => e.ItemName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("item_name");
+            entity.Property(e => e.Type)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<LabTestInfo>(entity =>
+        {
+            entity.ToTable("lab_test_info");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.CustomerService)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("customer_service");
+            entity.Property(e => e.DelayReason)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("delay_reason");
+            entity.Property(e => e.DelayType)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("delay_type");
+            entity.Property(e => e.Express)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("express");
+            entity.Property(e => e.IsDelete)
+                .HasMaxLength(5)
+                .IsUnicode(false)
+                .HasColumnName("is_delete");
+            entity.Property(e => e.LabOutTime).HasColumnName("lab_out_time");
+            entity.Property(e => e.LastUpdateTime).HasColumnName("last_update_time");
+            entity.Property(e => e.OrderEntryPerson)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("order_entry_person");
+            entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
+            entity.Property(e => e.Remark)
+                .HasColumnType("text")
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.ReviewFinishTime).HasColumnName("review_finish_time");
+            entity.Property(e => e.Reviewer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("reviewer");
+            entity.Property(e => e.RowVersion)
+                .IsRowVersion()
+                .IsConcurrencyToken()
+                .HasColumnName("row_version");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TestEngineer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("test_engineer");
+            entity.Property(e => e.TestGroup)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("test_group");
+            entity.Property(e => e.TestItemNum).HasColumnName("test_item_num");
+            entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
+        });
+
+        modelBuilder.Entity<Menu>(entity =>
+        {
+            entity.ToTable("menu");
+
+            entity.Property(e => e.MenuId)
+                .ValueGeneratedNever()
+                .HasColumnName("menu_id");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
+            entity.Property(e => e.MenuName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("menu_name");
+            entity.Property(e => e.StandardIndex1).HasColumnName("standard_index_1");
+            entity.Property(e => e.StandardIndex10).HasColumnName("standard_index_10");
+            entity.Property(e => e.StandardIndex100).HasColumnName("standard_index_100");
+            entity.Property(e => e.StandardIndex11).HasColumnName("standard_index_11");
+            entity.Property(e => e.StandardIndex12).HasColumnName("standard_index_12");
+            entity.Property(e => e.StandardIndex13).HasColumnName("standard_index_13");
+            entity.Property(e => e.StandardIndex14).HasColumnName("standard_index_14");
+            entity.Property(e => e.StandardIndex15).HasColumnName("standard_index_15");
+            entity.Property(e => e.StandardIndex16).HasColumnName("standard_index_16");
+            entity.Property(e => e.StandardIndex17).HasColumnName("standard_index_17");
+            entity.Property(e => e.StandardIndex18).HasColumnName("standard_index_18");
+            entity.Property(e => e.StandardIndex19).HasColumnName("standard_index_19");
+            entity.Property(e => e.StandardIndex2).HasColumnName("standard_index_2");
+            entity.Property(e => e.StandardIndex20).HasColumnName("standard_index_20");
+            entity.Property(e => e.StandardIndex21).HasColumnName("standard_index_21");
+            entity.Property(e => e.StandardIndex22).HasColumnName("standard_index_22");
+            entity.Property(e => e.StandardIndex23).HasColumnName("standard_index_23");
+            entity.Property(e => e.StandardIndex24).HasColumnName("standard_index_24");
+            entity.Property(e => e.StandardIndex25).HasColumnName("standard_index_25");
+            entity.Property(e => e.StandardIndex26).HasColumnName("standard_index_26");
+            entity.Property(e => e.StandardIndex27).HasColumnName("standard_index_27");
+            entity.Property(e => e.StandardIndex28).HasColumnName("standard_index_28");
+            entity.Property(e => e.StandardIndex29).HasColumnName("standard_index_29");
+            entity.Property(e => e.StandardIndex3).HasColumnName("standard_index_3");
+            entity.Property(e => e.StandardIndex30).HasColumnName("standard_index_30");
+            entity.Property(e => e.StandardIndex31).HasColumnName("standard_index_31");
+            entity.Property(e => e.StandardIndex32).HasColumnName("standard_index_32");
+            entity.Property(e => e.StandardIndex33).HasColumnName("standard_index_33");
+            entity.Property(e => e.StandardIndex34).HasColumnName("standard_index_34");
+            entity.Property(e => e.StandardIndex35).HasColumnName("standard_index_35");
+            entity.Property(e => e.StandardIndex36).HasColumnName("standard_index_36");
+            entity.Property(e => e.StandardIndex37).HasColumnName("standard_index_37");
+            entity.Property(e => e.StandardIndex38).HasColumnName("standard_index_38");
+            entity.Property(e => e.StandardIndex39).HasColumnName("standard_index_39");
+            entity.Property(e => e.StandardIndex4).HasColumnName("standard_index_4");
+            entity.Property(e => e.StandardIndex40).HasColumnName("standard_index_40");
+            entity.Property(e => e.StandardIndex41).HasColumnName("standard_index_41");
+            entity.Property(e => e.StandardIndex42).HasColumnName("standard_index_42");
+            entity.Property(e => e.StandardIndex43).HasColumnName("standard_index_43");
+            entity.Property(e => e.StandardIndex44).HasColumnName("standard_index_44");
+            entity.Property(e => e.StandardIndex45).HasColumnName("standard_index_45");
+            entity.Property(e => e.StandardIndex46).HasColumnName("standard_index_46");
+            entity.Property(e => e.StandardIndex47).HasColumnName("standard_index_47");
+            entity.Property(e => e.StandardIndex48).HasColumnName("standard_index_48");
+            entity.Property(e => e.StandardIndex49).HasColumnName("standard_index_49");
+            entity.Property(e => e.StandardIndex5).HasColumnName("standard_index_5");
+            entity.Property(e => e.StandardIndex50).HasColumnName("standard_index_50");
+            entity.Property(e => e.StandardIndex51).HasColumnName("standard_index_51");
+            entity.Property(e => e.StandardIndex52).HasColumnName("standard_index_52");
+            entity.Property(e => e.StandardIndex53).HasColumnName("standard_index_53");
+            entity.Property(e => e.StandardIndex54).HasColumnName("standard_index_54");
+            entity.Property(e => e.StandardIndex55).HasColumnName("standard_index_55");
+            entity.Property(e => e.StandardIndex56).HasColumnName("standard_index_56");
+            entity.Property(e => e.StandardIndex57).HasColumnName("standard_index_57");
+            entity.Property(e => e.StandardIndex58).HasColumnName("standard_index_58");
+            entity.Property(e => e.StandardIndex59).HasColumnName("standard_index_59");
+            entity.Property(e => e.StandardIndex6).HasColumnName("standard_index_6");
+            entity.Property(e => e.StandardIndex60).HasColumnName("standard_index_60");
+            entity.Property(e => e.StandardIndex61).HasColumnName("standard_index_61");
+            entity.Property(e => e.StandardIndex62).HasColumnName("standard_index_62");
+            entity.Property(e => e.StandardIndex63).HasColumnName("standard_index_63");
+            entity.Property(e => e.StandardIndex64).HasColumnName("standard_index_64");
+            entity.Property(e => e.StandardIndex65).HasColumnName("standard_index_65");
+            entity.Property(e => e.StandardIndex66).HasColumnName("standard_index_66");
+            entity.Property(e => e.StandardIndex67).HasColumnName("standard_index_67");
+            entity.Property(e => e.StandardIndex68).HasColumnName("standard_index_68");
+            entity.Property(e => e.StandardIndex69).HasColumnName("standard_index_69");
+            entity.Property(e => e.StandardIndex7).HasColumnName("standard_index_7");
+            entity.Property(e => e.StandardIndex70).HasColumnName("standard_index_70");
+            entity.Property(e => e.StandardIndex71).HasColumnName("standard_index_71");
+            entity.Property(e => e.StandardIndex72).HasColumnName("standard_index_72");
+            entity.Property(e => e.StandardIndex73).HasColumnName("standard_index_73");
+            entity.Property(e => e.StandardIndex74).HasColumnName("standard_index_74");
+            entity.Property(e => e.StandardIndex75).HasColumnName("standard_index_75");
+            entity.Property(e => e.StandardIndex76).HasColumnName("standard_index_76");
+            entity.Property(e => e.StandardIndex77).HasColumnName("standard_index_77");
+            entity.Property(e => e.StandardIndex78).HasColumnName("standard_index_78");
+            entity.Property(e => e.StandardIndex79).HasColumnName("standard_index_79");
+            entity.Property(e => e.StandardIndex8).HasColumnName("standard_index_8");
+            entity.Property(e => e.StandardIndex80).HasColumnName("standard_index_80");
+            entity.Property(e => e.StandardIndex81).HasColumnName("standard_index_81");
+            entity.Property(e => e.StandardIndex82).HasColumnName("standard_index_82");
+            entity.Property(e => e.StandardIndex83).HasColumnName("standard_index_83");
+            entity.Property(e => e.StandardIndex84).HasColumnName("standard_index_84");
+            entity.Property(e => e.StandardIndex85).HasColumnName("standard_index_85");
+            entity.Property(e => e.StandardIndex86).HasColumnName("standard_index_86");
+            entity.Property(e => e.StandardIndex87).HasColumnName("standard_index_87");
+            entity.Property(e => e.StandardIndex88).HasColumnName("standard_index_88");
+            entity.Property(e => e.StandardIndex89).HasColumnName("standard_index_89");
+            entity.Property(e => e.StandardIndex9).HasColumnName("standard_index_9");
+            entity.Property(e => e.StandardIndex90).HasColumnName("standard_index_90");
+            entity.Property(e => e.StandardIndex91).HasColumnName("standard_index_91");
+            entity.Property(e => e.StandardIndex92).HasColumnName("standard_index_92");
+            entity.Property(e => e.StandardIndex93).HasColumnName("standard_index_93");
+            entity.Property(e => e.StandardIndex94).HasColumnName("standard_index_94");
+            entity.Property(e => e.StandardIndex95).HasColumnName("standard_index_95");
+            entity.Property(e => e.StandardIndex96).HasColumnName("standard_index_96");
+            entity.Property(e => e.StandardIndex97).HasColumnName("standard_index_97");
+            entity.Property(e => e.StandardIndex98).HasColumnName("standard_index_98");
+            entity.Property(e => e.StandardIndex99).HasColumnName("standard_index_99");
+            entity.Property(e => e.UploadTime).HasColumnName("upload_time");
+        });
+
+        modelBuilder.Entity<NextMenu>(entity =>
+        {
+            entity.HasKey(e => e.IdNext);
+
+            entity.ToTable("next_menu");
+
+            entity.Property(e => e.IdNext)
+                .ValueGeneratedNever()
+                .HasColumnName("id_next");
+            entity.Property(e => e.BuyerTable)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("buyer_table");
+            entity.Property(e => e.ItemName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("item_name");
+            entity.Property(e => e.StandardName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("standard_name");
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<NormalParameter>(entity =>
+        {
+            entity.HasKey(e => e.ParamId).HasName("PK_phy_parameter");
+
+            entity.ToTable("normal_parameter");
+
+            entity.Property(e => e.ParamId)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("param_id");
+            entity.Property(e => e.CleanseProcedure)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("cleanse_procedure");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
+            entity.Property(e => e.ContactItem)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_item");
+            entity.Property(e => e.ContactSample)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_sample");
+            entity.Property(e => e.Cycle)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("cycle");
+            entity.Property(e => e.ExtraParam)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("extra_param");
+            entity.Property(e => e.Load)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("load");
+            entity.Property(e => e.Pressure)
+                .HasMaxLength(30)
+                .IsUnicode(false)
+                .HasColumnName("pressure");
+            entity.Property(e => e.Remark)
+                .HasMaxLength(150)
+                .IsUnicode(false)
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.WashNum)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("wash_num");
+        });
+
+        modelBuilder.Entity<OvsMenu>(entity =>
+        {
+            entity.HasKey(e => e.IdOvs);
+
+            entity.ToTable("ovs_menu");
+
+            entity.Property(e => e.IdOvs)
+                .ValueGeneratedNever()
+                .HasColumnName("id_ovs");
+            entity.Property(e => e.BuyerTable)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("buyer_table");
+            entity.Property(e => e.ItemName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("item_name");
+            entity.Property(e => e.StandardName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("standard_name");
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<PrimarkMenu>(entity =>
+        {
+            entity.HasKey(e => e.IdPrimark);
+
+            entity.ToTable("primark_menu");
+
+            entity.Property(e => e.IdPrimark)
+                .ValueGeneratedNever()
+                .HasColumnName("id_primark");
+            entity.Property(e => e.BuyerTable)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("buyer_table");
+            entity.Property(e => e.ItemName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("item_name");
+            entity.Property(e => e.StandardName)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("standard_name");
+            entity.Property(e => e.Type)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<SampleDescription>(entity =>
+        {
+            entity.HasKey(e => e.IdSampleDescription);
+
+            entity.ToTable("sample_description");
+
+            entity.Property(e => e.IdSampleDescription)
+                .ValueGeneratedNever()
+                .HasColumnName("id_sample_description");
+            entity.Property(e => e.BuyerName)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("buyer_name");
+            entity.Property(e => e.DefaultValue)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("default_value");
+            entity.Property(e => e.IsNecessary)
+                .HasMaxLength(1)
+                .IsFixedLength()
+                .HasColumnName("is_necessary");
+            entity.Property(e => e.PropertyName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_name");
+            entity.Property(e => e.PropertyValue)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_value");
+            entity.Property(e => e.Type)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<SampleInfo>(entity =>
+        {
+            entity.HasKey(e => e.IdSample);
+
+            entity.ToTable("sample_info");
+
+            entity.Property(e => e.IdSample)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("id_sample");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
+            entity.Property(e => e.DescriptionId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("description_id");
+            entity.Property(e => e.Remark)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.SampleCode)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("sample_code");
+        });
+
+        modelBuilder.Entity<SampleInfoDescription>(entity =>
+        {
+            entity.HasKey(e => e.IdDescription);
+
+            entity.ToTable("sample_info_description");
+
+            entity.Property(e => e.IdDescription)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("id_description");
+            entity.Property(e => e.PropertyName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_name");
+            entity.Property(e => e.PropertyValue)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("property_value");
+            entity.Property(e => e.SampleId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("sample_id");
+        });
+
+        modelBuilder.Entity<Standard>(entity =>
+        {
+            entity.ToTable("standard");
+
+            entity.Property(e => e.StandardId)
+                .ValueGeneratedNever()
+                .HasColumnName("standard_id");
+            entity.Property(e => e.ItemIndex).HasColumnName("item_index");
+            entity.Property(e => e.StandardCode)
+                .HasMaxLength(255)
+                .HasColumnName("standard_code");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.ToTable("user");
+
+            entity.Property(e => e.UserId)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("user_id");
+            entity.Property(e => e.CreateTime)
+                .HasColumnType("datetime")
+                .HasColumnName("create_time");
+            entity.Property(e => e.EmployeeId)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("employee_id");
+            entity.Property(e => e.LastLoginIp)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("last_login_ip");
+            entity.Property(e => e.LoginFailCount)
+                .HasDefaultValue(0)
+                .HasColumnName("login_fail_count");
+            entity.Property(e => e.NickName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("nick_name");
+            entity.Property(e => e.PassWord)
+                .HasColumnType("text")
+                .HasColumnName("pass_word");
+            entity.Property(e => e.Role)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("role");
+            entity.Property(e => e.Status)
+                .HasDefaultValue((byte)1)
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedTime)
+                .HasColumnType("datetime")
+                .HasColumnName("updated_time");
+            entity.Property(e => e.UserName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("user_name");
+        });
+
+        modelBuilder.Entity<UserProfile>(entity =>
+        {
+            entity.HasKey(e => e.EmployeeId);
+
+            entity.ToTable("user_profile");
+
+            entity.Property(e => e.EmployeeId)
+                .HasMaxLength(10)
+                .IsFixedLength()
+                .HasColumnName("employee_id");
+            entity.Property(e => e.AvatarUrl)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("avatar_url");
+            entity.Property(e => e.Birth).HasColumnName("birth");
+            entity.Property(e => e.Email)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("email");
+            entity.Property(e => e.Gender)
+                .HasMaxLength(10)
+                .IsFixedLength()
+                .HasColumnName("gender");
+            entity.Property(e => e.IdCard)
+                .HasColumnType("text")
+                .HasColumnName("id_card");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("phone");
+            entity.Property(e => e.RealName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("real_name");
+        });
+
+        modelBuilder.Entity<WetParameterAatcc>(entity =>
+        {
+            entity.HasKey(e => e.ParamId).HasName("PK_wet_parameter_aatcc_1");
+
+            entity.ToTable("wet_parameter_aatcc");
+
+            entity.Property(e => e.ParamId).HasColumnName("param_id");
+            entity.Property(e => e.AfterWash)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("after_wash");
+            entity.Property(e => e.Bleach)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("bleach");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
+            entity.Property(e => e.ContactItem)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_item");
+            entity.Property(e => e.ContactSample)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_sample");
+            entity.Property(e => e.Cycle)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("cycle");
+            entity.Property(e => e.Detergent)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("detergent");
+            entity.Property(e => e.DryCleanProcedure)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("dry_clean_procedure");
+            entity.Property(e => e.DryCondition)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("dry_condition");
+            entity.Property(e => e.DryProcedure)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("dry_procedure");
+            entity.Property(e => e.Iron)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("iron");
+            entity.Property(e => e.IronMethod)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("iron_method");
+            entity.Property(e => e.Program)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("program");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.Sensitive)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("sensitive");
+            entity.Property(e => e.SpecialCareInstruction)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("special_care_instruction");
+            entity.Property(e => e.Standard)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("standard");
+            entity.Property(e => e.SteelBallNum).HasColumnName("steel_ball_num");
+            entity.Property(e => e.SteelBallType)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("steel_ball_type");
+            entity.Property(e => e.Temperature)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("temperature");
+            entity.Property(e => e.WashingProcedure)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("washing_procedure");
+        });
+
+        modelBuilder.Entity<WetParameterIso>(entity =>
+        {
+            entity.HasKey(e => e.ParamId).HasName("PK_wet_parameter_iso_1");
+
+            entity.ToTable("wet_parameter_iso");
+
+            entity.Property(e => e.ParamId).HasColumnName("param_id");
+            entity.Property(e => e.AfterWash)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("after_wash");
+            entity.Property(e => e.Ballast)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("ballast");
+            entity.Property(e => e.Bleach)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("bleach");
+            entity.Property(e => e.ContactBuyer)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_buyer");
+            entity.Property(e => e.ContactItem)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_item");
+            entity.Property(e => e.ContactSample)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("contact_sample");
+            entity.Property(e => e.Detergent)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("detergent");
+            entity.Property(e => e.DryCleanProcedure)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("dry_clean_procedure");
+            entity.Property(e => e.DryProcedure)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("dry_procedure");
+            entity.Property(e => e.Iron)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("iron");
+            entity.Property(e => e.IronMethod)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("iron_method");
+            entity.Property(e => e.Program)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("program");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.Sensitive)
+                .HasMaxLength(10)
+                .IsUnicode(false)
+                .HasColumnName("sensitive");
+            entity.Property(e => e.SpecialCareInstruction)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("special_care_instruction");
+            entity.Property(e => e.Standard)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("standard");
+            entity.Property(e => e.SteelBallNum).HasColumnName("steel_ball_num");
+            entity.Property(e => e.SteelBallType)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("steel_ball_type");
+            entity.Property(e => e.Temperature)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("temperature");
+            entity.Property(e => e.WashingProcedure)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("washing_procedure");
+        });
+
+        OnModelCreatingPartial(modelBuilder);
+    }
+
+    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+}

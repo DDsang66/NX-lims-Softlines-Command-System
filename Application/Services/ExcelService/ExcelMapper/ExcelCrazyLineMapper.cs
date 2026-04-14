@@ -1,0 +1,214 @@
+﻿namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelMapper
+{
+    public static class ExcelCrazyLineMapper
+    {
+        #region PHY
+        public static string[] MapWeight()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "A12", "A13", "A14", "A15","A16"
+            };
+        }
+
+        public static string[] MapPS(string ItemName)
+        {
+            List<string> stringPS = null;
+            // 定义固定的单元格地址映射
+            switch (ItemName)
+            {
+                case "Snagging Resistance":
+                    stringPS = new List<string> { "K19", "R19", "Y19", "AF19" };
+                    break;
+                case "Pilling Resistance":
+                    stringPS = new List<string> { "A8", "A9", "A10", "A11" };
+                    break;
+                default: break;
+            }
+            return stringPS?.ToArray() ?? new string[0];
+
+        }
+
+        public static string[] MapSeamSlippage()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "A10", "A12"
+            };
+        }
+        public static string[] MapSpray()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "A8", "A9","A10", "A15","A16", "A17"
+            };
+        }
+        public static string[] MapRegular()
+        {
+            // 定义固定的单元格地址映射
+            return new string[]
+            {
+                "D5"
+            };
+        }
+
+        #endregion
+
+        #region WET
+        public static string[] MapDStoWasing(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "G11" },
+                "Fabric" => new List<string> { "M9", "T9", "AA9", "AI9", "G13", "AB13", "G24", "AB24" },
+                "Socks" => new List<string> { "G11" },
+                "Gloves" => new List<string> { "G20" },
+                "Cap" => new List<string> { "G29" },
+                _ => new List<string> { "M9", "T9", "AA9", "AI9", "G13", "AB13", "G24", "AB24" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+        public static string[] MapDStoDC(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Glaves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "G8" },
+                "Fabric" => new List<string> { "K6", "R6", "Y6", "AG6", "F10", "Z10", "F21", "Z21" },
+                "Socks" => new List<string> { "G8" },
+                "Gloves" => new List<string> { "G17" },
+                "Cap" => new List<string> { "G26" },
+                _ => new List<string> { "K6", "R6", "Y6", "AG6", "F10", "Z10", "F21", "Z21" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+
+
+        public static string[] MapWRL(string ItemName)
+        {
+            List<string> stringPWD = null;
+            // 定义固定的单元格地址映射
+            switch (ItemName)
+            {
+                case "CF to Washing":
+                    stringPWD = new List<string> { "E7", "G7", "J7", "M7", "O7", "Q7" };
+                    break;
+                case "CF to Rubbing":
+                    stringPWD = new List<string> { "E21", "G21", "J21", "M21", "O21", "Q21" };
+                    break;
+                case "CF to Light":
+                    stringPWD = new List<string> { "E29", "G29", "J29", "M29", "O29", "Q29" };
+                    break;
+                default: break;
+            }
+            return stringPWD?.ToArray() ?? new string[0];
+        }
+
+        public static string[] MapPWD(string ItemName)
+        {
+            List<string> stringPWD = null;
+            // 定义固定的单元格地址映射
+            switch (ItemName)
+            {
+                case "CF to Perspiration":
+                    stringPWD = new List<string> { "D5", "F5", "H5", "J5", "L5", "N5" };
+                    break;
+                case "CF to Water":
+                    stringPWD = new List<string> { "D26", "F26", "H26", "J26", "L26", "N26" };
+                    break;
+                case "CF to Dry-clean":
+                    stringPWD = new List<string> { "D38", "F38", "H38", "J38", "L38", "N38" };
+                    break;
+                default: break;
+            }
+            return stringPWD?.ToArray() ?? new string[0];
+        }
+
+
+
+
+        public static string[] MapSpirality(string sampleDescription)
+        {
+            List<string> stringSpirality;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Glaves", "Cap" }
+                              .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            stringSpirality = matched switch
+            {
+                "Garment" => new List<string> { "A26" },
+                "Fabric" => new List<string> { "A10" },
+                "Socks" => new List<string> { "A10" },
+                "Gloves" => new List<string> { "A10"},
+                "Cap" => new List<string> { "A10"},
+                _ => new List<string> { "A10" }
+            };
+            return stringSpirality?.ToArray() ?? new string[0];
+        }
+
+        #endregion
+
+        //AfterWash
+
+        public static string[] DStoWashingAf(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "W9","AG11" },
+                "Fabric" => new List<string> { "L14", "AF14","L25", "AF25" },
+                "Socks" => new List<string> { "W9", "AG11" },
+                "Gloves" => new List<string> { "W18", "AG18" },
+                "Cap" => new List<string> { "W27", "AG27" },
+                _ => new List<string> { "L14", "AF14", "L25", "AF25" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+
+        public static string[] DStoDCAf(string sampleDescription)
+        {
+            List<string> stringMap;
+            var matched = new[] { "Garment", "Fabric", "Socks", "Gloves", "Cap" }
+                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
+            // 定义固定的单元格地址映射
+            stringMap = matched switch
+            {
+                "Garment" => new List<string> { "W6","AG8" },
+                "Fabric" => new List<string> { "J11", "AD11", "J22", "AD22" },
+                "Socks" => new List<string> { "W6", "AG8" },
+                "Gloves" => new List<string> { "W15", "AG15" },
+                "Cap" => new List<string> { "W24", "AG24" },
+                _ => new List<string> { "J11", "AD11", "J22", "AD22" }
+            };
+
+            return stringMap?.ToArray() ?? new string[0];
+        }
+
+
+        public static string[] SpiralityAf()
+        {
+            return new string[]
+            {
+                "C5"
+            };
+        }
+
+    }
+}
