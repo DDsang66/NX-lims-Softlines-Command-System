@@ -17,16 +17,29 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Configuration
         public string GetBaseUrl()
         {
             var context = _httpContextAccessor.HttpContext;
-            if (context == null) return "http://192.168.56.1:5051"; // Fallback
+            if (context == null) return "http://localhost"; // Fallback
 
             var request = context.Request;
 
-            // 使用请求的 Scheme 和 Host，支持 IP 访问
+            // 逻辑 1: 优先使用请求中的 Scheme (http/https) 和 Host
+            // 如果服务在反向代理（如 Nginx）后面，这通常是最准确的，
+            // 前提是 Nginx 正确转发了 X-Forwarded-Proto 和 X-Forwarded-Host 头。
             var scheme = request.Scheme;
             var host = request.Host;
 
-            var port = host.Port.HasValue ? $":{host.Port.Value}" : "";
-            return $"{scheme}://{host.Host}{port}";
+            // 如果 Host 是 localhost 或 IP，且想强制返回内网 IP (根据你之前的代码逻辑)
+            // 注意：这种硬编码 IP 的逻辑在 Docker/K8s 环境下通常是不需要的，
+            // 但如果确实需要本机 IP，保留这部分逻辑。
+            if (host.Host == "localhost" || IsLocalIpAddress(host.Host))
+            {
+                var localIP = GetLocalIPAddress();
+                // 如果端口存在，则拼接端口
+                var port = host.Port.HasValue ? $":{host.Port.Value}" : "";
+                return $"{scheme}://{localIP}{port}";
+            }
+
+            // 默认情况：直接返回请求的 Host
+            return $"{scheme}://{host}";
         }
 
         private bool IsLocalIpAddress(string host)

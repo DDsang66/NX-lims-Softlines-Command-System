@@ -21,6 +21,9 @@ using NX_lims_Softlines_Command_System.Application;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure;
 using NX_lims_Softlines_Command_System.src.Domain;
+using AutoMapper;
+using Mapster;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -36,6 +39,11 @@ namespace NX_lims_Softlines_Command_System
                 InfrastructureAssemblyMarker.Assembly,
                 DomainAssemblyMarker.Assembly
                 );
+
+            TypeAdapterConfig.GlobalSettings.Scan(typeof(Program).Assembly);
+
+            builder.Services.AddMapster();
+
 
             // Add services to the container.
             var licenseType = builder.Configuration.GetValue<string>("EPPlus:License");
@@ -87,20 +95,14 @@ namespace NX_lims_Softlines_Command_System
                     policy.WithOrigins("http://localhost:5173",
                                        "http://localhost:82",
                                        "http://localhost:81",
-                                       "http://localhost:5130",
-                                       "http://127.0.0.1:5130",
-                                       "http://127.0.0.1:5173",
-                                       "http://192.168.56.1:5173",
-                                       "http://192.168.56.1:5130",
-                                       "http://192.168.56.1:5051",
                                        "http://192.168.3.6:82",
                                        "http://192.168.3.6:81",
-                                       "http://10.194.198.119:5051",
-                                        "http://10.194.198.119:5173",
+                                       "http://192.168.3.6:5051",
+                                        "http://192.168.76.8:5173",
                                        "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
-                          .AllowCredentials();
+                          .AllowCredentials(); // 用 JWT/ Cookie 可保留
                 });
             });
             builder.Services.AddEndpointsApiExplorer();
@@ -109,13 +111,16 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddDbContext<LabDbContextSec>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("NX-limsLabCommandSys")));
 
+            builder.Services.AddDbContext<dbContext>(options =>
+            options.UseSqlServer(builder.Configuration.GetConnectionString("NX-lims")));
+
             var app = builder.Build();
             app.UseStaticFiles();
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.RoutePrefix = "swagger";   // 默锟较撅拷锟斤拷 swagger
+                c.RoutePrefix = "swagger";   // 默认就是 swagger
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
             });
 

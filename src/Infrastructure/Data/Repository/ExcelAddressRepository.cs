@@ -14,7 +14,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             _db = db;
         }
 
-        public async Task<string?> GetFilePathAsync(string repoNum, string buyer, string group)
+        public async Task<string?> GetFilePathAsync(string repoNum, string buyer, string group, CancellationToken ct)
         {
             // 1. 构建 SQL LIKE 模式
             // 数据库存储格式假设为: RepoNum_Buyer_Group_TimeStamp_Name_sheet.xlsx
@@ -32,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Where(e => EF.Functions.Like(e.Address, pattern)) // 核心模糊匹配
                 .OrderByDescending(e => e.IdExcelAddress) // 如果有多个匹配，取最新的（假设 Id 是自增的）
                 .Select(e => e.Address)
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(ct);
 
             return filePath;
         }
