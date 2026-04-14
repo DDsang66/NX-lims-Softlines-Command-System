@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5130/healthcheck)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:80/healthcheck)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/healthcheck)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://192.168.65.248:5130/web-apps/apps/api/documents/api.js)",
+      "Bash(powershell.exe -Command \"Start-Process 'C:/Program Files/Docker/Docker/Docker Desktop.exe'\")",
+      "Bash(where docker:*)",
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(powershell -Command \"Get-Process -Name dotnet -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Read(//e/NX2/NX-lims-Client-main/**)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5051/swagger/index.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5130/web-apps/apps/api/documents/api.js)",
+      "Bash(curl -s \"http://localhost:5051/api/worksheet/excelurl?repo=87.405.26.0001.01&buyer=Mango&group=Phy\")",
+      "Bash(curl -s \"http://localhost:5051/api/worksheet/excelurl?repo=87.405.26..01&buyer=Mango&group=Phy\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:5051/api/worksheet/87.405.26..01/Mango_PHY_sheet.xlsx/download\")",
+      "Bash(curl -s \"http://localhost:5173/api/worksheet/87.405.26..01/Mango_PHY_sheet.xlsx/download\" -o /tmp/test.xlsx)",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"http://localhost:5130/healthcheck\")",
+      "Bash(powershell -Command \"Get-Process -Name dotnet,node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(curl -s \"http://localhost:80/healthcheck\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:80/web-apps/apps/api/documents/api.js\")",
+      "Bash(powershell -Command 'Get-Service | Where-Object { $_.DisplayName -like '\\\\''*rabbit*'\\\\'' -or $_.DisplayName -like '\\\\''*postgres*'\\\\'' -or $_.DisplayName -like '\\\\''*sql*'\\\\'' }')",
+      "Read(//e/DocumentServer/config/**)",
+      "Read(//c/Program Files/ONLYOFFICE/DocumentServer/config/**)",
+      "Read(//e/DocumentServer/**)"
+    ]
+  }
+}

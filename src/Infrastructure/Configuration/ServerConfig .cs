@@ -17,6 +17,18 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Configuration
         public string GetBaseUrl()
         {
             var context = _httpContextAccessor.HttpContext;
+<<<<<<< HEAD
+            if (context == null) return "http://192.168.56.1:5051"; // Fallback
+
+            var request = context.Request;
+
+            // 使用请求的 Scheme 和 Host，支持 IP 访问
+            var scheme = request.Scheme;
+            var host = request.Host;
+
+            var port = host.Port.HasValue ? $":{host.Port.Value}" : "";
+            return $"{scheme}://{host.Host}{port}";
+=======
             if (context == null) return "http://localhost"; // Fallback
 
             var request = context.Request;
@@ -40,6 +52,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Configuration
 
             // 默认情况：直接返回请求的 Host
             return $"{scheme}://{host}";
+>>>>>>> a165edfa3a67107084b86ae3ea4e30814c7f9bc4
         }
 
         private bool IsLocalIpAddress(string host)

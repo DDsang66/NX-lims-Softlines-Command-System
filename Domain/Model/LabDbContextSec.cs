@@ -62,6 +62,15 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
 
+    // Fiber Analysis entities
+    public virtual DbSet<FiberDatabase> FiberDatabases { get; set; }
+
+    public virtual DbSet<FiberWorksheet> FiberWorksheets { get; set; }
+
+    public virtual DbSet<FiberWorksheetDetail> FiberWorksheetDetails { get; set; }
+
+    public virtual DbSet<FiberWorksheetResult> FiberWorksheetResults { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>

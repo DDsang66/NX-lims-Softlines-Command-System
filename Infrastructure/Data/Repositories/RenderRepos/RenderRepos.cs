@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Application.DTO;
@@ -21,7 +21,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Rend
         /// <summary>
         /// 表单数据获取
         /// </summary>
-        public async Task< object> RenderAsync(string buyername)
+        public async Task<object> RenderAsync(string buyername)
         {
             var sampleDescList = await _db.SampleDescriptions.Where(x => x.BuyerName == buyername).ToArrayAsync();
             var groupedsampleDescList = sampleDescList
@@ -39,12 +39,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Rend
         }
 
         /// <summary>
-        /// 表单数据获取
+        /// 获取纤维成分列表（从 fiber_database 表）
         /// </summary>
         public async Task<object> CompostionSearchAsync()
         {
-            var List = await _db.CompositionNews.Select(x => x.CompositionNameEn).ToArrayAsync();
-            return List;
+            var list = await _db.FiberDatabases
+                .Where(x => x.IsActive)
+                .OrderBy(x => x.FiberNameEn)
+                .Select(x => x.FiberNameEn)
+                .ToListAsync();
+            return list;
         }
     }
 }
