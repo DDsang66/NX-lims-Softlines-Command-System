@@ -6,7 +6,7 @@ using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine;
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
 {
     [ApiController]
-    [Route("api/fiber")]
+    [Route("api/fiberdocx")]
     public class FiberDocxController : ControllerBase,IScopedDependency
     {
         private readonly IWebHostEnvironment _env;

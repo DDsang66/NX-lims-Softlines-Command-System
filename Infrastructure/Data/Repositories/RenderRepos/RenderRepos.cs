@@ -38,15 +38,26 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Rend
             return groupedsampleDescList;
         }
 
+        ///// <summary>
+        ///// 获取纤维成分列表（从 fiber_database 表）
+        ///// </summary>
+        //public async Task<object> CompostionSearchAsync()
+        //{
+        //    var list = await _db.FiberDatabases
+        //        .Where(x => x.IsActive)
+        //        .OrderBy(x => x.FiberNameEn)
+        //        .Select(x => x.FiberNameEn)
+        //        .ToListAsync();
+        //    return list;
+        //}
+
         /// <summary>
         /// 获取纤维成分列表（从 fiber_database 表）
         /// </summary>
         public async Task<object> CompostionSearchAsync()
         {
-            var list = await _db.FiberDatabases
-                .Where(x => x.IsActive)
-                .OrderBy(x => x.FiberNameEn)
-                .Select(x => x.FiberNameEn)
+            var list = await _db.CompositionNews
+                .Select(x => x.CompositionNameEn)
                 .ToListAsync();
             return list;
         }
