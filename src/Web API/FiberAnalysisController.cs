@@ -9,20 +9,17 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
 {
     [ApiController]
     [Route("api/[Controller]")]
-    public class FiberController : ControllerBase
+    public class FiberAnalysisController : ControllerBase
     {
         private readonly IFiberDatabaseRepository _fiberRepo;
         private readonly FiberWorksheetService _worksheetService;
-        private readonly FiberCalculationService _calcService;
 
-        public FiberController(
+        public FiberAnalysisController(
             IFiberDatabaseRepository fiberRepo,
-            FiberWorksheetService worksheetService,
-            FiberCalculationService calcService)
+            FiberWorksheetService worksheetService)
         {
             _fiberRepo = fiberRepo;
             _worksheetService = worksheetService;
-            _calcService = calcService;
         }
 
         #region 纤维数据库 API
@@ -83,19 +80,15 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
 
         #endregion
 
-
-
-
-
         #region 工作表 API
         /// <summary>
         /// 返回下载地址url
         /// 前端在传给document server进行渲染
         /// </summary>
         [HttpPost("worksheet")]
-        public async Task<Result<DocxUrlResponseDto>> BuildAnalysis([FromBody] BuildAnalysisDto dto)
+        public async Task<Result<DocxUrlResponseDto>> BuildAnalysis([FromBody] BuildAnalysisDto dto,CancellationToken ct)
         {
-            var result = await _worksheetService.BuildAnalysisAsync(dto);
+            var result = await _worksheetService.BuildAnalysisAsync(dto,ct);
 
             return Result<DocxUrlResponseDto>.Ok(new DocxUrlResponseDto());
         }
@@ -152,7 +145,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         [HttpPost("calculate")]
         public async Task<Result> Calculate([FromBody] FiberCalculationRequestDto request)
         {
-            var result = await _calcService.CalculateAsync(request);
+            //var result = await _calcService.CalculateAsync(request);
 
             return Result.Ok();
         }

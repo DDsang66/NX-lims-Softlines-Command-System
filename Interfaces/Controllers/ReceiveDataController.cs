@@ -24,7 +24,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             _env = env;
             _excel = excel;
             _factory = factory;
-            _db = db;
+            _db = db; 
         }
 
         [HttpPost("showExcel")]

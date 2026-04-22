@@ -52,8 +52,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Temperature = /*(p.SampleDescription!.Contains("Rain") || p.SampleDescription.Contains("Padding") || p.SampleDescription.Contains("Down Jackets")) == true ?*/
                 p.WashingProcedure!.Contains("3") ? "30" : "40",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
-                Program = p.SampleDescription!.Contains("Care Label") ? "900 rpm":
-                _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
+                Program =  _helper.MaxComposition(p.FiberContent!) == "Cotton" ? "1400 rpm, automatic time 1:50h"
                 : await _helper.MaxCompositionType(p.FiberContent!) == "Synthetic" ? "1200 rpm, automatic time 1:20h"
                 : "600 rpm 1h for mild wash",
                 SpecialCareInstruction = p.Sci ?? null,

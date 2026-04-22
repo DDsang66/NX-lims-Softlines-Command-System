@@ -6,7 +6,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 {
-    public class FiberDatabaseRepository : IFiberDatabaseRepository, IScopedDependency
+    public class FiberDatabaseRepository :  IFiberDatabaseRepository,IScopedDependency
     {
         private readonly LabDbContextSec _context;
 
@@ -15,59 +15,39 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             _context = context;
         }
 
-        public async Task<List<FiberDatabase>> GetAllAsync()
+        public async Task<List<CompositionNew>> GetAllAsync()
         {
-            return await _context.FiberDatabases
-                .Where(f => f.IsActive)
-                .OrderBy(f => f.FiberNameEn)
-                .ToListAsync();
+            return null;
         }
 
-        public async Task<FiberDatabase?> GetByIdAsync(Guid id)
+        public async Task<CompositionNew?> GetByIdAsync(Guid id)
         {
-            return await _context.FiberDatabases.FindAsync(id);
+            return null;
         }
 
-        public async Task<FiberDatabase?> GetByNameEnAsync(string nameEn)
+        public async Task<CompositionNew?> GetByNameEnAsync(string nameEn)
         {
-            return await _context.FiberDatabases
-                .FirstOrDefaultAsync(f => f.FiberNameEn.ToLower() == nameEn.ToLower());
+            return null;
         }
 
-        public async Task<FiberDatabase> AddAsync(FiberDatabase fiber)
+        public async Task<CompositionNew> AddAsync(CompositionNew fiber)
         {
-            fiber.CreatedAt = DateTime.UtcNow;
-            _context.FiberDatabases.Add(fiber);
-            await _context.SaveChangesAsync();
-            return fiber;
+            return null;
         }
 
-        public async Task<FiberDatabase> UpdateAsync(FiberDatabase fiber)
+        public async Task<CompositionNew> UpdateAsync(CompositionNew fiber)
         {
-            fiber.UpdatedAt = DateTime.UtcNow;
-            _context.FiberDatabases.Update(fiber);
-            await _context.SaveChangesAsync();
-            return fiber;
+            return null;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
-            var fiber = await GetByIdAsync(id);
-            if (fiber == null) return false;
-
-            fiber.IsActive = false;
-            fiber.UpdatedAt = DateTime.UtcNow;
-            await _context.SaveChangesAsync();
             return true;
         }
 
         public async Task<List<string>> GetAllNamesAsync()
         {
-            return await _context.FiberDatabases
-                .Where(f => f.IsActive)
-                .OrderBy(f => f.FiberNameEn)
-                .Select(f => f.FiberNameEn)
-                .ToListAsync();
+            return null;
         }
     }
 }
