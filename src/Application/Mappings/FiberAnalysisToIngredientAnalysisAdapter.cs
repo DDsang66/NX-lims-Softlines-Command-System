@@ -1,27 +1,27 @@
 ﻿using Mapster;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.IngredientAnalysis;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.IngredientAnalysis.Enums;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.IngredientAnalysis.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Mappings
 {
-    public class FiberAnalysisToIngredientAnalysisAdapter : IRegister
+    public class FiberAnalysisToIngredientAnalysisCalculationAdapter : IRegister
     {
         public void Register(TypeAdapterConfig config)
         {
-            config.NewConfig<FiberAnalysis, IngredientAnalysis>()
+            config.NewConfig<FiberAnalysis, IngredientAnalysisCalculation>()
                 .ConstructUsing(src => ConvertToDomain(src));
         }
 
-        private static IngredientAnalysis ConvertToDomain(FiberAnalysis src)
+        private static IngredientAnalysisCalculation ConvertToDomain(FiberAnalysis src)
         {
             var methods = ParseMethods(src.Method);
             var type = (AnalysisType)(src.Type ?? 0);
             var components = DeserializeComponents(src.FiberAnalysis1, type);
 
-            return IngredientAnalysis.Create(
+            return IngredientAnalysisCalculation.Create(
                 src.Id,
                 src.ReportNumber ?? string.Empty,
                 src.Buyer ?? string.Empty,
@@ -124,24 +124,34 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 int step = 0;
                 foreach (var list in dissolvedListProp.EnumerateArray())
                 {
+                    int globalStep = 0;
                     var originalGsm1 = GetFloatProperty(list, "originalGSMTrail1");
                     var originalGsm2 = GetFloatProperty(list, "originalGSMTrail2");
 
                     if (!list.TryGetProperty("dissolvedRows", out var rowsProp))
                         continue;
-
+                    var units = new List<MultiDissolvedUnit>();
                     foreach (var row in rowsProp.EnumerateArray())
                     {
-                        components.Add(new DissolvedFiberComponent
+                        var unit = new MultiDissolvedUnit
                         {
-                            OriginalGSMTrail1 = originalGsm1,
-                            OriginalGSMTrail2 = originalGsm2,
                             FiberName = GetStringProperty(row, "fiberName"),
                             GSMTrail1 = GetFloatProperty(row, "gsmTrail1"),
                             GSMTrail2 = GetFloatProperty(row, "gsmTrail2"),
-                            DissolutionStep = step++
-                        });
+                            DissolutionStep = globalStep++
+                        };
+                        units.Add(unit);
                     }
+
+                    // 将 units 作为一个 DissolvedFiberComponent 的值对象集合
+                    var component = new DissolvedFiberComponent
+                    {
+                        // 组件层面的 FiberName 可以取首个 unit 的名称或保持空
+                        FiberName = units.FirstOrDefault()?.FiberName ?? string.Empty,
+                        DissolutionUnits = units
+                    };
+
+                    components.Add(component);
                 }
             }
 

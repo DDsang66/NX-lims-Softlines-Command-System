@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository

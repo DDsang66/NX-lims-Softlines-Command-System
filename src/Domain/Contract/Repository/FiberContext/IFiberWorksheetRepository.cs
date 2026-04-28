@@ -1,6 +1,6 @@
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
+namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext
 {
     public interface IFiberWorksheetRepository
     {
@@ -13,8 +13,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         /// 根据ID获取成分分析
         /// </summary>
         Task<FiberAnalysis?> GetByIdAsync(long id, CancellationToken ct);
-
-
 
         /// <summary>
         /// 添加工作表

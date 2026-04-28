@@ -84,8 +84,4 @@
         public string FiberName { get; set; } = string.Empty;
         public float GSMTrail1 { get; set; } = 0;
     }
-
-
-
-
 }

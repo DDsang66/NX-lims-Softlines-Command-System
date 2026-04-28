@@ -1,6 +1,6 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.IngredientAnalysis.Enums;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.Enums;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.IngredientAnalysis.ValueObj
+namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj
 {
     /// <summary>
     /// 成分抽象（值对象基类）
@@ -17,7 +17,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.IngredientAnal
     public record SingleFiberComponent : FiberComponent
     {
         public override AnalysisType Type => AnalysisType.Single;
-
         public string Sample { get; init; } = string.Empty;
         public float GSMTrail1 { get; init; }
     }
@@ -43,6 +42,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.IngredientAnal
 
         public float OriginalGSMTrail1 { get; init; }
         public float OriginalGSMTrail2 { get; init; }
+        public List<MultiDissolvedUnit> DissolutionUnits { get; init; } = new();
+    }
+
+    public record MultiDissolvedUnit 
+    {
+        public string FiberName { get; init; } = string.Empty;
         public float GSMTrail1 { get; init; }
         public float GSMTrail2 { get; init; }
         public int DissolutionStep { get; init; } // 溶解步骤

@@ -1,6 +1,6 @@
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
+namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext
 {
     public interface IFiberDatabaseRepository
     {

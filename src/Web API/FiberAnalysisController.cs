@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Service;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API
