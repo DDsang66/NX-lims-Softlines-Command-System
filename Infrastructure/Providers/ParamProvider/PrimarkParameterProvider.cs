@@ -303,7 +303,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(sampleDesc, p.DryProcedure),
                 Detergent = DetergentHelper(p.Detergent, sampleDesc, p.WashingProcedure),
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
@@ -566,7 +566,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     break;
                 case "Tear Strength":
                     bool isCelluloseExist = _helper.IsCompositionExist("Cellulose", fiberContent!);
-                    if ( ! FetchSamplePropertyValue(sampleDesc,"Structure").Contains("Woven")||(_helper.CompositionRate(fiberContent!, "Elastane") == 0 && !isCelluloseExist)) condition = "N/A";
+                    if ( ! FetchSamplePropertyValue(sampleDesc,"Structure").Contains("Woven")||(_helper.CompositionRate(fiberContent!, "Elastane") != 0 /*&& !isCelluloseExist*/)) condition = "N/A";
                     param = condition switch
                     {
                         string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
@@ -574,7 +574,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     };
                     break;
                 case "Tensile Strength":
-                    if ( ! FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(infoDto.fiberComposition!, "Elastane") == 0) condition = "N/A";
+                    if ( ! FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(fiberContent!, "Elastane") != 0) condition = "N/A";
                     param = condition switch
                     {
                         string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
@@ -582,7 +582,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     };
                     break;
                 case "Seam Strength":
-                    if (!FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(infoDto.fiberComposition!, "Elastane") == 0) condition = "N/A";
+                    if (!FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(fiberContent!, "Elastane") != 0) condition = "N/A";
                     param = condition switch
                     {
                         string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
@@ -590,7 +590,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     };
                     break;
                 case "Seam Slippage":
-                    if (!FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(infoDto.fiberComposition!, "Elastane") == 0) condition = "N/A";
+                    if (!FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(fiberContent!, "Elastane") != 0) condition = "N/A";
                     param = condition switch
                     {
                         string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
@@ -762,6 +762,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             var rate = _helper.CompositionRate(fiberComposition, "Elastane")+_helper.CompositionRate(fiberComposition, "Spandex");
             if (rate == 0) return Result = "N/A";
             if (MenuName == "PTC07" || MenuName == "PTC08") return Result = "20";
+            else if (!FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Seam Free")) return Result = "15";
             else if (MenuName == "PTC01" || MenuName == "PTC02" || MenuName == "PTC04")
             {
                 if (FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Jeans")) return Result = "40";

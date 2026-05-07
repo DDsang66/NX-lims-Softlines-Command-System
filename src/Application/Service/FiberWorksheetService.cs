@@ -3,15 +3,17 @@ using Mapster;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.AnalysisWorksheet;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection.Metadata;
 using System.Text.Json;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service
 {
@@ -21,10 +23,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
     public class FiberWorksheetService : IScopedDependency
     {
         private readonly IFiberWorksheetRepository _worksheetRepo;
+        private readonly FiberAnalysisWordTemplateAdapter _wordTemplateAdapter;
 
-        public FiberWorksheetService(IFiberWorksheetRepository worksheetRepo)
+        public FiberWorksheetService(IFiberWorksheetRepository worksheetRepo, FiberAnalysisWordTemplateAdapter wordTemplateAdapter)
         {
             _worksheetRepo = worksheetRepo;
+            _wordTemplateAdapter = wordTemplateAdapter;
         }
 
         /// <summary>
@@ -64,6 +68,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 //执行生成word
                 string filePath = string.Empty;//先调用生成方法成功后获取filePath
 
+                var analysisWorksheet = AnalysisWorksheet.Create();
+
+                analysisWorksheet.AttachCalculationResult(ingredientsAnalysis.Result);
+
+                var templateData = _wordTemplateAdapter.Adapt(analysisWorksheet.CalculationResult);
                 //ingredientsAnalysis.WorkSheetGenerator(filePath);
                 //执行保存
 

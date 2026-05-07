@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using System.Text.Json.Serialization;
 
 namespace NX_lims_Softlines_Command_System.Application.DTO
 {
@@ -32,6 +33,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     }
     public class SampleDescObject
     {
+        [JsonConverter(typeof(StringOrArrayConverter))]
         public string? sample { get; set; }
         public List<DescObject>? description { get; set; }
     }
@@ -45,6 +47,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     {
         public string? itemName { get; set; }
         public string? standards { get; set; }
+        [JsonConverter(typeof(StringOrArrayConverter))]
         public string? samples { get; set; }
     }
     public class FiberDto
@@ -56,6 +59,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public class FiberInfoNew
     {
+        [JsonConverter(typeof(StringOrArrayConverter))]
         public string? Sample { get; set; }
         public List<FiberDto>? Composition { get; set; }
 

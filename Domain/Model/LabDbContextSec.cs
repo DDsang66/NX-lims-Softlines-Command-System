@@ -230,9 +230,8 @@ public partial class LabDbContextSec : DbContext
 
         modelBuilder.Entity<ExcelAddress>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("excel_address");
+            entity.HasKey(e => e.IdExcelAddress);
+            entity.ToTable("excel_address");
 
             entity.Property(e => e.Address)
                 .HasMaxLength(125)

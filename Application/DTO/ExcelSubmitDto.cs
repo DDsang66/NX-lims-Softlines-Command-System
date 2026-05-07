@@ -1,4 +1,6 @@
-﻿namespace NX_lims_Softlines_Command_System.Application.DTO
+﻿using System.Text.Json.Serialization;
+
+namespace NX_lims_Softlines_Command_System.Application.DTO
 {
     public class ExcelSubmitDto
     {
@@ -16,6 +18,7 @@
 
     public class SeamDescObject
     {
+        [JsonConverter(typeof(StringOrArrayConverter))]
         public string? Sample { get; set; }
         public string? Type { get; set; }
         public List<SeamLocationObject>? LocationInfos { get; set; }
