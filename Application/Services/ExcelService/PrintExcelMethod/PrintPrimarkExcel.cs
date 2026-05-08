@@ -151,7 +151,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
                     var sheetCnt = (int)Math.Ceiling(allDisplayNames.Count / (double)capacity);
 
-                    var sheets = new List<ExcelWorksheet> { template };
+                    var sheets = new List<ExcelWorksheet>();
                     for (int i = 0; i < sheetCnt; i++)
                     {
                         string name = $"{templateName}_G{groupIndex}_{i + 1}";  // 加组索引，避免多组命名冲突
@@ -203,10 +203,19 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             // 写入测点
             WriteSamples(sheet, slice, afMap, cellAddrs, row.itemName!, descValue!, row.standards!);
 
-            // 写入参数（借助字典）
-            var representative = group.Points.First();
+            // 为切片中涉及到的每个原始测点分别填参数，避免只用代表点导致的覆盖/丢失
+            foreach (var point in group.Points)
+            {
+                // 本 point 的扩展名是否出现在当前切片里（说明这个原始点的某些扩展测点在本 sheet/切片中）
+                bool pointInSlice = point.Expanded.Any(e => slice.Contains(e.DisplayName));
+                if (!pointInSlice) continue;
 
-            FillParameters(sheet, representative.Bag, row, esDto, afMap, group.Points[0].Code, group);
+                // 优先使用该 point 自带的 AfterWashMap（若存在），否则使用传入的组级 afMap
+                var pointAfMap = point.AfterWashMap ?? afMap;
+
+                // 传入当前 point 的参数包与 code（FillParameters 内会用 sample 去取 seam 信息等）
+                FillParameters(sheet, point.Bag, row, esDto, pointAfMap, point.Code, group);
+            }
         }
 
         /// <summary>
@@ -217,11 +226,11 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         /// <param name="row"></param>
         /// <param name="esDto"></param>
         private void FillParameters(
-            ExcelWorksheet sheet, 
+            ExcelWorksheet sheet,
             ParameterBag bag,
-            NewSelectedRows row, 
-            ExcelSubmitDto esDto, 
-            int[]? afMap,string sample, 
+            NewSelectedRows row,
+            ExcelSubmitDto esDto,
+            int[]? afMap, string sample,
             SampleGroup group)
         {
             // 1. 填测点名称（在 FillSlice 已做）
@@ -238,14 +247,45 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             // 3. 填参数（ExtraMap）
             var extraMap = bag.Type == "Wet"
-           ? BulidWetExtraMap!.GetValueOrDefault(row.itemName, (wp, np, row, esDto,sample)
-                => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>())(bag.WetParam!, bag.NormalParam!, row, esDto,sample)
-           : BulidPhyExtraMap!.GetValueOrDefault(row.itemName, (wp, np, row, esDto,sample)
+           ? BulidWetExtraMap!.GetValueOrDefault(row.itemName, (wp, np, row, esDto, sample)
+                => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>())(bag.WetParam!, bag.NormalParam!, row, esDto, sample)
+           : BulidPhyExtraMap!.GetValueOrDefault(row.itemName, (wp, np, row, esDto, sample)
                 => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>())(bag.WetParam!, bag.NormalParam!, row, esDto, sample);
 
+            //foreach (var kv in extraMap)
+            //{
+            //    sheet.Cells[kv.Key].Value = kv.Value(bag.WetParam!, bag.NormalParam!, row, esDto,sample!);
+            //}
             foreach (var kv in extraMap)
             {
-                sheet.Cells[kv.Key].Value = kv.Value(bag.WetParam!, bag.NormalParam!, row, esDto,sample!);
+                try
+                {
+                    var targetAddr = kv.Key;
+                    var newValue = kv.Value(bag.WetParam!, bag.NormalParam!, row, esDto, sample!);
+
+                    // 读取现有值（注意：EPPlus 返回 object）
+                    var existing = sheet.Cells[targetAddr].Value;
+
+                    // 仅在目标单元格为空或与新值相同时写入，避免覆盖之前写入的其它 sample 数据
+                    if (existing == null || string.IsNullOrWhiteSpace(existing.ToString()))
+                    {
+                        sheet.Cells[targetAddr].Value = newValue;
+                    }
+                    else
+                    {
+                        // 可选：如果已有相同内容则保持（避免重复写）；否则跳过以防覆盖
+                        if (existing.ToString() == newValue) continue;
+
+                        // 记录日志/注释：此处发生单元格冲突（保守策略：跳过覆盖）
+                        // 若需要，可以尝试查找下一个空单元格或基于模板规则做偏移写入
+                        continue;
+                    }
+                }
+                catch
+                {
+                    // 保守处理：任何单个单元格写入异常都不应中断整个打印流程
+                    continue;
+                }
             }
         }
 
@@ -1344,12 +1384,21 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                         map["A5"] = (wp, np, row, esDto, sample) => GetDescValue(sample, "Test Method(Only for Extension)", esDto)!.Contains("Loop") ?
                         "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
                         "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
-                    };
-                    map["L7"] = (wp, np, row, esDto, sample) => "5";
-                    map["F7"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("15") ? "15"
-                    : np.ExtraParam!.Contains("20") ? "20"
-                    : np.ExtraParam!.Contains("25") ? "25"
-                    : np.ExtraParam!.Contains("30") ? "30" : "40";
+                    }
+                    ;
+                    if (np.ExtraParam!.Contains("N/A") == false)
+                    {
+                        map["L7"] = (wp, np, row, esDto, sample) => "5";
+                        map["F7"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("15") ? "15"
+                        : np.ExtraParam!.Contains("20") ? "20"
+                        : np.ExtraParam!.Contains("25") ? "25"
+                        : np.ExtraParam!.Contains("30") ? "30" : "40";
+                    }
+                    else
+                    {
+                        map["L7"] = (wp, np, row, esDto, sample) => "-";
+                        map["F7"] = (wp, np, row, esDto, sample) => "-";
+                    }
                     return map;
                 },
                 ["Residual Elongation SHAPEWEAR"] = (wp, np, row, esDto, sample) =>
@@ -1435,8 +1484,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     }
                     if (GetDescValue(sample, "Stretch Direction for Tensile and Tear", esDto)!.Contains("Weft"))
                     {
-                        map["V9"] = (wp, np, row, esDto, sample) => "N/A";
-                        map["AA9"] = (wp, np, row, esDto, sample) => "纬向存在弹性丝，N/A";
+                        map["V10"] = (wp, np, row, esDto, sample) => "N/A";
+                        map["AA10"] = (wp, np, row, esDto, sample) => "纬向存在弹性丝，N/A";
                     }
                     return map;
                 },
@@ -1453,7 +1502,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     }
                     if (GetDescValue(sample, "Stretch Direction for Tensile and Tear", esDto)!.Contains("Weft"))
                     {
-                        map["S8"] = (wp, np, row, esDto, sample) => "N/A";
+                        map["S7"] = (wp, np, row, esDto, sample) => "N/A";
                         map["X7"] = (wp, np, row, esDto, sample) => "纬向存在弹性丝，N/A";
                     }
                     return map;
@@ -1681,6 +1730,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                             {
                                 string reasonCell = reasonCellOrder[i];
                                 string reason = "N/A；" + info.Reason;         // 捕获局部变量
+                                Console.WriteLine($"Writing reason for sample {sample} to cell {reasonCell}: {reason}");
                                 map[reasonCell] = (wp, np, row, esDto, sample) => reason;
                             }
                         }
@@ -1765,6 +1815,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                             {
                                 string reasonCell = reasonCellOrder[i];
                                 string reason = "N/A；" + info.Reason;         // 捕获局部变量
+                                Console.WriteLine($"Writing reason for sample {sample} to cell {reasonCell}: {reason}");
                                 map[reasonCell] = (wp, np, row, esDto, sample) => reason;
                             }
                         }

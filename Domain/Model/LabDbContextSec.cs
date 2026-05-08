@@ -577,7 +577,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("cycle");
             entity.Property(e => e.ExtraParam)
-                .HasMaxLength(200)
+                .HasMaxLength(int.MaxValue)
                 .IsUnicode(false)
                 .HasColumnName("extra_param");
             entity.Property(e => e.Load)

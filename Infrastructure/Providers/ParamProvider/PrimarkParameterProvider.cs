@@ -1,15 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Mvc;
-using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Infrastructure.Tool;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
-using DocumentFormat.OpenXml.Presentation;
+﻿using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Model.Interface;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.BuyerRepos;
+using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider
@@ -542,14 +546,24 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     break;
                 case "Martindale Pilling":
                     condition = PillingHelper(fiberContent!, FetchSamplePropertyValue(sampleDesc, "Fiber Type(Only for Pilling Resistance)"), infoDto.menuName!);
-                    if ( !string.IsNullOrEmpty(condition) && condition.Contains("N/A"))
-                        param = @"{""IsApplicable"":""N/A""}";
-                    else if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || infoDto.menuName == "PTC01")
-                        param = @"{""Cycle"":""2000 revs"",""IsApplicable"":""Y""}";
-                    else if (infoDto.menuName is "PTC07" or "PTC08" or "PTC09" or "PTC10" or "PTC11" or "PTC12")
-                        param = @"{""Cycle"":""500 revs"",""IsApplicable"":""Y""}";
-                    else
-                        param = @"{""Cycle"":""500 revs"",""IsApplicable"":""Y""}";
+                    if (!string.IsNullOrEmpty(condition) && condition.Contains("N/A"))
+                    {
+                        if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || infoDto.menuName == "PTC01")
+                            param = @"{""Cycle"":""2000 revs"",""IsApplicable"":""N/A""}";
+                        else if (infoDto.menuName is "PTC07" or "PTC08" or "PTC09" or "PTC10" or "PTC11" or "PTC12")
+                            param = @"{""Cycle"":""500 revs"",""IsApplicable"":""N/A""}";
+                        else
+                            param = @"{""Cycle"":""500 revs"",""IsApplicable"":""N/A""}";
+                    }
+                    else 
+                    {
+                        if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || infoDto.menuName == "PTC01")
+                            param = @"{""Cycle"":""2000 revs"",""IsApplicable"":""Y""}";
+                        else if (infoDto.menuName is "PTC07" or "PTC08" or "PTC09" or "PTC10" or "PTC11" or "PTC12")
+                            param = @"{""Cycle"":""500 revs"",""IsApplicable"":""Y""}";
+                        else
+                            param = @"{""Cycle"":""500 revs"",""IsApplicable"":""Y""}";
+                    }
                     break;
                 case "Residual Elongation":
                     condition = ElogationHelper(fiberContent!, sampleDesc, infoDto.menuName!);
@@ -582,20 +596,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     };
                     break;
                 case "Seam Strength":
-                    if (!FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(fiberContent!, "Elastane") != 0) condition = "N/A";
-                    param = condition switch
-                    {
-                        string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
-                        _ => @"{""IsApplicable"":""Yes""}",
-                    };
+                    param = BuildSeamParam(infoDto.SeamParameter, sample, "Seam Strength", fiberContent, sampleDesc);
                     break;
                 case "Seam Slippage":
-                    if (!FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven") || _helper.CompositionRate(fiberContent!, "Elastane") != 0) condition = "N/A";
-                    param = condition switch
-                    {
-                        string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
-                        _ => @"{""IsApplicable"":""Yes""}",
-                    };
+                    param = BuildSeamParam(infoDto.SeamParameter, sample, "Seam Slippage", fiberContent, sampleDesc);
                     break;
                 case "Unrecovered Elongation":
                     condition = FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Jeans")?"40":"30";
@@ -762,7 +766,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             var rate = _helper.CompositionRate(fiberComposition, "Elastane")+_helper.CompositionRate(fiberComposition, "Spandex");
             if (rate == 0) return Result = "N/A";
             if (MenuName == "PTC07" || MenuName == "PTC08") return Result = "20";
-            else if (!FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Seam Free")) return Result = "15";
+            else if (!FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Seam Free")) 
+            {
+                return Result = "15";
+            }
             else if (MenuName == "PTC01" || MenuName == "PTC02" || MenuName == "PTC04")
             {
                 if (FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Jeans")) return Result = "40";
@@ -810,7 +817,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         private string? DryProcedureHelper(List<SampleInfoDescription> sampleDesc, string? dryProcedure)
         {
             if (string.IsNullOrEmpty(dryProcedure) == false) return dryProcedure;
-            else 
+            else
             {
                 if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven")) return "Line Dry";
                 else if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Knit")) return "Flat Dry";
@@ -818,14 +825,46 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             }
         }
 
+        private string BuildSeamParam(List<SeamDescObject>? seamParameters, string sample, string itemName, List<FiberDto>? fiberContent, List<SampleInfoDescription> sampleDesc)
+        {
+            bool isWoven = FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven", StringComparison.OrdinalIgnoreCase);
+            bool hasElastane = _helper.CompositionRate(fiberContent!, "Elastane") != 0;
+            bool overallIsNA = !isWoven || hasElastane;
 
+            var seamParam = seamParameters?.FirstOrDefault(sp =>
+                !string.IsNullOrWhiteSpace(sp.Sample) &&
+                (string.Equals(sp.Sample, sample, StringComparison.OrdinalIgnoreCase) ||
+                 sample.Contains(sp.Sample!, StringComparison.OrdinalIgnoreCase) ||
+                 sp.Sample!.Contains(sample, StringComparison.OrdinalIgnoreCase)));
 
+            var locations = new List<string>();
+            if (seamParam?.LocationInfos?.Count > 0)
+            {
+                locations.AddRange(seamParam.LocationInfos.Select(li =>
+                    $"{li.Location ?? "(unknown)"} ({(overallIsNA || li.IsNA == true ? "N/A" : "Yes")}{(string.IsNullOrWhiteSpace(li.Reason) ? "" : $"; {li.Reason}")})"));
+            }
+            else if (overallIsNA)
+            {
+                locations.Add("All locations: N/A");
+            }
 
+            var result = new
+            {
+                isApplicable = overallIsNA ? "N/A" : "Yes",
+                type = seamParam?.Type ?? (sample.Contains("lining", StringComparison.OrdinalIgnoreCase) ? "Lining"
+                        : sample.Contains("shell", StringComparison.OrdinalIgnoreCase) ? "Shell" : ""),
+                locations = locations.Count > 0 ? string.Join("; ", locations) : null
+            };
 
-
-
-
+            return JsonSerializer.Serialize(result, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All)
+            });
+        }
 
 
     }
+
 }

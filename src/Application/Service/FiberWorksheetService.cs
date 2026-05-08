@@ -10,6 +10,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.Ingre
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine;
 using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection.Metadata;
@@ -24,11 +25,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
     {
         private readonly IFiberWorksheetRepository _worksheetRepo;
         private readonly FiberAnalysisWordTemplateAdapter _wordTemplateAdapter;
+        private readonly WordTemplateEngine _wordTemplateEngine;
 
-        public FiberWorksheetService(IFiberWorksheetRepository worksheetRepo, FiberAnalysisWordTemplateAdapter wordTemplateAdapter)
+        public FiberWorksheetService(IFiberWorksheetRepository worksheetRepo, FiberAnalysisWordTemplateAdapter wordTemplateAdapter,WordTemplateEngine wordTemplateEngine)
         {
             _worksheetRepo = worksheetRepo;
             _wordTemplateAdapter = wordTemplateAdapter;
+            _wordTemplateEngine = wordTemplateEngine;
         }
 
         /// <summary>
@@ -73,6 +76,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 analysisWorksheet.AttachCalculationResult(ingredientsAnalysis.Result);
 
                 var templateData = _wordTemplateAdapter.Adapt(analysisWorksheet.CalculationResult);
+
+                _wordTemplateEngine.ReplaceText(filePath,templateData);
                 //ingredientsAnalysis.WorkSheetGenerator(filePath);
                 //执行保存
 

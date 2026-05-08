@@ -20,9 +20,6 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? ironMethod { get; set; }
         public string? bleachProcedure { get; set; }
         public string? detergent{ get; set; }
-
-
-
         public List<Items>? items { get; set; }
         public List<string>? afterWash { get; set; }
         public List<FiberDto>? fiberComposition { get; set; }
@@ -30,6 +27,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? additionalRequire { get; set; }
         public string? sampleDescription { get; set; }
         public List<SampleDescObject>? sampleDescripBoundSingle { get; set; }
+        public List<SeamDescObject>? SeamParameter { get; set; }
     }
     public class SampleDescObject
     {
