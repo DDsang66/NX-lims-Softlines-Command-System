@@ -204,9 +204,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
-                : "Type III (100% Polyester)",
+                Ballast = "Type III (100% Polyester)",
                 DryCleanProcedure = p.DCProcedure,
                 AfterWash = "After 1 Wash",
             },
@@ -230,9 +228,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
-                : "Type III (100% Polyester)",
+                Ballast = "Type III (100% Polyester)",
                 DryProcedure = DryProcedureHelper(sampleDesc, p.DryProcedure),
                 Detergent = DetergentHelper(p.Detergent, sampleDesc, p.WashingProcedure!),
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -343,9 +339,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
-                : "Type III (100% Polyester)",
+                Ballast = "Type III (100% Polyester)",
                 Detergent = DetergentHelper(p.Detergent, sampleDesc, p.WashingProcedure!),
                 DryProcedure = DryProcedureHelper(sampleDesc, p.DryProcedure),
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
@@ -375,9 +369,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = DryProcedureHelper(sampleDesc, p.DryProcedure),
                 SpecialCareInstruction = p.Sci,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
-                : "Type III (100% Polyester)",
+                Ballast = "Type III (100% Polyester)",
                 Temperature = "40",
                 WashingProcedure = "4H",
                 Detergent = DetergentHelper(p.Detergent, sampleDesc, p.WashingProcedure),
@@ -393,9 +385,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = DryProcedureHelper(sampleDesc,p.DryProcedure),
                 SpecialCareInstruction = p.Sci,
-                Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
-                : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
-                : "Type III (100% Polyester)",
+                Ballast = "Type III (100% Polyester)",
                 Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
                 WashingProcedure = p.WashingProcedure,
                 Detergent = DetergentHelper(p.Detergent, sampleDesc, p.WashingProcedure),
@@ -580,7 +570,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     break;
                 case "Tear Strength":
                     bool isCelluloseExist = _helper.IsCompositionExist("Cellulose", fiberContent!);
-                    if ( ! FetchSamplePropertyValue(sampleDesc,"Structure").Contains("Woven")||(_helper.CompositionRate(fiberContent!, "Elastane") != 0 /*&& !isCelluloseExist*/)) condition = "N/A";
+                    if ( ! FetchSamplePropertyValue(sampleDesc,"Structure").Contains("Woven")||(_helper.CompositionRate(fiberContent!, "Elastane") != 0 && !isCelluloseExist)) condition = "N/A";
                     param = condition switch
                     {
                         string s when s.Contains("N/A") => @"{""IsApplicable"":""N/A""}",
@@ -766,7 +756,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             var rate = _helper.CompositionRate(fiberComposition, "Elastane")+_helper.CompositionRate(fiberComposition, "Spandex");
             if (rate == 0) return Result = "N/A";
             if (MenuName == "PTC07" || MenuName == "PTC08") return Result = "20";
-            else if (!FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Seam Free")) 
+            else if (FetchSamplePropertyValue(sampleDesc, "Apparel Type").Contains("Seam Free")) 
             {
                 return Result = "15";
             }

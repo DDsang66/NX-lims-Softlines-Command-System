@@ -2,9 +2,6 @@
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 {
@@ -12,15 +9,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
     /// Word 模板引擎
     /// 仅封装底层操作功能，不涉及业务逻辑
     /// </summary>
-    public class WordTemplateEngine:IScopedDependency
+    public class WordTemplateEngine : IScopedDependency
     {
-
         /// <summary>
         /// 构造函数
         /// </summary>
         public WordTemplateEngine()
         {
-
         }
 
         /// <summary>
@@ -30,81 +25,210 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// <param name="bookmarkValues">书签名-值字典</param>
         public void ReplaceText(string filePath, Dictionary<string, string> bookmarkValues)
         {
-            if (!bookmarkValues.Any()) return;
+            if (bookmarkValues == null || !bookmarkValues.Any()) return;
 
             using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true))
             {
-                // 替换正文中的书签
+                // 正文部件
                 ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues);
+                doc.MainDocumentPart.Document!.Save();
 
-                // 替换所有页眉中的书签
+                // 页眉
                 foreach (var headerPart in doc.MainDocumentPart!.HeaderParts)
                 {
                     ReplaceBookmarksInPart(headerPart, bookmarkValues);
+                    headerPart.Header?.Save();
                 }
 
-                // 替换所有页脚中的书签
+                // 页脚
                 foreach (var footerPart in doc.MainDocumentPart.FooterParts)
                 {
                     ReplaceBookmarksInPart(footerPart, bookmarkValues);
+                    footerPart.Footer?.Save();
                 }
-
-                // 保存更改
-                doc.MainDocumentPart.Document!.Save();
             }
         }
-
 
         /// <summary>
         /// 在指定部件中替换书签
-        /// <param name="part">Word文档的任意部件（正文/页眉/页脚/脚注等）</param>
-        /// <param name="values">书签名-值字典</param>
+        /// 优先在原有 Run/Text 上就地替换以保留样式；若不存在则寻找局部最近的 RunProperties 并克隆；最后才插入无样式 Run。
         /// </summary>
-        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> values)
+        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> bookmarkValues)
         {
-            var root = part.RootElement;
-            if (root == null) return;
+            var bookmarks = part.RootElement!.Descendants<BookmarkStart>()
+                .Where(b => bookmarkValues.ContainsKey(b.Name!))
+                .ToList();
 
-            // 获取所有书签开始标记
-            var bookmarkStarts = root.Descendants<BookmarkStart>().ToList();
-
-            foreach (var bookmarkStart in bookmarkStarts)
+            foreach (var bookmark in bookmarks)
             {
-                string bookmarkName = bookmarkStart.Name!;
-
-                // 检查是否需要替换此书签
-                if (!values.ContainsKey(bookmarkName)) continue;
-
-                // 查找对应的书签结束标记（通过ID匹配）
-                var bookmarkEnd = root.Descendants<BookmarkEnd>()
-                    .FirstOrDefault(b => b.Id == bookmarkStart.Id);
+                // 找到对应的 BookmarkEnd
+                var bookmarkEnd = part.RootElement.Descendants<BookmarkEnd>()
+                    .FirstOrDefault(be => be.Id == bookmark.Id);
 
                 if (bookmarkEnd == null) continue;
 
-                // 执行替换
-                ReplaceBookmarkContent(bookmarkStart, bookmarkEnd, values[bookmarkName]);
+                // 获取书签之间的所有元素（同一父级序列）
+                var contentElements = GetContentBetweenBookmarks(part, bookmark, bookmarkEnd);
+
+                // 优先在原有 Run 的 Text 上就地替换（保留 RunProperties）
+                var existingRunWithText = contentElements.OfType<Run>()
+                    .FirstOrDefault(r => r.Elements<Text>().Any());
+
+                if (existingRunWithText != null)
+                {
+                    var textElem = existingRunWithText.Elements<Text>().First();
+                    textElem.Text = bookmarkValues[bookmark.Name];
+                    textElem.Space = SpaceProcessingModeValues.Preserve;
+
+                    // 删除书签范围内除保留的 run 之外的其他元素
+                    foreach (var elem in contentElements.ToList())
+                    {
+                        if (!object.ReferenceEquals(elem, existingRunWithText))
+                        {
+                            elem.Remove();
+                        }
+                    }
+
+                    continue;
+                }
+
+                // 如果没有就地可替换的 Run/Text，尝试寻找最近的 RunProperties（段落优先，单元格次之）
+                var nearestRunProps = FindNearestRunProperties(bookmark);
+
+                if (nearestRunProps != null)
+                {
+                    var newRun = new Run(nearestRunProps.CloneNode(true) as RunProperties,
+                                         new Text(bookmarkValues[bookmark.Name]) { Space = SpaceProcessingModeValues.Preserve });
+                    InsertRunAfterBookmark(bookmark, newRun);
+                }
+                else
+                {
+                    // 兜底：插入无样式的 Run（将使用 Word 的默认样式）
+                    var newRun = new Run(new Text(bookmarkValues[bookmark.Name]) { Space = SpaceProcessingModeValues.Preserve });
+                    InsertRunAfterBookmark(bookmark, newRun);
+                }
             }
         }
 
         /// <summary>
-        /// 替换书签内的内容
+        /// 在书签位置后插入 Run，确保插入点有效（书签 Parent 可能是 Run、Paragraph 等）
+        /// </summary>
+        private void InsertRunAfterBookmark(BookmarkStart bookmark, Run run)
+        {
+            OpenXmlElement? parent = bookmark.Parent;
+            if (parent == null)
+            {
+                // 兜底：将 run 插入到书签的祖先段落末尾
+                var para = bookmark.Ancestors<Paragraph>().FirstOrDefault();
+                if (para != null) para.Append(run);
+                return;
+            }
+
+            try
+            {
+                parent.InsertAfter(run, bookmark);
+            }
+            catch
+            {
+                // 若直接插入失败，退回到父段落末尾
+                var para = bookmark.Ancestors<Paragraph>().FirstOrDefault();
+                if (para != null) para.Append(run);
+            }
+        }
+
+        /// <summary>
+        /// 在书签与对应 BookmarkEnd 之间收集元素（基于 NextSibling 遍历，适用于位于同一父级的情况）
+        /// </summary>
+        private List<OpenXmlElement> GetContentBetweenBookmarks(OpenXmlPart part, BookmarkStart bookmark, BookmarkEnd bookmarkEnd)
+        {
+            var result = new List<OpenXmlElement>();
+            var current = bookmark.NextSibling();
+
+            while (current != null && current != bookmarkEnd)
+            {
+                result.Add(current);
+                current = current.NextSibling();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 清除书签之间的内容（保留书签标记）
+        /// </summary>
+        private void ClearContentBetweenBookmarks(OpenXmlPart part, BookmarkStart bookmark, BookmarkEnd bookmarkEnd)
+        {
+            var current = bookmark.NextSibling();
+
+            while (current != null && current != bookmarkEnd)
+            {
+                var next = current.NextSibling();
+                current.Remove();
+                current = next;
+            }
+        }
+
+        /// <summary>
+        /// 查找书签附近最近的 RunProperties：优先同段落相邻 Run，若没有则在同单元格内查找。
+        /// 不再退回到部件任意 Run，以避免把不同位置的样式统一。
+        /// </summary>
+        private RunProperties? FindNearestRunProperties(BookmarkStart bookmark)
+        {
+            // 1. 同段落内查找相邻 RunProperties（向前向后）
+            var para = bookmark.Ancestors<Paragraph>().FirstOrDefault();
+            if (para != null)
+            {
+                var children = para.ChildElements.ToList();
+                int idx = children.IndexOf(bookmark);
+                if (idx >= 0)
+                {
+                    for (int i = idx - 1; i >= 0; i--)
+                    {
+                        if (children[i] is Run r && r.RunProperties != null)
+                        {
+                            return r.RunProperties.CloneNode(true) as RunProperties;
+                        }
+                    }
+
+                    for (int i = idx + 1; i < children.Count; i++)
+                    {
+                        if (children[i] is Run r && r.RunProperties != null)
+                        {
+                            return r.RunProperties.CloneNode(true) as RunProperties;
+                        }
+                    }
+                }
+            }
+
+            // 2. 在同一 TableCell 范围内查找任一带格式的 Run
+            var cell = bookmark.Ancestors<TableCell>().FirstOrDefault();
+            if (cell != null)
+            {
+                var runInCell = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null);
+                if (runInCell != null)
+                {
+                    return runInCell.RunProperties.CloneNode(true) as RunProperties;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// 替换书签内的内容（备用方法：在同段落内删除并插入新 Run）
         /// </summary>
         private void ReplaceBookmarkContent(BookmarkStart start, BookmarkEnd end, string newText)
         {
-            // 获取父段落
             var parentPara = start.Ancestors<Paragraph>().FirstOrDefault();
             if (parentPara == null) return;
 
-            // 获取书签范围内的所有元素
             var elementsBetween = GetElementsBetween(start, end).ToList();
 
-            // 删除旧内容（保留书签标记本身）
             foreach (var elem in elementsBetween)
             {
                 elem.Remove();
             }
 
-            // 在书签开始后插入新文本
             var newRun = new Run(
                 new RunProperties(),
                 new Text(newText) { Space = SpaceProcessingModeValues.Preserve }
@@ -114,26 +238,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         }
 
         /// <summary>
-        /// 获取两个元素之间的所有元素
+        /// 获取两个元素之间的所有元素（仅处理在同一父级内的情况）
         /// </summary>
         private IEnumerable<OpenXmlElement> GetElementsBetween(BookmarkStart start, BookmarkEnd end)
         {
-            // 在同一段落内查找
             var parent = start.Parent;
-            if (parent != end.Parent) yield break; // 跨段落的书签不处理
+            if (parent != end.Parent) yield break;
 
-            bool foundStart = false;
+            bool started = false;
             foreach (var elem in parent!.ChildElements.ToList())
             {
                 if (elem == start)
                 {
-                    foundStart = true;
+                    started = true;
                     continue;
                 }
 
-                if (elem == end) break;
+                if (elem == end) yield break;
 
-                if (foundStart) yield return elem;
+                if (started) yield return elem;
             }
         }
 
@@ -149,13 +272,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             return new Dictionary<string, string>();
         }
 
-
         /// <summary>
-        /// 图片替换书签位
+        /// 图片替换书签位（预留）
         /// </summary>
         public void ReplaceWithImage()
         {
-
         }
 
         /// <summary>
@@ -165,16 +286,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         {
             if (table == null) return;
 
-            // 获取最后一行作为模板
             var lastRow = table.Elements<TableRow>().LastOrDefault();
             if (lastRow == null) return;
 
-            // 克隆新行（深拷贝）
             var newRow = (TableRow)lastRow.CloneNode(true);
 
             table.Append(newRow);
 
-            // 清空新行中的内容（保留格式）
             foreach (var cell in newRow.Elements<TableCell>())
             {
                 ClearCellContent(cell);
@@ -186,19 +304,16 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// </summary>
         private void ClearCellContent(TableCell cell)
         {
-            // 获取单元格内的所有段落
             var paragraphs = cell.Elements<Paragraph>().ToList();
 
             foreach (var para in paragraphs)
             {
-                // 删除段落中的所有Run（保留段落属性）
                 var runs = para.Elements<Run>().ToList();
                 foreach (var run in runs)
                 {
                     run.Remove();
                 }
 
-                // 如果段落完全为空，添加一个空Run保持结构
                 if (!para.HasChildren)
                 {
                     para.Append(new Run(new Text("")));
@@ -209,20 +324,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// <summary>
         /// 定位表格（支持书签、内容匹配、索引等多种策略）
         /// </summary>
-        /// <param name="doc"></param>
-        /// <param name="identifier"></param>
-        /// <returns></returns>
-        public Table LocateTable(WordprocessingDocument doc, string identifier)
+        public Table? LocateTable(WordprocessingDocument doc, string identifier)
         {
-            // 策略1：先尝试书签
             var table = GetTableByBookmark(doc, identifier);
             if (table != null) return table;
 
-            // 策略2：尝试内容匹配
             table = GetTableByContent(doc, identifier);
             if (table != null) return table;
 
-            // 策略3：尝试索引（如果identifier是数字）
             if (int.TryParse(identifier, out int index))
             {
                 table = GetTableByIndex(doc, index);
@@ -232,13 +341,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             return null;
         }
 
-        /// <summary>
-        /// 通过索引获取表格
-        /// </summary>
-        /// <param name="doc"></param>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        Table GetTableByIndex(WordprocessingDocument doc, int index)
+        private Table? GetTableByIndex(WordprocessingDocument doc, int index)
         {
             var tables = doc.MainDocumentPart.Document.Body.Elements<Table>().ToList();
 
@@ -248,13 +351,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             return tables[index];
         }
 
-        /// <summary>
-        /// 通过书签获取表格
-        /// </summary>
-        /// <param name="doc"></param>
-        /// <param name="bookmarkName"></param>
-        /// <returns></returns>
-        Table GetTableByBookmark(WordprocessingDocument doc, string bookmarkName)
+        private Table? GetTableByBookmark(WordprocessingDocument doc, string bookmarkName)
         {
             var bookmark = doc.MainDocumentPart.Document.Body
                 .Descendants<BookmarkStart>()
@@ -262,45 +359,32 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 
             if (bookmark == null) return null;
 
-            // 向上查找祖先中的 Table
             return bookmark.Ancestors<Table>().FirstOrDefault();
         }
 
-        /// <summary>
-        /// 通过内容获取表格
-        /// </summary>
-        /// <param name="doc"></param>
-        /// <param name="searchText"></param>
-        /// <returns></returns>
-        Table GetTableByContent(WordprocessingDocument doc, string searchText)
+        private Table? GetTableByContent(WordprocessingDocument doc, string searchText)
         {
             return doc.MainDocumentPart.Document.Body.Elements<Table>()
                 .FirstOrDefault(t => t.InnerText.Contains(searchText));
         }
 
         /// <summary>
-        /// 对word插入新表
+        /// 对word插入新表（预留）
         /// </summary>
         public void AddNewTable()
         {
-
         }
 
         /// <summary>
-        /// 删除表格中的某一行
+        /// 删除表格中的某一行（预留）
         /// </summary>
         public void RemoveRow()
         {
-            //可能需要触发同一表格之中书签顺序的更新
+            // 可能需要触发同一表格之中书签顺序的更新
         }
 
-
-        //换页规则
-
-        //表格合并规则
-
-        //键入空白行
-
-
+        // 换页规则
+        // 表格合并规则
+        // 键入空白行
     }
 }

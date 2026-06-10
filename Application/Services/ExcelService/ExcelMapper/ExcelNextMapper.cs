@@ -92,7 +92,7 @@
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
-                "Garment" => new List<string> { "AW41" },
+                "Garment" => new List<string> { "F41" },
                 "Fabric" => new List<string> { "AW39" },
                 "Socks" => new List<string> { "F46" },
                 "Gloves" => new List<string> { "F46" },

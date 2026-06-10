@@ -48,7 +48,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = "10",
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
@@ -66,7 +66,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
@@ -84,7 +84,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
@@ -102,7 +102,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
@@ -319,6 +319,18 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                    input.Contains("L-4") ? "L-4" :
                    input.Contains("L-3") ? "L-3" :
                    null;
+        }
+
+        private string? DryProcedureHelper(string sampleDesc, string? dryProcedure)
+        {
+            if (string.IsNullOrEmpty(dryProcedure) == false) return dryProcedure;
+            else
+            {
+                if (sampleDesc.Contains("Woven")) return "Line Dry";
+                else if (sampleDesc.Contains("Knit")) return "Flat Dry";
+                else return "Line Dry";
+            }
+
         }
     }
 }

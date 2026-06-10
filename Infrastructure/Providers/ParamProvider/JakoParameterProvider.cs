@@ -152,7 +152,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         {
             [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Vegetable")] = "Cycle: 3000 revs",
             [("RegularFabric(JAKO)", "Pilling Resistance", "Polyester", "Synthetic")] = "Cycle: 7000 revs",
-            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Synthetic")] = "Cycle: 7000 revs",
+            [("RegularFabric(JAKO)", "Pilling Resistance", "Cotton", "Synthetic")] = "Cycle: 3000 revs",
             [("RegularFabric(JAKO)", "Pilling Resistance", null, null)] = null,
             [("RegularFabric(JAKO)", "Seam Slippage", null, null)] = "Load: 16N",
             [("RegularFabric(JAKO)", "CF to Light", null, null)] = "L-4",

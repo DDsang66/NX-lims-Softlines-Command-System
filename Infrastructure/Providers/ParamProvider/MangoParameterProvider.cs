@@ -43,7 +43,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.MenuName!,p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
@@ -110,5 +110,17 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             return null!;
         }
 
+
+
+        private string? DryProcedureHelper(string sampleDesc, string? dryProcedure)
+        {
+            if (string.IsNullOrEmpty(dryProcedure) == false) return dryProcedure;
+            else
+            {
+                if (sampleDesc.Contains("Woven")) return "Line Dry";
+                else if (sampleDesc.Contains("Knit")) return "Flat Dry";
+                else return "Line Dry";
+            }
+        }
     }
 }

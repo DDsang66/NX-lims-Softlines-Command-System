@@ -44,7 +44,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
@@ -54,13 +54,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
-            ("Spirality/Skewing",_,_) => new WetParameterIso
+            ("Spirality/Skewing", _, _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
@@ -85,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
     : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
@@ -101,7 +101,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 Standard = p.Standard,
                 WashingProcedure = p.WashingProcedure,
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
     : _helper.IsCompositionSourceExist("Synthetic", p.FiberContent!) >= 51 ? "Type III (100% Polyester)"
@@ -126,13 +126,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             // 1. 计算最大值
             string? condition = null;
             string? condition1 = null;
-            switch (ItemName) 
+            switch (ItemName)
             {
                 case "Pilling Resistance":
-                    if(standard.Contains("12945-1")) condition = "ICI";
+                    if (standard.Contains("12945-1")) condition = "ICI";
                     else if (standard.Contains("12945-2")) condition = "Martindale";
 
-                    if(_helper.CompositionRate(infoDto.fiberComposition!,"Wool")>0) condition1 = "Wool";
+                    if (_helper.CompositionRate(infoDto.fiberComposition!, "Wool") > 0) condition1 = "Wool";
                     else if (infoDto.sampleDescription!.Contains("Woven")) condition1 = "Woven";
                     else if (infoDto.sampleDescription.Contains("Knit")) condition1 = "Knit";
                     break;
@@ -142,7 +142,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     else if (infoDto.sampleDescription.Contains("Leather")) condition = "leather";
                     break;
                 case "Tensile Strength":
-                    if (infoDto.sampleDescription!.Contains("Fabric")) condition = "fabric";    
+                    if (infoDto.sampleDescription!.Contains("Fabric")) condition = "fabric";
                     else if (infoDto.sampleDescription.Contains("Leather")) condition = "leather";
 
                     if (infoDto.sampleDescription.Contains("Woven")) condition1 = "Woven";
@@ -229,5 +229,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             return null!;
         }
 
+        private string? DryProcedureHelper(string sampleDesc, string? dryProcedure)
+        {
+            if (string.IsNullOrEmpty(dryProcedure) == false) return dryProcedure;
+            else
+            {
+                if (sampleDesc.Contains("Woven")) return "Line Dry";
+                else if (sampleDesc.Contains("Knit")) return "Flat Dry";
+                else return "Line Dry";
+            }
+
+        }
     }
 }

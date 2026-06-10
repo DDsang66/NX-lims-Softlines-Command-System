@@ -154,10 +154,33 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var sheets = new List<ExcelWorksheet>();
                     for (int i = 0; i < sheetCnt; i++)
                     {
-                        string name = $"{templateName}_G{groupIndex}_{i + 1}";  // 加组索引，避免多组命名冲突
-                        sheets.Add(pkg.Workbook.Worksheets.Any(ws => ws.Name == name)
-                            ? pkg.Workbook.Worksheets[name]
-                            : pkg.Workbook.Worksheets.Copy(templateName, name));
+                        //string name = $"{templateName}_G{groupIndex}_{i + 1}";  // 加组索引，避免多组命名冲突
+                        //sheets.Add(pkg.Workbook.Worksheets.Any(ws => ws.Name == name)
+                        //    ? pkg.Workbook.Worksheets[name]
+                        //    : pkg.Workbook.Worksheets.Copy(templateName, name));
+                        string name = $"{templateName}_G{groupIndex}_{i + 1}";
+
+                        // 1. 优先查找（一次查询）
+                        var existingSheet = pkg.Workbook.Worksheets.FirstOrDefault(ws => ws.Name == name);
+
+                        if (existingSheet != null)
+                        {
+                            sheets.Add(existingSheet);
+                        }
+                        else
+                        {
+                            try
+                            {
+                                // 2. 找不到再 Copy
+                                var newSheet = pkg.Workbook.Worksheets.Copy(templateName, name);
+                                sheets.Add(newSheet);
+                            }
+                            catch (InvalidOperationException) // EPPlus 名称重复异常
+                            {
+                                // 3. 如果 Copy 失败（说明被其他线程抢先创建了），兜底再查一次
+                                sheets.Add(pkg.Workbook.Worksheets[name]);
+                            }
+                        }
                     }
 
                     //3切片
@@ -791,10 +814,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Zip Fasteners"] = "ZipperStrength",
             ["Vertical Wicking of Textiles"] = "Wicking",
 
-            ["Colour Fastness to Chlorinated Water"] = "CFtoSublimation&HotPressing&Cl",
+            ["Colour Fastness to Chlorinated Water"] = "CFtoSHC",
             ["Colour Fastness to Chlorine Bleach"] = "CFtoPerspiration&Bleach",
             ["Colour Fastness to Dry Cleaning"] = "Yellowing&DryClean",
-            ["Colour Fastness to Hot Pressing"] = "CFtoSublimation&HotPressing&Cl",
+            ["Colour Fastness to Hot Pressing"] = "CFtoSHC",
             ["Colour Fastness to Light"] = "CFtoWash&Rub&Lig&Wat",
             ["Colour Fastness to Non Chlorine Bleach"] = "CFtoPerspiration&Bleach",
             ["Colour Fastness to Perspiration"] = "CFtoPerspiration&Bleach",

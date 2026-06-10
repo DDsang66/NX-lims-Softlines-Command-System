@@ -69,7 +69,25 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 //计算失败触发补偿机制
 
                 //执行生成word
-                string filePath = string.Empty;//先调用生成方法成功后获取filePath
+                string sourcePath = Path.Combine("wwwroot", "DocxModel", "FIBER_ANALYSIS_DATA_SHEET.docx");
+
+                // 目标目录路径
+                string targetDirectory = Path.Combine("wwwroot", "DocxModel", "SaveDocx");
+
+                // 确保目标目录存在
+                if (!Directory.Exists(targetDirectory))
+                {
+                    Directory.CreateDirectory(targetDirectory);
+                }
+
+                // 构建目标文件名
+                string targetFileName = $"{ingredientsAnalysis.ReportNo}_FiberAnalysis.docx";
+
+                // 完整的目标文件路径
+                string targetPath = Path.Combine(targetDirectory, targetFileName);
+
+                // 复制文件
+                File.Copy(sourcePath, targetPath, true); // true表示如果目标文件已存在则覆盖
 
                 var analysisWorksheet = AnalysisWorksheet.Create();
 
@@ -77,7 +95,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
 
                 var templateData = _wordTemplateAdapter.Adapt(analysisWorksheet.CalculationResult);
 
-                _wordTemplateEngine.ReplaceText(filePath,templateData);
+                _wordTemplateEngine.ReplaceText(targetPath, templateData);
                 //ingredientsAnalysis.WorkSheetGenerator(filePath);
                 //执行保存
 

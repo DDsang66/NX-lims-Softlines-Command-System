@@ -88,9 +88,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                         flatData["Reagent"] = single.Reagent;
                         flatData[$"FiberName_{itemIndex}"] = single.FiberName;
                         flatData[$"Sample_{itemIndex}"] = single.Sample;
-                        flatData[$"MoistureRegain_{itemIndex}"] = single.MoistureRegain.ToString("F2");
+                        flatData[$"MoistureRegain_{itemIndex}"] = single.MoistureRegain.ToString("F2")+"%";
                         flatData[$"GSMTrail1_{itemIndex}"] = single.GSMTrail1.ToString("F4");
-                        flatData[$"Rate_{itemIndex}"] = single.Rate.ToString("F2");
+                        flatData[$"Rate_{itemIndex}"] = single.Rate.ToString("F2")+"%";
                         itemIndex++;
                         break;
 
@@ -100,10 +100,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                         flatData["Reagent"] = multi.Reagent;
                         flatData["GSMTrail1"] = multi.GSMTrail1.ToString("F4");
                         flatData["GSMTrail2"] = multi.GSMTrail2.ToString("F4");
-                        flatData["RateTrail1"] = multi.RateTrail1.ToString("F2");
-                        flatData["RateTrail2"] = multi.RateTrail2.ToString("F2");
-                        flatData["Rate"] = multi.Rate.ToString("F2");
-                        flatData["Avg"] = multi.Avg.ToString("F2");
+                        flatData["RateTrail1"] = multi.RateTrail1.ToString("F2")+"%";
+                        flatData["RateTrail2"] = multi.RateTrail2.ToString("F2")+"%";
+                        flatData["Rate"] = multi.Rate.ToString("F2")+"%";
+                        flatData["Avg"] = multi.Avg.ToString("F2") + "%";
 
                         // 展开 MultiFiberRowUnits
                         if (multi.MultiFiberRowUnits != null)
@@ -161,14 +161,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 // 写入当前行的所有字段
                 result[$"Section_{rowIndex}"] = sectionValue;
                 result[$"Sum_{rowIndex}"] = unit.Sum;
-                result[$"GSMTrail1_{rowIndex}"] = unit.GSMTrail1.ToString("F4");
-                result[$"GSMTrail2_{rowIndex}"] = unit.GSMTrail2.ToString("F4");
-                result[$"RateTrail1_{rowIndex}"] = unit.RateTrail1.ToString("F2");
-                result[$"RateTrail2_{rowIndex}"] = unit.RateTrail2.ToString("F2");
-                result[$"Avg_{rowIndex}"] = unit.Avg.ToString("F2");
-                result[$"Correct_{rowIndex}"] = unit.Correct.ToString("F2");
-                result[$"MoistureRegain_{rowIndex}"] = unit.MoistureRegain.ToString("F2");
-                result[$"Rate_{rowIndex}"] = unit.Rate.ToString("F2");
+                result[$"GSMTrail1_{rowIndex}"] = unit.GSMTrail1 == 0 ? "" : unit.GSMTrail1.ToString("F4");
+                result[$"GSMTrail2_{rowIndex}"] = unit.GSMTrail2 == 0 ? "" : unit.GSMTrail2.ToString("F4");
+                result[$"RateTrail1_{rowIndex}"] = unit.RateTrail1 == 0 ? "" : unit.RateTrail1.ToString("F2") + "%";
+                result[$"RateTrail2_{rowIndex}"] = unit.RateTrail2 == 0 ? "" : unit.RateTrail2.ToString("F2") + "%";
+                result[$"Avg_{rowIndex}"] = unit.Avg == 0 ? "" : unit.Avg.ToString("F2") + "%";
+                result[$"Correct_{rowIndex}"] = unit.Correct == 0 ? "" : unit.Correct.ToString("F2");
+                result[$"MoistureRegain_{rowIndex}"] = unit.MoistureRegain == 0 ? "" : unit.MoistureRegain.ToString("F2") + "%";
+                result[$"Rate_{rowIndex}"] = unit.Rate == 0 ? "" : unit.Rate.ToString("F2") + "%";
 
                 rowIndex++;
             }
