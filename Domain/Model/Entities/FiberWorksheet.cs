@@ -50,10 +50,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Model.Entities
         [Column("updated_at")]
         public DateTime? UpdatedAt { get; set; }
 
-        [Timestamp]
-        [Column("row_version")]
-        public byte[]? RowVersion { get; set; }
-
         // Navigation properties
         public virtual ICollection<FiberWorksheetDetail> Details { get; set; } = new List<FiberWorksheetDetail>();
         public virtual FiberWorksheetResult? Result { get; set; }

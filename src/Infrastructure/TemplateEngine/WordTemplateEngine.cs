@@ -1,6 +1,9 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using A = DocumentFormat.OpenXml.Drawing;
+using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System;
 using System.Collections.Generic;
@@ -151,11 +154,98 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 
 
         /// <summary>
-        /// 图片替换书签位
+        /// 在指定书签位置插入图片（支持正文、页眉、页脚）
         /// </summary>
-        public void ReplaceWithImage()
+        /// <param name="filePath">Word文档路径</param>
+        /// <param name="bookmarkName">书签名</param>
+        /// <param name="imageId">图片在文档中的rId（需外部先通过 AddImagePart 添加）</param>
+        /// <param name="imageName">图片文件名（用于描述）</param>
+        /// <param name="widthEmu">图片宽度（EMU），默认约6英寸</param>
+        /// <param name="heightEmu">图片高度（EMU），默认约4英寸</param>
+        public void ReplaceWithImage(string filePath, string bookmarkName,
+            string imageId, string imageName,
+            long widthEmu = 5486400, long heightEmu = 3657600)
         {
+            using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true))
+            {
+                var bookmark = doc.MainDocumentPart!.Document.Body
+                    .Descendants<BookmarkStart>()
+                    .FirstOrDefault(b => b.Name == bookmarkName);
 
+                if (bookmark == null) return;
+
+                var bookmarkEnd = doc.MainDocumentPart.Document.Body
+                    .Descendants<BookmarkEnd>()
+                    .FirstOrDefault(b => b.Id == bookmark.Id);
+
+                if (bookmarkEnd == null) return;
+
+                // 清除书签范围内的旧内容
+                var elementsBetween = GetElementsBetween(bookmark, bookmarkEnd).ToList();
+                foreach (var elem in elementsBetween)
+                {
+                    elem.Remove();
+                }
+
+                // 创建图片 Drawing
+                var drawing = CreateImageDrawing(imageId, imageName, widthEmu, heightEmu);
+                var run = new Run(drawing);
+                bookmark.InsertAfterSelf(run);
+
+                doc.MainDocumentPart.Document.Save();
+            }
+        }
+
+        /// <summary>
+        /// 创建图片 Drawing 元素
+        /// </summary>
+        private static Drawing CreateImageDrawing(string imageId, string imageName,
+            long widthEmu, long heightEmu)
+        {
+            uint imgId = (uint)(Math.Abs(imageName.GetHashCode()) % 10000);
+
+            var pic = new PIC.Picture();
+            var nvpp = new PIC.NonVisualPictureProperties();
+            nvpp.Append(new PIC.NonVisualDrawingProperties { Id = imgId, Name = imageName });
+            nvpp.Append(new PIC.NonVisualPictureDrawingProperties());
+            pic.Append(nvpp);
+            var blipFill = new PIC.BlipFill();
+            blipFill.Append(new A.Blip { Embed = imageId });
+            blipFill.Append(new A.Stretch(new A.FillRectangle()));
+            pic.Append(blipFill);
+            var spPr = new PIC.ShapeProperties();
+            var xfrm = new A.Transform2D();
+            xfrm.Append(new A.Offset { X = 0L, Y = 0L });
+            xfrm.Append(new A.Extents { Cx = widthEmu, Cy = heightEmu });
+            spPr.Append(xfrm);
+            var presetGeom = new A.PresetGeometry(new A.AdjustValueList());
+            presetGeom.Preset = A.ShapeTypeValues.Rectangle;
+            spPr.Append(presetGeom);
+            pic.Append(spPr);
+
+            var graphicData = new A.GraphicData();
+            graphicData.Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture";
+            graphicData.Append(pic);
+
+            var graphic = new A.Graphic();
+            graphic.Append(graphicData);
+
+            var inline = new DW.Inline();
+            inline.DistanceFromTop = 0U;
+            inline.DistanceFromBottom = 0U;
+            inline.DistanceFromLeft = 0U;
+            inline.DistanceFromRight = 0U;
+            inline.EditId = "50D07946";
+            inline.Append(new DW.Extent { Cx = widthEmu, Cy = heightEmu });
+            inline.Append(new DW.EffectExtent { LeftEdge = 0L, TopEdge = 0L, RightEdge = 0L, BottomEdge = 0L });
+            inline.Append(new DW.DocProperties { Id = imgId, Name = imageName });
+            inline.Append(new DW.NonVisualGraphicFrameDrawingProperties(
+                new A.GraphicFrameLocks { NoChangeAspect = true }));
+            inline.Append(graphic);
+
+            var drawing = new Drawing();
+            drawing.Append(inline);
+            return drawing;
         }
 
         /// <summary>
@@ -279,19 +369,95 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         }
 
         /// <summary>
-        /// 对word插入新表
+        /// 在文档中插入新表格（在指定书签段落后）
         /// </summary>
-        public void AddNewTable()
+        /// <param name="doc">WordprocessingDocument</param>
+        /// <param name="columns">列数</param>
+        /// <param name="rows">行数</param>
+        /// <param name="paragraphBookmark">书签名，表格插入到该书签所在段落后。为空则添加到body末尾</param>
+        /// <returns>新创建的Table</returns>
+        public Table AddNewTable(WordprocessingDocument doc, int columns, int rows,
+            string? paragraphBookmark = null)
         {
+            if (columns < 1 || rows < 1) return null!;
 
+            var table = new Table();
+
+            // 设置表格属性（边框、宽度）
+            var tblPr = new TableProperties(
+                new TableBorders(
+                    new TopBorder { Val = BorderValues.Single, Size = 4 },
+                    new BottomBorder { Val = BorderValues.Single, Size = 4 },
+                    new LeftBorder { Val = BorderValues.Single, Size = 4 },
+                    new RightBorder { Val = BorderValues.Single, Size = 4 },
+                    new InsideHorizontalBorder { Val = BorderValues.Single, Size = 4 },
+                    new InsideVerticalBorder { Val = BorderValues.Single, Size = 4 }
+                ),
+                new TableWidth { Type = TableWidthUnitValues.Pct, Width = "5000" }
+            );
+            table.Append(tblPr);
+
+            // 创建表格网格（列定义）
+            var tblGrid = new TableGrid();
+            for (int i = 0; i < columns; i++)
+            {
+                tblGrid.Append(new GridColumn());
+            }
+            table.Append(tblGrid);
+
+            // 创建行
+            for (int r = 0; r < rows; r++)
+            {
+                var tableRow = new TableRow();
+                for (int c = 0; c < columns; c++)
+                {
+                    var tableCell = new TableCell(
+                        new Paragraph(new Run(new Text("")))
+                    );
+                    tableRow.Append(tableCell);
+                }
+                table.Append(tableRow);
+            }
+
+            // 插入位置
+            if (!string.IsNullOrEmpty(paragraphBookmark))
+            {
+                var bookmark = doc.MainDocumentPart!.Document.Body
+                    .Descendants<BookmarkStart>()
+                    .FirstOrDefault(b => b.Name == paragraphBookmark);
+
+                if (bookmark != null)
+                {
+                    var para = bookmark.Ancestors<Paragraph>().FirstOrDefault();
+                    para?.InsertAfterSelf(table);
+                }
+                else
+                {
+                    doc.MainDocumentPart!.Document.Body.Append(table);
+                }
+            }
+            else
+            {
+                doc.MainDocumentPart!.Document.Body.Append(table);
+            }
+
+            return table;
         }
 
         /// <summary>
-        /// 删除表格中的某一行
+        /// 删除表格中的指定行（至少保留一行）
         /// </summary>
-        public void RemoveRow()
+        /// <param name="table">目标表格</param>
+        /// <param name="rowIndex">要删除的行索引（0-based）</param>
+        public void RemoveRow(Table table, int rowIndex)
         {
-            //可能需要触发同一表格之中书签顺序的更新
+            if (table == null) return;
+
+            var rows = table.Elements<TableRow>().ToList();
+            if (rows.Count <= 1) return; // 至少保留一行
+            if (rowIndex < 0 || rowIndex >= rows.Count) return;
+
+            rows[rowIndex].Remove();
         }
 
 

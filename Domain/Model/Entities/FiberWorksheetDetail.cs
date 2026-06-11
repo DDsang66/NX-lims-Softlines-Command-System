@@ -40,10 +40,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Model.Entities
         [Column("calculated_percent", TypeName = "decimal(10,4)")]
         public decimal? CalculatedPercent { get; set; }
 
-        [Timestamp]
-        [Column("row_version")]
-        public byte[]? RowVersion { get; set; }
-
         // Navigation property
         [ForeignKey("WorksheetId")]
         public virtual FiberWorksheet? Worksheet { get; set; }

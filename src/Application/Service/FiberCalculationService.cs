@@ -40,7 +40,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         {
             var result = new FiberCalculationResultDto();
             var fiberData = await _fiberRepo.GetAllAsync();
-            var fiberDict = fiberData.ToDictionary(f => f.FiberNameEn.ToLower(), f => f);
+            var fiberDict = fiberData
+                .GroupBy(f => f.FiberNameEn.ToLower())
+                .ToDictionary(g => g.Key, g => g.First());
 
             // 计算每个纤维的结果
             var itemResults = new List<FiberCalculationItemResultDto>();
