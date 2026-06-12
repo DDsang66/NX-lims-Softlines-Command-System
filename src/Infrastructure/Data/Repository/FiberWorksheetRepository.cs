@@ -65,13 +65,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     .SetProperty(w => w.UpdatedAt, worksheet.UpdatedAt)
                     .SetProperty(w => w.ComponentType, worksheet.ComponentType)
                     .SetProperty(w => w.TestMethod, worksheet.TestMethod)
-                    .SetProperty(w => w.Buyer, worksheet.Buyer));
+                    .SetProperty(w => w.Buyer, worksheet.Buyer)
+                    .SetProperty(w => w.Status, worksheet.Status));
 
-            // 3) 插入新子实体（无追踪冲突，因为旧实体从未被追踪）
+            // 3) 插入新子实体 — 断开导航避免 EF 误 INSERT 父实体
             if (worksheet.Details.Any())
+            {
+                foreach (var d in worksheet.Details)
+                {
+                    d.Worksheet = null;              // 只保留 FK
+                    d.WorksheetId = worksheet.Id;
+                }
                 _context.FiberWorksheetDetails.AddRange(worksheet.Details);
+            }
             if (worksheet.Result != null)
+            {
+                worksheet.Result.Worksheet = null;   // 只保留 FK
+                worksheet.Result.WorksheetId = worksheet.Id;
                 _context.FiberWorksheetResults.Add(worksheet.Result);
+            }
 
             if (worksheet.Details.Any() || worksheet.Result != null)
                 await _context.SaveChangesAsync();

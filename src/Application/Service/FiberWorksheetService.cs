@@ -43,129 +43,24 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             if (string.IsNullOrWhiteSpace(dto.ReportNumber))
                 return Result.Fail("报告号不能为空", "VALIDATION_ERROR");
 
-            // 2. 总是新建聚合根（无追踪），由 Repository 负责新旧替换
+            // 2. 聚合根：新建或保留已有 Id/CreatedAt/Status
             var existing = await _worksheetRepo.GetByReportNumberAsync(dto.ReportNumber);
-            var worksheet = new FiberWorksheet
+            var worksheet = new FiberWorksheet(dto.ReportNumber, dto.Buyer)
             {
                 Id = existing?.Id ?? Guid.NewGuid(),
-                ReportNumber = dto.ReportNumber,
-                ComponentType = dto.ComponentType,
-                TestMethod = dto.Method?.Count > 0 ? string.Join(",", dto.Method) : null,
-                Buyer = dto.Buyer,
                 Status = existing?.Status ?? "Draft",
                 CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow
             };
 
-            // 3. 构建明细列表
-            int sectionIndex = 0;
+            worksheet.RebuildFromAnalysis(dto);
 
-            if (dto.ComponentType == "Multi" && dto.MultipleBuildAnalysis != null)
-            {
-                // 多组分：拆分列表
-                if (dto.MultipleBuildAnalysis.fiberSplittingList != null)
-                {
-                    foreach (var splitList in dto.MultipleBuildAnalysis.fiberSplittingList)
-                    {
-                        if (splitList.SplittingRows == null) continue;
-
-                        foreach (var row in splitList.SplittingRows)
-                        {
-                            if (string.IsNullOrWhiteSpace(row.FiberName)) continue;
-
-                            worksheet.Details.Add(new FiberWorksheetDetail
-                            {
-                                Id = Guid.NewGuid(),
-                                WorksheetId = worksheet.Id,
-                                SectionIndex = sectionIndex,
-                                Composition = row.FiberName,
-                                Trial1 = (decimal?)row.GSMTrail1,
-                                Trial2 = (decimal?)row.GSMTrail2
-                            });
-                        }
-                        sectionIndex++;
-                    }
-                }
-
-                // 多组分：溶解列表
-                if (dto.MultipleBuildAnalysis.fiberDissolvedList != null)
-                {
-                    foreach (var dissolved in dto.MultipleBuildAnalysis.fiberDissolvedList)
-                    {
-                        // 原始GSM存储为表头Trial
-                        if (dissolved.DissolvedRows != null)
-                        {
-                            foreach (var row in dissolved.DissolvedRows)
-                            {
-                                if (string.IsNullOrWhiteSpace(row.FiberName)) continue;
-
-                                worksheet.Details.Add(new FiberWorksheetDetail
-                                {
-                                    Id = Guid.NewGuid(),
-                                    WorksheetId = worksheet.Id,
-                                    SectionIndex = sectionIndex,
-                                    Composition = row.FiberName,
-                                    Trial1 = (decimal?)row.GSMTrail1,
-                                    Trial2 = (decimal?)row.GSMTrail2,
-                                    HeaderTrial1 = (decimal?)dissolved.OriginalGSMTrail1,
-                                    HeaderTrial2 = (decimal?)dissolved.OriginalGSMTrail2
-                                });
-                            }
-                            sectionIndex++;
-                        }
-                    }
-                }
-            }
-            else if (dto.ComponentType == "Single" && dto.SingleBuildAnalysis != null)
-            {
-                // 单组分
-                if (dto.SingleBuildAnalysis.SingleFiberRows != null)
-                {
-                    foreach (var row in dto.SingleBuildAnalysis.SingleFiberRows)
-                    {
-                        if (string.IsNullOrWhiteSpace(row.FiberName)) continue;
-
-                        worksheet.Details.Add(new FiberWorksheetDetail
-                        {
-                            Id = Guid.NewGuid(),
-                            WorksheetId = worksheet.Id,
-                            SectionIndex = sectionIndex++,
-                            Composition = row.FiberName,
-                            Trial1 = (decimal?)row.GSMTrail1
-                        });
-                    }
-                }
-            }
-
-            // 4. 构建结果
-            worksheet.Result = new FiberWorksheetResult
-            {
-                Id = Guid.NewGuid(),
-                WorksheetId = worksheet.Id,
-                VerifyResult = dto.VerifyResult,
-                FinalResult = dto.FinalResult,
-                DurabilityLabel = dto.DurabilityLabel,
-                OtherLabel = dto.OtherLabel,
-                Comprehensive = dto.Comprehensive,
-                RecommendedLabel = dto.RecommendedLabel?.Any() == true
-                    ? string.Join(", ", dto.RecommendedLabel)
-                    : null,
-                ResultRemark = dto.ResultRemark,
-                LabelRemark = dto.LabelRemark,
-                JudgmentLabelRemark = dto.JudgmentLabelRemark,
-                LanguageLabelRemark = dto.LanguageLabelRemark
-            };
-
-            // 5. 保存到数据库
+            // 3. 保存到数据库
             if (existing != null)
-            {
                 await _worksheetRepo.UpdateAsync(worksheet);
-            }
             else
-            {
                 await _worksheetRepo.AddAsync(worksheet);
-            }
 
-            // 6. 生成Word文档
+            // 4. 生成Word文档
             try
             {
                 GenerateWordDocument(worksheet);
@@ -307,44 +202,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 Items = requestItems
             };
 
-            // 3. 执行计算
+            // 3. 执行计算，聚合根自行更新
             var calcResult = await _calcService.CalculateAsync(request);
+            worksheet.ApplyCalculation(calcResult);
 
-            // 4. 更新工作表结果
-            if (worksheet.Result == null)
-            {
-                worksheet.Result = new FiberWorksheetResult
-                {
-                    Id = Guid.NewGuid(),
-                    WorksheetId = worksheet.Id
-                };
-            }
-
-            worksheet.Result.RecommendedLabel = calcResult.RecommendedLabel;
-            worksheet.Result.Comprehensive = calcResult.MainCategory;
-
-            // 5. 更新明细中的计算百分比
-            foreach (var calcItem in calcResult.Items)
-            {
-                var matchingDetails = worksheet.Details
-                    .Where(d => d.Composition == calcItem.Composition)
-                    .ToList();
-
-                foreach (var detail in matchingDetails)
-                {
-                    detail.CalculatedPercent = calcItem.CombinedPercentage;
-                }
-            }
-
-            // 6. 生成 Remark
-            worksheet.Result.ResultRemark = GenerateResultRemark(calcResult);
-            worksheet.Result.LabelRemark = GenerateLabelRemark(calcResult);
-            worksheet.Result.JudgmentLabelRemark = GenerateJudgmentRemark(calcResult);
-            worksheet.Result.LanguageLabelRemark = GenerateLanguageRemark();
-
-            worksheet.Status = "InProgress";
-            worksheet.UpdatedAt = DateTime.UtcNow;
-
+            // 4. 保存
             await _worksheetRepo.UpdateAsync(worksheet);
 
             return Result<FiberCalculationResultDto>.Ok(calcResult);
@@ -360,51 +222,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
 
             return MapToDto(worksheet);
         }
-
-        #region Remark 生成
-
-        private string GenerateResultRemark(FiberCalculationResultDto calcResult)
-        {
-            if (!calcResult.Items.Any()) return string.Empty;
-
-            var remarks = new List<string>();
-
-            foreach (var item in calcResult.Items)
-            {
-                remarks.Add(
-                    $"{item.Composition}: Net Dry Content {item.NetDryContent:F1}%, " +
-                    $"Moisture Regain {item.MoistureRegain:F1}%, " +
-                    $"Combined {item.CombinedPercentage:F1}%");
-            }
-
-            return string.Join("; ", remarks);
-        }
-
-        private string GenerateLabelRemark(FiberCalculationResultDto calcResult)
-        {
-            if (string.IsNullOrEmpty(calcResult.RecommendedLabel))
-                return string.Empty;
-
-            return $"Label: {calcResult.RecommendedLabel}";
-        }
-
-        private string GenerateJudgmentRemark(FiberCalculationResultDto calcResult)
-        {
-            var total = calcResult.Items.Sum(i => i.CombinedPercentage);
-            var tolerance = Math.Abs(100m - total);
-
-            if (tolerance <= 0.5m)
-                return $"Total {total:F1}% — Within tolerance (±0.5%)";
-            else
-                return $"Total {total:F1}% — Exceeds tolerance (±0.5%), review required";
-        }
-
-        private string GenerateLanguageRemark()
-        {
-            return "Fiber composition tested in accordance with relevant standards.";
-        }
-
-        #endregion
 
         #region 映射
 
