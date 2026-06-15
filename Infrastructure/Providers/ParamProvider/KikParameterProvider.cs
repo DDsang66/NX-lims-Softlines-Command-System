@@ -47,13 +47,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM":"900RPM"
+                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM" : "900RPM"
             },
 
             ("Determination of the Fastening of Components", _, _) => new WetParameterIso
@@ -66,12 +66,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
                 DryProcedure = "Tumble Dry",
-                Temperature = p.WashingProcedure!.Contains("H") ? "40" 
-                : p.WashingProcedure!.Contains("3") ? "40" 
+                Temperature = p.WashingProcedure!.Contains("H") ? "40"
+                : p.WashingProcedure!.Contains("3") ? "40"
                 : p.WashingProcedure!.Contains("4") ? "50"
                 : p.WashingProcedure!.Contains("5") ? "60"
-                :p.WashingProcedure!.Contains("6") ? "70"
-                :"80",
+                : p.WashingProcedure!.Contains("6") ? "70"
+                : "80",
                 SpecialCareInstruction = p.Sci ?? null,
             },
 
@@ -85,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 SpecialCareInstruction = p.Sci ?? null,
@@ -127,7 +127,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
-                DryProcedure = p.DryProcedure,
+                DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 SpecialCareInstruction = p.Sci ?? null,
@@ -204,5 +204,16 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             return null!;
         }
 
+
+        private string? DryProcedureHelper(string sampleDesc, string? dryProcedure)
+        {
+            if (string.IsNullOrEmpty(dryProcedure) == false) return dryProcedure;
+            else
+            {
+                if (sampleDesc.Contains("Woven")) return "Line Dry";
+                else if (sampleDesc.Contains("Knit")) return "Flat Dry";
+                else return "Line Dry";
+            }
+        }
     }
 }

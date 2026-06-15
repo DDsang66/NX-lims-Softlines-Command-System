@@ -715,17 +715,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 var sample = ws.Cells["A3"].Value?.ToString();
 
                 var cellOrder = new List<string> { "A9", "A11", "A13", "A15", "A17", "A19", "A21", "A23", "A25" };
-                var reasonCellOrder = new List<string>();
-                if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                var reasonCellOrder = cellOrder.Select(c => "P" + c.Substring(1)).ToList();
+                if (sample.ToLower().Contains("shell"))
                 {
-                    map["M8"] = (w, dto, esDto, ws, reportNo) => "√";
-                    map["AC8"] = (w, dto, esDto, ws, reportNo) => "√";
                     reasonCellOrder = cellOrder.Select(c => "H" + c.Substring(1)).ToList();
                 }
-                else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                if (sample.ToLower().Contains("lining"))
                 {
-                    map["U8"] = (w, dto, esDto, ws, reportNo) => "√";
-                    map["AK8"] = (w, dto, esDto, ws, reportNo) => "√";
                     reasonCellOrder = cellOrder.Select(c => "P" + c.Substring(1)).ToList();
                 }
                 var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

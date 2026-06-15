@@ -1,33 +1,33 @@
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
+namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext
 {
     public interface IFiberDatabaseRepository
     {
         /// <summary>
         /// 获取所有纤维数据
         /// </summary>
-        Task<List<FiberDatabase>> GetAllAsync();
+        Task<List<CompositionNew>> GetAllAsync();
 
         /// <summary>
         /// 根据ID获取纤维数据
         /// </summary>
-        Task<FiberDatabase?> GetByIdAsync(Guid id);
+        Task<CompositionNew?> GetByIdAsync(Guid id);
 
         /// <summary>
         /// 根据英文名称获取纤维数据
         /// </summary>
-        Task<FiberDatabase?> GetByNameEnAsync(string nameEn);
+        Task<CompositionNew?> GetByNameEnAsync(string nameEn);
 
         /// <summary>
         /// 添加纤维数据
         /// </summary>
-        Task<FiberDatabase> AddAsync(FiberDatabase fiber);
+        Task<CompositionNew> AddAsync(CompositionNew fiber);
 
         /// <summary>
         /// 更新纤维数据
         /// </summary>
-        Task<FiberDatabase> UpdateAsync(FiberDatabase fiber);
+        Task<CompositionNew> UpdateAsync(CompositionNew fiber);
 
         /// <summary>
         /// 删除纤维数据

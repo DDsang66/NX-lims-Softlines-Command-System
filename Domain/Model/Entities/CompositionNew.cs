@@ -22,4 +22,20 @@ public partial class CompositionNew
     public string? TertiaryClassificationEn { get; set; }
 
     public string? TertiaryClassificationChn { get; set; }
+
+    public decimal? MoistureRegainIso { get; set; }
+
+    public decimal? MoistureRegainAatcc { get; set; }
+
+    public decimal? MoistureRegainCan { get; set; }
+
+    public decimal? MoistureRegainKor { get; set; }
+
+    public decimal? MoistureRegainGb { get; set; }
+
+    public decimal? MoistureRegainCns { get; set; }
+
+    public decimal? MoistureRegainJis { get; set; }
+
+    public decimal? QualitativeDescription { get; set; }
 }

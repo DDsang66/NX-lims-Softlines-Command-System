@@ -129,7 +129,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                "A12", "A13", "A14", "A15","A16"
+                "A12", "A13", "A14", "A15","A16", "A17", "A18", "A19", "A20"
             };
         }
 

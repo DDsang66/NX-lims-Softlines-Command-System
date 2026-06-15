@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using System.Text.Json.Serialization;
 
 namespace NX_lims_Softlines_Command_System.Application.DTO
 {
@@ -19,9 +20,6 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? ironMethod { get; set; }
         public string? bleachProcedure { get; set; }
         public string? detergent{ get; set; }
-
-
-
         public List<Items>? items { get; set; }
         public List<string>? afterWash { get; set; }
         public List<FiberDto>? fiberComposition { get; set; }
@@ -29,9 +27,11 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
         public string? additionalRequire { get; set; }
         public string? sampleDescription { get; set; }
         public List<SampleDescObject>? sampleDescripBoundSingle { get; set; }
+        public List<SeamDescObject>? SeamParameter { get; set; }
     }
     public class SampleDescObject
     {
+        [JsonConverter(typeof(StringOrArrayConverter))]
         public string? sample { get; set; }
         public List<DescObject>? description { get; set; }
     }
@@ -45,6 +45,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
     {
         public string? itemName { get; set; }
         public string? standards { get; set; }
+        [JsonConverter(typeof(StringOrArrayConverter))]
         public string? samples { get; set; }
     }
     public class FiberDto
@@ -56,6 +57,7 @@ namespace NX_lims_Softlines_Command_System.Application.DTO
 
     public class FiberInfoNew
     {
+        [JsonConverter(typeof(StringOrArrayConverter))]
         public string? Sample { get; set; }
         public List<FiberDto>? Composition { get; set; }
 

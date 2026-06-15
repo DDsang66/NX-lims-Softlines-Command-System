@@ -70,6 +70,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                                 .FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
                 if (wp == null) wp = new WetParameterIso();
                 string? afterWash = wp!.AfterWash;
+
+                afterWash = string.Join(", ", dto.Sample!
+                   .Split(',')
+                   .Select(s => s.Trim())
+                   .SelectMany(s => new[] { $"{s}-1 Wash" }));
+
+
                 string? iron = wp!.Iron;
                 string? ironMethod = wp!.IronMethod;
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);

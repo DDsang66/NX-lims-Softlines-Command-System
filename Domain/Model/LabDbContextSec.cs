@@ -18,8 +18,6 @@ public partial class LabDbContextSec : DbContext
 
     public virtual DbSet<AdidasMethodItemMap> AdidasMethodItemMaps { get; set; }
 
-    public virtual DbSet<Applications> Applications { get; set; }
-
     public virtual DbSet<AuditChange> AuditChanges { get; set; }
 
     public virtual DbSet<Composition> Compositions { get; set; }
@@ -31,6 +29,8 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<ExcelAddress> ExcelAddresses { get; set; }
 
     public virtual DbSet<Feedback> Feedbacks { get; set; }
+
+    public virtual DbSet<FiberAnalysis> FiberAnalyses { get; set; }
 
     public virtual DbSet<Item> Items { get; set; }
 
@@ -61,16 +61,6 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
-
-    // Fiber Analysis entities
-    public virtual DbSet<FiberDatabase> FiberDatabases { get; set; }
-
-    public virtual DbSet<FiberWorksheet> FiberWorksheets { get; set; }
-
-    public virtual DbSet<FiberWorksheetDetail> FiberWorksheetDetails { get; set; }
-
-    public virtual DbSet<FiberWorksheetResult> FiberWorksheetResults { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -94,41 +84,6 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("type");
-        });
-
-        modelBuilder.Entity<Applications>(entity =>
-        {
-            entity.HasKey(e => e.ApplicationId);
-            entity.ToTable("application");
-
-            entity.Property(e => e.ApplicationId)
-                .ValueGeneratedNever()
-                .HasColumnName("application_id");
-            entity.Property(e => e.Applicant)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("applicant");
-            entity.Property(e => e.Express)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasColumnName("express");
-            entity.Property(e => e.Reason)
-                .HasMaxLength(100)
-                .IsUnicode(false)
-                .HasColumnName("reason");
-            entity.Property(e => e.Remark)
-                .HasColumnType("text")
-                .HasColumnName("remark");
-            entity.Property(e => e.ReportDueDate).HasColumnName("report_due_date");
-            entity.Property(e => e.ReportNumber)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("report_number");
-            entity.Property(e => e.TestGroup)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasColumnName("test_group");
-            entity.Property(e => e.TestSampleNum).HasColumnName("test_sample_num");
         });
 
         modelBuilder.Entity<AuditChange>(entity =>
@@ -210,6 +165,27 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("composition_nameEN");
             entity.Property(e => e.IdComposition).HasColumnName("id_composition");
+            entity.Property(e => e.MoistureRegainAatcc)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_aatcc");
+            entity.Property(e => e.MoistureRegainCan)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_can");
+            entity.Property(e => e.MoistureRegainCns)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_cns");
+            entity.Property(e => e.MoistureRegainGb)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_gb");
+            entity.Property(e => e.MoistureRegainIso)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_iso");
+            entity.Property(e => e.MoistureRegainJis)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_jis");
+            entity.Property(e => e.MoistureRegainKor)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_kor");
             entity.Property(e => e.PrimaryCategoryChn)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -218,6 +194,9 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("primary_categoryEN");
+            entity.Property(e => e.QualitativeDescription)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("qualitative_description");
             entity.Property(e => e.SecondaryClassificationChn)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -253,16 +232,16 @@ public partial class LabDbContextSec : DbContext
         {
             entity.HasKey(e => e.IdExcelAddress);
             entity.ToTable("excel_address");
-            entity.Property(e => e.ReportNumber)
-            .HasMaxLength(50)
-            .IsUnicode(false)
-            .HasColumnName("report_number");
 
             entity.Property(e => e.Address)
                 .HasMaxLength(125)
                 .IsUnicode(false)
                 .HasColumnName("address");
             entity.Property(e => e.IdExcelAddress).HasColumnName("id_excel_address");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
             entity.Property(e => e.RowVersion)
                 .IsRowVersion()
                 .IsConcurrencyToken()
@@ -312,6 +291,31 @@ public partial class LabDbContextSec : DbContext
                 .HasDefaultValueSql("((3))")
                 .HasComment("类型（建议、BUG）")
                 .HasColumnName("type");
+        });
+
+        modelBuilder.Entity<FiberAnalysis>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("Id");
+            entity.ToTable("fiber_analysis");
+            entity.Property(e => e.Buyer)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("buyer");
+            entity.Property(e => e.FiberAnalysis1)
+                .HasColumnType("text")
+                .HasColumnName("fiber_analysis");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Method)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Remark)
+                .HasColumnType("text")
+                .HasColumnName("remark");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("report_number");
+            entity.Property(e => e.Type).HasColumnName("type");
         });
 
         modelBuilder.Entity<Item>(entity =>
@@ -573,7 +577,7 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("cycle");
             entity.Property(e => e.ExtraParam)
-                .HasMaxLength(200)
+                .HasMaxLength(int.MaxValue)
                 .IsUnicode(false)
                 .HasColumnName("extra_param");
             entity.Property(e => e.Load)

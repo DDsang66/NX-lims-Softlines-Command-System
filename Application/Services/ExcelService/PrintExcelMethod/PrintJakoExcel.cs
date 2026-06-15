@@ -486,15 +486,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var sample = ws.Cells["D3"].Value?.ToString();
 
                     var cellOrder = new List<string> { "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "A16", "A17", "A18", "A19" };
-                    var reasonCellOrder = new List<string>();
-                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    var reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
+                    if (sample.ToLower().Contains("shell"))
                     {
-                        map["Q4"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
                     } 
-                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    if (sample.ToLower().Contains("lining"))
                     {
-                        map["AF4"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
                     } 
                     var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -565,15 +563,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var sample = ws.Cells["D3"].Value?.ToString();
 
                     var cellOrder = new List<string> { "A5", "A6", "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "A16" };
-                    var reasonCellOrder = new List<string>();
-                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    var reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
+                    if (sample.ToLower().Contains("shell"))
                     {
-                        map["Q4"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
                     }
-                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    if (sample.ToLower().Contains("lining"))
                     {
-                        map["AF4"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
                     }
                     var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -643,15 +639,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var sample = ws.Cells["D5"].Value?.ToString();
 
                     var cellOrder = new List<string> { "A7", "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15", "A16", "A17", "A18" };
-                    var reasonCellOrder = new List<string>();
-                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    var reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
+                    if (sample.ToLower().Contains("shell"))
                     {
-                        map["Q6"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
                     }
-                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    if (sample.ToLower().Contains("lining"))
                     {
-                        map["AF6"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
                     }
                     var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -714,14 +708,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var sample = ws.Cells["D3"].Value?.ToString();
                     var cellOrder = new List<string> { "A20", "A21", "A22", "A23", "A24", "A25", "A26", "A27", "A28", "A29", "A30", "A31" };
                     var reasonCellOrder = new List<string>();
-                    if (dto.Sample!.Contains("Shell") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Shell"))
+                    if (sample.ToLower().Contains("shell"))
                     {
-                        map["Q19"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "J" + c.Substring(1)).ToList();
                     }
-                    else if (dto.Sample.Contains("Lining") || esDto.SeamParameter!.FirstOrDefault(s => s.Sample == sample)!.Type!.Contains("Lining"))
+                    if (sample.ToLower().Contains("lining"))
                     {
-                        map["AF19"] = (dto, esDto, ws, reportNo) => "√";
                         reasonCellOrder = cellOrder.Select(c => "Y" + c.Substring(1)).ToList();
                     }
                     var descMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
