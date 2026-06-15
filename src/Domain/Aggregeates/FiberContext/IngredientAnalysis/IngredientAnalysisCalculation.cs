@@ -251,38 +251,29 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     Rate = 0
                 });
 
-                // 中间行和最后一行：逐成分处理
+                // 逐成分处理：前端传的是累积剩余重量，需反推各成分自身重量
                 for (int i = 0; i < componentCount; i++)
                 {
                     var current = groupUnits[i];
-                    var isLast = i == componentCount - 1;
 
-                    decimal gsmTrail1 = (decimal)current.GSMTrail1;
-                    decimal gsmTrail2 = (decimal)current.GSMTrail2;
-                    decimal rateTrail1;
-                    decimal rateTrail2;
+                    // 上一步剩余重量 = 原始总重 或 上一步的累积值
+                    decimal prevGsm1 = (i == 0)
+                        ? (decimal)group.OriginalGSMTrail1
+                        : (decimal)groupUnits[i - 1].GSMTrail1;
+                    decimal prevGsm2 = (i == 0)
+                        ? (decimal)group.OriginalGSMTrail2
+                        : (decimal)groupUnits[i - 1].GSMTrail2;
 
-                    if (isLast)
-                    {
-                        // 最后一行：当前成分重量 / 总重（剩余的就是它自己）
-                        rateTrail1 = SafeDivide(gsmTrail1, totalGSMTrail1);
-                        rateTrail2 = SafeDivide(gsmTrail2, totalGSMTrail2);
-                    }
-                    else
-                    {
-                        // 中间行：（当前成分重量 - 下一成分重量）/ 总重
-                        // 差值即为当前成分被溶解掉的量
-                        var next = groupUnits[i + 1];
-                        var diffTrail1 = gsmTrail1 - (decimal)next.GSMTrail1;
-                        var diffTrail2 = gsmTrail2 - (decimal)next.GSMTrail2;
+                    // 当前成分自身重量 = 上一步剩余 - 当前步剩余
+                    decimal gsmTrail1 = prevGsm1 - (decimal)current.GSMTrail1;
+                    decimal gsmTrail2 = prevGsm2 - (decimal)current.GSMTrail2;
 
-                        rateTrail1 = SafeDivide(diffTrail1, totalGSMTrail1);
-                        rateTrail2 = SafeDivide(diffTrail2, totalGSMTrail2);
-                    }
+                    var rateTrail1 = SafeDivide(gsmTrail1, totalGSMTrail1);
+                    var rateTrail2 = SafeDivide(gsmTrail2, totalGSMTrail2);
 
                     units.Add(new MultiFiberRowUnit
                     {
-                        Section = section,  
+                        Section = section,
                         Sum = current.FiberName,
                         GSMTrail1 = gsmTrail1,
                         GSMTrail2 = gsmTrail2,

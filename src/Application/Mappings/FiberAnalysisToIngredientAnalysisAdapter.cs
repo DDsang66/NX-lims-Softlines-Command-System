@@ -146,9 +146,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     // 将 units 作为一个 DissolvedFiberComponent 的值对象集合
                     var component = new DissolvedFiberComponent
                     {
-                        // 组件层面的 FiberName 可以取首个 unit 的名称或保持空
                         FiberName = units.FirstOrDefault()?.FiberName ?? string.Empty,
-                        DissolutionUnits = units
+                        DissolutionUnits = units,
+                        OriginalGSMTrail1 = originalGsm1,
+                        OriginalGSMTrail2 = originalGsm2
                     };
 
                     components.Add(component);

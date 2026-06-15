@@ -390,6 +390,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         public Table AddNewTable(WordprocessingDocument doc, int columns, int rows,
             string? paragraphBookmark = null)
         {
+            return null!;
         }
 
         /// <summary>

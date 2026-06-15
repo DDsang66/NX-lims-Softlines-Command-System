@@ -12,143 +12,162 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
     public class FiberAnalysisController : ControllerBase
     {
         private readonly IFiberDatabaseRepository _fiberRepo;
+        private readonly IFiberWorksheetRepository _worksheetRepo;
         private readonly FiberWorksheetService _worksheetService;
+        private readonly IWebHostEnvironment _env;
 
         public FiberAnalysisController(
             IFiberDatabaseRepository fiberRepo,
-            FiberWorksheetService worksheetService)
+            IFiberWorksheetRepository worksheetRepo,
+            FiberWorksheetService worksheetService,
+            IWebHostEnvironment env)
         {
             _fiberRepo = fiberRepo;
+            _worksheetRepo = worksheetRepo;
             _worksheetService = worksheetService;
+            _env = env;
         }
 
         #region 纤维数据库 API
 
-        /// <summary>
-        /// 获取所有纤维数据
-        /// </summary>
         [HttpGet("database")]
         public async Task<IActionResult> GetAllFibers()
         {
             var fibers = await _fiberRepo.GetAllAsync();
-
-            return Ok(new { success = true });
+            return Ok(new { success = true, data = fibers });
         }
 
-        /// <summary>
-        /// 获取纤维名称列表（用于前端下拉选择）
-        /// </summary>
         [HttpGet("names")]
         public async Task<IActionResult> GetFiberNames()
         {
             var names = await _fiberRepo.GetAllNamesAsync();
-
             return Ok(new { success = true, data = names });
         }
 
-        /// <summary>
-        /// 添加纤维数据
-        /// </summary>
         [HttpPost("database")]
         public async Task<IActionResult> AddFiber([FromBody] FiberDatabaseCreateDto dto)
         {
-
-            return Ok(new { success = true });
+            var entity = new CompositionNew
+            {
+                CompositionNameEn = dto.FiberNameEn,
+                CompositionNameChn = dto.FiberNameCn,
+                PrimaryCategoryEn = dto.Category
+            };
+            var result = await _fiberRepo.AddAsync(entity);
+            return Ok(new { success = true, data = result });
         }
 
-        /// <summary>
-        /// 更新纤维数据
-        /// </summary>
         [HttpPut("database/{id}")]
         public async Task<IActionResult> UpdateFiber(Guid id, [FromBody] FiberDatabaseCreateDto dto)
         {
             var fiber = await _fiberRepo.GetByIdAsync(id);
+            if (fiber == null)
+                return NotFound(new { success = false, message = "纤维数据不存在" });
 
-            return Ok(new { success = true });
+            fiber.CompositionNameEn = dto.FiberNameEn;
+            fiber.CompositionNameChn = dto.FiberNameCn;
+            fiber.PrimaryCategoryEn = dto.Category;
+
+            var result = await _fiberRepo.UpdateAsync(fiber);
+            return Ok(new { success = true, data = result });
         }
 
-        /// <summary>
-        /// 删除纤维数据
-        /// </summary>
         [HttpDelete("database/{id}")]
         public async Task<IActionResult> DeleteFiber(Guid id)
         {
             var result = await _fiberRepo.DeleteAsync(id);
-
             return Ok(new { success = result });
         }
 
         #endregion
 
         #region 工作表 API
-        /// <summary>
-        /// 返回下载地址url
-        /// 前端在传给document server进行渲染
-        /// </summary>
-        [HttpPost("worksheet")]
-        public async Task<Result<DocxUrlResponseDto>> BuildAnalysis([FromBody] BuildAnalysisDto dto,CancellationToken ct)
-        {
-            var result = await _worksheetService.BuildAnalysisAsync(dto,ct);
 
-            return Result<DocxUrlResponseDto>.Ok(new DocxUrlResponseDto());
+        [HttpPost("worksheet")]
+        public async Task<Result<DocxUrlResponseDto>> BuildAnalysis([FromBody] BuildAnalysisDto dto, CancellationToken ct)
+        {
+            var result = await _worksheetService.BuildAnalysisAsync(dto, ct);
+            if (result.IsFailure)
+                return Result<DocxUrlResponseDto>.Fail(result.Error, result.ErrorCode);
+
+            var docxUrl = new DocxUrlResponseDto
+            {
+                fileKey = dto.ReportNumber,
+                fileName = $"{dto.ReportNumber}_FiberAnalysis.docx",
+                downloadUrl = $"/api/FiberAnalysis/{dto.ReportNumber}_FiberAnalysis.docx/download",
+                callbackUrl = $"/api/FiberAnalysis/{dto.ReportNumber}_FiberAnalysis.docx/callback"
+            };
+
+            return Result<DocxUrlResponseDto>.Ok(docxUrl);
         }
 
-        /// <summary>
-        /// 工作表下载地址
-        /// </summary>
-        /// <param name="fileName"></param>
-        /// <returns></returns>
         [HttpGet("{fileName}/download")]
         public IActionResult Download(string fileName)
         {
-            // 根据 fileId 找到实际文件路径
+            var filePath = Path.Combine(_env.WebRootPath, "DocxModel", "SaveDocx", fileName);
+            if (!System.IO.File.Exists(filePath))
+                return NotFound(new { success = false, message = "文件不存在" });
 
-            string filePath = null;
-            // 返回文件流，Content-Type 必须正确
             return PhysicalFile(
                 filePath,
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 fileDownloadName: fileName,
-                enableRangeProcessing: true  // 支持断点续传
+                enableRangeProcessing: true
             );
         }
 
-
-        /// <summary>
-        /// 获取工作表
-        /// </summary>
         [HttpGet("worksheet/{reportNumber}")]
-        public async Task<IActionResult> GetWorkSheet()
+        public async Task<IActionResult> GetWorkSheet(string reportNumber)
         {
-            //var result = await _worksheetService.SaveAsync(dto);
+            var result = await _worksheetRepo.GetByReportNumberAsync(reportNumber);
+            if (result == null)
+                return NotFound(new { success = false, message = "工作表不存在" });
 
-            return Ok(new { success = true});
+            return Ok(new { success = true, data = result });
         }
 
-        /// <summary>
-        /// 删除工作表
-        /// </summary>
         [HttpDelete("worksheet/{id}")]
         public async Task<IActionResult> DeleteWorksheet(Guid id)
         {
-            //var result = await _worksheetService.DeleteAsync(id);
-            return Ok(new { });
+            var result = await _worksheetRepo.DeleteAsync(id);
+            if (!result)
+                return NotFound(new { success = false, message = "工作表不存在或删除失败" });
+
+            return Ok(new { success = true });
         }
 
         #endregion
 
         #region 计算 API
 
-        /// <summary>
-        /// 执行成分逻辑计算获取Remark、Label等数据
-        /// </summary>
         [HttpPost("calculate")]
-        public async Task<Result> Calculate([FromBody] FiberCalculationRequestDto request)
+        public async Task<Result<FiberCalculationResultDto>> Calculate([FromBody] FiberCalculationRequestDto request)
         {
-            //var result = await _calcService.CalculateAsync(request);
-
-            return Result.Ok();
+            // 纯计算，不持久化
+            var result = await _worksheetService.DirectCalculateAsync(request);
+            if (result.IsFailure)
+                return Result<FiberCalculationResultDto>.Fail(result.Error, result.ErrorCode);
+            return result;
         }
+
+        [HttpPost("calculate/report/{reportNumber}")]
+        public async Task<Result<FiberCalculationResultDto>> CalculateByReport(string reportNumber)
+        {
+            var result = await _worksheetService.CalculateByReportAsync(reportNumber);
+            if (result.IsFailure)
+                return Result<FiberCalculationResultDto>.Fail(result.Error, result.ErrorCode);
+            return result;
+        }
+
+        [HttpPost("calculate/{id:long}")]
+        public async Task<Result<string>> CalculateById(long id, CancellationToken ct)
+        {
+            var result = await _worksheetService.CalculateAsync(id, ct);
+            if (result.IsFailure)
+                return Result<string>.Fail(result.Error, result.ErrorCode);
+            return Result<string>.Ok("计算完成");
+        }
+
         #endregion
     }
 }

@@ -6,7 +6,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 {
-    public class FiberWorksheetRepository : IFiberWorksheetRepository,IScopedDependency
+    public class FiberWorksheetRepository : IFiberWorksheetRepository, IScopedDependency
     {
         private readonly LabDbContextSec _context;
 
@@ -17,32 +17,36 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
         public async Task<FiberAnalysis?> GetByReportNumberAsync(string reportNumber)
         {
-            return null;
+            return await _context.FiberAnalyses
+                .FirstOrDefaultAsync(f => f.ReportNumber == reportNumber);
         }
 
         public async Task<FiberAnalysis?> GetByIdAsync(long id, CancellationToken ct)
         {
-            var fiberAnalysis = await _context.FiberAnalyses.FindAsync(id);
-
-            return fiberAnalysis;
+            return await _context.FiberAnalyses.FindAsync(id, ct);
         }
 
-
-        public async Task AddAsync(FiberAnalysis worksheet,CancellationToken ct)
+        public async Task AddAsync(FiberAnalysis worksheet, CancellationToken ct)
         {
-            await _context.AddAsync(worksheet,ct);
-
+            worksheet.CreatedAt = DateTime.UtcNow;
+            await _context.AddAsync(worksheet, ct);
             await _context.SaveChangesAsync(ct);
         }
 
         public async Task<FiberAnalysis> UpdateAsync(FiberAnalysis worksheet)
         {
-
-            return null;
+            worksheet.UpdatedAt = DateTime.UtcNow;
+            _context.FiberAnalyses.Update(worksheet);
+            await _context.SaveChangesAsync();
+            return worksheet;
         }
 
         public async Task<bool> DeleteAsync(Guid id)
         {
+            var entity = await _context.FiberAnalyses.FindAsync(id);
+            if (entity == null) return false;
+            _context.FiberAnalyses.Remove(entity);
+            await _context.SaveChangesAsync();
             return true;
         }
     }
