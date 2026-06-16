@@ -64,6 +64,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public List<string> Recommendation => Get<List<string>>("Recommendation") ?? new List<string>();
 
         // --------------------------
+        // 强类型辅助访问器（设备选型）
+        // --------------------------
+        public string Equipment_Microscope => Get<string>("Equipment_Microscope") ?? string.Empty;
+        public string Equipment_Oven => Get<string>("Equipment_Oven") ?? string.Empty;
+        public string Equipment_Balance => Get<string>("Equipment_Balance") ?? string.Empty;
+        public string Equipment_WaterBath => Get<string>("Equipment_WaterBath") ?? string.Empty;
+        public string Equipment_Shaker => Get<string>("Equipment_Shaker") ?? string.Empty;
+
+        // --------------------------
         // 强类型辅助访问器（纤维项）
         // --------------------------
         public int ComponentsCount => ParseInt("ComponentsCount");
@@ -180,6 +189,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             copy["FinalResult"] = remarkLabel.FinalResult;
             copy["Results"] = remarkLabel.Results;
             copy["Recommendation"] = remarkLabel.Recommendation;
+            return new AnalysisResult(copy);
+        }
+
+        public AnalysisResult WithEquipment(EquipmentSelection equipment)
+        {
+            var copy = new Dictionary<string, object>(Data);
+            copy["Equipment_Microscope"] = equipment.Microscope;
+            copy["Equipment_Oven"] = equipment.Oven;
+            copy["Equipment_Balance"] = equipment.Balance;
+            copy["Equipment_WaterBath"] = equipment.WaterBath;
+            copy["Equipment_Shaker"] = equipment.Shaker;
             return new AnalysisResult(copy);
         }
 

@@ -95,6 +95,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             result = result.WithAnalysisItems(calculatedFiberResult, actualComponentCount);
 
+            // 3.5) 设备选型（对应 Excel L23/O23/R23/L24/O24）
+            var orderedFiberNames = GetOrderedFiberNames();
+            var equipment = SelectEquipment(orderedFiberNames.Count, orderedFiberNames);
+            result = result.WithEquipment(equipment);
+
             // 4) 计算标签/备注
             var calculatedRemarkResult = GenerateRecommendedLabel(RemarkGroup, calculatedFiberResult);
 
@@ -558,18 +563,161 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </summary>
         /// <param name="qualitative"></param>
         /// <returns></returns>
-        private static string ReagentCalculateMethod(string qualitative) 
+        private static string ReagentCalculateMethod(string qualitative)
         {
-            string reagent = string.Empty;
-            //动物纤维 => NaClO
-            //"Polyamide","Nylon","Vinal","Vinylon","Vinylal" => 20%HCl
-            //弹性纤维 => DMF
-            //再生纤维素纤维"Rayon","Viscose","Modal","Lyocell","Cupro" => 59.5%H2SO4
-            //天然纤维素纤维"Cotton","Linen","Hemp","Ramie","Jute","Paper","Paper yarn","Kapok","Abaca" => 70%H2SO4
-            //"Polyester","Elastomultiester","Rubber","Elastodiene"=> 98%H2SO4
-            return reagent;
+            if (string.IsNullOrWhiteSpace(qualitative)) return string.Empty;
+
+            var rules = new (string Reagent, string[] Keywords)[]
+            {
+                ("NaClO",        new[]{"Wool","Alpaca","Mohair","Rabbit hair","Cashmere","Camel","Yak","Silk","Horse hair","Tussah","Tussah silk"}),
+                ("20%HCl",       new[]{"Polyamide","Nylon","Vina","Vinylon","Vinylal"}),
+                ("DMF",          new[]{"Acrylic","Modacrylic","Spandex","Elastane"}),
+                ("59.5%H2SO4",   new[]{"Rayon","Viscose","Modal","Lyocell","Cupro"}),
+                ("70%H2SO4",     new[]{"Cotton","Linen","Hemp","Ramie","Jute","Paper","Paper yarn","Kapok","Abaca"}),
+                ("98%H2SO4",     new[]{"Polyester","Elastomultiester","Rubber","Elastodiene"}),
+                ("Acetone",      new[]{"Acetate","Triacetate"})
+            };
+
+            var fibers = qualitative.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            var matched = new HashSet<string>();
+
+            foreach (var fiber in fibers)
+            {
+                var trimmed = fiber.Trim();
+                foreach (var (reagent, keywords) in rules)
+                {
+                    if (keywords.Any(k => trimmed.Contains(k, StringComparison.OrdinalIgnoreCase)))
+                        matched.Add(reagent);
+                }
+            }
+
+            return string.Join(", ", matched);
         }
 
+
+        /*------------------------------------------设备选型逻辑--------------------------------------------------------------------------*/
+
+        // 设备编码常量（对应 Excel L23/O23/R23/L24/O24）
+        private const string MICROSCOPE = "Microscope:SFL-NGB-EQP-056";
+        private const string OVEN = "Oven:SFL-NGB-EQP-164";
+        private const string BALANCE = "Balance:SFL-NGB-EQP-061";
+        private const string WATER_BATH = "Water bath:SFL-NGB-EQP-046";
+        private const string SHAKER = "Shaker:SFL-NGB-EQP-052";
+
+        // Shaker 触发纤维（首成分为这些时需化学溶解）
+        private static readonly HashSet<string> ShakerFirstFibers = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "nylon", "polyamide", "wool", "silk"
+        };
+
+        // P130 规则：Polyester 前不允许的纤维
+        private static readonly HashSet<string> ProhibitedBeforePolyester = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "nylon", "polyamide", "wool", "silk", "acetate"
+        };
+
+        /// <summary>
+        /// 设备选型主入口（对应 Excel L23/O23/R23/L24/O24）
+        /// </summary>
+        private EquipmentSelection SelectEquipment(int componentCount, List<string> orderedFiberNames)
+        {
+            return new EquipmentSelection
+            {
+                Microscope = SelectMandatory(componentCount, MICROSCOPE),       // L23
+                Oven = SelectMandatory(componentCount, OVEN),                   // O23
+                Balance = SelectMandatory(componentCount, BALANCE),             // R23
+                WaterBath = SelectWaterBath(orderedFiberNames),                 // L24
+                Shaker = SelectShaker(orderedFiberNames)                        // O24
+            };
+        }
+
+        /// <summary>L23/O23/R23 — 多组分必用设备</summary>
+        private static string SelectMandatory(int componentCount, string deviceCode)
+        {
+            return componentCount > 1 ? deviceCode : string.Empty;
+        }
+
+        /// <summary>L24 — 水浴设备选择（P130/P131 规则）</summary>
+        private string SelectWaterBath(List<string> fibers)
+        {
+            if (fibers.Count < 2) return string.Empty;
+
+            // P130: 任何相邻对中后者为 polyester 且前者非禁止纤维 → 水浴（优先）
+            for (int i = 1; i < fibers.Count; i++)
+            {
+                if (fibers[i].Equals("polyester", StringComparison.OrdinalIgnoreCase)
+                    && !ProhibitedBeforePolyester.Contains(fibers[i - 1]))
+                {
+                    return WATER_BATH;
+                }
+            }
+
+            // P131: 任何相邻对中前者为 acrylic 且后者存在 → 水浴（回退）
+            for (int i = 1; i < fibers.Count; i++)
+            {
+                if (fibers[i - 1].Equals("acrylic", StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrWhiteSpace(fibers[i]))
+                {
+                    return WATER_BATH;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>O24 — 振荡器/化学溶解设备选择</summary>
+        private string SelectShaker(List<string> fibers)
+        {
+            if (fibers.Count < 2) return string.Empty;
+
+            // 第一成分为 nylon/polyamide/wool/silk 且有 ≥2 成分 → Shaker
+            if (ShakerFirstFibers.Contains(fibers[0]))
+            {
+                return SHAKER;
+            }
+
+            // 有拆分列（等效 Excel P129=1 → T150>0）→ Shaker
+            var hasSplitting = Components.OfType<SplittingFiberComponent>().Any();
+            if (hasSplitting)
+            {
+                return SHAKER;
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// 从上到下提取所有纤维名称的有序列表
+        /// 多组分：拆分列（按 SplittingOrder）→ 溶解列（每组按 DissolutionStep）
+        /// </summary>
+        private List<string> GetOrderedFiberNames()
+        {
+            if (Type == AnalysisType.Single)
+            {
+                return Components.OfType<SingleFiberComponent>()
+                    .Select(c => c.FiberName)
+                    .ToList();
+            }
+
+            var names = new List<string>();
+
+            // 拆分列先
+            foreach (var s in Components.OfType<SplittingFiberComponent>().OrderBy(s => s.SplittingOrder))
+            {
+                names.Add(s.FiberName);
+            }
+
+            // 溶解列后（每组按步骤排序）
+            foreach (var d in Components.OfType<DissolvedFiberComponent>())
+            {
+                foreach (var unit in d.DissolutionUnits.OrderBy(u => u.DissolutionStep))
+                {
+                    names.Add(unit.FiberName);
+                }
+            }
+
+            return names;
+        }
 
         /*------------------------------------------计算逻辑------------------------------------------------------------------------------*/
 

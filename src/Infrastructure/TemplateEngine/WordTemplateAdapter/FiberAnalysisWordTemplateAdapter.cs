@@ -55,6 +55,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 flatData[kv.Key] = kv.Value;
             }
 
+            // 设备选型字段 — 拼接所有非空设备值
+            var equipmentParts = new[]
+            {
+                analysisResult.Equipment_Microscope,
+                analysisResult.Equipment_Oven,
+                analysisResult.Equipment_Balance,
+                analysisResult.Equipment_WaterBath,
+                analysisResult.Equipment_Shaker
+            }.Where(e => !string.IsNullOrWhiteSpace(e));
+            flatData["Equipment"] = string.Join("    ", equipmentParts);
+
             // 计数字段
             flatData["ComponentsCount"] = analysisResult.ComponentsCount.ToString();
 
