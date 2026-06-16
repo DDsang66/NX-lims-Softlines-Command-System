@@ -136,8 +136,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         {
             // 1) 计算样品总干重（所有拆分列 + 所有溶解列的原始干重）
             var totalGSMTrail1 = splittings.Sum(s => (decimal)s.GSMTrail1) + dissolveds.Sum(d => (decimal)d.OriginalGSMTrail1);
-
             var totalGSMTrail2 = splittings.Sum(s => (decimal)s.GSMTrail2) + dissolveds.Sum(d => (decimal)d.OriginalGSMTrail2);
+
+            // 若原始 GSM 未填(为 0)，取第一个溶解单元第一行 GSM 作为总重
+            if (totalGSMTrail1 == 0)
+            {
+                var firstUnit = dissolveds.FirstOrDefault()?.DissolutionUnits?.FirstOrDefault();
+                totalGSMTrail1 = (decimal)(firstUnit?.GSMTrail1 ?? 0);
+            }
+            if (totalGSMTrail2 == 0)
+            {
+                var firstUnit = dissolveds.FirstOrDefault()?.DissolutionUnits?.FirstOrDefault();
+                totalGSMTrail2 = (decimal)(firstUnit?.GSMTrail2 ?? 0);
+            }
 
             var splittingUnits = CalculateSplittingUnits(splittings, totalGSMTrail1, totalGSMTrail2);
 
@@ -151,20 +162,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 合并所有单元（拆分列 + 溶解列）
             var allUnits = splittingUnits.Concat(dissolvedUnits).ToList();
 
-            // 每个溶解组件生成一个 MultiCalculatedFiberItem
-            // DissolutionUnits 包含全部单元（通过 Yarn # 下标识别归属）
             var qualitative = GetFiberQualitative();
 
-            var items = dissolveds.Select(d => new MultiCalculatedFiberItem
+            // 只创建一个 MultiCalculatedFiberItem 包含所有单元，避免每个溶解组重复复制 allUnits 导致百分比被重复计算
+            var item = new MultiCalculatedFiberItem
             {
                 Qualitative = qualitative,
                 Reagent = ReagentCalculateMethod(qualitative),
                 GSMTrail1 = totalGSMTrail1,
                 GSMTrail2 = totalGSMTrail2,
-                MultiFiberRowUnits = allUnits  // 全部单元放在一起，通过 Section 识别
-            }).Cast<CalculatedFiberResult>().ToList();
-
-            return items;
+                MultiFiberRowUnits = allUnits,
+                Sample = dissolveds.FirstOrDefault()?.Sample ?? string.Empty
+            };
+            return new List<CalculatedFiberResult> { item };
         }
 
         /// <summary>
@@ -227,9 +237,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
                 var section = $"{{Yarn #{currentIndex}}}";
 
-                var groupUnits = group.DissolutionUnits .OrderBy(u => u.DissolutionStep).ToList();
+                var groupUnits = group.DissolutionUnits.OrderBy(u => u.DissolutionStep).ToList();
+                if (groupUnits.Count == 0) continue;  // 跳过空溶解组
 
                 int componentCount = groupUnits.Count;
+
+                // 起始行 GSM：有 originalGSM 则用它，否则用第一条 dissolved row 的 GSM
+                var startGsm1 = group.OriginalGSMTrail1 > 0 ? (decimal)group.OriginalGSMTrail1 : (decimal)groupUnits[0].GSMTrail1;
+                var startGsm2 = group.OriginalGSMTrail2 > 0 ? (decimal)group.OriginalGSMTrail2 : (decimal)groupUnits[0].GSMTrail2;
 
                 // 计算所有成分缩写拼接
                 var abbreviations = groupUnits.Select(u => GetFiberAbbreviation(u.FiberName)) .ToList();
@@ -241,42 +256,51 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 {
                     Section = section,
                     Sum = combinedAbbreviation,
-                    GSMTrail1 = (decimal)group.OriginalGSMTrail1,
-                    GSMTrail2 = (decimal)group.OriginalGSMTrail2,
-                    RateTrail1 = SafeDivide((decimal)group.OriginalGSMTrail1, totalGSMTrail1),
-                    RateTrail2 = SafeDivide((decimal)group.OriginalGSMTrail2, totalGSMTrail2),
-                    Avg = (SafeDivide((decimal)group.OriginalGSMTrail1, totalGSMTrail1) + SafeDivide((decimal)group.OriginalGSMTrail2, totalGSMTrail2)) / 2,
+                    GSMTrail1 = startGsm1,
+                    GSMTrail2 = startGsm2,
+                    RateTrail1 = SafeDivide(startGsm1, totalGSMTrail1),
+                    RateTrail2 = SafeDivide(startGsm2, totalGSMTrail2),
+                    Avg = (SafeDivide(startGsm1, totalGSMTrail1) + SafeDivide(startGsm2, totalGSMTrail2)) / 2,
                     Correct = 1,
                     MoistureRegain = 0,
                     Rate = 0
                 });
 
-                // 逐成分处理：前端传的是累积剩余重量，需反推各成分自身重量
                 for (int i = 0; i < componentCount; i++)
                 {
                     var current = groupUnits[i];
+                    var isLast = i == componentCount - 1;
 
-                    // 上一步剩余重量 = 原始总重 或 上一步的累积值
-                    decimal prevGsm1 = (i == 0)
-                        ? (decimal)group.OriginalGSMTrail1
-                        : (decimal)groupUnits[i - 1].GSMTrail1;
-                    decimal prevGsm2 = (i == 0)
-                        ? (decimal)group.OriginalGSMTrail2
-                        : (decimal)groupUnits[i - 1].GSMTrail2;
+                    decimal ownGsm1, ownGsm2, curGsm1, curGsm2;
+                    curGsm1 = (decimal)current.GSMTrail1;
+                    curGsm2 = (decimal)current.GSMTrail2;
 
-                    // 当前成分自身重量 = 上一步剩余 - 当前步剩余
-                    decimal gsmTrail1 = prevGsm1 - (decimal)current.GSMTrail1;
-                    decimal gsmTrail2 = prevGsm2 - (decimal)current.GSMTrail2;
+                    if (group.OriginalGSMTrail1 > 0)
+                    {
+                        // 有 originalGSM：行 GSM = 溶解后剩余，自身 = 上一步残 − 当前
+                        decimal prevGsm1 = (i == 0) ? startGsm1 : (decimal)groupUnits[i - 1].GSMTrail1;
+                        ownGsm1 = prevGsm1 - curGsm1;
+                        decimal prevGsm2 = (i == 0) ? startGsm2 : (decimal)groupUnits[i - 1].GSMTrail2;
+                        ownGsm2 = prevGsm2 - curGsm2;
+                    }
+                    else
+                    {
+                        // 无 originalGSM：行 GSM = 溶解前重量，自身 = 当前 − 下一
+                        decimal nextGsm1 = !isLast ? (decimal)groupUnits[i + 1].GSMTrail1 : 0m;
+                        ownGsm1 = curGsm1 - nextGsm1;
+                        decimal nextGsm2 = !isLast ? (decimal)groupUnits[i + 1].GSMTrail2 : 0m;
+                        ownGsm2 = curGsm2 - nextGsm2;
+                    }
 
-                    var rateTrail1 = SafeDivide(gsmTrail1, totalGSMTrail1);
-                    var rateTrail2 = SafeDivide(gsmTrail2, totalGSMTrail2);
+                    var rateTrail1 = SafeDivide(ownGsm1, totalGSMTrail1);
+                    var rateTrail2 = SafeDivide(ownGsm2, totalGSMTrail2);
 
                     units.Add(new MultiFiberRowUnit
                     {
                         Section = section,
                         Sum = current.FiberName,
-                        GSMTrail1 = gsmTrail1,
-                        GSMTrail2 = gsmTrail2,
+                        GSMTrail1 = curGsm1,
+                        GSMTrail2 = curGsm2,
                         RateTrail1 = rateTrail1,
                         RateTrail2 = rateTrail2,
                         Avg = (rateTrail1 + rateTrail2) / 2,

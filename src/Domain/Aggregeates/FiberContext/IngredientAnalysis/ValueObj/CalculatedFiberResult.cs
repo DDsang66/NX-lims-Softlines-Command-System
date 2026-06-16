@@ -26,6 +26,7 @@
     /// </summary>
     public record MultiCalculatedFiberItem : CalculatedFiberResult
     {
+        public string Sample { get; init; } = string.Empty;
         public decimal GSMTrail1 { get; init; }
         public decimal GSMTrail2 { get; init; }
         public decimal RateTrail1 { get; init; } = 100m;

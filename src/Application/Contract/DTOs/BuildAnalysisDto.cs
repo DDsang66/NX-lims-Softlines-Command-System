@@ -31,10 +31,11 @@
     /// <summary>
     /// 多组分表单
     /// </summary>
-    public record MultipleAnalysis 
+    public record MultipleAnalysis
     {
         public List<FiberSplittingList> fiberSplittingList { get; set; } = new();
         public List<FiberDissolvedList> fiberDissolvedList { get; set; } = new();
+        public string Sample { get; set; } = string.Empty;
     }
 
     /// <summary>

@@ -42,6 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
         public float OriginalGSMTrail1 { get; init; }
         public float OriginalGSMTrail2 { get; init; }
+        public string Sample { get; init; } = string.Empty;
         public List<MultiDissolvedUnit> DissolutionUnits { get; init; } = new();
     }
 

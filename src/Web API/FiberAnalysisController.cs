@@ -116,7 +116,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             );
         }
 
-        [HttpGet("worksheet/{reportNumber}")]
+        [HttpGet("worksheet/{reportNumber:regex(^.+$)}")]
         public async Task<IActionResult> GetWorkSheet(string reportNumber)
         {
             var result = await _worksheetRepo.GetByReportNumberAsync(reportNumber);
@@ -150,7 +150,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
-        [HttpPost("calculate/report/{reportNumber}")]
+        [HttpPost("calculate/report/{reportNumber:regex(^.+$)}")]
         public async Task<Result<FiberCalculationResultDto>> CalculateByReport(string reportNumber)
         {
             var result = await _worksheetService.CalculateByReportAsync(reportNumber);

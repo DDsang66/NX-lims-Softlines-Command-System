@@ -83,11 +83,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 switch (item)
                 {
                     case SingleCalculatedFiberItem single:
-                        // 单组分：直接提取，key 不加下标
                         flatData["Qualitative"] = single.Qualitative;
                         flatData["Reagent"] = single.Reagent;
-                        flatData[$"FiberName_{itemIndex}"] = single.FiberName;
-                        flatData[$"Sample_{itemIndex}"] = single.Sample;
+                        flatData["Sample"] = single.Sample;  // 页眉 Sample 书签（无后缀）
                         flatData[$"MoistureRegain_{itemIndex}"] = single.MoistureRegain.ToString("F2")+"%";
                         flatData[$"GSMTrail1_{itemIndex}"] = single.GSMTrail1.ToString("F4");
                         flatData[$"Rate_{itemIndex}"] = single.Rate.ToString("F2")+"%";
@@ -95,9 +93,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                         break;
 
                     case MultiCalculatedFiberItem multi:
-                        // 多组分：提取汇总字段
                         flatData["Qualitative"] = multi.Qualitative;
                         flatData["Reagent"] = multi.Reagent;
+                        flatData["Sample"] = multi.Sample;  // 页眉 Sample 书签
                         flatData["GSMTrail1"] = multi.GSMTrail1.ToString("F4");
                         flatData["GSMTrail2"] = multi.GSMTrail2.ToString("F4");
                         flatData["RateTrail1"] = multi.RateTrail1.ToString("F2")+"%";

@@ -118,6 +118,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 }
             }
 
+            // 读取 Sample（来自前端多组分 sampleInput 框）
+            var multiSample = GetStringProperty(multipleProp, "sample");
+
             // 溶解行
             if (multipleProp.TryGetProperty("fiberDissolvedList", out var dissolvedListProp))
             {
@@ -149,7 +152,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                         FiberName = units.FirstOrDefault()?.FiberName ?? string.Empty,
                         DissolutionUnits = units,
                         OriginalGSMTrail1 = originalGsm1,
-                        OriginalGSMTrail2 = originalGsm2
+                        OriginalGSMTrail2 = originalGsm2,
+                        Sample = multiSample
                     };
 
                     components.Add(component);
