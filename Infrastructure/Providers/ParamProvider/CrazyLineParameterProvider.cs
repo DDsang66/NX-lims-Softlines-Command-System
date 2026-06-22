@@ -50,8 +50,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
-                Temperature =
-                p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                Temperature = "80",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null,
@@ -66,11 +65,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Program = WetParamHelper(p.WashingProcedure!),
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
-                Temperature =
-                p.WashingProcedure!.Contains("Cold") ? "80"
-                : p.WashingProcedure.Contains("Warm") ? "105"
-                : p.WashingProcedure.Contains("Hot") ? "120"
-                : "140",
+                Temperature = "80",
                 Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
                 : p.WashingProcedure.Contains("Gentle") ? "Gentle"
                 : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
@@ -100,8 +95,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 DryProcedure = p.DryProcedure,
                 WashingProcedure = p.WashingProcedure,
-                Temperature =
-                p.WashingProcedure!.Contains("Cold") ? "80" : "105",
+                Temperature ="80",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
                 SpecialCareInstruction = p.Sci ?? null,
@@ -114,11 +108,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Program = WetParamHelper(p.WashingProcedure!),
                 WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
-                Temperature =
-                p.WashingProcedure!.Contains("Cold") ? "80"
-                : p.WashingProcedure.Contains("Warm") ? "105"
-                : p.WashingProcedure.Contains("Hot") ? "120"
-                : "140",
+                Temperature ="80",
                 Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
                 : p.WashingProcedure.Contains("Gentle") ? "Gentle"
                 : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
@@ -146,11 +136,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             : WashingProcedure.Contains("Gentle") ? "(2)"
             : WashingProcedure.Contains("Permanent") ? "(3)"
             : "";
-            part_2 =
-                WashingProcedure!.Contains("Cold") ? "II"
-                : WashingProcedure.Contains("Warm") ? "III"
-                : WashingProcedure.Contains("Hot") ? "IV"
-                : "V";
+            //part_2 =
+            //    WashingProcedure!.Contains("Cold") ? "II"
+            //    : WashingProcedure.Contains("Warm") ? "III"
+            //    : WashingProcedure.Contains("Hot") ? "IV"
+            //    : "V";
+            part_2 = "II";
             string program = part_1 + part_2;
             return program;
         }
