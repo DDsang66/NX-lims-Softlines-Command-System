@@ -66,7 +66,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             {
                 // 找到对应的 BookmarkEnd
                 var bookmarkEnd = part.RootElement.Descendants<BookmarkEnd>()
-                    .FirstOrDefault(be => be.Id == bookmark.Id);
+                    .FirstOrDefault(be => be.Id?.Value == bookmark.Id?.Value);
 
                 if (bookmarkEnd == null) continue;
 

@@ -23,7 +23,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             flatData["ComponentType"] = analysisResult.ComponentType;
 
             // 标签/备注字段（直接映射）
-            flatData["RecommendedLabel"] = analysisResult.RecommendedLabelString;
+            // 选空时清空 Recommend 单元格，选 Yes 时不填保持原样
+            if (string.IsNullOrWhiteSpace(analysisResult.RecommendedLabelString))
+                flatData["Recommend"] = "";
+
             flatData["ResultRemark"] = analysisResult.ResultRemark;
             flatData["LabelRemark"] = analysisResult.LabelRemark;
             flatData["JudgmentLabelRemark"] = analysisResult.JudgmentLabelRemark;
@@ -31,7 +34,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             flatData["DurabilityLabel"] = analysisResult.DurabilityLabel;
             flatData["OtherLabel"] = analysisResult.OtherLabel;
             flatData["Comprehensive"] = analysisResult.Comprehensive;
-            flatData["VerifyResult"] = analysisResult.VerifyResult;
+            flatData["VertifyResult"] = analysisResult.VerifyResult;  // 模板书签名为 VertifyResult
             flatData["FinalResult"] = analysisResult.FinalResult;
 
             // 数组/嵌套结构：留空，后续单独处理
@@ -43,10 +46,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }
 
             // 数组展开：Recommendation → Recommendation_1, Recommendation_2, ...
-            var recommendations = analysisResult.Recommendation;
-            for (int i = 0; i < recommendations.Count; i++)
+            // 当推荐标签为空时跳过填入
+            if (!string.IsNullOrWhiteSpace(analysisResult.RecommendedLabelString))
             {
-                flatData[$"Recommendation_{i + 1}"] = recommendations[i];
+                var recommendations = analysisResult.Recommendation;
+                for (int i = 0; i < recommendations.Count; i++)
+                {
+                    flatData[$"Recommendation_{i + 1}"] = recommendations[i];
+                }
             }
             // flatData["CalculatedFiberResult"] = ?;  // 复杂对象列表，需逐行展开
             var fiberData = ExpandCalculatedFiberResult(analysisResult.CalculatedFiberResult);
@@ -97,9 +104,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                         flatData["Qualitative"] = single.Qualitative;
                         flatData["Reagent"] = single.Reagent;
                         flatData["Sample"] = single.Sample;  // 页眉 Sample 书签（无后缀）
-                        flatData[$"MoistureRegain_{itemIndex}"] = single.MoistureRegain.ToString("F2")+"%";
-                        flatData[$"GSMTrail1_{itemIndex}"] = single.GSMTrail1.ToString("F4");
-                        flatData[$"Rate_{itemIndex}"] = single.Rate.ToString("F2")+"%";
+                        // 单组分用无后缀书签（模板兼容）
+                        flatData["GSMTrail1"] = single.GSMTrail1.ToString("F4");
+                        flatData["Rate"] = single.Rate.ToString("F2")+"%";
                         itemIndex++;
                         break;
 
