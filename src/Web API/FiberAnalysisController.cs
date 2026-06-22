@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Service;
@@ -15,17 +17,20 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         private readonly IFiberWorksheetRepository _worksheetRepo;
         private readonly FiberWorksheetService _worksheetService;
         private readonly IWebHostEnvironment _env;
+        private readonly LabDbContextSec _db;
 
         public FiberAnalysisController(
             IFiberDatabaseRepository fiberRepo,
             IFiberWorksheetRepository worksheetRepo,
             FiberWorksheetService worksheetService,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            LabDbContextSec db)
         {
             _fiberRepo = fiberRepo;
             _worksheetRepo = worksheetRepo;
             _worksheetService = worksheetService;
             _env = env;
+            _db = db;
         }
 
         #region 纤维数据库 API
@@ -42,6 +47,39 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         {
             var names = await _fiberRepo.GetAllNamesAsync();
             return Ok(new { success = true, data = names });
+        }
+
+        [HttpGet("label-options")]
+        public async Task<IActionResult> GetLabelOptions(CancellationToken ct)
+        {
+            var options = await _db.LabelOptions
+                .OrderBy(o => o.Category)
+                .ThenBy(o => o.SortOrder)
+                .Select(o => new { o.Category, o.Text })
+                .ToListAsync(ct);
+
+            var resultRemarkList = options
+                .Where(o => o.Category == "ResultRemark")
+                .Select(o => o.Text)
+                .ToList();
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    judgmentLabelOptions = options
+                        .Where(o => o.Category == "Judgment")
+                        .Select(o => o.Text)
+                        .ToList(),
+                    languageLabelOptions = options
+                        .Where(o => o.Category == "Language")
+                        .Select(o => o.Text)
+                        .ToList(),
+                    resultRemarkOptions = resultRemarkList,
+                    labelRemarkOptions = resultRemarkList
+                }
+            });
         }
 
         [HttpPost("database")]

@@ -20,6 +20,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             var methods = ParseMethods(src.Method);
             var type = (AnalysisType)(src.Type ?? 0);
             var components = DeserializeComponents(src.FiberAnalysis1, type);
+            var remarkLabel = DeserializeRemark(src.Remark);
 
             return IngredientAnalysisCalculation.Create(
                 src.Id,
@@ -27,8 +28,54 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 src.Buyer ?? string.Empty,
                 methods,
                 type,
-                components
+                components,
+                remarkLabel
             );
+        }
+
+        private static RemarkLabel DeserializeRemark(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new RemarkLabel();
+
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                return new RemarkLabel
+                {
+                    RecommendedLabel = GetStringListProperty(root, "recommendedLabel"),
+                    ResultRemark = GetStringProperty(root, "resultRemark"),
+                    LabelRemark = GetStringProperty(root, "labelRemark"),
+                    JudgmentLabelRemark = GetStringProperty(root, "judgmentLabelRemark"),
+                    LanguageLabelRemark = GetStringProperty(root, "languageLabelRemark"),
+                    DurabilityLabel = GetStringProperty(root, "durabilityLabel"),
+                    OtherLabel = GetStringProperty(root, "otherLabel"),
+                    Comprehensive = GetStringProperty(root, "comprehensive"),
+                    VerifyResult = GetStringProperty(root, "verifyResult"),
+                    FinalResult = GetStringProperty(root, "finalResult")
+                };
+            }
+            catch (JsonException)
+            {
+                return new RemarkLabel();
+            }
+        }
+
+        private static List<string> GetStringListProperty(JsonElement element, string propertyName)
+        {
+            if (element.TryGetProperty(propertyName, out var prop) && prop.ValueKind == JsonValueKind.Array)
+            {
+                var list = new List<string>();
+                foreach (var item in prop.EnumerateArray())
+                {
+                    if (item.ValueKind == JsonValueKind.String)
+                        list.Add(item.GetString()!);
+                }
+                return list;
+            }
+            return new List<string>();
         }
 
         private static List<string> ParseMethods(string? method)

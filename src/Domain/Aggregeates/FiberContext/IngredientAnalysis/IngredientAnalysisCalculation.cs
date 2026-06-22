@@ -38,7 +38,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 string buyer,
                 List<string> methods,
                 AnalysisType type,
-                List<FiberComponent> components)
+                List<FiberComponent> components,
+                RemarkLabel? remarkLabel = null)
         {
             // 领域验证
             if (id <= 0) throw new ArgumentException("Id is required");
@@ -53,7 +54,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 Buyer = buyer,
                 Methods = methods,
                 Type = type,
-                _components = components ?? new List<FiberComponent>()
+                _components = components ?? new List<FiberComponent>(),
+                RemarkGroup = remarkLabel ?? new RemarkLabel()
             };
         }
 

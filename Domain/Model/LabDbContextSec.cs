@@ -61,6 +61,8 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<WetParameterAatcc> WetParameterAatccs { get; set; }
 
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
+
+    public virtual DbSet<LabelOption> LabelOptions { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -1021,6 +1023,22 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("washing_procedure");
+        });
+
+        modelBuilder.Entity<LabelOption>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("label_option");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Category)
+                .HasMaxLength(20)
+                .IsUnicode(false)
+                .HasColumnName("category");
+            entity.Property(e => e.SortOrder).HasColumnName("sort_order");
+            entity.Property(e => e.Text)
+                .HasMaxLength(500)
+                .IsUnicode(false)
+                .HasColumnName("text");
         });
 
         OnModelCreatingPartial(modelBuilder);
