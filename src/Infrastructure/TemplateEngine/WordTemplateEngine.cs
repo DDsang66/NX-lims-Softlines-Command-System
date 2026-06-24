@@ -403,6 +403,122 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             // 可能需要触发同一表格之中书签顺序的更新
         }
 
+        /// <summary>
+        /// 在 Microscopeview1~14 书签后按输入纤维顺序填入对应图片
+        /// </summary>
+        public void InsertMicroscopeImages(string filePath, IEnumerable<string> fiberNames, string imageFolder)
+        {
+            using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true))
+            {
+                var mainPart = doc.MainDocumentPart!;
+                var body = mainPart.Document.Body;
+
+                var bookmarks = body.Descendants<BookmarkStart>()
+                    .Where(b => b.Name != null && b.Name.Value != null && b.Name.Value.StartsWith("Microscopeview"))
+                    .OrderBy(b => int.Parse(b.Name!.Value!.Replace("Microscopeview", "")))
+                    .ToList();
+
+                int slotIndex = 0;
+
+                foreach (var fiberName in fiberNames)
+                {
+                    if (string.IsNullOrWhiteSpace(fiberName)) continue;
+
+                    var imagePath = Path.Combine(imageFolder, $"{fiberName}.png");
+                    if (!File.Exists(imagePath)) continue;
+
+                    if (slotIndex >= bookmarks.Count) break;
+
+                    var bookmark = bookmarks[slotIndex++];
+
+                    byte[] imageBytes = File.ReadAllBytes(imagePath);
+                    var mediaPart = mainPart.AddImagePart(ImagePartType.Png);
+                    using var ms = new MemoryStream(imageBytes);
+                    mediaPart.FeedData(ms);
+                    string contentId = mainPart.GetIdOfPart(mediaPart);
+
+                    var drawing = CreateImageDrawing(contentId, fiberName, (uint)slotIndex);
+
+                    var paragraph = bookmark.Ancestors<Paragraph>().FirstOrDefault();
+                    if (paragraph == null) continue;
+
+                    // 获取书签段的 RunProperties 用于文字样式
+                    var refRunProps = paragraph.Elements<Run>()
+                        .Select(r => r.RunProperties)
+                        .FirstOrDefault(rp => rp != null);
+
+                    // 在书签所在段落后插入图片段+名称段
+                    var imageParagraph = new Paragraph(
+                        new ParagraphProperties(
+                            new SpacingBetweenLines { After = "0", Line = "240", LineRule = LineSpacingRuleValues.Auto }
+                        ),
+                        new Run(
+                            new RunProperties(new NoProof()),
+                            drawing
+                        )
+                    );
+                    var nameParagraph = new Paragraph(
+                        new ParagraphProperties(
+                            new SpacingBetweenLines { After = "0", Line = "240", LineRule = LineSpacingRuleValues.Auto }
+                        ),
+                        new Run(
+                            refRunProps?.CloneNode(true) as RunProperties ?? new RunProperties(),
+                            new Text(fiberName) { Space = SpaceProcessingModeValues.Preserve }
+                        )
+                    );
+                    paragraph.Parent!.InsertAfter(nameParagraph, paragraph);
+                    paragraph.Parent!.InsertAfter(imageParagraph, paragraph);
+                }
+
+                mainPart.Document.Save();
+            }
+        }
+
+        private static Drawing CreateImageDrawing(string relationshipId, string imageName, uint id)
+        {
+            const long emuCm = 360000;
+            long width = 3 * emuCm;
+            long height = 2 * emuCm;
+
+            return new Drawing(
+                new DW.Inline(
+                    new DW.Extent { Cx = width, Cy = height },
+                    new DW.EffectExtent { LeftEdge = 0L, TopEdge = 0L, RightEdge = 0L, BottomEdge = 0L },
+                    new DW.DocProperties { Id = id, Name = imageName },
+                    new DW.NonVisualGraphicFrameDrawingProperties(
+                        new A.GraphicFrameLocks { NoChangeAspect = true }
+                    ),
+                    new A.Graphic(
+                        new A.GraphicData(
+                            new PIC.Picture(
+                                new PIC.NonVisualPictureProperties(
+                                    new PIC.NonVisualDrawingProperties { Id = id, Name = $"{imageName}.png" },
+                                    new PIC.NonVisualPictureDrawingProperties()
+                                ),
+                                new PIC.BlipFill(
+                                    new A.Blip { Embed = relationshipId },
+                                    new A.Stretch(new A.FillRectangle())
+                                ),
+                                new PIC.ShapeProperties(
+                                    new A.Transform2D(
+                                        new A.Offset { X = 0L, Y = 0L },
+                                        new A.Extents { Cx = width, Cy = height }
+                                    ),
+                                    new A.PresetGeometry(new A.AdjustValueList())
+                                    { Preset = A.ShapeTypeValues.Rectangle }
+                                )
+                            )
+                        )
+                        { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" }
+                    )
+                )
+                {
+                    DistanceFromTop = 0, DistanceFromBottom = 0,
+                    DistanceFromLeft = 0, DistanceFromRight = 0
+                }
+            );
+        }
+
         // 换页规则
         // 表格合并规则
         // 键入空白行

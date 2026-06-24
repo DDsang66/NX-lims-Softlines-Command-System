@@ -96,6 +96,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 var templateData = _wordTemplateAdapter.Adapt(analysisWorksheet.CalculationResult);
 
                 _wordTemplateEngine.ReplaceText(targetPath, templateData);
+
+                // 显微镜图片插入 — 展开多组分所有纤维名
+                var fiberNames = ingredientsAnalysis.Components
+                    .SelectMany(c => c is DissolvedFiberComponent d
+                        ? d.DissolutionUnits.Select(u => u.FiberName)
+                        : new[] { c.FiberName })
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+                var imageFolder = Path.Combine("wwwroot", "MicroscopeImages");
+                _wordTemplateEngine.InsertMicroscopeImages(targetPath, fiberNames, imageFolder);
+
                 //ingredientsAnalysis.WorkSheetGenerator(filePath);
                 //执行保存
 

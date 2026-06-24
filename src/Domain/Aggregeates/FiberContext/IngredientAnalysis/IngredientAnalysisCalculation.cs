@@ -142,20 +142,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private List<CalculatedFiberResult> CalculateMultipleComponents(IEnumerable<DissolvedFiberComponent> dissolveds, IEnumerable<SplittingFiberComponent> splittings)
         {
             // 1) 计算样品总干重（所有拆分列 + 所有溶解列的原始干重）
-            var totalGSMTrail1 = splittings.Sum(s => (decimal)s.GSMTrail1) + dissolveds.Sum(d => (decimal)d.OriginalGSMTrail1);
-            var totalGSMTrail2 = splittings.Sum(s => (decimal)s.GSMTrail2) + dissolveds.Sum(d => (decimal)d.OriginalGSMTrail2);
-
-            // 若原始 GSM 未填(为 0)，取第一个溶解单元第一行 GSM 作为总重
-            if (totalGSMTrail1 == 0)
-            {
-                var firstUnit = dissolveds.FirstOrDefault()?.DissolutionUnits?.FirstOrDefault();
-                totalGSMTrail1 = (decimal)(firstUnit?.GSMTrail1 ?? 0);
-            }
-            if (totalGSMTrail2 == 0)
-            {
-                var firstUnit = dissolveds.FirstOrDefault()?.DissolutionUnits?.FirstOrDefault();
-                totalGSMTrail2 = (decimal)(firstUnit?.GSMTrail2 ?? 0);
-            }
+            //    每个溶解组独立 fallback：若 OriginalGSM 未填，取该组第一溶解行 GSM
+            var dissolvedT1 = dissolveds.Sum(d => d.OriginalGSMTrail1 > 0
+                ? (decimal)d.OriginalGSMTrail1
+                : (decimal)(d.DissolutionUnits?.FirstOrDefault()?.GSMTrail1 ?? 0));
+            var dissolvedT2 = dissolveds.Sum(d => d.OriginalGSMTrail2 > 0
+                ? (decimal)d.OriginalGSMTrail2
+                : (decimal)(d.DissolutionUnits?.FirstOrDefault()?.GSMTrail2 ?? 0));
+            var totalGSMTrail1 = splittings.Sum(s => (decimal)s.GSMTrail1) + dissolvedT1;
+            var totalGSMTrail2 = splittings.Sum(s => (decimal)s.GSMTrail2) + dissolvedT2;
 
             var splittingUnits = CalculateSplittingUnits(splittings, totalGSMTrail1, totalGSMTrail2);
 
@@ -414,6 +409,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <param name="format">格式化字符串（F0 或 F1）</param>
         private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format)
         {
+            // 单组分：每个纤维固定 100%，不求和
+            if (calculatedFiberResult.All(c => c is SingleCalculatedFiberItem))
+            {
+                return calculatedFiberResult
+                    .OfType<SingleCalculatedFiberItem>()
+                    .Select(s => $"100% {s.FiberName}")
+                    .ToList();
+            }
+
             // 1. 提取原始成分数据
             var rawComponents = ExtractComponents(calculatedFiberResult);
 

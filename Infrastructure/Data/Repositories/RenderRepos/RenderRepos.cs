@@ -56,8 +56,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Rend
         /// </summary>
         public async Task<object> CompostionSearchAsync()
         {
-            var list = await _db.CompositionNews
-                .Select(x => x.CompositionNameEn)
+            var list = await _db.FiberDatabases
+                .Where(x => x.IsActive == null || x.IsActive == true)
+                .Select(x => x.FiberNameEn)
                 .ToListAsync();
             return list;
         }

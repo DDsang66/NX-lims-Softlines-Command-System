@@ -63,6 +63,8 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<WetParameterIso> WetParameterIsos { get; set; }
 
     public virtual DbSet<LabelOption> LabelOptions { get; set; }
+
+    public virtual DbSet<FiberDatabase> FiberDatabases { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -1023,6 +1025,49 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("washing_procedure");
+        });
+
+        modelBuilder.Entity<FiberDatabase>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("fiber_database");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FiberNameEn)
+                .HasMaxLength(100)
+                .HasColumnName("fiber_name_en");
+            entity.Property(e => e.FiberNameCn)
+                .HasMaxLength(100)
+                .HasColumnName("fiber_name_cn");
+            entity.Property(e => e.Category)
+                .HasMaxLength(50)
+                .HasColumnName("category");
+            entity.Property(e => e.MoistureRegainIso)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_iso");
+            entity.Property(e => e.MoistureRegainAatcc)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_aatcc");
+            entity.Property(e => e.MoistureRegainCan)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_can");
+            entity.Property(e => e.MoistureRegainKor)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_kor");
+            entity.Property(e => e.MoistureRegainGb)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_gb");
+            entity.Property(e => e.MoistureRegainCns)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_cns");
+            entity.Property(e => e.MoistureRegainJis)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("moisture_regain_jis");
+            entity.Property(e => e.QualitativeDescription)
+                .HasMaxLength(500)
+                .HasColumnName("qualitative_description");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<LabelOption>(entity =>
