@@ -81,5 +81,32 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Distinct()
                 .ToListAsync();
         }
+
+        public async Task<Dictionary<string, decimal>> GetMoistureRegainMapAsync(string standard)
+        {
+            var fibers = await _context.FiberDatabases
+                .AsNoTracking()
+                .Where(f => f.IsActive == null || f.IsActive == true)
+                .ToListAsync();
+
+            var s = standard?.Trim() ?? string.Empty;
+            Func<FiberDatabase, decimal?> selector = s switch
+            {
+                var x when x.Contains("Korea")   => f => f.MoistureRegainKor,
+                var x when x.StartsWith("AATCC") => f => f.MoistureRegainAatcc,
+                var x when x.StartsWith("CAN")    => f => f.MoistureRegainCan,
+                var x when x.StartsWith("FZ/T")   => f => f.MoistureRegainGb,
+                var x when x.StartsWith("CNS")    => f => f.MoistureRegainCns,
+                var x when x.StartsWith("JIS")    => f => f.MoistureRegainJis,
+                _ => f => f.MoistureRegainIso
+            };
+
+            return fibers
+                .Select(f => new { f.FiberNameEn, mr = selector(f) })
+                .Where(f => f.mr != null)
+                .GroupBy(f => f.FiberNameEn)
+                .ToDictionary(g => g.Key, g => g.First().mr ?? 0m);
+        }
+
     }
 }

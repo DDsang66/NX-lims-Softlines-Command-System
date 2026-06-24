@@ -20,6 +20,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public RemarkLabel RemarkGroup { get; private set; } = new();
         public AnalysisType Type { get; private set; } // 枚举：单组分/多组分
         public AnalysisResult Result { get; private set; } = AnalysisResult.Empty();//字典映射
+        public Dictionary<string, decimal> MoistureRegainMap { get; set; } = new();
 
         /// <summary>
         /// 实体创建工厂方法，包含领域验证逻辑
@@ -101,6 +102,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             var orderedFiberNames = GetOrderedFiberNames();
             var equipment = SelectEquipment(orderedFiberNames.Count, orderedFiberNames);
             result = result.WithEquipment(equipment);
+
+            // 3.6) 自动拼接 Methods（对应 Excel L4 公式）
+            var selectedStandard = Methods.FirstOrDefault() ?? string.Empty;
+            var methodString = BuildMethodString(selectedStandard, orderedFiberNames);
+            result = result.WithMethods(methodString);
 
             // 4) 计算标签/备注
             var calculatedRemarkResult = GenerateRecommendedLabel(RemarkGroup, calculatedFiberResult);
@@ -334,6 +340,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 .SelectMany(m => m.MultiFiberRowUnits ?? new List<MultiFiberRowUnit>())
                 .Where(r => !string.IsNullOrWhiteSpace(r.Sum))
                 .Where(r => !r.Sum.Contains('/'))  // 排除起始行的缩写（如 E/T）
+                .Select(r =>
+                {
+                    // 从 MoistureRegainMap 查回潮率
+                    var mr = LookupMoistureRegain(r.Sum);
+                    return r with { MoistureRegain = mr };
+                })
                 .ToList();
 
             // 计算分母：所有成分的 [(1+MR)*Correct/100]*Avg 之和
@@ -358,13 +370,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         return row;
                     }
 
+                    // 查回潮率
+                    var mr = LookupMoistureRegain(row.Sum);
+
                     // 计算分子
-                    var numerator = (1m + row.MoistureRegain / 100m) * row.Correct / 100m * row.Avg;
+                    var numerator = (1m + mr / 100m) * row.Correct / 100m * row.Avg;
 
                     // 计算Rate并保留两位小数
                     var rate = Math.Round(numerator / denominator * 100m, 2, MidpointRounding.AwayFromZero);
 
-                    return row with { Rate = rate };  // record 的 with 表达式创建副本
+                    return row with { MoistureRegain = mr, Rate = rate };
 
                 }).ToList();
 
@@ -488,6 +503,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             return components;
         }
 
+        private decimal LookupMoistureRegain(string fiberName)
+        {
+            if (string.IsNullOrWhiteSpace(fiberName) || MoistureRegainMap.Count == 0)
+                return 0m;
+
+            if (MoistureRegainMap.TryGetValue(fiberName, out var exact))
+                return exact;
+
+            var match = MoistureRegainMap
+                .FirstOrDefault(kv => string.Equals(kv.Key, fiberName, StringComparison.OrdinalIgnoreCase));
+            return match.Value;
+        }
+
         /// <summary>
         /// 安全除法：除数为0时返回0，避免异常
         /// </summary>
@@ -563,6 +591,135 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             return string.Join("/", dissolvedNames.Concat(splittingNames));
         }
+
+        /*------------------------------------------Method 自动拼接------------------------------------------------------------------------*/
+
+        private const string ISO_QUALITATIVE = "ISO/TR 11827:2012";
+        private const string DIN_QUALITATIVE = "DIN CEN ISO/TR 11827:2019";
+        private const string ISO1833_1 = "ISO1833-1:2020";
+        private const string ISO1833_2 = "ISO1833-2:2020";
+        private const string ISO1833_3 = "ISO1833-3:2020";
+        private const string ISO1833_4 = "ISO1833-4:2023";
+        private const string ISO1833_6 = "ISO1833-6:2018";
+        private const string ISO1833_7 = "ISO1833-7:2017";
+        private const string ISO1833_11 = "ISO1833-11:2017";
+        private const string ISO1833_12 = "ISO1833-12:2020";
+        private const string ISO1833_18 = "ISO1833-18:2020";
+        private const string ISO1833_22 = "ISO1833-22:2020";
+        private const string ISO1833_24 = "ISO1833-24:2010";
+
+        private static readonly HashSet<string> DIN1833_D5x = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "ISO1833-1:2020", "ISO1833-2:2020", "ISO1833-3:2020", "ISO1833-4:2023",
+            "ISO1833-6:2018", "ISO1833-7:2017", "ISO1833-11:2017", "ISO1833-12:2020",
+            "ISO1833-18:2020", "ISO1833-22:2020", "ISO1833-24:2010"
+        };
+
+        /// <summary>Excel L4: 根据标准体系和成分对自动拼接方法标准链</summary>
+        private static string BuildMethodString(string standard, List<string> fibers)
+        {
+            if (string.IsNullOrWhiteSpace(standard)) return string.Empty;
+
+            var isIso = standard.Equals("ISO1833", StringComparison.OrdinalIgnoreCase);
+            var isDin = standard.Equals("DIN EN ISO 1833", StringComparison.OrdinalIgnoreCase);
+
+            // 非 ISO/DIN：直接返回原值
+            if (!isIso && !isDin) return standard;
+
+            // 3 组分走 -2 号
+            if (fibers.Count == 3)
+                return isIso ? $"{ISO_QUALITATIVE} {ISO1833_2}"
+                             : $"{DIN_QUALITATIVE} DIN EN ISO 1833-2:2020";
+
+            // 从成分对查子标准号
+            var subStandards = new List<string>();
+            for (int i = 0; i < fibers.Count - 1; i++)
+            {
+                var s = LookupSubStandard(fibers[i], fibers[i + 1]);
+                if (!string.IsNullOrEmpty(s) && !subStandards.Contains(s))
+                    subStandards.Add(s);
+            }
+
+            // 有拆分列时加 -1
+            var parts = new List<string>();
+            if (isIso) parts.Add(ISO_QUALITATIVE);
+            else parts.Add(DIN_QUALITATIVE);
+
+            // -1 号（暂不判断拆分列，先不加）
+            parts.AddRange(subStandards);
+
+            // DIN 版：替换 ISO 前缀为 DIN EN
+            if (isDin)
+                parts = parts.Select(p => DIN1833_D5x.Contains(p)
+                    ? "DIN EN " + p
+                    : p).ToList();
+
+            return string.Join(" ", parts);
+        }
+
+        /// <summary>对相邻成分对查表返回 ISO1833 子标准编号</summary>
+        private static string LookupSubStandard(string first, string second)
+        {
+            var f = first.ToLowerInvariant();
+            var s = second.ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+
+            // rayon/modal/lyocell/cotton/cupro + elastane → -1
+            if (IsCellulosic(f) && (s == "elastane" || s == "spandex"))
+                return ISO1833_1;
+
+            // Silk + wool/cashmere → -18
+            if (f == "silk" && (s == "wool" || s == "cashmere"))
+                return ISO1833_18;
+
+            // wool/animal + any → -4
+            if (IsAnimal(f))
+                return ISO1833_4;
+
+            // elastane + elastomultiester/polyester → -11
+            if (IsElastane(f) && (s == "elastomultiester" || s == "polyester"))
+                return ISO1833_11;
+
+            // elastane + other → -12
+            if (IsElastane(f))
+                return ISO1833_12;
+
+            // polyamide/nylon + any → -7
+            if (f == "polyamide" || f == "nylon")
+                return ISO1833_7;
+
+            // acrylic + any → -12
+            if (f == "acrylic")
+                return ISO1833_12;
+
+            // cellulosic + cotton/cellulosic → -6
+            if (IsCellulosic(f) && IsCellulosicOrCotton(s))
+                return ISO1833_6;
+
+            // cellulosic/cotton + elastomultiester/polyester → -11
+            if (IsCellulosicOrCotton(f) && (s == "elastomultiester" || s == "polyester"))
+                return ISO1833_11;
+
+            // cellulosic + linen/ramie → -22
+            if (IsRayonType(f) && (s == "linen" || s == "ramie"))
+                return ISO1833_22;
+
+            // polyester + any → -24
+            if (f == "polyester")
+                return ISO1833_24;
+
+            // acetate alone → -3
+            if (f == "acetate")
+                return ISO1833_3;
+
+            return string.Empty;
+        }
+
+        private static bool IsAnimal(string f) => f == "wool" || f == "alpaca" || f == "cashmere" || f == "mohair" || f == "*animal" || f == "rabbit hair" || f == "silk";
+        private static bool IsElastane(string f) => f == "elastane" || f == "spandex";
+        private static bool IsCellulosic(string f) => f == "rayon" || f == "*re cellulose" || f == "viscose" || f == "modal" || f == "lyocell" || f == "cupro" || f == "cotton";
+        private static bool IsCellulosicOrCotton(string f) => f == "cotton" || f == "hemp" || f == "paper" || IsCellulosic(f) || f == "linen" || f == "ramie" || f == "*cellulosic fiber";
+        private static bool IsRayonType(string f) => f == "rayon" || f == "*re cellulose" || f == "viscose" || f == "modal" || f == "cupro" || f == "lyocell";
 
         /// <summary>
         /// 溶剂计算逻辑

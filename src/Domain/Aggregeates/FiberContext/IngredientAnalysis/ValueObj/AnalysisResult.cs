@@ -166,6 +166,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             return new AnalysisResult(copy);
         }
 
+        public AnalysisResult WithMethods(string methods)
+        {
+            var copy = new Dictionary<string, object>(Data);
+            copy["Methods"] = methods;
+            return new AnalysisResult(copy);
+        }
+
         public AnalysisResult WithAnalysisItems(IEnumerable<CalculatedFiberResult> calculatedFiberResult, int? actualComponentCount = null)
         {
             var copy = new Dictionary<string, object>(Data);

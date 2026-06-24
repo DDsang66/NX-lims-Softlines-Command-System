@@ -24,12 +24,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
     public class FiberWorksheetService : IScopedDependency
     {
         private readonly IFiberWorksheetRepository _worksheetRepo;
+        private readonly IFiberDatabaseRepository _fiberDatabaseRepo;
         private readonly FiberAnalysisWordTemplateAdapter _wordTemplateAdapter;
         private readonly WordTemplateEngine _wordTemplateEngine;
 
-        public FiberWorksheetService(IFiberWorksheetRepository worksheetRepo, FiberAnalysisWordTemplateAdapter wordTemplateAdapter,WordTemplateEngine wordTemplateEngine)
+        public FiberWorksheetService(IFiberWorksheetRepository worksheetRepo, IFiberDatabaseRepository fiberDatabaseRepo, FiberAnalysisWordTemplateAdapter wordTemplateAdapter,WordTemplateEngine wordTemplateEngine)
         {
             _worksheetRepo = worksheetRepo;
+            _fiberDatabaseRepo = fiberDatabaseRepo;
             _wordTemplateAdapter = wordTemplateAdapter;
             _wordTemplateEngine = wordTemplateEngine;
         }
@@ -61,6 +63,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             if (po == null) return Result.Fail("data is not found");
 
             var ingredientsAnalysis = po.Adapt<IngredientAnalysisCalculation>();//Mapster封装映射，内部使用工厂模式构建IngredientAnalysis对象
+
+            // 回潮率查询（必须在 CalculateAsync 之前）
+            var selectedStandard2 = ingredientsAnalysis.Methods.FirstOrDefault() ?? string.Empty;
+            ingredientsAnalysis.MoistureRegainMap = await _fiberDatabaseRepo.GetMoistureRegainMapAsync(selectedStandard2);
 
             //执行计算
             try
@@ -121,6 +127,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 return Result.Fail(ex.Message);
             }
         }
+
 
         /// <summary>
         /// 计算用户的输入值（单项分析）并返回分析结果（不保存数据，仅供前端展示）

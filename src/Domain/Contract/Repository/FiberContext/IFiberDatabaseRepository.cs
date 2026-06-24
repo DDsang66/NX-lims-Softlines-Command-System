@@ -38,5 +38,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberC
         /// 获取所有纤维名称列表（用于前端下拉选择）
         /// </summary>
         Task<List<string>> GetAllNamesAsync();
+
+        /// <summary>
+        /// 获取回潮率映射（纤维名 → 回潮率%），根据标准选对应列
+        /// </summary>
+        Task<Dictionary<string, decimal>> GetMoistureRegainMapAsync(string standard);
     }
 }
