@@ -1,10 +1,10 @@
 ﻿namespace NX_lims_Softlines_Command_System.src.Domain.Share
 {
-    public sealed record IdStandard
+    public sealed record StandardId
     {
         public string Value { get; }
 
-        public IdStandard(string value)
+        public StandardId(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 throw new ArgumentNullException(nameof(value));
@@ -21,8 +21,8 @@
         public bool Equals(string? other) => Value == other;
 
         // 4. 保持原有的隐式转换
-        public static implicit operator string(IdStandard code) => code.Value;
-        public static implicit operator IdStandard(string value) => new(value);
+        public static implicit operator string(StandardId code) => code.Value;
+        public static implicit operator StandardId(string value) => new(value);
     }
 
 }
