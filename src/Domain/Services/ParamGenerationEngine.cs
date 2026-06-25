@@ -23,12 +23,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
             _comparer = comparer ?? throw new ArgumentNullException(nameof(comparer));
         }
 
+        /// <summary>
+        /// 根据条件池和规则集生成参数集
+        /// </summary>
+        /// <param name="pool"></param>
+        /// <param name="rules"></param>
+        /// <returns></returns>
         public ParamSet Generate(ConditionPool pool, IEnumerable<ParamRule> rules)
         {
-            var ordered = rules?.OrderBy(r => r.Priority).ToList() ?? new List<ParamRule>();
+            //按Priority升序排序
+            var ruleCollection = rules?.OrderBy(r => r.Priority).ToList() ?? new List<ParamRule>();
+
             var result = new ParamSet();
 
-            foreach (var rule in ordered)
+            foreach (var rule in ruleCollection)
             {
                 if (!rule.IsActive) continue;
 

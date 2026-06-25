@@ -11,5 +11,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         List<ParamRule> GetByFormulaId(FormulaId formulaId);
         Task AddAsync(ParamRule rule);
         Task UpdateAsync(ParamRule rule);
+        Task<ParamRule> FindAsync(ParamRuleId id);
     }
 }

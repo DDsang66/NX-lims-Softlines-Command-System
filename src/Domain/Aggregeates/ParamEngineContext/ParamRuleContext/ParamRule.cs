@@ -196,7 +196,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         ///*---------------------------------------------------------end--------------------------------------------------------------*/
 
         /// <summary>
-        /// 暴露领域初始计算结果
+        /// 暴露当前规则初始结果
         /// 当前结果需要通过复杂校验后才能写入CheckList中的ParamSet(最终结果)供后续使用
         /// </summary>
         /// <returns></returns>
