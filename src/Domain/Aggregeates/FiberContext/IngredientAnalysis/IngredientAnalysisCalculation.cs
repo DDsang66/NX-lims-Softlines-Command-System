@@ -108,6 +108,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             var methodString = BuildMethodString(selectedStandard, orderedFiberNames);
             result = result.WithMethods(methodString);
 
+            // 3.7) 燃烧法分类（对应 ISO 11827 Table A.1）
+            result = result.WithBurningTest(orderedFiberNames);
+
             // 4) 计算标签/备注
             var calculatedRemarkResult = GenerateRecommendedLabel(RemarkGroup, calculatedFiberResult);
 
@@ -429,7 +432,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             {
                 return calculatedFiberResult
                     .OfType<SingleCalculatedFiberItem>()
-                    .Select(s => $"100% {s.FiberName}")
+                    .Select(s => $"{s.Sample}:\n100% {s.FiberName}")
                     .ToList();
             }
 

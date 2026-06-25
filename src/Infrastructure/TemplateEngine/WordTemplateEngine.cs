@@ -79,9 +79,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 
                 if (existingRunWithText != null)
                 {
-                    var textElem = existingRunWithText.Elements<Text>().First();
-                    textElem.Text = bookmarkValues[bookmark.Name];
-                    textElem.Space = SpaceProcessingModeValues.Preserve;
+                    // 清空已有 text 元素，用 InsertTextWithLineBreaks 写入（支持 \n 换行）
+                    foreach (var t in existingRunWithText.Elements<Text>().ToList())
+                        t.Remove();
+                    InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], existingRunWithText);
 
                     // 删除书签范围内除保留的 run 之外的其他元素
                     foreach (var elem in contentElements.ToList())
@@ -100,16 +101,41 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 
                 if (nearestRunProps != null)
                 {
-                    var newRun = new Run(nearestRunProps.CloneNode(true) as RunProperties,
-                                         new Text(bookmarkValues[bookmark.Name]) { Space = SpaceProcessingModeValues.Preserve });
+                    var newRun = new Run(nearestRunProps.CloneNode(true) as RunProperties);
                     InsertRunAfterBookmark(bookmark, newRun);
+                    InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
                 }
                 else
                 {
                     // 兜底：插入无样式的 Run（将使用 Word 的默认样式）
-                    var newRun = new Run(new Text(bookmarkValues[bookmark.Name]) { Space = SpaceProcessingModeValues.Preserve });
+                    var newRun = new Run();
                     InsertRunAfterBookmark(bookmark, newRun);
+                    InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 处理含 \n 的文本：拆分为多段，Run 间插入 &lt;w:br/&gt; 实现 Word 换行
+        /// </summary>
+        private static void InsertTextWithLineBreaks(string text, Run firstRun)
+        {
+            var lines = text.Split('\n');
+            firstRun.Append(new Text(lines[0]) { Space = SpaceProcessingModeValues.Preserve });
+
+            if (lines.Length <= 1) return;
+
+            OpenXmlElement insertAfter = firstRun;
+            for (int i = 1; i < lines.Length; i++)
+            {
+                var brRun = new Run(new Break());
+                var textRun = new Run(
+                    firstRun.RunProperties?.CloneNode(true) as RunProperties,
+                    new Text(lines[i]) { Space = SpaceProcessingModeValues.Preserve });
+
+                insertAfter = insertAfter.InsertAfterSelf(brRun);
+                brRun.InsertAfterSelf(textRun);
+                insertAfter = textRun;
             }
         }
 
@@ -477,8 +503,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         private static Drawing CreateImageDrawing(string relationshipId, string imageName, uint id)
         {
             const long emuCm = 360000;
-            long width = 3 * emuCm;
-            long height = 2 * emuCm;
+            long width = 2 * emuCm;
+            long height = 135 * emuCm / 100;  // 1.35cm
 
             return new Drawing(
                 new DW.Inline(

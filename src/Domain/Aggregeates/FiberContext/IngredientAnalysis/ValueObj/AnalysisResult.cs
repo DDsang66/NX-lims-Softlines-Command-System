@@ -60,6 +60,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public string Comprehensive => Get<string>("Comprehensive") ?? string.Empty;
         public string VerifyResult => Get<string>("VerifyResult") ?? string.Empty;
         public string FinalResult => Get<string>("FinalResult") ?? string.Empty;
+        public string BurningTest => Get<string>("BurningTest") ?? string.Empty;
         public List<string> Results => Get<List<string>>("Results") ?? new List<string>();
         public List<string> Recommendation => Get<List<string>>("Recommendation") ?? new List<string>();
 
@@ -170,6 +171,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         {
             var copy = new Dictionary<string, object>(Data);
             copy["Methods"] = methods;
+            return new AnalysisResult(copy);
+        }
+
+        public AnalysisResult WithBurningTest(IEnumerable<string> fiberNames)
+        {
+            var categories = BurningCategory.Classify(fiberNames);
+            var copy = new Dictionary<string, object>(Data);
+            copy["BurningTest"] = string.Join(", ", categories);
             return new AnalysisResult(copy);
         }
 

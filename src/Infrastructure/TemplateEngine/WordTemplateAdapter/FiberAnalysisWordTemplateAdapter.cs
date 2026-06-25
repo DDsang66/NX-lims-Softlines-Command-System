@@ -36,6 +36,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             flatData["Comprehensive"] = analysisResult.Comprehensive;
             flatData["VertifyResult"] = analysisResult.VerifyResult;  // 模板书签名为 VertifyResult
             flatData["FinalResult"] = analysisResult.FinalResult;
+            flatData["BurningTest"] = analysisResult.BurningTest;
 
             // 数组/嵌套结构：留空，后续单独处理
             // 数组展开：Results → TestResult_1, TestResult_2, ...
@@ -56,7 +57,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 }
             }
             // flatData["CalculatedFiberResult"] = ?;  // 复杂对象列表，需逐行展开
-            var fiberData = ExpandCalculatedFiberResult(analysisResult.CalculatedFiberResult);
+            var fiberData = ExpandCalculatedFiberResult(
+                analysisResult.CalculatedFiberResult);
             foreach (var kv in fiberData)
             {
                 flatData[kv.Key] = kv.Value;
@@ -90,7 +92,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// <summary>
         /// 展开 CalculatedFiberResult 到扁平字典
         /// </summary>
-        private Dictionary<string, string> ExpandCalculatedFiberResult(List<CalculatedFiberResult> calculatedFiberResult)
+        private Dictionary<string, string> ExpandCalculatedFiberResult(
+            List<CalculatedFiberResult> calculatedFiberResult)
         {
             var flatData = new Dictionary<string, string>();
 
@@ -103,7 +106,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                     case SingleCalculatedFiberItem single:
                         flatData["Qualitative"] = single.Qualitative;
                         flatData["Reagent"] = single.Reagent;
-                        flatData["Sample"] = single.Sample;  // 页眉 Sample 书签（无后缀）
+                        flatData["Sample"] = "-";  // Single 组件 Sample 书签固定为 "-"
                         // 单组分用无后缀书签（模板兼容）
                         flatData["GSMTrail1"] = single.GSMTrail1.ToString("F4");
                         flatData["Rate"] = single.Rate.ToString("F2")+"%";
@@ -128,6 +131,50 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                             foreach (var kv in rowData)
                             {
                                 flatData[kv.Key] = kv.Value;
+                            }
+
+                            // Bottle / Crucible 编号
+                            // Bottle = 唯一 Yarn 名
+                            var yarnNames = multi.MultiFiberRowUnits
+                                .Select(u => u.Section)
+                                .Where(s => !string.IsNullOrWhiteSpace(s) && s != "/")
+                                .Distinct()
+                                .ToList();
+
+                            // Crucible = Section 变化时开新组，每组组分数-1
+                            var crucibleCounts = new List<int>();
+                            int groupCount = 0;
+                            string lastSection = "";
+                            foreach (var unit in multi.MultiFiberRowUnits)
+                            {
+                                var section = unit.Section ?? "";
+                                if (!string.IsNullOrWhiteSpace(section) && section != "/" && section != lastSection)
+                                {
+                                    if (groupCount > 1)
+                                        crucibleCounts.Add(groupCount - 1);
+                                    groupCount = 0;
+                                    lastSection = section;
+                                }
+                                if (!string.IsNullOrWhiteSpace(unit.Sum) && !unit.Sum.Contains('/'))
+                                    groupCount++;
+                            }
+                            if (groupCount > 1)
+                                crucibleCounts.Add(groupCount - 1);
+
+                            int totalNeeded = yarnNames.Count + crucibleCounts.Sum();
+                            if (totalNeeded > 0)
+                            {
+                                var rng = new Random();
+                                var numbers = Enumerable.Range(1, 99)
+                                    .OrderBy(_ => rng.Next())
+                                    .Take(totalNeeded)
+                                    .ToList();
+                                var bottleTexts = numbers.Take(yarnNames.Count)
+                                    .Select(n => $"Bottle: {n}");
+                                var crucibleTexts = numbers.Skip(yarnNames.Count)
+                                    .Select(n => $"Crucible: {n}");
+                                flatData["Bottle"] = string.Join("    ",
+                                    bottleTexts.Concat(crucibleTexts));
                             }
                         }
                         break;

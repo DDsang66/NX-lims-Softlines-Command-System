@@ -40,7 +40,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// 构建成分分析报告服务
         /// </summary>
         /// <returns></returns>0
-        public async Task<Result> BuildAnalysisAsync(BuildAnalysisDto dto,CancellationToken ct) 
+        public async Task<Result<string>> BuildAnalysisAsync(BuildAnalysisDto dto,CancellationToken ct)
         {
 
             //需要重新进行用例编排
@@ -60,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
 
             var po = await _worksheetRepo.GetByIdAsync(entity.Id, ct);
 
-            if (po == null) return Result.Fail("data is not found");
+            if (po == null) return Result<string>.Fail("data is not found");
 
             var ingredientsAnalysis = po.Adapt<IngredientAnalysisCalculation>();//Mapster封装映射，内部使用工厂模式构建IngredientAnalysis对象
 
@@ -86,8 +86,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                     Directory.CreateDirectory(targetDirectory);
                 }
 
-                // 构建目标文件名
-                string targetFileName = $"{ingredientsAnalysis.ReportNo}_FiberAnalysis.docx";
+                // 构建目标文件名（加时间戳避免同报告号覆盖）
+                string targetFileName = $"{ingredientsAnalysis.ReportNo}_{DateTime.Now:yyMMddHHmmss}_FiberAnalysis.docx";
 
                 // 完整的目标文件路径
                 string targetPath = Path.Combine(targetDirectory, targetFileName);
@@ -118,13 +118,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
 
                 //IFiberReposity 查询Word地址与生成状态；返回url
 
-                return Result.Ok();
+                return Result<string>.Ok(targetFileName);
             }
             catch (Exception ex)
             {
                 //记录日志
                 //触发补偿机制
-                return Result.Fail(ex.Message);
+                return Result<string>.Fail(ex.Message);
             }
         }
 

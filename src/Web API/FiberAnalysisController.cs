@@ -128,12 +128,13 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             if (result.IsFailure)
                 return Result<DocxUrlResponseDto>.Fail(result.Error, result.ErrorCode);
 
+            var actualFileName = result.Value;  // Service 返回的实际文件名（含时间戳）
             var docxUrl = new DocxUrlResponseDto
             {
-                fileKey = dto.ReportNumber,
-                fileName = $"{dto.ReportNumber}_FiberAnalysis.docx",
-                downloadUrl = $"/api/FiberAnalysis/{dto.ReportNumber}_FiberAnalysis.docx/download",
-                callbackUrl = $"/api/FiberAnalysis/{dto.ReportNumber}_FiberAnalysis.docx/callback"
+                fileKey = actualFileName,
+                fileName = actualFileName,
+                downloadUrl = $"/api/FiberAnalysis/{actualFileName}/download",
+                callbackUrl = $"/api/FiberAnalysis/{actualFileName}/callback"
             };
 
             return Result<DocxUrlResponseDto>.Ok(docxUrl);
