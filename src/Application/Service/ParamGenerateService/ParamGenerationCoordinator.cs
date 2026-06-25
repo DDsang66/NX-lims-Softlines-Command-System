@@ -1,0 +1,72 @@
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
+
+namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerateService
+{
+    /// <summary>
+    /// 应用层协调器：负责跨聚合加载、调用富化器/引擎/补偿服务、并返回最终 ParamSet
+    /// - 不直接持久化（调用方可在事务边界内保存）
+    /// </summary>
+    public class ParamGenerationCoordinator
+    {
+        private readonly IParamStructureRepository _structureRepo;
+        private readonly IFormulaRepository _formulaRepo;
+        private readonly IParamRuleRepository _ruleRepo;
+        private readonly IParamGenerationEngine _engine;
+        private readonly IParamCompensationService _compensation;
+
+        public ParamGenerationCoordinator(
+            IParamStructureRepository structureRepo,
+            IFormulaRepository formulaRepo,
+            IParamRuleRepository ruleRepo,
+            IParamGenerationEngine engine,
+            IParamCompensationService compensation)
+        {
+            _structureRepo = structureRepo;
+            _formulaRepo = formulaRepo;
+            _ruleRepo = ruleRepo;
+            _engine = engine;
+            _compensation = compensation;
+        }
+
+        /// <summary>
+        /// 主流程：
+        /// 1. 加载 ParamStructure
+        /// 2. 使用 ParamStructure/Formula 验证 ConditionPool
+        /// 3. 加载规则并调用引擎生成
+        /// 4. 调用补偿服务得到最终 ParamSet
+        /// </summary>
+        public Result<ParamSet> GenerateForStructure(string structureId, ConditionPool pool)
+        {
+            // 1. 加载结构
+            var structure = _structureRepo.GetById(new ParamStructureId(structureId));
+            if (structure == null) return Result<ParamSet>.Fail("ParamStructure not found");
+
+            // 2. 前置验证（结构层面）
+            var v = structure.ValidateConditionPool(pool);
+            if (v.IsFailure) return Result<ParamSet>.Fail(v.Error);
+
+            // 3. 加载 Formula 并做语义检查
+            var formula = _formulaRepo.GetById(structure.FormulaId);
+            if (formula == null) return Result<ParamSet>.Fail("Formula not found");
+
+            var missing = formula.RequiredConditions().Where(f => !pool.HasCondition(f)).ToList();
+            if (missing.Any()) return Result<ParamSet>.Fail($"Missing required conditions: {string.Join(',', missing)}");
+
+            // 4. 加载规则
+            var rules = _ruleRepo.GetByIds(structure.ApplicableRuleIds);
+
+            // 5. 引擎生成
+            var generated = _engine.Generate(pool, rules);
+
+            // 6. 补偿
+            var final = _compensation.ApplyCompensation(generated, structure.Schema);
+
+            return Result<ParamSet>.Ok(final);
+        }
+    }
+}

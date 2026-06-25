@@ -1,12 +1,12 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Share.ValueObj;
-using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
+﻿using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 {
     public class Standard : Entity, IAggregateRoot
     {
-        public IdStandard IdStandard { get; private set; } = null!;
+        public StandardId IdStandard { get; private set; } = null!;
 
         public string StandardCode { get; private set; } = null!;
 
@@ -20,7 +20,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 
         public Status Status { get; private set; } = Status.Draft; 
 
-        public StandardFamilyCode StandardFamilyCode { get; private set; } = null!;
+        public StandardFamilyId StandardFamilyCode { get; private set; } = null!;
         private Standard() { }
 
         /// <summary>
@@ -37,10 +37,10 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public static Standard Create(
-            IdStandard id,
+            StandardId id,
             string standardCode,
             string testGroup,
-            StandardFamilyCode familyCode,
+            StandardFamilyId familyCode,
             string? nameEn,
             string? nameChn)
         {
@@ -81,7 +81,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         public void Update(
             string? standardCode,
             string? testGroup,
-            StandardFamilyCode? familyCode,
+            StandardFamilyId? familyCode,
             string? nameEn,
             string? nameChn)
         {
