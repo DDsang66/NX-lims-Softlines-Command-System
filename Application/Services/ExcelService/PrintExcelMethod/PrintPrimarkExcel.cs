@@ -116,6 +116,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             foreach (var row in esDto.NewSelectedRows!)
             {
+                // Colour Change and Staining 已包含在 Appearance 中，跳过以避免重复
+                if (row.itemName == "Colour Change and Staining") continue;
+
                 //用于获取测点组索引，方便sheet命名
 
                 var pkg = row.types == "Wet" ? pkgWet : pkgPhy;
