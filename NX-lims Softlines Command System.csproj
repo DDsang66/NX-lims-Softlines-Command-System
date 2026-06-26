@@ -55,7 +55,6 @@
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="src\Application\Contract\ApiResult\" />
     <Folder Include="src\Application\Interface\" />
-    <Folder Include="src\Domain\Aggregeates\Standard\ValueObj\" />
     <Folder Include="test\Engine\ParamRuleTest\" />
     <Folder Include="wwwroot\DocxModel\SaveDocx\" />
   </ItemGroup>

@@ -1,10 +1,11 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 {
-    public class Standard : Entity, IAggregateRoot
+    public sealed class Standard : Entity, IAggregateRoot
     {
         public StandardId IdStandard { get; private set; } = null!;
 
@@ -13,8 +14,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         public string? StandardCodeNameEn { get; private set; } = null!;
 
         public string? StandardCodeNameChn { get; private set; } = null!;
-
-        public string TestGroup { get; private set; } = null!;
 
         public byte IsDisabled { get; private set; }
 
@@ -39,7 +38,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         public static Standard Create(
             StandardId id,
             string standardCode,
-            string testGroup,
             StandardFamilyId familyCode,
             string? nameEn,
             string? nameChn)
@@ -47,14 +45,10 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
             if (string.IsNullOrWhiteSpace(standardCode))
                 throw new ArgumentException("Standard code is required");
 
-            if (string.IsNullOrWhiteSpace(testGroup))
-                throw new ArgumentException("Test group is required");
-
             var standard = new Standard
             {
                 IdStandard = id,
                 StandardCode = standardCode,
-                TestGroup = testGroup,
                 StandardFamilyCode = familyCode,
                 StandardCodeNameEn = nameEn,
                 StandardCodeNameChn = nameChn,
@@ -80,7 +74,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         /// <exception cref="ArgumentNullException"></exception>
         public void Update(
             string? standardCode,
-            string? testGroup,
             StandardFamilyId? familyCode,
             string? nameEn,
             string? nameChn)
@@ -88,9 +81,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
             //当前只做最简校验，后续可以根据业务规则添加更多校验逻辑，例如：标准编码格式、测试组合法性、名称长度等
             if (!string.IsNullOrWhiteSpace(standardCode))
                 this.StandardCode = standardCode;
-
-            if (!string.IsNullOrWhiteSpace(testGroup))
-                this.TestGroup = testGroup;
 
             if (familyCode != null)
                 this.StandardFamilyCode = familyCode;

@@ -1,4 +1,4 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Domain.Share
+﻿namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj
 {
     public sealed record StandardId
     {
@@ -11,7 +11,7 @@
 
             if (value.Length > 50)
                 throw new ArgumentException("IdStandard cannot exceed 50 characters.", nameof(value));
-            this.Value = value;
+            Value = value;
         }
 
         // 2. 显式重写 ToString，解决输出 {IdStandard { Value = ... }} 的问题
