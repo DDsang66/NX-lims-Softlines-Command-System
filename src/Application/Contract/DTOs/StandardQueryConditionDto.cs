@@ -2,5 +2,9 @@
 {
     public record StandardQueryConditionDto
     {
+        /// <summary>
+        /// 查询条件
+        /// </summary>
+        public Dictionary<string, object> ModifyQueryParameters { get;set; } = new Dictionary<string, object>();
     }
 }

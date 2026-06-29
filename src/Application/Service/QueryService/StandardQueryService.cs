@@ -22,7 +22,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.QueryService
         {
             var standardId = new StandardId(id);
 
-            //var standard = await _standardRepository.GetByIdAsync(standardId, ct);
+            var standard = await _standardRepository.GetByIdAsync(standardId, ct);
 
             return Result<StandardResponseDto>.Ok(new StandardResponseDto());
         }
@@ -34,7 +34,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.QueryService
         /// <returns></returns>
         public async Task<Result<StandardResponseDto>> GetStandardsAsync(CancellationToken ct) 
         {
-            //var standards = await _standardRepository.GetStandardAsync(ct);
+            var standards = await _standardRepository.GetStandardListAsync(ct);
 
             return Result<StandardResponseDto>.Ok(new StandardResponseDto());
         }

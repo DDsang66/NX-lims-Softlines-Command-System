@@ -44,6 +44,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// <returns></returns>
         public async Task<Result> RemoveStandardAsync(string id,CancellationToken ct) 
         {
+            var standardId = new StandardId(id);
+
+            await _standardRepository.RemoveAsync(standardId, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
             return Result.Ok();
         }
 

@@ -71,6 +71,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         {
             // 1. 获取现有规则
             var existingRule = await _repository.FindAsync(new ParamRuleId(request.Id));
+
             if (existingRule == null)
                 throw new Exception($"Param rule with id {request.Id} not found");
 
