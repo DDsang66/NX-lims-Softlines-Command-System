@@ -1,19 +1,14 @@
-using DocumentFormat.OpenXml.Office2010.Excel;
 using Mapster;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.AnalysisWorksheet;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
-using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine;
-using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter;
-using System.ComponentModel.DataAnnotations;
-using System.Reflection.Metadata;
+using NX_lims_Softlines_Command_System.src.Application.Contract;
 using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service
@@ -25,15 +20,90 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
     {
         private readonly IFiberWorksheetRepository _worksheetRepo;
         private readonly IFiberDatabaseRepository _fiberDatabaseRepo;
-        private readonly FiberAnalysisWordTemplateAdapter _wordTemplateAdapter;
-        private readonly WordTemplateEngine _wordTemplateEngine;
+        private readonly IWordTemplateAdapter _wordTemplateAdapter;
+        private readonly IWordTemplateEngine _wordTemplateEngine;
+        private readonly IFileStorageService _fileStorage;
+        private readonly ILabelOptionRepository _labelOptionRepo;
 
-        public FiberWorksheetService(IFiberWorksheetRepository worksheetRepo, IFiberDatabaseRepository fiberDatabaseRepo, FiberAnalysisWordTemplateAdapter wordTemplateAdapter,WordTemplateEngine wordTemplateEngine)
+        public FiberWorksheetService(
+            IFiberWorksheetRepository worksheetRepo,
+            IFiberDatabaseRepository fiberDatabaseRepo,
+            IWordTemplateAdapter wordTemplateAdapter,
+            IWordTemplateEngine wordTemplateEngine,
+            IFileStorageService fileStorage,
+            ILabelOptionRepository labelOptionRepo)
         {
             _worksheetRepo = worksheetRepo;
             _fiberDatabaseRepo = fiberDatabaseRepo;
             _wordTemplateAdapter = wordTemplateAdapter;
             _wordTemplateEngine = wordTemplateEngine;
+            _fileStorage = fileStorage;
+            _labelOptionRepo = labelOptionRepo;
+        }
+
+        public async Task<object> GetLabelOptionsAsync(CancellationToken ct)
+        {
+            var options = await _labelOptionRepo.GetLabelOptionsAsync(ct);
+            var resultRemarkList = options.Where(o => o.Category == "ResultRemark").Select(o => o.Text).ToList();
+            return new
+            {
+                success = true,
+                data = new
+                {
+                    judgmentLabelOptions = options.Where(o => o.Category == "Judgment").Select(o => o.Text).ToList(),
+                    languageLabelOptions = options.Where(o => o.Category == "Language").Select(o => o.Text).ToList(),
+                    resultRemarkOptions = resultRemarkList,
+                    labelRemarkOptions = resultRemarkList
+                }
+            };
+        }
+
+        public async Task<object> GetAllFibersAsync()
+            => new { success = true, data = await _fiberDatabaseRepo.GetAllAsync() };
+
+        public async Task<object> GetFiberNamesAsync()
+            => new { success = true, data = await _fiberDatabaseRepo.GetAllNamesAsync() };
+
+        public async Task<object> AddFiberAsync(FiberDatabaseCreateDto dto)
+        {
+            var entity = new CompositionNew
+            {
+                CompositionNameEn = dto.FiberNameEn,
+                CompositionNameChn = dto.FiberNameCn,
+                PrimaryCategoryEn = dto.Category
+            };
+            var result = await _fiberDatabaseRepo.AddAsync(entity);
+            return new { success = true, data = result };
+        }
+
+        public async Task<object> UpdateFiberAsync(Guid id, FiberDatabaseCreateDto dto)
+        {
+            var fiber = await _fiberDatabaseRepo.GetByIdAsync(id);
+            if (fiber == null) return new { success = false, message = "纤维数据不存在" };
+            fiber.CompositionNameEn = dto.FiberNameEn;
+            fiber.CompositionNameChn = dto.FiberNameCn;
+            fiber.PrimaryCategoryEn = dto.Category;
+            var result = await _fiberDatabaseRepo.UpdateAsync(fiber);
+            return new { success = true, data = result };
+        }
+
+        public async Task<object> DeleteFiberAsync(Guid id)
+        {
+            var result = await _fiberDatabaseRepo.DeleteAsync(id);
+            return new { success = result };
+        }
+
+        public async Task<object> GetWorkSheetAsync(string reportNumber)
+        {
+            var result = await _worksheetRepo.GetByReportNumberAsync(reportNumber);
+            if (result == null) return new { success = false, message = "工作表不存在" };
+            return new { success = true, data = result };
+        }
+
+        public async Task<object> DeleteWorksheetAsync(Guid id)
+        {
+            var result = await _worksheetRepo.DeleteAsync(id);
+            return new { success = result };
         }
 
         /// <summary>
@@ -47,8 +117,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             //实例化AnalysisWorksheet生成word文件
             //实例化IngredientAnalysis进行计算
             //结果回传AnalysisWorksheet进行文档填写
-
-            await ValidateStructure(dto);
 
             var entity = dto.Adapt<FiberAnalysis>();
 
@@ -64,42 +132,24 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
 
             var ingredientsAnalysis = po.Adapt<IngredientAnalysisCalculation>();//Mapster封装映射，内部使用工厂模式构建IngredientAnalysis对象
 
-            // 回潮率查询（必须在 CalculateAsync 之前）
+            // 回潮率查询
             var selectedStandard2 = ingredientsAnalysis.Methods.FirstOrDefault() ?? string.Empty;
-            ingredientsAnalysis.MoistureRegainMap = await _fiberDatabaseRepo.GetMoistureRegainMapAsync(selectedStandard2);
+            var mrMap = await _fiberDatabaseRepo.GetMoistureRegainMapAsync(selectedStandard2);
 
             //执行计算
             try
             {
-                await ingredientsAnalysis.CalculateAsync();
+                ingredientsAnalysis.Calculate(mrMap);
                 //计算失败触发补偿机制
 
                 //执行生成word
-                string sourcePath = Path.Combine("wwwroot", "DocxModel", "FIBER_ANALYSIS_DATA_SHEET.docx");
-
-                // 目标目录路径
-                string targetDirectory = Path.Combine("wwwroot", "DocxModel", "SaveDocx");
-
-                // 确保目标目录存在
-                if (!Directory.Exists(targetDirectory))
-                {
-                    Directory.CreateDirectory(targetDirectory);
-                }
-
-                // 构建目标文件名（加时间戳避免同报告号覆盖）
                 string targetFileName = $"{ingredientsAnalysis.ReportNo}_{DateTime.Now:yyMMddHHmmss}_FiberAnalysis.docx";
+                string targetPath = _fileStorage.CopyTemplate(
+                    Path.Combine("DocxModel", "FIBER_ANALYSIS_DATA_SHEET.docx"),
+                    Path.Combine("DocxModel", "SaveDocx"),
+                    targetFileName);
 
-                // 完整的目标文件路径
-                string targetPath = Path.Combine(targetDirectory, targetFileName);
-
-                // 复制文件
-                File.Copy(sourcePath, targetPath, true); // true表示如果目标文件已存在则覆盖
-
-                var analysisWorksheet = AnalysisWorksheet.Create();
-
-                analysisWorksheet.AttachCalculationResult(ingredientsAnalysis.Result);
-
-                var templateData = _wordTemplateAdapter.Adapt(analysisWorksheet.CalculationResult);
+                var templateData = _wordTemplateAdapter.Adapt(ingredientsAnalysis.Result);
 
                 _wordTemplateEngine.ReplaceText(targetPath, templateData);
 
@@ -162,7 +212,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 return Result<AnalysisResult>.Fail("分析记录不存在", "NOT_FOUND");
 
             var ingredientsAnalysis = entity.Adapt<IngredientAnalysisCalculation>();
-            await ingredientsAnalysis.CalculateAsync();
+            ingredientsAnalysis.Calculate();
 
             return Result<AnalysisResult>.Ok(ingredientsAnalysis.Result);
         }
@@ -177,7 +227,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 return Result<FiberCalculationResultDto>.Fail("工作表不存在", "NOT_FOUND");
 
             var ingredientsAnalysis = entity.Adapt<IngredientAnalysisCalculation>();
-            var calcResult = await ingredientsAnalysis.CalculateAsync();
+            var calcResult = ingredientsAnalysis.Calculate();
 
             return Result<FiberCalculationResultDto>.Ok(new FiberCalculationResultDto
             {
@@ -210,26 +260,5 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         }
 
         /// <summary>
-        /// 结构性验证
-        /// </summary>
-        /// <returns></returns>
-        public async Task<Result> ValidateStructure(BuildAnalysisDto dto)
-        {
-            if (string.IsNullOrEmpty(dto.ReportNumber))
-                throw new ValidationException("报告号必填");
-
-            if (!dto.Method.Any())
-                throw new ValidationException("检测方法必填");
-
-            var hasSingle = dto.SingleBuildAnalysis?.SingleFiberRows?.Any() == true;
-
-            var hasMultiple = dto.MultipleBuildAnalysis?.fiberSplittingList?.Any() == true
-                || dto.MultipleBuildAnalysis?.fiberDissolvedList?.Any() == true;
-
-            if (!hasSingle && !hasMultiple)
-                throw new ValidationException("至少包含一组分数据");
-
-            return Result.Ok();
-        }
     }
 }

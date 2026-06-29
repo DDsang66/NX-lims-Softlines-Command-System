@@ -1,11 +1,7 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-using NX_lims_Softlines_Command_System.Domain.Model.Entities;
+﻿using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
-using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine;
-using System.Reflection.Metadata;
-using System.Threading.Tasks;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis
 {
@@ -20,7 +16,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public RemarkLabel RemarkGroup { get; private set; } = new();
         public AnalysisType Type { get; private set; } // 枚举：单组分/多组分
         public AnalysisResult Result { get; private set; } = AnalysisResult.Empty();//字典映射
-        public Dictionary<string, decimal> MoistureRegainMap { get; set; } = new();
+        private IReadOnlyDictionary<string, decimal> _moistureRegainMap = new Dictionary<string, decimal>();
 
         /// <summary>
         /// 实体创建工厂方法，包含领域验证逻辑
@@ -46,6 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             if (id <= 0) throw new ArgumentException("Id is required");
             if (string.IsNullOrWhiteSpace(reportNo)) throw new ArgumentException("RepoNo. is required");
             if (methods == null || !methods.Any()) throw new ArgumentException("Methods are required");
+            if (components == null || !components.Any()) throw new ArgumentException("至少包含一组分数据");
             //等等
 
             return new IngredientAnalysisCalculation
@@ -65,8 +62,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <summary>
         /// 计算逻辑
         /// </summary>
-        public async Task<AnalysisResult> CalculateAsync()
+        public AnalysisResult Calculate(IReadOnlyDictionary<string, decimal>? moistureRegainMap = null)
         {
+            _moistureRegainMap = moistureRegainMap ?? new Dictionary<string, decimal>();
+
             // 1) 基础参数
             var result = AnalysisResult.Empty()
                 .WithBasicParams(ReportNo, Buyer, DateTime.Now, Methods)
@@ -119,7 +118,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 5) 保存聚合根状态
             Result = result;
 
-            return await Task.FromResult(result);
+            return result;
         }
 
         /// <summary>
@@ -508,13 +507,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
         private decimal LookupMoistureRegain(string fiberName)
         {
-            if (string.IsNullOrWhiteSpace(fiberName) || MoistureRegainMap.Count == 0)
+            if (string.IsNullOrWhiteSpace(fiberName) || _moistureRegainMap.Count == 0)
                 return 0m;
 
-            if (MoistureRegainMap.TryGetValue(fiberName, out var exact))
+            if (_moistureRegainMap.TryGetValue(fiberName, out var exact))
                 return exact;
 
-            var match = MoistureRegainMap
+            var match = _moistureRegainMap
                 .FirstOrDefault(kv => string.Equals(kv.Key, fiberName, StringComparison.OrdinalIgnoreCase));
             return match.Value;
         }
@@ -886,18 +885,5 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         }
 
         /*------------------------------------------计算逻辑------------------------------------------------------------------------------*/
-
-        /// <summary>
-        /// 领域规则验证
-        /// </summary>
-        /// <exception cref="ArgumentException"></exception>
-        private void ValidateComponents()
-        {
-            if (!_components.Any())
-                throw new ArgumentException("至少需要一个成分");
-
-            // 其他业务规则...
-        }
-
     }
 }

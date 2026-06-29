@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <summary>
         /// 字典集合，用于 Word 文档映射（保留，外部模板依赖此结构）
         /// </summary>
-        public Dictionary<string, object> Data { get; init; } = new();
+        private Dictionary<string, object> Data { get; init; } = new();
 
         public AnalysisResult() { }
 

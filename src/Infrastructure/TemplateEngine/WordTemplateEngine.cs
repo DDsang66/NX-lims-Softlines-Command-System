@@ -4,6 +4,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using A = DocumentFormat.OpenXml.Drawing;
 using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
+using NX_lims_Softlines_Command_System.src.Application.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
@@ -12,7 +13,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
     /// Word 模板引擎
     /// 仅封装底层操作功能，不涉及业务逻辑
     /// </summary>
-    public class WordTemplateEngine : IScopedDependency
+    public class WordTemplateEngine : IWordTemplateEngine, IScopedDependency
     {
         /// <summary>
         /// 构造函数

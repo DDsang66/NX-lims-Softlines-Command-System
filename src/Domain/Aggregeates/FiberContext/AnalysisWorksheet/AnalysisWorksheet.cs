@@ -5,7 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.AnalysisWorksheet
 {
-    public sealed class AnalysisWorksheet:IAggregateRoot
+    public sealed class AnalysisWorksheet
     {
         /// <summary>
         /// 分析工作单聚合根，用户进入界面随即向后端创建一个工作单用于记录分析过程，

@@ -1,9 +1,10 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
+﻿using NX_lims_Softlines_Command_System.src.Application.Contract;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter
 {
-    public class FiberAnalysisWordTemplateAdapter:IScopedDependency
+    public class FiberAnalysisWordTemplateAdapter : IWordTemplateAdapter, IScopedDependency
     {
         /// <summary>
         /// 从 IngredientAnalysis 计算结果中重构 Data，

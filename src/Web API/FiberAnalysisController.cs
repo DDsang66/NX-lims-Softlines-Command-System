@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.Domain.Model;
-using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Service;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API
@@ -13,109 +9,47 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
     [Route("api/[Controller]")]
     public class FiberAnalysisController : ControllerBase
     {
-        private readonly IFiberDatabaseRepository _fiberRepo;
-        private readonly IFiberWorksheetRepository _worksheetRepo;
         private readonly FiberWorksheetService _worksheetService;
         private readonly IWebHostEnvironment _env;
-        private readonly LabDbContextSec _db;
 
         public FiberAnalysisController(
-            IFiberDatabaseRepository fiberRepo,
-            IFiberWorksheetRepository worksheetRepo,
             FiberWorksheetService worksheetService,
-            IWebHostEnvironment env,
-            LabDbContextSec db)
+            IWebHostEnvironment env)
         {
-            _fiberRepo = fiberRepo;
-            _worksheetRepo = worksheetRepo;
             _worksheetService = worksheetService;
             _env = env;
-            _db = db;
         }
 
         #region 纤维数据库 API
 
         [HttpGet("database")]
         public async Task<IActionResult> GetAllFibers()
-        {
-            var fibers = await _fiberRepo.GetAllAsync();
-            return Ok(new { success = true, data = fibers });
-        }
+            => Ok(await _worksheetService.GetAllFibersAsync());
 
         [HttpGet("names")]
         public async Task<IActionResult> GetFiberNames()
-        {
-            var names = await _fiberRepo.GetAllNamesAsync();
-            return Ok(new { success = true, data = names });
-        }
+            => Ok(await _worksheetService.GetFiberNamesAsync());
 
         [HttpGet("label-options")]
         public async Task<IActionResult> GetLabelOptions(CancellationToken ct)
-        {
-            var options = await _db.LabelOptions
-                .OrderBy(o => o.Category)
-                .ThenBy(o => o.SortOrder)
-                .Select(o => new { o.Category, o.Text })
-                .ToListAsync(ct);
-
-            var resultRemarkList = options
-                .Where(o => o.Category == "ResultRemark")
-                .Select(o => o.Text)
-                .ToList();
-
-            return Ok(new
-            {
-                success = true,
-                data = new
-                {
-                    judgmentLabelOptions = options
-                        .Where(o => o.Category == "Judgment")
-                        .Select(o => o.Text)
-                        .ToList(),
-                    languageLabelOptions = options
-                        .Where(o => o.Category == "Language")
-                        .Select(o => o.Text)
-                        .ToList(),
-                    resultRemarkOptions = resultRemarkList,
-                    labelRemarkOptions = resultRemarkList
-                }
-            });
-        }
+            => Ok(await _worksheetService.GetLabelOptionsAsync(ct));
 
         [HttpPost("database")]
         public async Task<IActionResult> AddFiber([FromBody] FiberDatabaseCreateDto dto)
-        {
-            var entity = new CompositionNew
-            {
-                CompositionNameEn = dto.FiberNameEn,
-                CompositionNameChn = dto.FiberNameCn,
-                PrimaryCategoryEn = dto.Category
-            };
-            var result = await _fiberRepo.AddAsync(entity);
-            return Ok(new { success = true, data = result });
-        }
+            => Ok(await _worksheetService.AddFiberAsync(dto));
 
         [HttpPut("database/{id}")]
         public async Task<IActionResult> UpdateFiber(Guid id, [FromBody] FiberDatabaseCreateDto dto)
         {
-            var fiber = await _fiberRepo.GetByIdAsync(id);
-            if (fiber == null)
-                return NotFound(new { success = false, message = "纤维数据不存在" });
-
-            fiber.CompositionNameEn = dto.FiberNameEn;
-            fiber.CompositionNameChn = dto.FiberNameCn;
-            fiber.PrimaryCategoryEn = dto.Category;
-
-            var result = await _fiberRepo.UpdateAsync(fiber);
-            return Ok(new { success = true, data = result });
+            var result = await _worksheetService.UpdateFiberAsync(id, dto);
+            var obj = result as dynamic;
+            if (obj?.success == false) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpDelete("database/{id}")]
         public async Task<IActionResult> DeleteFiber(Guid id)
-        {
-            var result = await _fiberRepo.DeleteAsync(id);
-            return Ok(new { success = result });
-        }
+            => Ok(await _worksheetService.DeleteFiberAsync(id));
 
         #endregion
 
@@ -128,7 +62,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             if (result.IsFailure)
                 return Result<DocxUrlResponseDto>.Fail(result.Error, result.ErrorCode);
 
-            var actualFileName = result.Value;  // Service 返回的实际文件名（含时间戳）
+            var actualFileName = result.Value;
             var docxUrl = new DocxUrlResponseDto
             {
                 fileKey = actualFileName,
@@ -158,21 +92,19 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         [HttpGet("worksheet/{reportNumber:regex(^.+$)}")]
         public async Task<IActionResult> GetWorkSheet(string reportNumber)
         {
-            var result = await _worksheetRepo.GetByReportNumberAsync(reportNumber);
-            if (result == null)
-                return NotFound(new { success = false, message = "工作表不存在" });
-
-            return Ok(new { success = true, data = result });
+            var result = await _worksheetService.GetWorkSheetAsync(reportNumber);
+            var obj = result as dynamic;
+            if (obj?.success == false) return NotFound(result);
+            return Ok(result);
         }
 
         [HttpDelete("worksheet/{id}")]
         public async Task<IActionResult> DeleteWorksheet(Guid id)
         {
-            var result = await _worksheetRepo.DeleteAsync(id);
-            if (!result)
-                return NotFound(new { success = false, message = "工作表不存在或删除失败" });
-
-            return Ok(new { success = true });
+            var result = await _worksheetService.DeleteWorksheetAsync(id);
+            var obj = result as dynamic;
+            if (obj?.success == false) return NotFound(result);
+            return Ok(result);
         }
 
         #endregion
