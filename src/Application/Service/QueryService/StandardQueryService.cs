@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -24,7 +25,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.QueryService
 
             var standard = await _standardRepository.GetByIdAsync(standardId, ct);
 
-            return Result<StandardResponseDto>.Ok(new StandardResponseDto());
+            var standardDto = standard.Adapt<StandardResponseDto>();
+
+            return Result<StandardResponseDto>.Ok(standardDto);
         }
 
         /// <summary>
@@ -32,11 +35,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.QueryService
         /// </summary>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result<StandardResponseDto>> GetStandardsAsync(CancellationToken ct) 
+        public async Task<Result<List<StandardResponseDto>>> GetStandardsAsync(CancellationToken ct) 
         {
             var standards = await _standardRepository.GetStandardListAsync(ct);
+            
+            var standardDtoList = standards.Adapt<List<StandardResponseDto>>();
 
-            return Result<StandardResponseDto>.Ok(new StandardResponseDto());
+            return Result<List<StandardResponseDto>>.Ok(standardDtoList);
         }
 
         /// <summary>
@@ -45,11 +50,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.QueryService
         /// <param name="QueryCondition"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result<StandardResponseDto>> GetStandardByCodeAsync(StandardQueryConditionDto queryCondition, CancellationToken ct) 
+        public async Task<Result<List<StandardResponseDto>>> GetStandardByCodeAsync(StandardQueryConditionDto queryCondition, CancellationToken ct) 
         {
             //var standards = await _standardRepository.GetByConditionAsync(ct);
 
-            return Result<StandardResponseDto>.Ok(new StandardResponseDto());
+            //通过中间件将queryCondition转换为标准查询条件
+
+            return Result<List<StandardResponseDto>>.Ok(new List<StandardResponseDto>());
         }
     }
 }

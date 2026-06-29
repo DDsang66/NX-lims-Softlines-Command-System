@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
@@ -59,8 +60,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> UpdateStandardAsync(string id, CancellationToken ct) 
+        public async Task<Result> UpdateStandardAsync(StandardUpdateDto dto, CancellationToken ct) 
         {
+            var standardId = new StandardId(dto.StandardId);
+
+            var standard = await _standardRepository.GetByIdAsync(standardId, ct);
+
+            var standardFamilyCode = new StandardFamilyId(dto.StandardFamilyCode);
+
+            standard.Update(dto.StandardCode,standardFamilyCode, dto.StandardNameEn,dto.StandardNameCn);
+
+            await _standardRepository.UpdateAsync(standard, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
             return Result.Ok();
         }
 
@@ -69,8 +82,38 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// </summary>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> ActiveStandardAsync(CancellationToken ct) 
+        public async Task<Result> ActiveStandardAsync(string id,CancellationToken ct) 
         {
+            var standardId = new StandardId(id);
+
+            var standard = await _standardRepository.GetByIdAsync(standardId, ct);
+
+            standard.Activate();
+
+            await _standardRepository.UpdateAsync(standard, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 将标准转变为草稿
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> DraftStandardAsync(string id, CancellationToken ct)
+        {
+            var standardId = new StandardId(id);
+
+            var standard = await _standardRepository.GetByIdAsync(standardId, ct);
+
+            standard.Draft();
+
+            await _standardRepository.UpdateAsync(standard, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
             return Result.Ok();
         }
     }
