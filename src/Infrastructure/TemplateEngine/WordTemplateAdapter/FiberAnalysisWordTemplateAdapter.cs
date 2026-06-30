@@ -65,6 +65,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 flatData[kv.Key] = kv.Value;
             }
 
+            // ResultRemark 或 LabelRemark 非空时 Sample 后加 *
+            if (!string.IsNullOrWhiteSpace(analysisResult.ResultRemark) ||
+                !string.IsNullOrWhiteSpace(analysisResult.LabelRemark))
+            {
+                flatData["Sample"] = (flatData.GetValueOrDefault("Sample") ?? "") + "*";
+            }
+
             // 设备选型字段 — 拼接所有非空设备值
             var equipmentParts = new[]
             {
@@ -75,6 +82,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 analysisResult.Equipment_Shaker
             }.Where(e => !string.IsNullOrWhiteSpace(e));
             flatData["Equipment"] = string.Join("    ", equipmentParts);
+
+            // 页脚 MR 汇总
+            var mrItems = analysisResult.CalculatedFiberResult
+                .OfType<MultiCalculatedFiberItem>()
+                .SelectMany(m => m.MultiFiberRowUnits ?? new List<MultiFiberRowUnit>())
+                .Where(r => !string.IsNullOrWhiteSpace(r.Sum) && !r.Sum.Contains('/'))
+                .Where(r => r.MoistureRegain > 0)
+                .Select(r => $"{r.Sum} {r.MoistureRegain:F2}%");
+            flatData["MR"] = string.Join("  ", mrItems);
 
             // 计数字段
             flatData["ComponentsCount"] = analysisResult.ComponentsCount.ToString();
