@@ -9,7 +9,7 @@ using NX_lims_Softlines_Command_System.Application.Services.AuthenticationServic
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
-using NX_lims_Softlines_Command_System.Application.Services.OrderService;
+
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Application.Services.UserService;
@@ -54,7 +54,7 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<FiberContentHelper>();
             builder.Services.AddScoped<IPrintExcelStrategyFactory, PrintExcelStrategyFactory>();
             builder.Services.AddScoped<ExcelHelper>();
-            builder.Services.AddScoped<OrderService>();
+
             builder.Services.AddScoped<FeedBackService>();
             builder.Services.AddScoped<FeedBackRepo>();
             builder.Services.AddScoped<OrderRepo>();
@@ -102,7 +102,7 @@ namespace NX_lims_Softlines_Command_System
                                        "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
-                          .AllowCredentials(); // ÓÃ JWT/ Cookie ¿É±£Áô
+                          .AllowCredentials(); // ï¿½ï¿½ JWT/ Cookie ï¿½É±ï¿½ï¿½ï¿½
                 });
             });
             builder.Services.AddEndpointsApiExplorer();
@@ -120,7 +120,7 @@ namespace NX_lims_Softlines_Command_System
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.RoutePrefix = "swagger";   // Ä¬ÈÏ¾ÍÊÇ swagger
+                c.RoutePrefix = "swagger";   // Ä¬ï¿½Ï¾ï¿½ï¿½ï¿½ swagger
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
             });
 

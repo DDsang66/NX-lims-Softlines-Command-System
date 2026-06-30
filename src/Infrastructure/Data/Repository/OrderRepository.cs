@@ -103,6 +103,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     && i.IsDelete == "N", ct);
         }
 
+        public async Task<string?> GetReportNumberByLineIdAsync(long lineId, CancellationToken ct)
+        {
+            return await _context.LabTestInfos
+                .Where(i => i.Id == lineId && i.IsDelete == "N")
+                .Select(i => i.ReportNumber)
+                .FirstOrDefaultAsync(ct);
+        }
+
         /* ================================================================
          * 映射工具
          * ================================================================ */

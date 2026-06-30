@@ -1,10 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
-using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Application.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.OrderContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
@@ -13,130 +12,160 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
     public class OrderAppService : IScopedDependency
     {
         private readonly IOrderRepository _repository;
-        private readonly LabDbContextSec _db;
+        private readonly IOrderQueryService _queryService;
+        private readonly IOrderLookupService _lookup;
 
-        public OrderAppService(IOrderRepository repository, LabDbContextSec db)
+        public OrderAppService(IOrderRepository repository, IOrderQueryService queryService, IOrderLookupService lookup)
         {
             _repository = repository;
-            _db = db;
+            _queryService = queryService;
+            _lookup = lookup;
         }
 
-        /// <summary>
-        /// 新增订单
-        /// </summary>
-        public async Task AddOrderAsync(OrderDto dto)
-        {
-            if (dto == null || dto.Rows == null || dto.Rows.Count == 0)
-                throw new ArgumentException("订单数据不能为空");
+        /* ================================================================
+         * 读 — 查询
+         * ================================================================ */
 
-            var firstRow = dto.Rows.First();
-            if (firstRow.ReportNum == null || firstRow.OrderEntry == null)
-                throw new ArgumentException("报告号和录入人不能为空");
+        public async Task<OrderOutput[]> GetOrderListAsync(string userId)
+            => await _queryService.GetOrderListAsync(userId);
 
-            // 查重复 — 聚合根内会再检查，这里提前给友好错误
-            foreach (var row in dto.Rows)
-            {
-                if (await _repository.ExistsAsync(new OrderId(row.ReportNum!), row.Group!, CancellationToken.None))
-                    throw new InvalidOperationException($"重复记录: ReportNum={row.ReportNum}, Group={row.Group}");
-            }
+        public async Task<object> GetOrderSummaryAsync(OrderQueryParams dto)
+            => await _queryService.GetOrderSummaryAsync(dto);
 
-            // 创建聚合根
-            var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == dto.Rows[0].Cs)?.CustomerService1 ?? string.Empty;
-            var order = Order.Create(firstRow.ReportNum, firstRow.OrderEntry, csName, dto.Remark);
+        public async Task<OrderCardOutput> GetOrderCardListAsync(DateTimeOffset time, string group, string timeType)
+            => await _queryService.GetOrderCardListAsync(time, group, timeType);
 
-            // 添加行
-            foreach (var row in dto.Rows)
-            {
-                order.AddLine(
-                    lineId: new SnowflakeIdGenerator().NextId(),
-                    testGroup: row.Group!,
-                    express: StringToExpress(row.Express),
-                    dueDate: row.DueDate ?? DateTimeOffset.UtcNow,
-                    labIn: row.LabIn ?? DateTimeOffset.UtcNow,
-                    remark: row.Remark);
-            }
+        public async Task<OrderFanCardOutput> GetOrderFanChartListAsync(DateTimeOffset time, string group, string timeType)
+            => await _queryService.GetOrderFanChartListAsync(time, group, timeType);
 
-            await _repository.AddAsync(order, CancellationToken.None);
-        }
+        public async Task<OrderLineCardOutput> GetOrderLineChartAsync(DateTimeOffset[] time, string group, string timeType, string Type)
+            => await _queryService.GetOrderLineChartAsync(time, group, timeType, Type);
 
         /// <summary>
-        /// 更新订单行
+        /// 新增订单 — 成功返回 true，失败返回 false
         /// </summary>
-        public async Task UpdateOrderAsync(OrderUpdateDto dto)
+        public async Task<bool> AddOrderAsync(OrderDto dto)
         {
-            if (dto == null || dto.Rows == null || dto.Rows.Count == 0)
-                throw new ArgumentException("更新数据不能为空");
+            if (dto?.Rows == null || dto.Rows.Count == 0) return false;
 
-            foreach (var row in dto.Rows)
+            try
             {
-                if (row.RecordId == null || !long.TryParse(row.RecordId, out var lineId))
-                    throw new ArgumentException("RecordId 无效");
+                var firstRow = dto.Rows.First();
+                if (string.IsNullOrWhiteSpace(firstRow.ReportNum) || firstRow.OrderEntry == null)
+                    return false;
 
-                // 从 RecordId 找到对应的 ReportNumber（DbContext 查询）
-                var record = await _db.LabTestInfos
-                    .FirstOrDefaultAsync(i => i.Id == lineId && i.IsDelete == "N");
-                if (record?.ReportNumber == null)
-                    throw new InvalidOperationException($"记录 {lineId} 不存在或已删除");
+                foreach (var row in dto.Rows)
+                {
+                    if (await _repository.ExistsAsync(new OrderId(row.ReportNum!), row.Group!, CancellationToken.None))
+                        return false;
+                }
 
-                var order = await _repository.GetByIdAsync(new OrderId(record.ReportNumber), CancellationToken.None);
-                if (order == null)
-                    throw new InvalidOperationException($"订单 {record.ReportNumber} 不存在");
+                var cs = dto.Rows[0].Cs;
+                var csName = await _lookup.ResolveCsNameAsync(cs);
+                var order = Order.Create(firstRow.ReportNum, firstRow.OrderEntry, csName, dto.Remark);
 
-                // 更新行数据
-                order.UpdateLine(
-                    lineId,
-                    express: StringToExpress(row.Express),
-                    dueDate: row.ReportDueDate,
-                    labIn: row.OrderInTime,
-                    sampleCount: row.TestSampleNum,
-                    itemCount: row.TestItemNum,
-                    reviewer: await ResolveUserName(row.ReviewerId),
-                    engineer: row.TestEngineer,
-                    remark: row.Remark,
-                    delayType: row.DelayType,
-                    delayReason: row.DelayReason);
+                foreach (var row in dto.Rows)
+                {
+                    order.AddLine(
+                        lineId: new SnowflakeIdGenerator().NextId(),
+                        testGroup: row.Group!,
+                        express: StringToExpress(row.Express),
+                        dueDate: row.DueDate ?? DateTimeOffset.UtcNow,
+                        labIn: row.LabIn ?? DateTimeOffset.UtcNow,
+                        remark: row.Remark);
+                }
 
-                // 时间驱动的状态自动转换
-                order.ApplyTimeBasedStatusTransition(
-                    lineId,
-                    reviewer: await ResolveUserName(row.ReviewerId),
-                    engineer: row.TestEngineer,
-                    reviewFinishTime: row.ReviewFinishTime,
-                    labOutTime: row.LabOutTime);
-
-                await _repository.UpdateAsync(order, CancellationToken.None);
+                await _repository.AddAsync(order, CancellationToken.None);
+                return true;
+            }
+            catch
+            {
+                return false;
             }
         }
 
         /// <summary>
-        /// 软删除一行
+        /// 更新订单行 — 成功返回 true，失败返回 false
         /// </summary>
-        public async Task DeleteOrderAsync(long recordId)
+        public async Task<bool> UpdateOrderAsync(OrderUpdateDto dto)
         {
-            var record = await _db.LabTestInfos
-                .FirstOrDefaultAsync(i => i.Id == recordId && i.IsDelete == "N");
-            if (record?.ReportNumber == null)
-                throw new InvalidOperationException($"记录 {recordId} 不存在或已删除");
+            if (dto?.Rows == null || dto.Rows.Count == 0) return false;
 
-            var order = await _repository.GetByIdAsync(new OrderId(record.ReportNumber), CancellationToken.None);
-            if (order == null)
-                throw new InvalidOperationException($"订单 {record.ReportNumber} 不存在");
+            try
+            {
+                foreach (var row in dto.Rows)
+                {
+                    if (row.RecordId == null || !long.TryParse(row.RecordId, out var lineId))
+                        continue;
 
-            order.DeleteLine(recordId);
-            await _repository.UpdateAsync(order, CancellationToken.None);
+                    var reportNum = await _repository.GetReportNumberByLineIdAsync(lineId, CancellationToken.None);
+                    if (reportNum == null) continue;
+
+                    var order = await _repository.GetByIdAsync(new OrderId(reportNum), CancellationToken.None);
+                    if (order == null) continue;
+
+                    order.UpdateLine(lineId,
+                        express: StringToExpress(row.Express),
+                        dueDate: row.ReportDueDate,
+                        labIn: row.OrderInTime,
+                        sampleCount: row.TestSampleNum,
+                        itemCount: row.TestItemNum,
+                        reviewer: await ResolveUserName(row.ReviewerId),
+                        engineer: row.TestEngineer,
+                        remark: row.Remark,
+                        delayType: row.DelayType,
+                        delayReason: row.DelayReason);
+
+                    order.ApplyTimeBasedStatusTransition(lineId,
+                        reviewer: await ResolveUserName(row.ReviewerId),
+                        engineer: row.TestEngineer,
+                        reviewFinishTime: row.ReviewFinishTime,
+                        labOutTime: row.LabOutTime);
+
+                    await _repository.UpdateAsync(order, CancellationToken.None);
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
-        /// 根据 ReportNumber 加载订单
+        /// 软删除订单行 — 遍历 OrderDeleteRequest.Items，逐行删除
         /// </summary>
+        public async Task<bool> DeleteOrderAsync(OrderDeleteRequest req)
+        {
+            if (req?.Items == null || req.Items.Count == 0) return false;
+
+            try
+            {
+                foreach (var item in req.Items)
+                {
+                    if (!long.TryParse(item.RecordId, out var recordId)) continue;
+
+                    var reportNum2 = await _repository.GetReportNumberByLineIdAsync(recordId, CancellationToken.None);
+                    if (reportNum2 == null) continue;
+
+                    var order2 = await _repository.GetByIdAsync(new OrderId(reportNum2), CancellationToken.None);
+                    if (order2 == null) continue;
+
+                    order2.DeleteLine(recordId);
+                    await _repository.UpdateAsync(order2, CancellationToken.None);
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         public Task<Order?> GetOrderByIdAsync(string reportNumber)
         {
             return _repository.GetByIdAsync(new OrderId(reportNumber), CancellationToken.None);
         }
-
-        /* ================================================================
-         * 辅助
-         * ================================================================ */
 
         private static OrderExpress StringToExpress(string? s) => s switch
         {
@@ -148,9 +177,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
 
         private async Task<string?> ResolveUserName(string? userId)
         {
-            if (string.IsNullOrWhiteSpace(userId)) return null;
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.UserId == userId);
-            return user?.NickName;
+            return await _lookup.ResolveUserNameAsync(userId);
         }
     }
 }

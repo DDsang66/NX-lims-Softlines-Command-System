@@ -1,8 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Application.Services.OrderService;
-using DocumentFormat.OpenXml.Wordprocessing;
+using NX_lims_Softlines_Command_System.src.Application.Service.OrderAppService;
 
 
 namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
@@ -11,19 +10,18 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
     [Route("api/order")]
     public class OrderController : Controller
     {
-        private readonly OrderService _os;
-        public OrderController(OrderService os)
+        private readonly OrderAppService _orderApp;
+        public OrderController(OrderAppService orderAppService)
         {
-            _os = os;
+            _orderApp = orderAppService;
         }
         /// <summary>
         /// 接收前端返回的Order表单
         /// </summary>
         [HttpPost("add")]
-        public IActionResult OrderAdd([FromBody] OrderDto dto)
+        public async Task<IActionResult> OrderAdd([FromBody] OrderDto dto)
         {
-            //调用OrderService进行处理
-            bool answer = _os.AddOrder(dto);
+            bool answer = await _orderApp.AddOrderAsync(dto);
             if (answer)
             {
                 return Ok(new { success = true, message = "Adding Succeed" });
@@ -37,7 +35,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpPost("update")]
         public async Task<IActionResult> OrderUpdate([FromBody] OrderUpdateDto dto)
         {
-            bool result = _os.UpdateOrder(dto);
+            bool result = await _orderApp.UpdateOrderAsync(dto);
             if (result)
             {
                 return Ok(new { success = true, message = "Update Succeed" });
@@ -51,7 +49,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpPost("delete")]
         public async Task<IActionResult> OrderDelete([FromBody] OrderDeleteRequest odr)
         {
-            bool result = _os.DeleteOrder(odr);
+            bool result = await _orderApp.DeleteOrderAsync(odr);
             if (result)
             {
                 return Ok(new { success = true, message = "Delete Succeed" });
@@ -65,7 +63,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpGet("getorder")]
         public async Task<IActionResult> GetOrder(string userId)
         {
-            var result = await _os.GetOrderListAsync(userId);
+            var result = await _orderApp.GetOrderListAsync(userId);
             return Ok(new { success = true, message = "Getting Succeed", data = result });
         }
 
@@ -75,7 +73,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpPost("ordersummary")]
         public async Task<IActionResult> OrderSummary([FromBody] OrderQueryParams orderQueryParams)
         {
-            var result = await _os.GetOrderSummaryAsync(orderQueryParams);
+            var result = await _orderApp.GetOrderSummaryAsync(orderQueryParams);
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 
@@ -88,7 +86,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpGet("cards")]
         public async Task<IActionResult> OrderReporting(DateTimeOffset time,string group,string timeType)
         {
-            var result = await _os.GetOrderCardListAsync(time, group, timeType);
+            var result = await _orderApp.GetOrderCardListAsync(time, group, timeType);
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 
@@ -98,7 +96,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         [HttpGet("fanChart")]
         public async Task<IActionResult> OrderRate(DateTimeOffset time, string group, string timeType)
         {
-            var result = await _os.GetOrderFanChartListAsync(time, group, timeType);
+            var result = await _orderApp.GetOrderFanChartListAsync(time, group, timeType);
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
         /// <summary>
@@ -111,7 +109,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             [FromQuery] string Type,
             [FromQuery] DateTimeOffset[] time)
         {
-            var result = await _os.GetOrderLineChartAsync(time,group,timeType,Type);
+            var result = await _orderApp.GetOrderLineChartAsync(time, group, timeType, Type);
             return Ok(new { success = true, message = "Adding Succeed", data = result });
         }
 
