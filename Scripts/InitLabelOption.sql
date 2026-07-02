@@ -1,7 +1,9 @@
--- label_option 种子数据
--- JudgmentLabelRemark: A184-A188 (category='Judgment')
--- LanguageLabelRemark: A162-A176 (category='Language')
+-- ================================================================
+-- label_option 种子数据 (75 rows)
+-- 分类: Language(1-15), Judgment(16-20), ResultRemark(21-75)
+-- ================================================================
 
+-- ==================== Language (语言标签备注) ====================
 INSERT INTO label_option (category, sort_order, text) VALUES
 ('Language', 1,  'USA (Language in label should be English)'),
 ('Language', 2,  'EU (Language in label should be English)'),
@@ -19,8 +21,66 @@ INSERT INTO label_option (category, sort_order, text) VALUES
 ('Language', 14, 'Korea (Language in label should be Korean)'),
 ('Language', 15, 'Sweden (Language in label should be Swedish)'),
 
+-- ==================== Judgment (判定标签备注) ====================
 ('Judgment', 1, 'Conclusion: The information listed on the fibre content label is appropriate'),
 ('Judgment', 2, 'Conclusion: The information listed on the fibre content label is inappropriate, our recommendation as below:'),
 ('Judgment', 3, 'The fiber label provided by client is appropriate.'),
-('Judgment', 4, 'The fiber label provided by client is inappropriate because of '),
-('Judgment', 5, 'The fiber label provided by client is appropriate, but the following fiber content label would be more appropriate for the submitted product:');
+('Judgment', 4, 'The fiber label provided by client is inappropriate because of'),
+('Judgment', 5, 'The fiber label provided by client is appropriate, but the following fiber content label would be more appropriate for the submitted product:'),
+
+-- ==================== ResultRemark (结果备注) ====================
+('ResultRemark', 1,  '*Exclusive of decoration'),
+('ResultRemark', 2,  '*装饰除外Exclusive of decoration'),
+('ResultRemark', 3,  '*Exclusive of elastic'),
+('ResultRemark', 4,  '*弹性纤维除外Exclusive of elastic'),
+('ResultRemark', 5,  '*Exclusive of joining thread'),
+('ResultRemark', 6,  '*连接线除外Exclusive of joining thread'),
+('ResultRemark', 7,  '*The sample contains trace amount of other fibre'),
+('ResultRemark', 8,  '*含微量其他纤维The sample contains trace amount of other fibre'),
+('ResultRemark', 9,  '*Request by applicant'),
+('ResultRemark', 10, '*根据客户要求Request by applicant'),
+('ResultRemark', 11, '*Pending garment review'),
+('ResultRemark', 12, '*成品需重新审核Pending garment review'),
+('ResultRemark', 13, 'As per client''s request , total garment is calculation for client reference.'),
+('ResultRemark', 14, '根据客户要求，总体结果仅供客户参考As per client''s request , total garment is calculation for client reference.'),
+('ResultRemark', 15, '*The fabric contains non-fibrous materials, the result is just for reference.'),
+('ResultRemark', 16, '*样品含有非纤维物质，结果仅供客户参考The fabric contains non-fibrous materials, the result is just for reference.'),
+('ResultRemark', 17, 'Inclusive (Exclusive) of back thread'),
+('ResultRemark', 18, '包括(不包括)底线'),
+('ResultRemark', 19, '*Exclusive of elastic in the cuff and reinforcement yarn of the toe and the heel'),
+('ResultRemark', 20, '*Except         %                  added to heel & toe'),
+('ResultRemark', 21, '1.The laboratory cannot verify the term "Lycra"，2.Manufacturer must ensure that the trademark ''LYCRA'' used for the ''Elastane'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 22, '实验室无法证实"莱卡"这个词，制造商必须确保"Elastane"纤维的 ''LYCRA''商标不虚假，不具有欺骗性或误导性'),
+('ResultRemark', 23, '1.The laboratory cannot verify the term "Merino"，2. Manufacturer must ensure that the "Merino fibre" are not false, deceptive, or misleading.'),
+('ResultRemark', 24, '1.The laboratory cannot verify the term "Bamboo"，2. Manufacturer must ensure that the ''Viscose from Bamboo'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 25, '1.The laboratory cannot verify the term "Recycled"，2. Manufacturer must ensure that the ''Polyester-Recycled'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 26, '1.The laboratory cannot verify the term "Recycled"，2. Manufacturer must ensure that the ''Recycled Polyester'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 27, '1.The laboratory cannot verify the term "Recycled"，2. Manufacturer must ensure that the ''Recycled Polyamide'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 28, '1.The laboratory cannot verify the term "Recycled"，2. Manufacturer must ensure that the ''Recycled Nylon'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 29, '1.The laboratory cannot verify the term "Organic"，2. Manufacturer must ensure that the ''Organic Cotton'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 30, '1.The laboratory cannot verify the term "Tencel"2. Manufacturer must ensure that the trademark ''Tencel'' used for the ''lyocell'' fibre are not false, deceptive, or misleading.'),
+('ResultRemark', 31, '" "是根据客户提供的信息,它是否正确，实验室不负任何责任'),
+('ResultRemark', 32, 'As per client''s request , recommendation are refer to ISO test result'),
+('ResultRemark', 33, '根据客户要求，建议标签参考ISO测试结果'),
+('ResultRemark', 34, 'Quantitative result cannot be given since the glue cannot be removed completely from the flocking'),
+('ResultRemark', 35, '定量结果不能给出，因为胶水不能完全从植绒中去除'),
+('ResultRemark', 36, 'We cannot get an accurate percentages of each fiber in flocking due to technical limitation'),
+('ResultRemark', 37, '由于技术上的限制，我们无法得到植绒中每种纤维的准确百分比'),
+('ResultRemark', 38, 'This flocking is composed of :'),
+('ResultRemark', 39, '这种植绒是由：    组成'),
+('ResultRemark', 40, 'Laboratory cannot verify the term"recycled" "organic" "Egyptian" "Pima"'),
+('ResultRemark', 41, '实验室无法验证"回收""有机""埃及棉""皮玛棉"一词'),
+('ResultRemark', 42, 'Lab can ldentify only as wool, Applicant has to provide sufficient documents for the sample is made of Recycled Wool to the buyer.'),
+('ResultRemark', 43, '实验室只能识别为羊毛，申请人必须提供足够的文件证明样品是再生羊毛给买家。'),
+('ResultRemark', 44, '*Contains non-textile parts of animal origin'),
+('ResultRemark', 45, '含有非纺织成分的动物来源'),
+('ResultRemark', 46, '*The product contains artificial fur'),
+('ResultRemark', 47, '产品含有假毛'),
+('ResultRemark', 48, 'Due to breakage of the elastane which cannot function properly so lab will not report Elastane fiber.'),
+('ResultRemark', 49, '由于弹性纤维损坏，已经没有弹性功能，所以实验室不会报告弹性纤维。'),
+('ResultRemark', 50, '*Excluding coating：100%Polyester'),
+('ResultRemark', 51, '不含涂层，涂层：100%聚酯纤维'),
+('ResultRemark', 52, '*Exclusive of trimming'),
+('ResultRemark', 53, '装饰除外Exclusive of trimming'),
+('ResultRemark', 54, 'This result is converted based on the tested dry weight in accordance with the GB method, and neither the conversion rules nor the methods are within the CNAS accreditation scope。'),
+('ResultRemark', 55, 'OVS 备注！');
