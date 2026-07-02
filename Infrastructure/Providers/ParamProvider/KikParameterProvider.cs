@@ -53,7 +53,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM" : "900RPM"
+                Program = p.WashingProcedure!.Contains("3G") ? "600RPM" : p.WashingProcedure!.Contains("3M") ? "800RPM" : "900RPM"
             },
 
             ("Determination of the Fastening of Components", _, _) => new WetParameterIso
@@ -91,7 +91,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM" : "900RPM"
+                Program = p.WashingProcedure!.Contains("3G") ? "600RPM" : p.WashingProcedure!.Contains("3M") ? "800RPM" : "900RPM"
             },
             ("Attachment Strength", _, _) => new WetParameterIso
             {
@@ -133,7 +133,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
-                Program = p.WashingProcedure!.Contains("G") ? "600RPM" : p.WashingProcedure!.Contains("M") ? "800RPM" : "900RPM"
+                Program = p.WashingProcedure!.Contains("3G") ? "600RPM" : p.WashingProcedure!.Contains("3M") ? "800RPM" : "900RPM"
             },
             _ => new WetParameterIso
             {

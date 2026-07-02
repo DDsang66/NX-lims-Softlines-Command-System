@@ -7,7 +7,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
     {
         private static readonly Dictionary<string, Func<WetParameterIso, string, ParamDto>> Mappings = new()
         {
-            ["CF to Washing"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, null),
+            ["CF to Washing"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", p.Program, p.SteelBallNum, null, null, null, p.WashingProcedure, null, null, null, param),
             ["DS to Washing"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
             ["Appearance"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
             ["Print Durability"] = (p, param) => new(p.ContactItem!, p.Standard, p.Temperature + "°C", null, null, p.Ballast, p.SpecialCareInstruction, p.DryProcedure, p.WashingProcedure, null, null, null, null),
@@ -17,7 +17,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Mapper
             ["Water Resistance-Hydrostatic Pressure"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
             ["Absorbency"]= (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
             ["Wicking"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
-
+            ["CF to Perspiration"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
+            ["CF to Water"] = (p, param) => new(p.ContactItem!, p.Standard, null, null, null, null, null, null, null, null, null, null, param),
         };
 
         public static ParamDto Map(string itemName, WetParameterIso p, string param = null)
