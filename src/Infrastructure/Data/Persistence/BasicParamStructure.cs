@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+
+public partial class BasicParamStructure
+{
+    public string ParamStructureId { get; set; } = null!;
+
+    public string ParamName { get; set; } = null!;
+
+    public string? Schema { get; set; }
+
+    public string Type { get; set; } = null!;
+
+    public string? AllowedValue { get; set; }
+
+    public string FormulaId { get; set; } = null!;
+
+    public string StandardFamilyCodeId { get; set; } = null!;
+}

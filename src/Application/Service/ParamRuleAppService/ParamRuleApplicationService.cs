@@ -51,14 +51,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 pattern
             );
 
-            // 3. 激活规则
+            // 3. 激活规则(待其余聚合根逻辑完善后用单独的方法激活)
             rule.Active();
 
             // 4. 持久化
             await _repository.AddAsync(rule);
 
             // 5. 返回DTO
-            return MapToDto(rule);
+            return rule.Adapt<ParamRuleDto>();
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             await _repository.UpdateAsync(existingRule);
 
             // 5. 返回DTO
-            return MapToDto(existingRule);
+            return existingRule.Adapt<ParamRuleDto>();
         }
 
         /// <summary>
@@ -104,19 +104,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             if (rule == null)
                 throw new Exception($"Param rule with id {id} not found");
 
-            return MapToDto(rule);
-        }
-
-        private ParamRuleDto MapToDto(ParamRule rule)
-        {
-            return new ParamRuleDto
-            {
-                Id = rule.Id.Value,
-                FormulaId = rule.FormulaId.Value,
-                ParamName = rule.ParamName,
-                Priority = rule.Priority,
-                IsActive = rule.IsActive
-            };
+            return rule.Adapt<ParamRuleDto>();
         }
     }
 }

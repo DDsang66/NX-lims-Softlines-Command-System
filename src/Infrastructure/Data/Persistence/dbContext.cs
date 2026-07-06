@@ -6,10 +6,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 public partial class dbContext : DbContext
 {
-    public dbContext()
-    {
-    }
-
     public dbContext(DbContextOptions<dbContext> options)
         : base(options)
     {
@@ -19,13 +15,15 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<BasicBuyerMenu> BasicBuyerMenus { get; set; }
 
+    public virtual DbSet<BasicFormula> BasicFormulas { get; set; }
+
     public virtual DbSet<BasicItem> BasicItems { get; set; }
 
     public virtual DbSet<BasicParam> BasicParams { get; set; }
 
     public virtual DbSet<BasicParamRule> BasicParamRules { get; set; }
 
-    public virtual DbSet<BasicParamSchema> BasicParamSchemas { get; set; }
+    public virtual DbSet<BasicParamStructure> BasicParamStructures { get; set; }
 
     public virtual DbSet<BasicStandard> BasicStandards { get; set; }
 
@@ -106,6 +104,42 @@ public partial class dbContext : DbContext
                 .HasColumnName("test_group");
         });
 
+        modelBuilder.Entity<BasicFormula>(entity =>
+        {
+            entity.HasKey(e => e.FormulaId).HasName("PK_formula");
+
+            entity.ToTable("basic_formula");
+
+            entity.Property(e => e.FormulaId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("formula_id");
+            entity.Property(e => e.ConditionFields)
+                .HasColumnType("text")
+                .HasColumnName("condition_fields");
+            entity.Property(e => e.Description)
+                .HasColumnType("text")
+                .HasColumnName("description");
+            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date");
+            entity.Property(e => e.ExpressionTemplate)
+                .HasColumnType("text")
+                .HasColumnName("expression_template");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.Name)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("name");
+            entity.Property(e => e.ParamName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("param_name");
+            entity.Property(e => e.StandardFamilyCodeId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("standard_family_code_id");
+            entity.Property(e => e.Version).HasColumnName("version");
+        });
+
         modelBuilder.Entity<BasicItem>(entity =>
         {
             entity.HasKey(e => e.IdItem);
@@ -164,62 +198,74 @@ public partial class dbContext : DbContext
 
         modelBuilder.Entity<BasicParamRule>(entity =>
         {
-            entity.HasKey(e => e.IdRule);
+            entity.HasKey(e => e.RuleId);
 
             entity.ToTable("basic_param_rule");
 
-            entity.Property(e => e.IdRule)
+            entity.Property(e => e.RuleId)
                 .HasMaxLength(25)
                 .IsUnicode(false)
-                .HasColumnName("id_rule");
+                .HasColumnName("rule_id");
+            entity.Property(e => e.ConditionPattern)
+                .HasColumnType("text")
+                .HasColumnName("condition_pattern");
             entity.Property(e => e.DefaultValue)
                 .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("default_value");
-            entity.Property(e => e.Formula)
-                .HasMaxLength(255)
-                .IsUnicode(false)
-                .HasColumnName("formula");
-            entity.Property(e => e.Mapping)
-                .HasColumnType("text")
-                .HasColumnName("mapping");
-            entity.Property(e => e.Name)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("name");
-            entity.Property(e => e.StandardFamilyCodeId).HasColumnName("standard_family_code_id");
-            entity.Property(e => e.Status)
-                .HasMaxLength(15)
-                .IsUnicode(false)
-                .HasColumnName("status");
-        });
-
-        modelBuilder.Entity<BasicParamSchema>(entity =>
-        {
-            entity.HasKey(e => e.IdSchema);
-
-            entity.ToTable("basic_param_schema");
-
-            entity.Property(e => e.IdSchema)
+            entity.Property(e => e.FormulaId)
                 .HasMaxLength(25)
                 .IsUnicode(false)
-                .HasColumnName("id_schema");
+                .HasColumnName("formula_id");
+            entity.Property(e => e.IsActive).HasColumnName("is_active");
+            entity.Property(e => e.ParamName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("param_name");
+            entity.Property(e => e.ParamStructureId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("param_structure_id");
+            entity.Property(e => e.Priority).HasColumnName("priority");
+            entity.Property(e => e.StandardFamilyCodeId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("standard_family_code_id");
+            entity.Property(e => e.StopOnMatch).HasColumnName("stop_on_match");
+        });
+
+        modelBuilder.Entity<BasicParamStructure>(entity =>
+        {
+            entity.HasKey(e => e.ParamStructureId).HasName("PK_basic_param_schema");
+
+            entity.ToTable("basic_param_structure");
+
+            entity.Property(e => e.ParamStructureId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("param_structure_id");
             entity.Property(e => e.AllowedValue)
                 .HasColumnType("text")
                 .HasColumnName("allowed_value");
-            entity.Property(e => e.ParamterName)
-                .HasMaxLength(100)
+            entity.Property(e => e.FormulaId)
+                .HasMaxLength(25)
                 .IsUnicode(false)
-                .HasColumnName("paramter_name");
-            entity.Property(e => e.StandardFamilyCodeId).HasColumnName("standard_family_code_id");
+                .HasColumnName("formula_id");
+            entity.Property(e => e.ParamName)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("param_name");
+            entity.Property(e => e.Schema)
+                .HasColumnType("text")
+                .HasColumnName("schema");
+            entity.Property(e => e.StandardFamilyCodeId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("standard_family_code_id");
             entity.Property(e => e.Type)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("type");
-            entity.Property(e => e.Unit)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("unit");
         });
 
         modelBuilder.Entity<BasicStandard>(entity =>
@@ -244,18 +290,11 @@ public partial class dbContext : DbContext
                 .HasMaxLength(150)
                 .IsUnicode(false)
                 .HasColumnName("standard_code_name_en");
-            entity.Property(e => e.StandardFamilyCode)
-                .HasMaxLength(50)
+            entity.Property(e => e.StandardFamilyCodeId)
+                .HasMaxLength(25)
                 .IsUnicode(false)
-                .HasColumnName("standard_family_code");
-            entity.Property(e => e.Status)
-                .HasMaxLength(15)
-                .IsUnicode(false)
-                .HasColumnName("status");
-            entity.Property(e => e.TestGroup)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasColumnName("test_group");
+                .HasColumnName("standard_family_code_id");
+            entity.Property(e => e.Status).HasColumnName("status");
         });
 
         modelBuilder.Entity<BasicStandardFamily>(entity =>

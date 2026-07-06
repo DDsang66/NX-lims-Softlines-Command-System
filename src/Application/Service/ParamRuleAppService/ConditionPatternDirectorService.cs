@@ -20,6 +20,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             _builder = builder;
         }
 
+        /// <summary>
+        /// 构建ConditionPattern
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         public ConditionPattern CreatePatternFromDto(CreateParamRuleRequest request)
         {
             // 使用Builder构建ConditionPattern

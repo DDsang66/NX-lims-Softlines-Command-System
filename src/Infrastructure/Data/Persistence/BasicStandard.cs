@@ -13,9 +13,7 @@ public partial class BasicStandard
 
     public string? StandardCodeNameChn { get; set; }
 
-    public string? StandardFamilyCode { get; set; }
+    public byte Status { get; set; }
 
-    public string TestGroup { get; set; } = null!;
-
-    public string Status { get; set; } = null!;
+    public string StandardFamilyCodeId { get; set; } = null!;
 }

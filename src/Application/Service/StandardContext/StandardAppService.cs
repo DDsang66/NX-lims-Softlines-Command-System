@@ -8,7 +8,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
-namespace NX_lims_Softlines_Command_System.src.Application.Service
+namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardContext
 {
     public class StandardAppService: IScopedDependency
     {

@@ -18,7 +18,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         private readonly List<ParamStructureId> _paramStructureIds = new();
         private readonly List<ParamRuleId> _sharedRuleIds = new();
         public StandardFamilyId Id { get; private set; }
-        public string Name { get; private set; }  // "ISO 6330 Family"
+        public string StandardFamilyCode { get; private set; }  // "ISO 6330 Family"
         public IReadOnlyCollection<StandardId> StandardIds => _standardIds.AsReadOnly();
         public IReadOnlyCollection<FormulaId> FormulaIds => _formulaIds.AsReadOnly();
         public IReadOnlyCollection<ParamStructureId> ParamStructureIds => _paramStructureIds.AsReadOnly();
@@ -42,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             var family = new StandardFamily
             {
                 Id = id,
-                Name = name,
+                StandardFamilyCode = name,
                 Version = version,
                 EffectiveDate = DateTime.UtcNow
             };

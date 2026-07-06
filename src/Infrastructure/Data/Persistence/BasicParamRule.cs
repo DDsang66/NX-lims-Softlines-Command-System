@@ -5,17 +5,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 public partial class BasicParamRule
 {
-    public string IdRule { get; set; } = null!;
+    public string RuleId { get; set; } = null!;
 
-    public string? Name { get; set; }
+    public string? ParamName { get; set; }
 
-    public string? Formula { get; set; }
-
-    public string? Mapping { get; set; }
+    public string? ConditionPattern { get; set; }
 
     public string? DefaultValue { get; set; }
 
-    public long? StandardFamilyCodeId { get; set; }
+    public int Priority { get; set; }
 
-    public string Status { get; set; } = null!;
+    public bool StopOnMatch { get; set; }
+
+    public bool IsActive { get; set; }
+
+    public string StandardFamilyCodeId { get; set; } = null!;
+
+    public string FormulaId { get; set; } = null!;
+
+    public string? ParamStructureId { get; set; }
 }

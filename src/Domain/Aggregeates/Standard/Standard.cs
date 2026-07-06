@@ -15,8 +15,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 
         public string? StandardCodeNameChn { get; private set; } = null!;
 
-        public byte IsDisabled { get; private set; }
-
         public Status Status { get; private set; } = Status.Draft; 
 
         public StandardFamilyId StandardFamilyCode { get; private set; } = null!;
@@ -40,7 +38,8 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
             string standardCode,
             StandardFamilyId familyCode,
             string? nameEn,
-            string? nameChn)
+            string? nameChn,
+            Status status)
         {
             if (string.IsNullOrWhiteSpace(standardCode))
                 throw new ArgumentException("Standard code is required");
@@ -53,13 +52,42 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
                 StandardCodeNameEn = nameEn,
                 StandardCodeNameChn = nameChn,
                 Status = Status.Draft,
-                IsDisabled = 1
             };
 
             //standard.AddDomainEvent(new StandardCreatedEvent(id, standardCode));
 
             return standard;
         }
+
+        /// <summary>
+        /// 工厂方法用于重建标准聚合根实例，包含必要的属性和可选的参数集合
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="standardCode"></param>
+        /// <param name="standardCodeNameEn"></param>
+        /// <param name="standardCodeNameChn"></param>
+        /// <param name="status"></param>
+        /// <param name="standardFamilyCode"></param>
+        /// <returns></returns>
+        public static Standard Reconstitute(
+            StandardId id,
+            string standardCode,
+            string standardCodeNameEn,
+            string standardCodeNameChn,
+            Status status,
+            StandardFamilyId standardFamilyCode)
+        {
+            return new Standard
+            {
+                IdStandard = id,
+                StandardCode = standardCode,
+                StandardCodeNameEn = standardCodeNameEn,
+                StandardCodeNameChn = standardCodeNameChn,
+                Status = status,
+                StandardFamilyCode = standardFamilyCode
+            };
+        }
+
 
         /// <summary>
         /// 更新标准信息
