@@ -17,6 +17,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
     public sealed class PrintNextExcel : IPrintExcelStrategy
     {
         private readonly LabDbContextSec _db;
+
+        private Dictionary<string, int> _usedBaseSheets = new Dictionary<string, int>();
+
         public PrintNextExcel(LabDbContextSec db)
         {
             _db = db;
@@ -24,6 +27,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
         public void PrintJsonData(ExcelSubmitDto Dto, ExcelPackage PackageWet, ExcelPackage PackagePhy)
         {
+            _usedBaseSheets.Clear();
             string reportNumber = Dto.ReportNumber!;
             string buyer = Dto.Buyer!;
             string menu = Dto.MenuName!;
@@ -135,43 +139,46 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ExcelSubmitDto esDto,
             string reportNo)
         {
-            #region 旧版
-            ////<-------------------------------------------------------------------------------------->
-            //string? tplName = null;
-            //bool foundInSub = false;
-            //// 1) 模板 sheet
-            //if (TemplateSheetNames.TryGetValue(itemName, out var subDictionary))
-            //{
-            //    /* ---------- 其余测试保持原单关键字逻辑 ---------- */
-            //    foreach (var kvp in subDictionary)
-            //    {
-            //        if (string.IsNullOrEmpty(kvp.Key) ||
-            //            dto.sampleDescription!.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
-            //        {
-            //            tplName = kvp.Value;
-            //            foundInSub = true;
-            //            break;
-            //        }
-            //    }
-
-            //}
-            ////如果在 TemplateSheetNames 中未找到，尝试从 TemplateSheetNamesNormal 中查找
-            //if (!foundInSub)
-            //{
-            //    TemplateSheetNamesNormal.TryGetValue(itemName, out tplName);
-            //}
-
-            //// 如果仍未找到匹配的模板名
-            //if (tplName == null)
-            //{
-            //    Console.WriteLine("未找到对应的模板名");
-            //    tplName = "DefaultSheetName"; // 假设有一个默认模板名
-            //}
-            //var template = pkg.Workbook.Worksheets[tplName];
-            ////<-------------------------------------------------------------------------------------->
-            #endregion
             var tplName = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal).GetTemplateName(itemName,dto.sampleDescription!);
-            var template = pkg.Workbook.Worksheets[tplName];
+
+            // 修正：只有同一个 ItemName 重复使用同一个模板时，才判定为需要防覆盖
+            string baseSheetKey = $"{itemName}_{pkg.GetHashCode()}_{tplName}";
+            bool needsCopyBase = false;
+            int copyIndex = 0;
+
+            if (_usedBaseSheets.ContainsKey(baseSheetKey))
+            {
+                // 只有同一个ItemName（如附加外观和原始外观）第二次使用该模板时才创建副本
+                needsCopyBase = true;
+                copyIndex = ++_usedBaseSheets[baseSheetKey];
+            }
+            else
+            {
+                _usedBaseSheets[baseSheetKey] = 0;
+            }
+
+            // 获取原始模板
+            var originalTemplate = pkg.Workbook.Worksheets[tplName];
+            ExcelWorksheet template;
+
+            // 如果需要防覆盖，则复制一个独立的基础Sheet
+            if (needsCopyBase)
+            {
+                string copySheetName = $"{tplName}_Copy{copyIndex}";
+                if (pkg.Workbook.Worksheets.Any(ws => ws.Name == copySheetName))
+                {
+                    template = pkg.Workbook.Worksheets[copySheetName];
+                }
+                else
+                {
+                    template = pkg.Workbook.Worksheets.Copy(tplName, copySheetName);
+                }
+            }
+            else
+            {
+                template = originalTemplate;
+            }
+
             // 2) 计算需要几张 sheet
             var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
             string[]? AfterWashCellAddrs = null;
@@ -233,7 +240,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 else
                 {
-                    string newSheetName = $"{tplName} ({idx + 1})";
+                    // 后续分页基于基础 template 进行复制
+                    string newSheetName = $"{template.Name} ({idx + 1})";
                     // 检查是否已经存在同名的 sheet
                     if (pkg.Workbook.Worksheets.Any(ws => ws.Name == newSheetName))
                     {
@@ -241,7 +249,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     }
                     else
                     {
-                        ws = pkg.Workbook.Worksheets.Copy(tplName, newSheetName);
+                        ws = pkg.Workbook.Worksheets.Copy(template.Name, newSheetName);
                     }
                 }
                 sheets.Add(ws);
@@ -266,8 +274,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 // 5) 其余参数
                 if (dto.Type == "Wet")
                 {
-                    var wp = _db.WetParameterIsos.FirstOrDefault(p => p.ContactItem == itemName && p.ReportNumber == reportNo);
-                    if (wp==null)
+                    // 新增：判断是否为附加的外观项（通过 Parameter 内容识别）
+                    string queryItemName = itemName;
+                    if (itemName == "Appearance Assessment after Wash" &&
+                        dto.Parameter != null &&
+                        dto.Parameter.Contains("Same as Stability"))
+                    {
+                        queryItemName = "Stability to Washing"; // 附加外观使用 Stability to Washing 的数据
+                    }
+
+                    var wp = _db.WetParameterIsos.FirstOrDefault(p => p.ContactItem == queryItemName && p.ReportNumber == reportNo);
+                    if (wp == null)
                     {
                         wp = _db.WetParameterIsos
                             .FirstOrDefault(p => p.ReportNumber == reportNo &&

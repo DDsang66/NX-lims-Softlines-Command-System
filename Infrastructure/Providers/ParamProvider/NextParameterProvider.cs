@@ -348,31 +348,28 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         {
             string washingProcedure = string.Empty;
             var maxComposition = _helper.MaxComposition(fiberComposition);
-            if (sampleDescription.Contains("Garment"))
+            if (sampleDescription.Contains("Swimwear"))
             {
-                if (sampleDescription.Contains("Swimwear"))
-                {
-                    if (sampleDescription.Contains("Embellished")) washingProcedure = "SHW";
-                    else washingProcedure = "5A";
-                }
-                else if (sampleDescription.Contains("Cap")
-                    || sampleDescription.Contains("Gloves")
-                    || sampleDescription.Contains("Socks"))
-                {
-                    washingProcedure = "7A";
-                }
-                else if (maxComposition == "Silk"
-                    || maxComposition == "Wool"
-                    || maxComposition == "Mohair")
-                {
-                    if (!string.IsNullOrEmpty(WashingProcedure)&&WashingProcedure.Contains("H")) washingProcedure = "SHW";
-                    else washingProcedure = "7A";
-                }
-                else WashingProcedure = "7A";
-
+                if (sampleDescription.Contains("Embellished")) washingProcedure = "SHW";
+                else washingProcedure = "5A";
             }
-            else if (sampleDescription.Contains("Fabric") || sampleDescription.Contains("Mockup")) washingProcedure = "5A";
+            else if (sampleDescription.Contains("Knitwear"))
+            {
+                if (WashingProcedure.Contains("H")) washingProcedure = "SHW";
+                else washingProcedure = "7A";
+            }
+            else if (sampleDescription.Contains("Gloves") || sampleDescription.Contains("Cap"))
+            {
+                if (WashingProcedure.Contains("H")) washingProcedure = "SHW";
+                else washingProcedure = "7A";
+            }
+            else if (sampleDescription.Contains("Socks")) 
+            {
+                if (maxComposition == "Cotton" || maxComposition == "Acrylic") washingProcedure = "4N";
+                else washingProcedure = "4G";
+            }
             else washingProcedure = "5A";
+
             return washingProcedure;
         }
 
@@ -445,23 +442,21 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             if (sampleDescription.Contains("Elastics")) return "Tumble Dry";
 
             // 3. 成衣 / 毛衫
-            if (sampleDescription.ContainsAny("Garment", "Knitwear"))
+            if (sampleDescription.ContainsAll("Garment", "Knitwear"))
                 return sampleDescription.Contains("Childrenswear") ? "Tumble Dry" : "Flat Dry";
 
             // 4. 针织物
-            if (sampleDescription.ContainsAll("Knit", "Fabric"))
+
+            if (sampleDescription.Contains("Weft"))      // 纬编
             {
-                if (sampleDescription.Contains("Weft"))      // 纬编
-                {
-                    if (maxComp == "Cotton" || over51Syn) return "Tumble Dry";
-                    if (maxComp is "Silk" or "Wool" or "Acrylic" || hasRegCell) return "Line Dry";
-                }
-                else if (sampleDescription.Contains("Warp")) // 经编
-                {
-                    return sampleDescription.Contains("Stretch") ? "Line Dry" : "Tumble Dry";
-                }
-                return null;                                 // 其他针织兜底
+                if (maxComp == "Cotton" || over51Syn) return "Tumble Dry";
+                if (maxComp is "Silk" or "Wool" or "Acrylic" || hasRegCell) return "Line Dry";
             }
+            else if (sampleDescription.Contains("Warp Knit")) // 经编
+            {
+                return sampleDescription.Contains("Stretch") ? "Line Dry" : "Tumble Dry";
+            }
+
 
             // 5. 机织物（Woven Fabric）
             if (sampleDescription.ContainsAll("Woven", "Fabric"))
