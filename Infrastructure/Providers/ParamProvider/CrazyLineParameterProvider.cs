@@ -76,6 +76,39 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("Appearance", "Hand Wash Cold" or "Hand Wash", _) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                DryProcedure = p.DryProcedure,
+                WashingProcedure = p.WashingProcedure,
+                Temperature = "80",
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                //Iron = _helper.CompositionRate(p.FiberContent!, "Viscose") == 100 ? "Cool" : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
+            ("Appearance",_,_) => new WetParameterAatcc
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Program = WetParamHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
+                DryProcedure = p.DryProcedure,
+                Temperature = "80",
+                Cycle = p.WashingProcedure!.Contains("Normal") ? "Normal"
+                : p.WashingProcedure.Contains("Gentle") ? "Gentle"
+                : p.WashingProcedure.Contains("Permanent Press") ? "Permanent"
+                : "",
+                DryCondition = DryConditionHelper(p.DryProcedure!),
+                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                SpecialCareInstruction = p.Sci ?? null,
+                Iron = p.Iron ?? null,
+                IronMethod = p.IronMethod ?? null,
+            },
             ("DS to Dry-clean", _, _) => new WetParameterAatcc
             {
                 ContactItem = p.ItemName,

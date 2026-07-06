@@ -163,6 +163,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Perspiration"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Water"] = "CFtoPerspiration&Water&Dryclean",
             ["CF to Dry-clean"] = "CFtoPerspiration&Water&Dryclean",
+            ["Appearance"] = "AppearanceAfterWashing",
             ["Weight"] = "Weight",
             ["Seam Slippage"] = "Seam Slippage",
             ["Pilling Resistance"] = "Pilling&Snagging",
@@ -214,6 +215,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Water"] = (n, _) => ExcelCrazyLineMapper.MapPWD(n),
             ["CF to Dry-clean"] = (n, _) => ExcelCrazyLineMapper.MapPWD(n),
             ["Spirality/Skewing"] = (_, m) => ExcelCrazyLineMapper.MapSpirality(m),
+            ["Appearance"] = (_, m) => ExcelCrazyLineMapper.MapAppearance(),
             ["Weight"] = (_, _) => ExcelCrazyLineMapper.MapWeight(),
             ["Pilling Resistance"] = (n, _) => ExcelCrazyLineMapper.MapPS(n),
             ["Seam Slippage"] = (_, _) => ExcelCrazyLineMapper.MapSeamSlippage(),
@@ -231,6 +233,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["DS to Washing"] = (_, m) => ExcelCrazyLineMapper.DStoWashingAf(m),
             ["DS to Dry-clean"] = (_, m) => ExcelCrazyLineMapper.DStoDCAf(m),
             ["Spirality/Skewing"] = (_, _) => ExcelCrazyLineMapper.SpiralityAf(),
+            ["Appearance"] =  (_, m) => ExcelCrazyLineMapper.MapAppearanceAf(),
         };
 
 
@@ -264,7 +267,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    map["A3"] = (w, dto, reportNo) =>"AATCC TM 150-2018t/AATCC TS006";
+                    map["A3"] = (w, dto, reportNo) => "AATCC TM 150-2018t/AATCC TS006";
                     map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 return map;
@@ -284,6 +287,15 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["A3"] = (w, dto, reportNo) => "AATCC TM158-1978e10(2016)e";
                     map["G4"] = (w, dto, reportNo) => w.Sensitive == "Y" ? "Sensitive" : "Normal";
                 }
+                return map;
+            },
+            ["Appearance"] = (w, dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
+                map["BC1"] = (w, dto, reportNo) => reportNo;
+                map["AR4"] = (w, dto, reportNo) => w.Standard!;
+                map["BI13"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
+
                 return map;
             },
             ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>
@@ -433,7 +445,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             }
 
 
-            if (afmap != null && afmap.Length > 0 && (itemName == "DS to Washing" || itemName == "DS to Dry-clean") && sampleDescription.Contains("Garment"))
+            if (afmap != null && afmap.Length > 0 && (itemName == "DS to Washing" || itemName == "DS to Dry-clean") && sampleDescription.Contains("Garment")||itemName=="Appearance")
             {
                 for (int i = 0; i < AfterWashCellAddrs!.Length; i++)
                 {
@@ -448,19 +460,27 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
             }
 
-            for (int i = 0; i < slice.Length; i++)
+            if (itemName == "Appearance")
             {
-                // 写入样本数据到指定的单元格地址
-                ws.Cells[cellAddrs[i]].Value = slice[i];
-
-                // 如果有偏移量，并且偏移后的单元格地址在范围内
-                if (offset > 0 && i + offset < cellAddrs.Length)
+                for (int i = 0; i < cellAddrs.Length; i++)
                 {
-                    ws.Cells[cellAddrs[i + offset]].Value = slice[i];
+                    ws.Cells[cellAddrs[i]].Value = slice[0];
+                }
+            }
+            else
+            {
+                for (int i = 0; i < slice.Length; i++)
+                {
+                    // 写入样本数据到指定的单元格地址
+                    ws.Cells[cellAddrs[i]].Value = slice[i];
+
+                    // 如果有偏移量，并且偏移后的单元格地址在范围内
+                    if (offset > 0 && i + offset < cellAddrs.Length)
+                    {
+                        ws.Cells[cellAddrs[i + offset]].Value = slice[i];
+                    }
                 }
             }
         }
-
-
     }
 }

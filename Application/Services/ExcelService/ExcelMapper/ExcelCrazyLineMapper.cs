@@ -95,7 +95,13 @@
 
             return stringMap?.ToArray() ?? new string[0];
         }
-
+        public static string[] MapAppearance()
+        {
+            return new string[]
+            {
+                "BA5","BM13"
+            };
+        }
 
 
         public static string[] MapWRL(string ItemName)
@@ -210,5 +216,12 @@
             };
         }
 
+        public static string[] MapAppearanceAf()
+        {
+            return new string[]
+            {
+                "BG6","BE13"
+            };
+        }
     }
 }
