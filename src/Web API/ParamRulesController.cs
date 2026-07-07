@@ -19,7 +19,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         [HttpPost("add")]
         public async Task<IActionResult> CreateParamRule([FromBody] CreateParamRuleRequest request, CancellationToken ct)
         {
-            var result = await _applicationService.CreateParamRuleAsync(request, ct);
+            var result = await _applicationService.AddParamRuleFromJsonAsync(request, ct);
             return Ok(result);
         }
 

@@ -448,10 +448,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             if (DryProcedure == null) return null;
             string program = "";
             program =
-                DryProcedure!.Contains("Low") ? "A(ii)"
-                : DryProcedure.Contains("Line Dry") ? "B"
-                : DryProcedure.Contains("Flat Dry") ? "D"
-                : "A(i)";
+                  DryProcedure!.Contains("Low") ? "A(ii)"
+                  : DryProcedure.Contains("Line Dry") ? "B"
+                  : DryProcedure.Contains("Flat Dry") ? "D"
+                  : DryProcedure.Contains("Drip Dry") ? "C"
+                  : "A(i)";
             return program;
         }
 

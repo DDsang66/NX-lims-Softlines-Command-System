@@ -2,37 +2,57 @@
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppService
 {
-    //可弃用，当前已被RuleTranslationService替代
-    public class ConditionPatternDirectorService : IConditionPatternDirectorService,IScopedDependency
+    /// <summary>
+    /// 语言规则翻译服务
+    /// 支持文本结构、json结构规则
+    /// </summary>
+    public class RuleTranslationService: IRuleTranslationService,IScopedDependency
     {
-        private readonly IConditionPatternBuilder _builder;
+        private readonly IConditionPatternBuilder _patternBuilder;
+        private readonly ITokenizer _tokenizer;
+        private readonly IRuleParser _ruleParser;
 
-        public ConditionPatternDirectorService(IConditionPatternBuilder builder)
+        public RuleTranslationService(
+            IConditionPatternBuilder patternBuilder,
+            ITokenizer tokenizer,
+            IRuleParser ruleParser)
         {
-            _builder = builder;
+            _patternBuilder = patternBuilder;
+            _tokenizer = tokenizer;
+            _ruleParser = ruleParser;
         }
 
         /// <summary>
-        /// 构建ConditionPattern对象
+        /// 根据DTO创建条件模式
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public ConditionPattern CreatePatternFromDto(CreateParamRuleRequest request)
+        public ConditionPattern TranslateFromDto(CreateParamRuleRequest request,CancellationToken ct)
         {
-            // 使用Builder构建ConditionPattern
+            // 处理DTO到领域对象的转换
             foreach (var match in request.EqualMatches)
             {
-                _builder.AddEqual(match.Field, match.Value);
+                _patternBuilder.AddEqual(match.Field, match.Value);
             }
 
             foreach (var match in request.ComparisonMatches)
             {
-                _builder.AddComparison(
+                _patternBuilder.AddComparison(
+                    match.FieldPath,
+                    ParseComparisonOperator(match.Operator),
+                    match.ExpectedValue);
+            }
+
+            foreach (var match in request.ComparisonMatches)
+            {
+                _patternBuilder.AddComparison(
                     match.FieldPath,
                     ParseComparisonOperator(match.Operator),
                     match.ExpectedValue);
@@ -40,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
             foreach (var match in request.InMatches)
             {
-                _builder.AddIn(match.Field, match.Values);
+                _patternBuilder.AddIn(match.Field, match.Values);
             }
 
             foreach (var match in request.CompositeMatches)
@@ -56,10 +76,23 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                         ExpectedValue = sc.ExpectedValue
                     }).ToList()
                 };
-                _builder.AddComposite(composite);
+                _patternBuilder.AddComposite(composite);
             }
 
-            return _builder.Build();
+            return _patternBuilder.Build();
+        }
+
+        /// <summary>
+        /// 根据文本创建条件模式
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public ConditionPattern ParseFromText(string text, CancellationToken ct)
+        {
+            // 处理文本到领域对象的转换
+            var tokens = _tokenizer.Tokenize(text);
+
+            return _ruleParser.Parse(tokens);
         }
 
         private ComparisonOperator ParseComparisonOperator(string op)
@@ -75,7 +108,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 _ => throw new ArgumentException($"Unknown operator: {op}")
             };
         }
-
         private LogicalOperator ParseLogicalOperator(string logic)
         {
             return logic switch

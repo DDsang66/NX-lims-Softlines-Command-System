@@ -6,7 +6,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
 {
     public interface IParamRuleApplicationService : IScopedDependency
     {
-        Task<ParamRuleDto> CreateParamRuleAsync(CreateParamRuleRequest request, CancellationToken ct);
+        Task<ParamRuleDto> AddParamRuleFromJsonAsync(CreateParamRuleRequest request, CancellationToken ct);
+        Task<ParamRuleDto> AddParamRuleFromTextAsync(NaturalLanguageRuleRequest request, CancellationToken ct);
         Task<ParamRuleDto> UpdateParamRuleAsync(UpdateParamRuleRequest request, CancellationToken ct);
         Task<ParamRuleDto> GetParamRuleAsync(string id,CancellationToken ct);
     }
