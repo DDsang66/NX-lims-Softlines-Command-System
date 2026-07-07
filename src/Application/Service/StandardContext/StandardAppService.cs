@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
-using NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard;
+﻿using NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
@@ -30,7 +29,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
 
             var standardFamilyCode = new StandardFamilyId(dto.StandardFamilyCode);
 
-            var standard = Standard.Create(standardId, dto.StandardCode, standardFamilyCode,dto.StandardNameEn,dto.StandardNameCn);
+            var standard = Standard.Create(standardId, dto.StandardCode, standardFamilyCode,dto.StandardNameEn,dto.StandardNameCn,Status.Draft);
             
             await _standardRepository.AddAsync(standard, ct);
 

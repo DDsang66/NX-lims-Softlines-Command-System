@@ -54,7 +54,6 @@
     <Folder Include="Domain\Model\Services\" />
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="src\Application\Contract\ApiResult\" />
-    <Folder Include="src\Application\Interface\" />
     <Folder Include="src\Domain\Aggregeates\OrderContext\" />
     <Folder Include="src\Domain\Aggregeates\MenuContext\" />
     <Folder Include="test\Engine\ParamRuleTest\" />

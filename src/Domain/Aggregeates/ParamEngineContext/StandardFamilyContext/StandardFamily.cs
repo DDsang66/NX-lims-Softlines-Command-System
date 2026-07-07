@@ -1,13 +1,9 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard;
-using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
+﻿using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext
 {
@@ -30,9 +26,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
         public static StandardFamily Create(
             StandardFamilyId id,
-            string name,
-            IEnumerable<StandardId> standardIds,
-            string version)
+            string name
+            //IEnumerable<StandardId> standardIds,
+            //string version
+            )
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name required", nameof(name));
 
@@ -43,15 +40,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             {
                 Id = id,
                 StandardFamilyCode = name,
-                Version = version,
+                Version = "1",
                 EffectiveDate = DateTime.UtcNow
             };
 
-            if (standardIds != null)
-            {
-                foreach (var sid in standardIds.Distinct())
-                    family._standardIds.Add(sid);
-            }
+            //if (standardIds != null)
+            //{
+            //    foreach (var sid in standardIds.Distinct())
+            //        family._standardIds.Add(sid);
+            //}
 
             //family.AddDomainEvent(new StandardFamilyCreatedEvent(id, name));
 
@@ -118,15 +115,32 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             //AddDomainEvent(new SharedRuleAddedToFamilyEvent(Id, ruleId));
         }
 
-        // 领域方法：变更版本
-        public void UpdateVersion(string newVersion)
+        /// <summary>
+        /// 添加结构
+        /// </summary>
+        /// <param name="ruleId"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public void AddParamStructure(ParamStructureId structureId)
         {
-            if (string.IsNullOrWhiteSpace(newVersion))
-                throw new ArgumentException("Version required", nameof(newVersion));
+            if (_paramStructureIds.Contains(structureId))
+                throw new InvalidOperationException($"规则 {structureId} 已存在");
 
-            var oldVersion = Version;
+            _paramStructureIds.Add(structureId);
 
-            Version = newVersion;
+            //AddDomainEvent(new SharedRuleAddedToFamilyEvent(Id, ruleId));
+        }
+
+        // 领域方法：变更版本
+        public void UpdateVersion()
+        {
+            if (string.IsNullOrEmpty(Version)) 
+                throw new InvalidOperationException($"初始版本 {Version} 不存在"); 
+
+            var oldVersion = int.Parse(Version);
+
+            var newVersion = (oldVersion++);
+
+            Version = newVersion.ToString();
 
             //AddDomainEvent(new FamilyVersionUpdatedEvent(Id, oldVersion, newVersion));
         }

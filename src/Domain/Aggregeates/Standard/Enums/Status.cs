@@ -5,6 +5,7 @@
         Draft,      // 草稿
         Active,     // 现行
         Deprecated, // 废止
-        Superseded  // 被替代
+        Superseded,  // 被替代
+        Pending,    // 待定
     }
 }

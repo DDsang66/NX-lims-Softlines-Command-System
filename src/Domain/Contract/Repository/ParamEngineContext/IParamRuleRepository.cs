@@ -7,10 +7,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
 {
     public interface IParamRuleRepository: IRepository<ParamRule>, IScopedDependency
     {
-        List<ParamRule> GetByIds(IEnumerable<ParamRuleId> ids);
-        List<ParamRule> GetByFormulaId(FormulaId formulaId);
-        Task AddAsync(ParamRule rule);
-        Task UpdateAsync(ParamRule rule);
-        Task<ParamRule> FindAsync(ParamRuleId id);
+       Task<IEnumerable<ParamRule>> GetByFormulaIdAsync(FormulaId formulaId);
+        Task<ParamRule> GetByIdAsync(ParamRuleId id,CancellationToken ct);
+        Task<IEnumerable<ParamRule>> GetByIdsAsync(IEnumerable<ParamRuleId> ids, CancellationToken ct);
+        Task AddAsync(ParamRule rule,CancellationToken ct);
+        Task UpdateAsync(ParamRule rule,CancellationToken ct);
     }
 }

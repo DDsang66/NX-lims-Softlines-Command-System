@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppService;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API
@@ -16,23 +17,23 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         }
 
         [HttpPost("add")]
-        public async Task<IActionResult> CreateParamRule([FromBody] CreateParamRuleRequest request)
+        public async Task<IActionResult> CreateParamRule([FromBody] CreateParamRuleRequest request, CancellationToken ct)
         {
-            var result = await _applicationService.CreateParamRuleAsync(request);
+            var result = await _applicationService.CreateParamRuleAsync(request, ct);
             return Ok(result);
         }
 
         [HttpPut("update")]
-        public async Task<IActionResult> UpdateParamRule([FromBody] UpdateParamRuleRequest request)
+        public async Task<IActionResult> UpdateParamRule([FromBody] UpdateParamRuleRequest request, CancellationToken ct)
         {
-            var result = await _applicationService.UpdateParamRuleAsync(request);
+            var result = await _applicationService.UpdateParamRuleAsync(request, ct);
             return Ok(result);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetParamRule(string id)
+        public async Task<IActionResult> GetParamRule(string id,CancellationToken ct)
         {
-            var result = await _applicationService.GetParamRuleAsync(id);
+            var result = await _applicationService.GetParamRuleAsync(id, ct);
             return Ok(result);
         }
     }

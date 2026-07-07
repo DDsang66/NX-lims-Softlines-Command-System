@@ -1,24 +1,16 @@
 ﻿using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.NX_lims_Softlines_Command_System.src.Application.ParamEngineContext.Dtos;
+using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
-using Spire.AI.Api;
+
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppService
 {
-    public interface IParamRuleApplicationService: IScopedDependency
-    {
-        Task<ParamRuleDto> CreateParamRuleAsync(CreateParamRuleRequest request);
-        Task<ParamRuleDto> UpdateParamRuleAsync(UpdateParamRuleRequest request);
-        Task<ParamRuleDto> GetParamRuleAsync(string id);
-    }
-
     public class ParamRuleApplicationService: IParamRuleApplicationService,IScopedDependency
     {
         private readonly IParamRuleRepository _repository;
@@ -37,7 +29,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<ParamRuleDto> CreateParamRuleAsync(CreateParamRuleRequest request)
+        public async Task<ParamRuleDto> CreateParamRuleAsync(CreateParamRuleRequest request,CancellationToken ct)
         {
             // 1. 使用Director进行转换
             var pattern = _patternDirector.CreatePatternFromDto(request);
@@ -55,7 +47,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             rule.Active();
 
             // 4. 持久化
-            await _repository.AddAsync(rule);
+            await _repository.AddAsync(rule,ct);
 
             // 5. 返回DTO
             return rule.Adapt<ParamRuleDto>();
@@ -67,10 +59,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <param name="request"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<ParamRuleDto> UpdateParamRuleAsync(UpdateParamRuleRequest request)
+        public async Task<ParamRuleDto> UpdateParamRuleAsync(UpdateParamRuleRequest request,CancellationToken ct)
         {
             // 1. 获取现有规则
-            var existingRule = await _repository.FindAsync(new ParamRuleId(request.Id));
+            var existingRule = await _repository.GetByIdAsync(new ParamRuleId(request.Id),ct);
 
             if (existingRule == null)
                 throw new Exception($"Param rule with id {request.Id} not found");
@@ -86,7 +78,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             //existingRule.Pattern = pattern; // 注意：这里通过聚合根方法去更新
 
             // 4. 持久化
-            await _repository.UpdateAsync(existingRule);
+            await _repository.UpdateAsync(existingRule,ct);
 
             // 5. 返回DTO
             return existingRule.Adapt<ParamRuleDto>();
@@ -98,9 +90,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <param name="id"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<ParamRuleDto> GetParamRuleAsync(string id)
+        public async Task<ParamRuleDto> GetParamRuleAsync(string id,CancellationToken ct)
         {
-            var rule = await _repository.FindAsync(new ParamRuleId(id));
+            var rule = await _repository.GetByIdAsync(new ParamRuleId(id), ct);
             if (rule == null)
                 throw new Exception($"Param rule with id {id} not found");
 

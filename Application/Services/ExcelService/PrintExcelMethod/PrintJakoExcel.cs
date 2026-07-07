@@ -170,6 +170,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Pilling Resistance"] = "Pilling Resistance",
             ["Snagging Resistance"] = "Abrasion&Snagging",
             ["Abrasion Resistance"] = "Abrasion&Snagging",
+            ["Air Permeability"] = "Air",
             ["Tensile Strength"] = "Seam Slippage&Tensile",
             ["Tear Strength"] = "Tear Strength",
             ["Extension and Recovery"] = "Stretch&Recovery of Elastic",
@@ -244,6 +245,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Bursting Strength"] = (_, _) => ExcelJakoMapper.BurstingMap(),
             ["Extension and Recovery"] = (_, _) => ExcelJakoMapper.ElasticMap(),
             ["Abrasion Resistance"] = (n, _) => ExcelJakoMapper.ASMap(n),
+            ["Air Permeability"] = (n, _) => ExcelJakoMapper.AirMap(),
             ["Snagging Resistance"] = (n, _) => ExcelJakoMapper.ASMap(n),
             ["Tensile Strength"] = (_, _) => ExcelJakoMapper.TensileMap(),
             ["Tear Strength"] = (_, _) => ExcelJakoMapper.TearMap(),
@@ -448,6 +450,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A3"] = (dto, esDto, ws,  reportNo) => dto.Standard!,
                 ["C5"] = (dto, esDto, ws,  reportNo) => "9kPa",
                 ["I5"] = (dto, esDto, ws,  reportNo) => "30000r"
+            },
+            ["Air Permeability"] = (dto, esDto, ws, reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
+            {
+                ["M1"] = (dto, esDto, ws, reportNo) => reportNo,
+                ["A3"] = (dto, esDto, ws, reportNo) => dto.Standard!,
+                ["F5"] = (dto, esDto, ws, reportNo) => "100",
+                ["E6"] = (dto, esDto, ws, reportNo) => "20"
             },
             ["Snagging Resistance"] = (dto, esDto, ws,  reportNo) => new Dictionary<string, Func<CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {

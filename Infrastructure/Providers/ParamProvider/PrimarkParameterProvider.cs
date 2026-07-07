@@ -422,7 +422,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Temperature = p.WashingProcedure!.Contains("3") ? "30" : "40",
                 WashingProcedure = p.WashingProcedure,
                 Detergent = "ECE(A)",
-                AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                //AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
+                AfterWash = string.Join(", ", sample
+                    .Split(',')
+                    .Select(s => s.Trim())
+                    .SelectMany(s => new[] { $"{s}-1 Wash" })),
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },

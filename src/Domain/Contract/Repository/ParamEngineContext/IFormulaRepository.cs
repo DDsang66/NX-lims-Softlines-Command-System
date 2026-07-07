@@ -6,10 +6,47 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
 {
     public interface IFormulaRepository:IRepository<Formula>, IScopedDependency
     {
-        Formula? GetById(FormulaId id);
-        List<Formula> GetByFamilyId(string standardFamilyId);
+        /// <summary>
+        /// 通过id获取公式
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        Task<Formula> GetByIdAsync(FormulaId id,CancellationToken ct);
+
+        /// <summary>
+        /// 通过id集合获取公式
+        /// </summary>
+        /// <param name="ids"></param>
+        /// <returns></returns>
+        Task<IEnumerable<Formula>> GetByIdsAsync(IEnumerable<FormulaId> ids,CancellationToken ct);
+
+        /// <summary>
+        /// 通过参数名获取公式
+        /// </summary>
+        /// <param name="paramName"></param>
+        /// <returns></returns>
         List<Formula> GetByParamName(string paramName);
-        Task AddAsync(Formula formula);
-        Task UpdateAsync(Formula formula);
+
+        /// <summary>
+        /// 添加公式
+        /// </summary>
+        /// <param name="formula"></param>
+        /// <returns></returns>
+        Task AddAsync(Formula formula, CancellationToken ct);
+
+        /// <summary>
+        /// 更新公式
+        /// </summary>
+        /// <param name="formula"></param>
+        /// <returns></returns>
+        Task UpdateAsync(Formula formula, CancellationToken ct);
+
+        /// <summary>
+        /// 批量更新公式
+        /// </summary>
+        /// <param name="fomulas"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IEnumerable<Formula>> UpdateRangeAsync(IEnumerable<Formula> fomulas, CancellationToken ct);
     }
 }

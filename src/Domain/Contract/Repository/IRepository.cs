@@ -13,14 +13,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         /// </summary>
         /// <param name="aggregateRoot"></param>
         /// <returns></returns>
-        Task AddAsync(T aggregateRoot);
+        Task AddAsync(T aggregateRoot,CancellationToken ct);
 
         /// <summary>
         /// 修改实体
         /// </summary>
         /// <param name="aggregateRoot"></param>
         /// <returns></returns>
-        Task UpdateAsync(T aggregateRoot);
+        Task UpdateAsync(T aggregateRoot,CancellationToken ct);
 
     }
 }

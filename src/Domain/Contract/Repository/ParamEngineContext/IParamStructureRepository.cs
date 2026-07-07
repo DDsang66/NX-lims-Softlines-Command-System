@@ -9,7 +9,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         ParamStructure? GetById(ParamStructureId id);
         List<ParamStructure> GetByFamilyId(string standardFamilyId);
         List<ParamStructure> GetByParamName(string paramName);
-        Task AddAsync(ParamStructure paramStructure);
-        Task UpdateAsync(ParamStructure paramStructure);
+        Task AddAsync(ParamStructure paramStructure,CancellationToken ct);
+        Task UpdateAsync(ParamStructure paramStructure,CancellationToken ct);
     }
 }

@@ -26,6 +26,13 @@
             };
         }
 
+        public static string[] AirMap()
+        {
+            return new string[]
+            {
+                "I10","O10","U10","AA10","AG10"
+            };
+        }
         public static string[] ASMap(string ItemName)
         {
             List<string>? stringMap = null;

@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using System.Threading.Tasks;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerateService
 {
@@ -40,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         /// 3. 加载规则并调用引擎生成
         /// 4. 调用补偿服务得到最终 ParamSet
         /// </summary>
-        public Result<ParamSet> GenerateForStructure(string structureId, ConditionPool pool)
+        public async Task<Result<ParamSet>> GenerateForStructure(string structureId, ConditionPool pool,CancellationToken ct)
         {
             // 1. 加载结构
             var structure = _structureRepo.GetById(new ParamStructureId(structureId));
@@ -51,14 +52,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             if (v.IsFailure) return Result<ParamSet>.Fail(v.Error);
 
             // 3. 加载 Formula 并做语义检查
-            var formula = _formulaRepo.GetById(structure.FormulaId);
+            var formula = await _formulaRepo.GetByIdAsync(structure.FormulaId, ct);
             if (formula == null) return Result<ParamSet>.Fail("Formula not found");
 
             var missing = formula.RequiredConditions().Where(f => !pool.HasCondition(f)).ToList();
             if (missing.Any()) return Result<ParamSet>.Fail($"Missing required conditions: {string.Join(',', missing)}");
 
             // 4. 加载规则
-            var rules = _ruleRepo.GetByIds(structure.ApplicableRuleIds);
+            var rules = await _ruleRepo.GetByIdsAsync(structure.ApplicableRuleIds, ct);
 
             // 5. 引擎生成
             var generated = _engine.Generate(pool, rules);

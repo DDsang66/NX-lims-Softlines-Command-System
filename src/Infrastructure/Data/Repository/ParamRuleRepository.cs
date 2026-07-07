@@ -8,27 +8,27 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 {
     public class ParamRuleRepository : IParamRuleRepository, IScopedDependency
     {
-        public List<ParamRule> GetByIds(IEnumerable<ParamRuleId> ids)
+        public Task<IEnumerable<ParamRule>> GetByIdsAsync(IEnumerable<ParamRuleId> ids,CancellationToken ct)
         {
-            return new List<ParamRule>();
+            return null;
         }
 
-        public List<ParamRule> GetByFormulaId(FormulaId formulaId)
+        public Task<IEnumerable<ParamRule>> GetByFormulaIdAsync(FormulaId formulaId)
         {
-            return new List<ParamRule>();
+            return null;
         }
 
-        public async Task AddAsync(ParamRule rule) 
+        public async Task AddAsync(ParamRule rule, CancellationToken ct) 
         {
 
         }
 
-        public async Task UpdateAsync(ParamRule rule) 
+        public async Task UpdateAsync(ParamRule rule, CancellationToken ct) 
         { 
 
         }
 
-        public async Task<ParamRule> FindAsync(ParamRuleId id) 
+        public async Task<ParamRule> GetByIdAsync(ParamRuleId id,CancellationToken ct) 
         {
             
             return null;

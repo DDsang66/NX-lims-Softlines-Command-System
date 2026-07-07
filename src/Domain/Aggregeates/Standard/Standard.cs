@@ -123,6 +123,33 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
             // 可以在这里添加领域事件，例如StandardUpdatedEvent，来通知系统标准信息已更新（Schema、Rule等）
         }
 
+        /// <summary>
+        /// 绑定标准到标准族
+        /// </summary>
+        public void BindToStandardFamily(StandardFamilyId id) 
+        {
+            // 1. 参数校验
+            if (id == null)
+                throw new Exception("标准族ID不能为空");
+
+            // 2. 业务规则校验：一个标准不能同时属于多个标准族
+            if (this.StandardFamilyCode != null && this.StandardFamilyCode.Value != id.Value)
+                throw new Exception($"该标准已绑定到标准族 {this.StandardFamilyCode}，不能重复绑定到其他标准族");
+
+            // 3. 业务规则校验：只有特定状态的标准才能被绑定
+            if (this.Status != Status.Draft && this.Status != Status.Pending)
+                throw new Exception($"只有“草稿”或“待审核”状态的标准才能被绑定到标准族，当前状态为：{this.Status}");
+
+            // 4. 业务规则校验：如果标准族ID相同，则无需重复操作
+            if (this.StandardFamilyCode?.Value == id.Value)
+                return; // 或者可以抛出异常，取决于业务需求
+
+            // 5. 执行状态变更
+            this.StandardFamilyCode = id;
+            // 6. 可以在这里触发领域事件，通知外部系统
+            // AddDomainEvent(new StandardBoundToFamilyEvent(this.Id, id));
+
+        }
 
         /// <summary>
         /// 激活标准
