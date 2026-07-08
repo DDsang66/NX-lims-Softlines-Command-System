@@ -13,15 +13,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 {
     public class ParamRuleApplicationService: IParamRuleApplicationService,IScopedDependency
     {
-        private readonly IParamRuleRepository _repository;
+        private readonly IParamRuleRepository _pararmRuleRepository;
         private readonly IRuleTranslationService _ruleTranslationService;
+        private readonly IFormulaRepository _formulaRepository;
 
         public ParamRuleApplicationService(
-            IParamRuleRepository repository,
-            IRuleTranslationService ruleTranslationService)
+            IParamRuleRepository pararmRuleRepository,
+            IRuleTranslationService ruleTranslationService,
+            IFormulaRepository formulaRepository)
         {
-            _repository = repository;
+            _pararmRuleRepository = pararmRuleRepository;
             _ruleTranslationService = ruleTranslationService;
+            _formulaRepository = formulaRepository;
         }
 
         /// <summary>
@@ -32,7 +35,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         public async Task<ParamRuleDto> AddParamRuleFromJsonAsync(CreateParamRuleRequest request,CancellationToken ct)
         {
             // 1. 使用Director进行转换
-            var pattern = _ruleTranslationService.TranslateFromDto(request,ct);
+            var pattern = _ruleTranslationService.PatternTranslateFromDto(request,ct);
 
             // 2. 创建聚合根
             var rule = ParamRule.Create(
@@ -40,40 +43,51 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 new FormulaId(request.FormulaId),
                 request.ParamName,
                 request.Priority,
-                pattern
+                pattern,
+                new ParamValue(request.ParamResult)
             );
 
             // 3. 激活规则(待其余聚合根逻辑完善后用单独的方法激活)
             rule.Active();
 
             // 4. 持久化
-            await _repository.AddAsync(rule,ct);
+            await _pararmRuleRepository.AddAsync(rule,ct);
 
             // 5. 返回DTO
             return rule.Adapt<ParamRuleDto>();
         }
 
-        public async Task<ParamRuleDto> AddParamRuleFromTextAsync(NaturalLanguageRuleRequest request, CancellationToken ct)
+        /// <summary>
+        /// 自然语言规则添加
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<ParamRuleDto> AddParamRuleFromNaturalTextAsync(NaturalLanguageRuleRequest request, CancellationToken ct)
         {
-            // 1. 使用Director进行转换
-            var pattern = _ruleTranslationService.ParseFromText(request.Text, ct);
+            // 1. 获取公式
+            var formula = await _formulaRepository.GetByIdAsync(new FormulaId(request.FormulaId),ct);
 
-            // 2. 创建聚合根
+            // 2. 使用Director进行转换
+            var (pattern, result) = _ruleTranslationService.ParseFromNaturalLanguageText(request.Text, formula, ct);
+
+            // 3. 创建聚合根
             var rule = ParamRule.Create(
                 new ParamRuleId(request.FormulaId),
                 new FormulaId(request.FormulaId),
                 request.ParamName,
                 request.Priority,
-                pattern
+                pattern: pattern,
+                result: result
             );
 
-            // 3. 激活规则(待其余聚合根逻辑完善后用单独的方法激活)
+            // 4. 激活规则(待其余聚合根逻辑完善后用单独的方法激活)
             rule.Active();
 
-            // 4. 持久化
-            await _repository.AddAsync(rule, ct);
+            // 5. 持久化
+            await _pararmRuleRepository.AddAsync(rule, ct);
 
-            // 5. 返回DTO
+            // 6. 返回DTO
             return rule.Adapt<ParamRuleDto>();
         }
 
@@ -86,7 +100,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         public async Task<ParamRuleDto> UpdateParamRuleAsync(UpdateParamRuleRequest request,CancellationToken ct)
         {
             // 1. 获取现有规则
-            var existingRule = await _repository.GetByIdAsync(new ParamRuleId(request.Id),ct);
+            var existingRule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(request.Id),ct);
 
             if (existingRule == null)
                 throw new Exception($"Param rule with id {request.Id} not found");
@@ -102,7 +116,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             //existingRule.Pattern = pattern; // 注意：这里通过聚合根方法去更新
 
             // 4. 持久化
-            await _repository.UpdateAsync(existingRule,ct);
+            await _pararmRuleRepository.UpdateAsync(existingRule,ct);
 
             // 5. 返回DTO
             return existingRule.Adapt<ParamRuleDto>();
@@ -116,7 +130,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <exception cref="Exception"></exception>
         public async Task<ParamRuleDto> GetParamRuleAsync(string id,CancellationToken ct)
         {
-            var rule = await _repository.GetByIdAsync(new ParamRuleId(id), ct);
+            var rule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(id), ct);
             if (rule == null)
                 throw new Exception($"Param rule with id {id} not found");
 

@@ -5,52 +5,75 @@ using System.Text.RegularExpressions;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
 {
-    public class RuleTokenizer : IRuleTokenizer, IScopedDependency
+    /// <summary>
+    /// 基础设施层：底层词法拆分实现
+    /// 纯技术实现，无业务逻辑，无异常处理
+    /// </summary>
+    public sealed class RuleTokenizer : IRuleTokenizer, IScopedDependency
     {
-        public List<Token> Tokenize(string text)
+        /// <summary>
+        /// 原子化正则：每个匹配项是不可再分的基础单元
+        /// </summary>
+        private static readonly Regex TokenPattern = new Regex(
+            @"(?:""[^""]*"")" +           // 1. 字符串字面量
+            @"|(\d+\.?\d*)" +             // 2. 数值
+            @"|(℃|%|min|g|m|s)" +        // 3. 单位
+            @"|(→|->|=>|>=|<=|==|!=)" +    // 4. 多字符运算符
+            @"|([+\-*/<>=,;():])" +       // 5. 单字符运算符
+            @"|(\w+)",                    // 6. 标识符
+            RegexOptions.Compiled);
+
+        public IReadOnlyList<Token> Split(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-                throw new ArgumentException("Rule text cannot be empty", nameof(text));
-
             var tokens = new List<Token>();
-            var position = 0;
-            var regex = new Regex(@"(\w+|[<→,]|\+|\d+℃)");
 
-            foreach (Match match in regex.Matches(text))
+            foreach (Match match in TokenPattern.Matches(text))
             {
-                if (match.Success)
-                {
-                    var token = new Token(
-                        match.Value,
-                        DetermineTokenType(match.Value),
-                        position
-                    );
-                    tokens.Add(token);
-                    position += match.Length;
-                }
+                if (!match.Success) continue;
+
+                var value = match.Value.Trim();
+                if (string.IsNullOrEmpty(value)) continue;
+
+                var token = new Token(
+                    value: value,
+                    type: DetermineTokenType(value),
+                    position: match.Index
+                );
+
+                tokens.Add(token);
             }
 
             return tokens;
         }
 
-        private TokenType DetermineTokenType(string value)
+        /// <summary>
+        /// 根据值确定类型
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private static TokenType DetermineTokenType(string value)
         {
-            if (value == "→") return TokenType.RangeOperator;
-            if (value == "+") return TokenType.ArithmeticOperator;
-            if (value.EndsWith("℃")) return TokenType.Temperature;
-            if (int.TryParse(value.Replace("℃", ""), out _)) return TokenType.Number;
-            if (Enum.TryParse<ConditionType>(value, true, out _)) return TokenType.ConditionValue;
-            return TokenType.Unknown;
-        }
-    }
+            if (value.StartsWith("\"") && value.EndsWith("\""))
+                return TokenType.StringLiteral;
 
-    // 保留 ConditionType 枚举，因为它可能特定于基础设施层
-    public enum ConditionType
-    {
-        A,
-        B,
-        C,
-        // 其他条件类型...
+            if (decimal.TryParse(value, out _))
+                return TokenType.Number;
+
+            if (value is "℃" or "%" or "min" or "g" or "m" or "s")
+                return TokenType.Unit;
+
+            return value switch
+            {
+                "AND" or "OR" or "NOT" => TokenType.LogicalOperator,
+                "→" or "->" or "=>" or "to" or "~" or "→" => TokenType.RangeOperator,
+                ">=" or "<=" or "==" or "!=" or ">" or "<" or "=" => TokenType.ComparisonOperator,
+                "+" or "-" or "*" or "/" => TokenType.ArithmeticOperator,
+                "(" or ")" => TokenType.Parenthesis,
+                "," or ";" or ":" => TokenType.Separator,
+                ":=" => TokenType.Assignment,
+                _ => TokenType.Identifier
+            };
+        }
     }
 }
 

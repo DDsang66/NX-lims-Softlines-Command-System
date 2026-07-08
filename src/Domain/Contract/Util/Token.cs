@@ -39,57 +39,62 @@
     public enum TokenType
     {
         /// <summary>
-        /// 条件类型（如：Type）
+        /// 标识符：字母开头的单词或短语（如 Woven, Flat, dry, ISO6330, Null）
         /// </summary>
-        ConditionType,
+        Identifier,
 
         /// <summary>
-        /// 条件值（如：A、B、C）
-        /// </summary>
-        ConditionValue,
-
-        /// <summary>
-        /// 温度值（如：+40℃）
-        /// </summary>
-        Temperature,
-
-        /// <summary>
-        /// 范围分隔符（如：→、-）
-        /// </summary>
-        RangeOperator,
-
-        /// <summary>
-        /// 运算符（如：+、-、*、/）
-        /// </summary>
-        ArithmeticOperator,
-
-        /// <summary>
-        /// 数字
+        /// 数值：整数或小数（如 30, 40.5, 60）
         /// </summary>
         Number,
 
         /// <summary>
-        /// 单位（如：℃、%）
+        /// 单位符号：℃, %, min, g, m, s 等
         /// </summary>
         Unit,
 
         /// <summary>
-        /// 逻辑运算符（如：AND、OR、NOT）
+        /// 逻辑运算符：AND, OR, NOT
         /// </summary>
         LogicalOperator,
 
         /// <summary>
-        /// 比较运算符（如：>、<、=）
+        /// 比较运算符：>, <, >=, <=, =, !=
         /// </summary>
         ComparisonOperator,
 
         /// <summary>
-        /// 括号
+        /// 算术运算符：+, -, *, /
+        /// </summary>
+        ArithmeticOperator,
+
+        /// <summary>
+        /// 范围/推导运算符：→, ->, =>, ~, to
+        /// </summary>
+        RangeOperator,
+
+        /// <summary>
+        /// 括号：(, )
         /// </summary>
         Parenthesis,
 
         /// <summary>
-        /// 未知类型
+        /// 分隔符：, ; :
+        /// </summary>
+        Separator,
+
+        /// <summary>
+        /// 赋值/推导标记：=, :=, =>
+        /// </summary>
+        Assignment,
+
+        /// <summary>
+        /// 字符串字面量：用引号包裹的文本
+        /// </summary>
+        StringLiteral,
+
+        /// <summary>
+        /// 未知/未识别类型
         /// </summary>
         Unknown
     }

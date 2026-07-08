@@ -13,7 +13,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public string Name { get; private set; }  // "BallastDerivation"
         public string ParamName { get; private set; }  // 生成的参数名 "Ballast"
         public List<string> ConditionFields { get; private set; }  // ["FiberDominantType", "BuyerSpecified"]
-        public string ExpressionTemplate { get; private set; }  // "FiberDominantType + BuyerSpecified"
+        public string ExpressionTemplate { get; private set; }  // "FiberDominantType + BuyerSpecified ->Ballst" 范式样本
         public string Description { get; private set; }
         public int Version { get; private set; }  // 版本号
         public DateTime EffectiveDate { get; private set; }  // 生效日期
@@ -30,7 +30,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             string name, 
             string paramName, 
             IEnumerable<string> conditionFields,
-            string expressionTemplate, string? description = null)
+            StandardFamilyId familyId,
+            string expressionTemplate, 
+            string? description = null
+            )
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name required", nameof(name));
@@ -57,7 +60,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Description = description?.Trim(),
                 IsActive = true,
                 Version = 1,
-                EffectiveDate = DateTime.UtcNow
+                EffectiveDate = DateTime.UtcNow,
+                FamilyId = familyId
             };
 
             // 如果需要发布领域事件，可在应用层或这里添加：
@@ -65,6 +69,38 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
             return f;
         }
+
+        /// <summary>
+        /// 重建
+        /// </summary>
+        public static Formula Reconstitute(
+            FormulaId id,
+            string name,
+            string paramName,
+            IEnumerable<string> conditionFields,
+            StandardFamilyId familyId,
+            string expressionTemplate,
+            string description,
+            int version,
+            bool isActive,
+            DateTime effectiveDate
+            )
+        {
+            return new Formula 
+            {
+                Id = id,
+                Name = name,
+                ParamName = paramName,
+                ConditionFields = conditionFields.ToList(),
+                FamilyId = familyId,
+                ExpressionTemplate = expressionTemplate ?? string.Empty,
+                Description = description,
+                Version = version,
+                IsActive = isActive,
+                EffectiveDate = effectiveDate
+            };
+        }
+
 
         /// <summary>
         /// 返回公式声明的原子条件字段名（供前置验证）

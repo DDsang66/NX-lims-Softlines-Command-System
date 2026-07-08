@@ -1,11 +1,13 @@
 ﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Interface;
+using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppService
 {
@@ -17,16 +19,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
     {
         private readonly IConditionPatternBuilder _patternBuilder;
         private readonly ITokenizer _tokenizer;
-        private readonly IRuleParser _ruleParser;
+        private readonly IParser _parser;
 
         public RuleTranslationService(
             IConditionPatternBuilder patternBuilder,
             ITokenizer tokenizer,
-            IRuleParser ruleParser)
+            IParser parser
+            )
         {
             _patternBuilder = patternBuilder;
             _tokenizer = tokenizer;
-            _ruleParser = ruleParser;
+            _parser = parser;
         }
 
         /// <summary>
@@ -34,7 +37,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public ConditionPattern TranslateFromDto(CreateParamRuleRequest request,CancellationToken ct)
+        public ConditionPattern PatternTranslateFromDto(CreateParamRuleRequest request,CancellationToken ct)
         {
             // 处理DTO到领域对象的转换
             foreach (var match in request.EqualMatches)
@@ -82,17 +85,27 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             return _patternBuilder.Build();
         }
 
+
         /// <summary>
-        /// 根据文本创建条件模式
+        /// 根据自然语言文本创建条件模式
         /// </summary>
         /// <param name="text"></param>
+        /// <param name="formula"></param>
+        /// <param name="ct"></param>
         /// <returns></returns>
-        public ConditionPattern ParseFromText(string text, CancellationToken ct)
+        public (ConditionPattern pattern,ParamValue paramValue) ParseFromNaturalLanguageText(string text, Formula formula, CancellationToken ct)
         {
             // 处理文本到领域对象的转换
             var tokens = _tokenizer.Tokenize(text);
 
-            return _ruleParser.Parse(tokens);
+            var parsedRule = _parser.Parse(tokens, formula);
+
+            // JSON 反序列化为 ConditionPattern
+            var pattern = parsedRule.ConditionPatternJson.Deserialize<ConditionPattern>();
+
+            var paramValue = new ParamValue(parsedRule.ResultValue);
+
+            return (pattern, paramValue);
         }
 
         private ComparisonOperator ParseComparisonOperator(string op)

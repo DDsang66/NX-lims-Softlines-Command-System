@@ -6,17 +6,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine
     public interface ITokenizer: IScopedDependency
     {
         /// <summary>
-        /// 将输入文本转换为词法单元列表
+        /// 将文本解析为 Token 列表
         /// </summary>
-        /// <param name="text">输入文本</param>
-        /// <returns>词法单元列表</returns>
-        List<Token> Tokenize(string text);
-
-        /// <summary>
-        /// 验证词法单元列表的有效性
-        /// </summary>
-        /// <param name="tokens">词法单元列表</param>
-        /// <returns>验证结果</returns>
-        bool ValidateTokens(List<Token> tokens);
+        /// <param name="text">原始规则文本</param>
+        /// <returns>Token 序列</returns>
+        /// <exception cref="ArgumentException">文本为空或格式错误</exception>
+        IReadOnlyList<Token> Tokenize(string text);
     }
 }

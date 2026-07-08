@@ -1,10 +1,12 @@
 ﻿namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
 {
-    public class CreateParamRuleRequest
+    public record CreateParamRuleRequest
     {
         public string Id { get; set; }
         public string FormulaId { get; set; }
         public string ParamName { get; set; }
+        public string ParamResult { get; set; }
+        public bool StopOnMatch { get; set; }
         public int Priority { get; set; }
         public List<EqualMatchDto> EqualMatches { get; set; } = new();
         public List<ComparisonMatchDto> ComparisonMatches { get; set; } = new();

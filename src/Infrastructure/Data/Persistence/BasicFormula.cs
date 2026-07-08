@@ -19,7 +19,7 @@ public partial class BasicFormula
 
     public int? Version { get; set; }
 
-    public DateOnly EffectiveDate { get; set; }
+    public DateTime EffectiveDate { get; set; }
 
     public bool IsActive { get; set; }
 

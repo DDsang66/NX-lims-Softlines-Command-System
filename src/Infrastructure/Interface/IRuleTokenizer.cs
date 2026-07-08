@@ -5,6 +5,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Interface
 {
     public interface IRuleTokenizer:IScopedDependency
     {
-        List<Token> Tokenize(string text);
+        IReadOnlyList<Token> Split(string text);
     }
 }

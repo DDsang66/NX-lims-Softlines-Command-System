@@ -1,156 +1,96 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Interface;
 using System.Text.RegularExpressions;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
 {
-    public class Tokenizer: ITokenizer,IScopedDependency
+    /// <summary>
+    /// 领域服务：Tokenizer 协调层
+    /// 负责前置检查、异常处理、固定语法结构校验
+    /// 底层拆分委托给 Infrastructure 的 IRuleTokenizer
+    /// </summary>
+    public sealed class Tokenizer : ITokenizer,IScopedDependency
     {
-        private readonly Dictionary<string, TokenType> _keywordMap;
-        private readonly HashSet<char> _unitChars;
+        private readonly IRuleTokenizer _ruleTokenizer;
 
-        public Tokenizer()
+        public Tokenizer(IRuleTokenizer ruleTokenizer)
         {
-            // 初始化关键字映射
-            _keywordMap = new Dictionary<string, TokenType>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Type"] = TokenType.ConditionType,
-                ["AND"] = TokenType.LogicalOperator,
-                ["OR"] = TokenType.LogicalOperator,
-                ["NOT"] = TokenType.LogicalOperator,
-                ["→"] = TokenType.RangeOperator,
-                ["-"] = TokenType.RangeOperator,
-                ["+"] = TokenType.ArithmeticOperator,
-                ["-"] = TokenType.ArithmeticOperator,
-                ["*"] = TokenType.ArithmeticOperator,
-                ["/"] = TokenType.ArithmeticOperator,
-                [">"] = TokenType.ComparisonOperator,
-                ["<"] = TokenType.ComparisonOperator,
-                ["="] = TokenType.ComparisonOperator
-            };
-
-            // 初始化单位字符集合
-            _unitChars = new HashSet<char> { '℃', '%', '°', 'C' };
+            _ruleTokenizer = ruleTokenizer ?? throw new ArgumentNullException(nameof(ruleTokenizer));
         }
 
-        public List<Token> Tokenize(string text)
+        /// <summary>
+        /// 词法拆分
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public IReadOnlyList<Token> Tokenize(string text)
         {
+            // 1. 前置检查
             if (string.IsNullOrWhiteSpace(text))
-                throw new ArgumentException("Text cannot be empty", nameof(text));
+                throw new ArgumentException("规则文本不能为空", nameof(text));
 
-            var tokens = new List<Token>();
-            var position = 0;
-            var length = text.Length;
+            // 2. 检查固定语法结构（如必须包含推导符 →）
+            if (!HasRangeOperator(text))
+                throw new ArgumentException("规则文本必须包含推导符 →", nameof(text));
 
-            while (position < length)
-            {
-                // 跳过空白字符
-                if (char.IsWhiteSpace(text[position]))
-                {
-                    position++;
-                    continue;
-                }
+            // 3. 检查括号匹配
+            if (!IsParenthesesBalanced(text))
+                throw new ArgumentException("规则文本括号不匹配", nameof(text));
 
-                // 尝试匹配最长的可能token
-                var token = MatchLongestToken(text, position);
-                if (token != null)
-                {
-                    tokens.Add(token);
-                    position += token.Value.Length;
-                }
-                else
-                {
-                    // 无法识别的token
-                    throw new TokenizationException(
-                        $"Unrecognized token at position {position}: '{text[position]}'");
-                }
-            }
+            // 4. 委托底层技术实现进行词法拆分
+            var tokens = _ruleTokenizer.Split(text);
+
+            // 5. 后校验：Token 序列合法性
+            ValidateTokenSequence(tokens);
 
             return tokens;
         }
 
-        public bool ValidateTokens(List<Token> tokens)
+        /// <summary>
+        /// 判断规则文本是否包含推导符
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        private static bool HasRangeOperator(string text)
+            => text.Contains('→') || text.Contains("->") || text.Contains("=>");
+
+        /// <summary>
+        /// 括号匹配校验
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        private static bool IsParenthesesBalanced(string text)
         {
-            if (tokens == null || tokens.Count == 0)
-                return false;
-
-            // 检查基本语法结构
-            // 示例：Type B +40℃ → 41℃
-            // 期望的结构：[ConditionType, ConditionValue, Temperature, RangeOperator, Temperature]
-
-            if (tokens.Count < 5)
-                return false;
-
-            // 检查第一个token是否为条件类型
-            if (tokens[0].Type != TokenType.ConditionType)
-                return false;
-
-            // 检查第二个token是否为条件值
-            if (tokens[1].Type != TokenType.ConditionValue)
-                return false;
-
-            // 检查温度token
-            if (tokens[2].Type != TokenType.Temperature || tokens[4].Type != TokenType.Temperature)
-                return false;
-
-            // 检查范围运算符
-            if (tokens[3].Type != TokenType.RangeOperator)
-                return false;
-
-            return true;
+            int depth = 0;
+            foreach (var c in text)
+            {
+                if (c == '(') depth++;
+                if (c == ')') depth--;
+                if (depth < 0) return false;
+            }
+            return depth == 0;
         }
 
-        private Token MatchLongestToken(string text, int position)
+        /// <summary>
+        /// Token 序列合法性校验
+        /// </summary>
+        /// <param name="tokens"></param>
+        /// <exception cref="ArgumentException"></exception>
+        private static void ValidateTokenSequence(IReadOnlyList<Token> tokens)
         {
-            // 尝试匹配关键字
-            foreach (var keyword in _keywordMap.Keys.OrderByDescending(k => k.Length))
-            {
-                if (text.Substring(position, Math.Min(keyword.Length, text.Length - position))
-                    .Equals(keyword, StringComparison.OrdinalIgnoreCase))
-                {
-                    return new Token(keyword, _keywordMap[keyword], position);
-                }
-            }
+            // 检查推导符数量
+            var arrowCount = tokens.Count(t => t.Type == TokenType.RangeOperator);
+            if (arrowCount != 1)
+                throw new ArgumentException($"规则必须包含且仅包含一个推导符，当前有 {arrowCount} 个");
 
-            // 尝试匹配数字
-            var numberMatch = Regex.Match(text.Substring(position), @"^[-+]?\d+(\.\d+)?");
-            if (numberMatch.Success)
-            {
-                var value = numberMatch.Value;
-                // 检查是否包含单位
-                if (position + value.Length < text.Length && _unitChars.Contains(text[position + value.Length]))
-                {
-                    value += text[position + value.Length].ToString();
-                    return new Token(value, TokenType.Temperature, position);
-                }
-                return new Token(value, TokenType.Number, position);
-            }
-
-            // 尝试匹配条件值（单个字母）
-            if (char.IsLetter(text[position]))
-            {
-                return new Token(text[position].ToString(), TokenType.ConditionValue, position);
-            }
-
-            // 尝试匹配单位
-            if (_unitChars.Contains(text[position]))
-            {
-                return new Token(text[position].ToString(), TokenType.Unit, position);
-            }
-
-            return null;
+            // 检查推导符位置（不能在最前或最后）
+            var arrowIndex = tokens.ToList().FindIndex(t => t.Type == TokenType.RangeOperator);
+            if (arrowIndex == 0 || arrowIndex == tokens.Count - 1)
+                throw new ArgumentException("推导符 → 不能位于规则开头或结尾");
         }
-    }
-
-    /// <summary>
-    /// 词法分析异常
-    /// </summary>
-    public class TokenizationException : Exception
-    {
-        public TokenizationException(string message) : base(message) { }
-        public TokenizationException(string message, Exception innerException)
-            : base(message, innerException) { }
     }
 }
 

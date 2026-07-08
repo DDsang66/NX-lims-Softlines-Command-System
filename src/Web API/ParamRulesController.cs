@@ -16,10 +16,17 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             _applicationService = applicationService;
         }
 
-        [HttpPost("add")]
-        public async Task<IActionResult> CreateParamRule([FromBody] CreateParamRuleRequest request, CancellationToken ct)
+        [HttpPost("add-json")]
+        public async Task<IActionResult> CreateParamRuleJson([FromBody] CreateParamRuleRequest request, CancellationToken ct)
         {
             var result = await _applicationService.AddParamRuleFromJsonAsync(request, ct);
+            return Ok(result);
+        }
+
+        [HttpPost("add-naturaltext")]
+        public async Task<IActionResult> CreateParamRuleText([FromBody] NaturalLanguageRuleRequest request, CancellationToken ct)
+        {
+            var result = await _applicationService.AddParamRuleFromNaturalTextAsync(request, ct);
             return Ok(result);
         }
 
