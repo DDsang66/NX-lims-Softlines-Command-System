@@ -60,17 +60,10 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         }
 
         /// <summary>
-        /// 工厂方法用于重建标准聚合根实例，包含必要的属性和可选的参数集合
+        /// 从数据库重建 Standard（仓储层使用，不校验业务规则）
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="standardCode"></param>
-        /// <param name="standardCodeNameEn"></param>
-        /// <param name="standardCodeNameChn"></param>
-        /// <param name="status"></param>
-        /// <param name="standardFamilyCode"></param>
-        /// <returns></returns>
-        public static Standard Reconstitute(
-            StandardId id,
+        internal static Standard Reconstitute(
+            StandardId idStandard,
             string standardCode,
             string standardCodeNameEn,
             string standardCodeNameChn,
@@ -79,7 +72,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         {
             return new Standard
             {
-                IdStandard = id,
+                IdStandard = idStandard,
                 StandardCode = standardCode,
                 StandardCodeNameEn = standardCodeNameEn,
                 StandardCodeNameChn = standardCodeNameChn,

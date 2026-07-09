@@ -7,11 +7,11 @@ public partial class BasicParamRule
 {
     public string RuleId { get; set; } = null!;
 
-    public string? ParamName { get; set; }
+    public string ParamName { get; set; } = null!;
 
-    public string? ConditionPattern { get; set; }
+    public string ConditionPattern { get; set; } = null!;
 
-    public string? DefaultValue { get; set; }
+    public string DefaultValue { get; set; } = null!;
 
     public int Priority { get; set; }
 
@@ -23,5 +23,5 @@ public partial class BasicParamRule
 
     public string FormulaId { get; set; } = null!;
 
-    public string? ParamStructureId { get; set; }
+    public string ParamStructureId { get; set; } = null!;
 }

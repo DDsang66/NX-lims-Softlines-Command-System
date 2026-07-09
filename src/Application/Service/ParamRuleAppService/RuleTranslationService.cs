@@ -108,6 +108,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             return (pattern, paramValue);
         }
 
+        /// <summary>
+        /// 根据JSON创建条件模式
+        /// </summary>
+        /// <param name="op"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         private ComparisonOperator ParseComparisonOperator(string op)
         {
             return op switch
@@ -121,6 +127,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 _ => throw new ArgumentException($"Unknown operator: {op}")
             };
         }
+
+        /// <summary>
+        /// 根据JSON创建逻辑运算符
+        /// </summary>
+        /// <param name="logic"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         private LogicalOperator ParseLogicalOperator(string logic)
         {
             return logic switch

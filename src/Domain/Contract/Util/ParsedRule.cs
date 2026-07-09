@@ -15,11 +15,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Util
         /// <summary>
         /// 推导符右边的结果值
         /// </summary>
-        public string ResultValue { get; set; }
+        public string ResultValue { get; set; } = string.Empty;
 
         /// <summary>
         /// 原始规则文本（用于追溯）
         /// </summary>
-        public string SourceText { get; set; }
+        public string SourceText { get; set; } = string.Empty;
     }
 }

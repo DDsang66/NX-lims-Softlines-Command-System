@@ -71,35 +71,46 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         }
 
         /// <summary>
-        /// 重建
+        /// 根据持久化数据重新构建 Formula 聚合根的实例（工厂方法，仅在内存中创建并保证不变式）
         /// </summary>
-        public static Formula Reconstitute(
+        /// <param name="id"></param>
+        /// <param name="name"></param>
+        /// <param name="paramName"></param>
+        /// <param name="conditionFields"></param>
+        /// <param name="familyId"></param>
+        /// <param name="expressionTemplate"></param>
+        /// <param name="description"></param>
+        /// <param name="version"></param>
+        /// <param name="isActive"></param>
+        /// <param name="effectiveDate"></param>
+        /// <returns></returns>
+        internal static Formula Reconstitute(
             FormulaId id,
             string name,
             string paramName,
             IEnumerable<string> conditionFields,
             StandardFamilyId familyId,
             string expressionTemplate,
-            string description,
             int version,
             bool isActive,
-            DateTime effectiveDate
-            )
+            DateTime effectiveDate,
+            string? description = null)
         {
-            return new Formula 
+            return new Formula
             {
                 Id = id,
                 Name = name,
                 ParamName = paramName,
                 ConditionFields = conditionFields.ToList(),
                 FamilyId = familyId,
-                ExpressionTemplate = expressionTemplate ?? string.Empty,
-                Description = description,
+                ExpressionTemplate = expressionTemplate,
+                Description =  description?.Trim(),
                 Version = version,
                 IsActive = isActive,
                 EffectiveDate = effectiveDate
             };
         }
+
 
 
         /// <summary>

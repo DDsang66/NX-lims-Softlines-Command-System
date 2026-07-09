@@ -59,7 +59,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
             if (decimal.TryParse(value, out _))
                 return TokenType.Number;
 
-            if (value is "℃" or "%" or "min" or "g" or "m" or "s")
+            //后续从单位符号库查询，禁止使用硬编码
+            if (value is "℃" or "°F" or "%" or "min" or "g" or "m" or "s")    
                 return TokenType.Unit;
 
             return value switch

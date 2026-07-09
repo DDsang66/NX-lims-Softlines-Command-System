@@ -5,7 +5,11 @@ using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 
@@ -16,15 +20,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         private readonly IParamRuleRepository _pararmRuleRepository;
         private readonly IRuleTranslationService _ruleTranslationService;
         private readonly IFormulaRepository _formulaRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ParamRuleApplicationService(
             IParamRuleRepository pararmRuleRepository,
             IRuleTranslationService ruleTranslationService,
-            IFormulaRepository formulaRepository)
+            IFormulaRepository formulaRepository,
+            IUnitOfWork unitOfWork)
         {
             _pararmRuleRepository = pararmRuleRepository;
             _ruleTranslationService = ruleTranslationService;
             _formulaRepository = formulaRepository;
+            _unitOfWork = unitOfWork;
         }
 
         /// <summary>
@@ -32,7 +39,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// </summary>
         /// <param name="request"></param>
         /// <returns></returns>
-        public async Task<ParamRuleDto> AddParamRuleFromJsonAsync(CreateParamRuleRequest request,CancellationToken ct)
+        public async Task<Result> AddParamRuleFromJsonAsync(CreateParamRuleRequest request,CancellationToken ct)
         {
             // 1. 使用Director进行转换
             var pattern = _ruleTranslationService.PatternTranslateFromDto(request,ct);
@@ -41,6 +48,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             var rule = ParamRule.Create(
                 new ParamRuleId(request.Id),
                 new FormulaId(request.FormulaId),
+                new ParamStructureId(request.ParamStructureId),
+                new StandardFamilyId(request.StandardFamilyId),
                 request.ParamName,
                 request.Priority,
                 pattern,
@@ -53,8 +62,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             // 4. 持久化
             await _pararmRuleRepository.AddAsync(rule,ct);
 
-            // 5. 返回DTO
-            return rule.Adapt<ParamRuleDto>();
+            await _unitOfWork.SaveChangesAsync();
+
+            // 5. 返回
+            return Result.Ok();
         }
 
         /// <summary>
@@ -63,7 +74,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <param name="request"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<ParamRuleDto> AddParamRuleFromNaturalTextAsync(NaturalLanguageRuleRequest request, CancellationToken ct)
+        public async Task<Result> AddParamRuleFromNaturalTextAsync(NaturalLanguageRuleRequest request, CancellationToken ct)
         {
             // 1. 获取公式
             var formula = await _formulaRepository.GetByIdAsync(new FormulaId(request.FormulaId),ct);
@@ -75,6 +86,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             var rule = ParamRule.Create(
                 new ParamRuleId(request.FormulaId),
                 new FormulaId(request.FormulaId),
+                new ParamStructureId(request.ParamStructureId),
+                new StandardFamilyId(request.StandardFamilyId),
                 request.ParamName,
                 request.Priority,
                 pattern: pattern,
@@ -85,10 +98,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             rule.Active();
 
             // 5. 持久化
-            await _pararmRuleRepository.AddAsync(rule, ct);
+            await  _pararmRuleRepository.AddAsync(rule, ct);
 
-            // 6. 返回DTO
-            return rule.Adapt<ParamRuleDto>();
+            await _unitOfWork.SaveChangesAsync();
+
+            // 6. 返回
+            return Result.Ok();
         }
 
         /// <summary>
@@ -97,7 +112,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <param name="request"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<ParamRuleDto> UpdateParamRuleAsync(UpdateParamRuleRequest request,CancellationToken ct)
+        public async Task<Result> UpdateParamRuleAsync(UpdateParamRuleRequest request,CancellationToken ct)
         {
             // 1. 获取现有规则
             var existingRule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(request.Id),ct);
@@ -118,8 +133,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             // 4. 持久化
             await _pararmRuleRepository.UpdateAsync(existingRule,ct);
 
-            // 5. 返回DTO
-            return existingRule.Adapt<ParamRuleDto>();
+            await _unitOfWork.SaveChangesAsync();
+
+            // 5. 返回
+            return Result.Ok();
         }
 
         /// <summary>
@@ -128,13 +145,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <param name="id"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<ParamRuleDto> GetParamRuleAsync(string id,CancellationToken ct)
+        public async Task<Result> GetParamRuleAsync(string id,CancellationToken ct)
         {
             var rule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(id), ct);
             if (rule == null)
                 throw new Exception($"Param rule with id {id} not found");
 
-            return rule.Adapt<ParamRuleDto>();
+            return Result.Ok();//后续返回dto
         }
     }
 }

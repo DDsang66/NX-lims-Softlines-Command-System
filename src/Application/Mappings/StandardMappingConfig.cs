@@ -20,14 +20,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.Status, src => (byte)src.Status)
                 .Map(dest => dest.StandardFamilyCodeId, src => src.StandardFamilyCode.Value);
 
-            // 反向映射（例如，从数据库加载时）
+            // ========== 数据库 => 领域模型（使用 Reconstitute 工厂方法）==========
             config.NewConfig<BasicStandard, Standard>()
-                .Map(dest => dest.IdStandard, src => new StandardId(src.IdStandard))
-                .Map(dest => dest.StandardCode, src => src.StandardCode)
-                .Map(dest => dest.StandardCodeNameEn, src => src.StandardCodeNameEn)
-                .Map(dest => dest.StandardCodeNameChn, src => src.StandardCodeNameChn)
-                .Map(dest => dest.Status, src => (Status)src.Status)
-                .Map(dest => dest.StandardFamilyCode, src => new StandardFamilyId(src.StandardFamilyCodeId));
+                .MapWith(src => Standard.Reconstitute(
+                    new StandardId(src.IdStandard),
+                    src.StandardCode,
+                    src.StandardCodeNameEn,
+                    src.StandardCodeNameChn,
+                    (Status)src.Status,
+                    new StandardFamilyId(src.StandardFamilyCodeId)
+                ));
         }
     }
 }

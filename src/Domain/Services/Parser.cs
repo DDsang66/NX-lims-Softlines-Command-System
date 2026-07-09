@@ -152,28 +152,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
             for (int i = 0; i < conditionFields.Count; i++)
             {
                 var fieldName = conditionFields[i];
+
                 var rawValue = string.Join("", slotValues[i].Select(t => t.Value)).Trim();
 
                 // 类型转换（根据字段名推断）
-                var value = ConvertValue(fieldName, rawValue);
+                //var value = ConvertValue(fieldName, rawValue);
 
-                equals.Add((fieldName, value));
+                equals.Add((fieldName, rawValue));
             }
 
             return equals;
-        }
-
-        /// <summary>
-        /// 根据字段名推断类型并转换
-        /// </summary>
-        private object? ConvertValue(string fieldName, string rawValue)
-        {
-            return fieldName switch
-            {
-                "BuyerSpecified" => bool.TryParse(rawValue, out var b) ? b : rawValue,
-                "Temperature" => decimal.TryParse(rawValue, out var d) ? d : rawValue,
-                _ => rawValue
-            };
         }
     }
 }

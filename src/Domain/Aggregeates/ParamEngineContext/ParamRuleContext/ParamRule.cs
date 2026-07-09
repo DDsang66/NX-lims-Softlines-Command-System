@@ -3,6 +3,9 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison;
 using System.Globalization;
@@ -14,6 +17,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     {
         public ParamRuleId Id { get; private set; }
         public FormulaId FormulaId { get; private set; } // 所属公式
+        public ParamStructureId StructureId { get; private set; } // 所属结构
+        public StandardFamilyId StandardFamilyId { get; private set; } // 所属标准族
         public string ParamName { get; private set; } // 生成的参数名
         public int Priority { get; private set; }  // 优先级（数字越小越高）
         public ConditionPattern Pattern { get; private set; } // 条件匹配模式
@@ -30,6 +35,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public static ParamRule Create(
             ParamRuleId id,
             FormulaId formulaId,
+            ParamStructureId structureId,
+            StandardFamilyId standardFamilyId,
             string paramName,
             int priority,
             ConditionPattern pattern,
@@ -38,17 +45,24 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             bool isActive = false)
         {
             // 集中进行业务规则校验和不变式保护
-            if (id == null) throw new ArgumentNullException(nameof(id));
-            if (formulaId == null) throw new ArgumentNullException(nameof(formulaId));
-            if (string.IsNullOrWhiteSpace(paramName)) throw new ArgumentException("参数名不能为空", nameof(paramName));
-            if (pattern == null) throw new ArgumentNullException(nameof(pattern));
-            if (priority < 1) throw new ArgumentOutOfRangeException(nameof(priority), "优先级不能小于1");
+            if (id == null) 
+                throw new ArgumentNullException(nameof(id));
+            if (formulaId == null) 
+                throw new ArgumentNullException(nameof(formulaId));
+            if (string.IsNullOrWhiteSpace(paramName)) 
+                throw new ArgumentException("参数名不能为空", nameof(paramName));
+            if (pattern == null)
+                throw new ArgumentNullException(nameof(pattern));
+            if (priority < 1)
+                throw new ArgumentOutOfRangeException(nameof(priority), "优先级不能小于1");
 
             // 在工厂内部处理默认值逻辑，保持私有构造函数的纯粹性
             return new ParamRule
             {
                 Id = id,
                 FormulaId = formulaId,
+                StructureId = structureId,
+                StandardFamilyId = standardFamilyId,
                 ParamName = paramName,
                 Priority = priority,
                 Pattern = pattern,
@@ -57,6 +71,37 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 IsActive = isActive
             };
         }
+
+        /// <summary>
+        /// 从数据库重建 ParamRule（仓储层使用，不校验业务规则）
+        /// </summary>
+        internal static ParamRule Reconstitute(
+            ParamRuleId id,
+            FormulaId formulaId,
+            ParamStructureId structureId,
+            StandardFamilyId standardFamilyId,
+            string paramName,
+            int priority,
+            ParamValue result,
+            bool stopOnMatch,
+            bool isActive,
+            ConditionPattern pattern)
+        {
+            return new ParamRule
+            {
+                Id = id,
+                FormulaId = formulaId,
+                StructureId = structureId,
+                StandardFamilyId = standardFamilyId,
+                ParamName = paramName,
+                Priority = priority,
+                Result = result,
+                StopOnMatch = stopOnMatch,
+                IsActive = isActive,
+                Pattern = pattern
+            };
+        }
+
 
         /*---------------------------------------------------------最简匹配计算--------------------------------------------------------------*/
         /// <summary>
@@ -233,6 +278,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         {
             if (newPriority < 1) throw new Exception("Invalid priority");
             this.Priority = newPriority;
+            //委托查询统一公式下的参数规则集检查是否有相同的优先级
         }
 
         /// <summary>

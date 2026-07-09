@@ -28,15 +28,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task AddAsync(Standard standard, CancellationToken ct)
         {
-            BasicStandard standardPo = new BasicStandard
-            {
-                IdStandard = standard.IdStandard.Value,
-                StandardCode = standard.StandardCode,
-                StandardCodeNameEn = standard.StandardCodeNameEn,
-                StandardCodeNameChn = standard.StandardCodeNameChn,
-                Status = (byte)standard.Status,
-                StandardFamilyCodeId = standard.StandardFamilyCode.Value
-            };
+            var standardPo  = standard.Adapt<BasicStandard>();
 
             await _context.AddAsync(standardPo, ct);//由工作单元统一提交
         }
@@ -50,16 +42,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task UpdateAsync(Standard standard, CancellationToken ct)
         {
             var standardPo = await _context.FindAsync<BasicStandard>(standard.IdStandard.Value, ct);
-
             if (standardPo == null)
                 throw new Exception($"标准 {standard.IdStandard.Value} 不存在");
 
-            // 直接修改属性，EF 自动追踪变更
-            standardPo.StandardCode = standard.StandardCode;
-            standardPo.StandardCodeNameEn = standard.StandardCodeNameEn;
-            standardPo.StandardCodeNameChn = standard.StandardCodeNameChn;
-            standardPo.Status = (byte)standard.Status;
-            standardPo.StandardFamilyCodeId = standard.StandardFamilyCode.Value;
+            // 使用 Mapster 的 Adapt 方法将领域模型的变更覆盖到已追踪的 PO 上
+            // 注意：这里不能直接 standard.Adapt<BasicStandard>()，因为会生成新对象
+            // 需要将源对象映射到已有目标对象
+            standard.Adapt(standardPo);
         }
 
 
@@ -71,27 +60,19 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var standardsList = standards.ToList();
             var ids = standardsList.Select(s => s.IdStandard.Value).ToList();
 
-            // 1. 查询现有记录
             var existingPos = await _context.BasicStandards
                 .Where(s => ids.Contains(s.IdStandard))
                 .ToListAsync(ct);
 
             var existingDict = existingPos.ToDictionary(s => s.IdStandard);
 
-            // 2. 逐个映射更新
             foreach (var standard in standardsList)
             {
                 if (!existingDict.TryGetValue(standard.IdStandard.Value, out var po))
                     throw new Exception($"标准 {standard.IdStandard.Value} 不存在");
 
-                // 手动映射字段
-                po.StandardCode = standard.StandardCode;
-                po.StandardCodeNameEn = standard.StandardCodeNameEn;
-                po.StandardCodeNameChn = standard.StandardCodeNameChn;
-                po.Status = (byte)standard.Status;
-                po.StandardFamilyCodeId = standard.StandardFamilyCode.Value;
-
-                // EF 自动追踪变更，不需要显式调用 Update
+                // 同 UpdateAsync，映射到已有对象
+                standard.Adapt(po);
             }
         }
 
@@ -120,18 +101,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         {
             var standardPo = await _context.FindAsync<BasicStandard>(id.Value, ct);
 
-            var standard = Standard.Reconstitute(
-                new StandardId(standardPo.IdStandard),
-                standardPo.StandardCode,
-                standardPo.StandardCodeNameEn,
-                standardPo.StandardCodeNameChn,
-                standardPo.Status == 1 ? Status.Active 
-                : standardPo.Status== 2 ? Status.Draft 
-                : Status.Deprecated,
-                new StandardFamilyId(standardPo.StandardFamilyCodeId)
-            );
+            // 修复原代码的空引用风险
+            if (standardPo == null) return null;
 
-            return standard;
+            return standardPo.Adapt<Standard>();
         }
 
         /// <summary>
@@ -143,34 +116,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task<IEnumerable<Standard>> GetByIdsAsync(IEnumerable<StandardId> ids, CancellationToken ct)
         {
             var idValues = ids.Select(id => id.Value).ToList();
-
-            if (!idValues.Any())
-                return Enumerable.Empty<Standard>();
+            if (!idValues.Any()) return Enumerable.Empty<Standard>();
 
             var standardPos = await _context.BasicStandards
                 .AsNoTracking()
                 .Where(s => idValues.Contains(s.IdStandard))
                 .ToListAsync(ct);
 
-            var standards = new List<Standard>();
-
-            foreach (var standardPo in standardPos)
-            {
-                var standard = Standard.Reconstitute(
-                    new StandardId(standardPo.IdStandard),
-                    standardPo.StandardCode,
-                    standardPo.StandardCodeNameEn,
-                    standardPo.StandardCodeNameChn,
-                    standardPo.Status == 1 ? Status.Active
-                    : standardPo.Status == 2 ? Status.Draft
-                    : Status.Deprecated,
-                    new StandardFamilyId(standardPo.StandardFamilyCodeId)
-                );
-
-                standards.Add(standard);
-            }
-
-            return standards;
+            // 批量映射，极大简化代码
+            return standardPos.Adapt<List<Standard>>();
         }
 
 
@@ -182,27 +136,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task<IEnumerable<Standard>> GetStandardListAsync(CancellationToken ct) 
         {
             var standardPos = await _context.BasicStandards
-                   .AsNoTracking()           // 只读查询，提升性能
+                   .AsNoTracking()
                    .ToListAsync(ct);
 
-            var standards = new List<Standard>();
-
-            foreach (var standardPo in standardPos)
-            {
-                var standard = Standard.Reconstitute(
-                    new StandardId(standardPo.IdStandard),
-                    standardPo.StandardCode,
-                    standardPo.StandardCodeNameEn,
-                    standardPo.StandardCodeNameChn,
-                    standardPo.Status == 1 ? Status.Active
-                    : standardPo.Status == 2 ? Status.Draft
-                    : Status.Deprecated,
-                    new StandardFamilyId(standardPo.StandardFamilyCodeId)
-                );
-                standards.Add(standard);
-            }
-
-            return standards;
+            // 批量映射
+            return standardPos.Adapt<List<Standard>>();
         }
     }
 }

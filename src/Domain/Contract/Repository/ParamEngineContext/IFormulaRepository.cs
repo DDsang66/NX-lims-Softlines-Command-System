@@ -25,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// </summary>
         /// <param name="paramName"></param>
         /// <returns></returns>
-        List<Formula> GetByParamName(string paramName);
+        Task<IEnumerable<Formula>> GetByParamName(string paramName, CancellationToken ct);
 
         /// <summary>
         /// 添加公式
@@ -47,6 +47,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="fomulas"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<IEnumerable<Formula>> UpdateRangeAsync(IEnumerable<Formula> fomulas, CancellationToken ct);
+        Task UpdateRangeAsync(IEnumerable<Formula> fomulas, CancellationToken ct);
     }
 }
