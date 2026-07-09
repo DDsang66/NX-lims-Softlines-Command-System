@@ -14,7 +14,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             //转化为数据库模型
             config.NewConfig<Formula, BasicFormula>()
                 .Map(dest => dest.FormulaId, src => src.Id.Value)
-                .Map(dest => dest.StandardFamilyCodeId, src => src.FamilyId.Value)
+                .Map(dest => dest.StandardFamilyCodeId, src => src.FamilyId == null ? null : src.FamilyId.Value)
                 .Map(dest => dest.Name, src => src.Name)
                 .Map(dest => dest.ParamName, src => src.ParamName)
                 .Map(dest => dest.ConditionFields, src => JsonSerializer.Serialize(src.ConditionFields, (JsonSerializerOptions?)null))
@@ -31,7 +31,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     src.Name,
                     src.ParamName,
                     JsonSerializer.Deserialize<List<string>>(src.ConditionFields!, (JsonSerializerOptions?)null) ?? new List<string>(),
-                    new StandardFamilyId(src.StandardFamilyCodeId),
+                    string.IsNullOrEmpty(src.StandardFamilyCodeId)
+                    ? null
+                    : new StandardFamilyId(src.StandardFamilyCodeId),
                     src.ExpressionTemplate!,
                     src.Version??0,
                     src.IsActive,

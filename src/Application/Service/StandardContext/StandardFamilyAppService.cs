@@ -47,6 +47,25 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
         }
 
         /// <summary>
+        /// 移除标准族
+        /// </summary>
+        /// <returns></returns>
+        public async Task<Result> RemoveStandardFamilyAsync(string id, CancellationToken ct) 
+        {
+            var standardFamilyId = new StandardFamilyId(id);
+
+            await _standardFamilyRepository.RemoveAsync(standardFamilyId,ct);
+
+            //通知其他关联的聚合根修改自己的StandardFamilyId
+            //1.引用新的StandardFamilyId
+            //2.更改状态为草稿态或不可用，待后续重新持有StandardFamilyId后继续使用
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        /// <summary>
         /// 向标准族添加标准
         /// </summary>
         /// <param name="ct"></param>

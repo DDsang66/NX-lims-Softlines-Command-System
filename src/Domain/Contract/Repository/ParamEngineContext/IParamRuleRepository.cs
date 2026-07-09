@@ -5,7 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext
 {
-    public interface IParamRuleRepository: IRepository<ParamRule>, IScopedDependency
+    public interface IParamRuleRepository: IRepository<ParamRule,ParamRuleId>, IScopedDependency
     {
         /// <summary>
         /// 根据公式查询所有规则

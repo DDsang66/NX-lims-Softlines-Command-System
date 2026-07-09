@@ -44,7 +44,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         public async Task<Result<ParamSet>> GenerateForStructure(string structureId, ConditionPool pool,CancellationToken ct)
         {
             // 1. 加载结构
-            var structure = _structureRepo.GetById(new ParamStructureId(structureId));
+            var structure = await _structureRepo.GetByIdAsync(new ParamStructureId(structureId),ct);
             if (structure == null) return Result<ParamSet>.Fail("ParamStructure not found");
 
             // 2. 前置验证（结构层面）

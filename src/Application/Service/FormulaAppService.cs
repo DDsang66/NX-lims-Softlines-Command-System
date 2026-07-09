@@ -33,8 +33,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 formulaId,
                 dto.Name,
                 dto.ParamName,
+                string.IsNullOrEmpty(dto.StandardFamilyId)
+                ? null
+                : new StandardFamilyId(dto.StandardFamilyId),
                 dto.ConditionFields,
-                new StandardFamilyId(dto.StandardFamilyId),
                 dto.ExpressionTemplate,
                 dto.Description);
 
@@ -45,7 +47,27 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             return Result.Ok();
         }
 
+        /// <summary>
+        /// 更新公式
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> UpdateFormulaAsync(UpdateFormulaDto dto, CancellationToken ct) 
+        {
+            var formulaId = new FormulaId(dto.FormulaId);
 
+            var formula = await _formulaRepository.GetByIdAsync(formulaId, ct);
+
+            //更新
+            //formula.Update();
+
+            await _formulaRepository.UpdateAsync(formula, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
 
 
      }

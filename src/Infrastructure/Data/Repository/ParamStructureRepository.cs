@@ -1,10 +1,11 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext
+namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 {
-    public interface IParamStructureRepository: IRepository<ParamStructure, ParamStructureId>, IScopedDependency
+    public class ParamStructureRepository:IParamStructureRepository,IScopedDependency
     {
         /// <summary>
         /// 查询结构
@@ -12,7 +13,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<ParamStructure> GetByIdAsync(ParamStructureId id, CancellationToken ct);
+        public async Task<ParamStructure> GetByIdAsync(ParamStructureId id, CancellationToken ct) 
+        {
+            return null;
+        }
 
         /// <summary>
         /// 根据标准族查询结构
@@ -20,7 +24,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="standardFamilyId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(string standardFamilyId,CancellationToken ct);
+        public async Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(string standardFamilyId, CancellationToken ct)
+        {
+            return null;
+        }
 
         /// <summary>
         /// 根据参数名称查询结构
@@ -28,7 +35,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="paramName"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<IEnumerable<ParamStructure>> GetByParamName(string paramName, CancellationToken ct);
+        public async Task<IEnumerable<ParamStructure>> GetByParamName(string paramName, CancellationToken ct)
+        {
+            return null;
+        }
 
         /// <summary>
         /// 添加参数结构
@@ -36,7 +46,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="paramStructure"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task AddAsync(ParamStructure paramStructure,CancellationToken ct);
+        public async Task AddAsync(ParamStructure paramStructure, CancellationToken ct) 
+        {
+            await Task.CompletedTask;
+        }
 
         /// <summary>
         /// 更新参数结构
@@ -44,6 +57,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="paramStructure"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task UpdateAsync(ParamStructure paramStructure,CancellationToken ct);
+        public async Task UpdateAsync(ParamStructure paramStructure, CancellationToken ct) 
+        {
+            await Task.CompletedTask;
+        }
+
     }
 }

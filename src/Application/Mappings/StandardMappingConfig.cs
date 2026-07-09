@@ -11,16 +11,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
     {
         public void Register(TypeAdapterConfig config)
         {
-            // 将 Standard 领域模型映射到 BasicStandard PO
             config.NewConfig<Standard, BasicStandard>()
-                .Map(dest => dest.IdStandard, src => src.IdStandard.Value)
-                .Map(dest => dest.StandardCode, src => src.StandardCode)
-                .Map(dest => dest.StandardCodeNameEn, src => src.StandardCodeNameEn)
-                .Map(dest => dest.StandardCodeNameChn, src => src.StandardCodeNameChn)
-                .Map(dest => dest.Status, src => (byte)src.Status)
-                .Map(dest => dest.StandardFamilyCodeId, src => src.StandardFamilyCode.Value);
+                   .Map(dest => dest.IdStandard, src => src.IdStandard.Value)
+                   .Map(dest => dest.StandardCode, src => src.StandardCode)
+                   .Map(dest => dest.StandardCodeNameEn, src => src.StandardCodeNameEn)
+                   .Map(dest => dest.StandardCodeNameChn, src => src.StandardCodeNameChn)
+                   .Map(dest => dest.Status, src => (byte)src.Status)
+                   .Map(dest => dest.StandardFamilyCodeId, src => src.StandardFamilyCode == null ? null : src.StandardFamilyCode.Value);
 
-            // ========== 数据库 => 领域模型（使用 Reconstitute 工厂方法）==========
+            // ========== 数据库 => 领域模型 ==========
             config.NewConfig<BasicStandard, Standard>()
                 .MapWith(src => Standard.Reconstitute(
                     new StandardId(src.IdStandard),
@@ -28,7 +27,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     src.StandardCodeNameEn,
                     src.StandardCodeNameChn,
                     (Status)src.Status,
-                    new StandardFamilyId(src.StandardFamilyCodeId)
+                    string.IsNullOrEmpty(src.StandardFamilyCodeId) 
+                    ? null 
+                    : new StandardFamilyId(src.StandardFamilyCodeId)
                 ));
         }
     }

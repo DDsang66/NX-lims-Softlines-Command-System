@@ -15,7 +15,7 @@ public partial class BasicParamStructure
 
     public string? AllowedValue { get; set; }
 
-    public string FormulaId { get; set; } = null!;
+    public string? FormulaId { get; set; } 
 
-    public string StandardFamilyCodeId { get; set; } = null!;
+    public string? StandardFamilyCodeId { get; set; } 
 }

@@ -15,7 +15,17 @@
             /// <summary>
             /// 所属公式ID
             /// </summary>
-            public string FormulaId { get; set; }
+            public string? FormulaId { get; set; }
+
+            /// <summary>
+            /// 参数结构id
+            /// </summary>
+            public string? ParamStructureId { get; set; }
+
+            /// <summary>
+            /// 标准族id
+            /// </summary>
+            public string? StandardFamilyId { get; set; }
 
             /// <summary>
             /// 参数名

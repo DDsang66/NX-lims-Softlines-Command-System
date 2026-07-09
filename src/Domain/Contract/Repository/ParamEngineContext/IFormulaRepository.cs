@@ -4,7 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext
 {
-    public interface IFormulaRepository:IRepository<Formula>, IScopedDependency
+    public interface IFormulaRepository:IRepository<Formula,FormulaId>, IScopedDependency
     {
         /// <summary>
         /// 通过id获取公式

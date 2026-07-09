@@ -1,5 +1,5 @@
 ﻿using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
+using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
@@ -13,12 +13,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     public sealed class ParamStructure : IAggregateRoot
     {
         public ParamStructureId Id { get; private set; }
-        public StandardFamilyId FamilyId { get; private set; }  // 关联标准族
-        public FormulaId FormulaId { get; private set; }       // 引用 Formula 聚合
+        public StandardFamilyId? FamilyId { get; private set; }  // 关联标准族
+        public FormulaId? FormulaId { get; private set; }       // 引用 Formula 聚合
         public string ParamName { get; private set; } = string.Empty;  // 例如 "Ballast"
-        public ParamSchema Schema { get; private set; } = new ParamSchema();
+        public ParamSchema Schema { get; private set; } 
         public List<ParamRuleId> ApplicableRuleIds { get; private set; } = new();
         public DateTime EffectiveDate { get; private set; }
+
+        //状态
 
         private ParamStructure() { }
 
@@ -27,8 +29,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         public static ParamStructure Create(
             ParamStructureId id,
-            StandardFamilyId familyId,
-            FormulaId formulaId,
+            StandardFamilyId? familyId,
+            FormulaId? formulaId,
             string paramName,
             ParamSchema schema,
             IEnumerable<ParamRuleId>? ruleIds = null,

@@ -15,5 +15,5 @@ public partial class BasicStandard
 
     public byte Status { get; set; }
 
-    public string StandardFamilyCodeId { get; set; } = null!;
+    public string? StandardFamilyCodeId { get; set; }
 }

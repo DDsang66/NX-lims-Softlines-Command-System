@@ -1,6 +1,8 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+
+namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj
 {
-    public class FormulaId
+    public class FormulaId:IAggregateRootId
     {
         public string Value { get; private set; }
 

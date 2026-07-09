@@ -19,9 +19,9 @@ public partial class BasicParamRule
 
     public bool IsActive { get; set; }
 
-    public string StandardFamilyCodeId { get; set; } = null!;
+    public string? StandardFamilyCodeId { get; set; } 
 
-    public string FormulaId { get; set; } = null!;
+    public string? FormulaId { get; set; } 
 
-    public string ParamStructureId { get; set; } = null!;
+    public string? ParamStructureId { get; set; } 
 }

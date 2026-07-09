@@ -23,5 +23,5 @@ public partial class BasicFormula
 
     public bool IsActive { get; set; }
 
-    public string StandardFamilyCodeId { get; set; } = null!;
+    public string? StandardFamilyCodeId { get; set; } 
 }

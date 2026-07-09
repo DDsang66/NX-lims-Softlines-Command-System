@@ -1,6 +1,6 @@
 ﻿namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
 {
-    public record AddFormulaDto
+    public record UpdateFormulaDto
     {
         /// <summary>
         /// 公式ID
@@ -25,7 +25,7 @@
         /// <summary>
         /// 标准族ID（对应领域层的 StandardFamilyId 值对象）
         /// </summary>
-        public string? StandardFamilyId { get; set; }
+        public string StandardFamilyId { get; set; } = string.Empty;
 
         /// <summary>
         /// 表达式模板（如：${field1} + ${field2}）

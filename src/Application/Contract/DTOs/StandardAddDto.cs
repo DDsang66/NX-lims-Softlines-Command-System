@@ -25,6 +25,6 @@
         /// <summary>
         /// 标准族代码
         /// </summary>
-        public string StandardFamilyCode { get; set; } = string.Empty;
+        public string? StandardFamilyCode { get; set; }
     }
 }

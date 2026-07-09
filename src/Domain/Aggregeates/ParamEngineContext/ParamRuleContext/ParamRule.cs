@@ -1,4 +1,4 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
+﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
@@ -16,9 +16,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     public sealed class ParamRule : IAggregateRoot
     {
         public ParamRuleId Id { get; private set; }
-        public FormulaId FormulaId { get; private set; } // 所属公式
-        public ParamStructureId StructureId { get; private set; } // 所属结构
-        public StandardFamilyId StandardFamilyId { get; private set; } // 所属标准族
+        public FormulaId? FormulaId { get; private set; } // 所属公式
+        public ParamStructureId? StructureId { get; private set; } // 所属结构
+        public StandardFamilyId? StandardFamilyId { get; private set; } // 所属标准族
         public string ParamName { get; private set; } // 生成的参数名
         public int Priority { get; private set; }  // 优先级（数字越小越高）
         public ConditionPattern Pattern { get; private set; } // 条件匹配模式
@@ -34,9 +34,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         public static ParamRule Create(
             ParamRuleId id,
-            FormulaId formulaId,
-            ParamStructureId structureId,
-            StandardFamilyId standardFamilyId,
+            FormulaId? formulaId,
+            ParamStructureId? structureId,
+            StandardFamilyId? standardFamilyId,
             string paramName,
             int priority,
             ConditionPattern pattern,
@@ -47,8 +47,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             // 集中进行业务规则校验和不变式保护
             if (id == null) 
                 throw new ArgumentNullException(nameof(id));
-            if (formulaId == null) 
-                throw new ArgumentNullException(nameof(formulaId));
             if (string.IsNullOrWhiteSpace(paramName)) 
                 throw new ArgumentException("参数名不能为空", nameof(paramName));
             if (pattern == null)
@@ -77,9 +75,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         internal static ParamRule Reconstitute(
             ParamRuleId id,
-            FormulaId formulaId,
-            ParamStructureId structureId,
-            StandardFamilyId standardFamilyId,
+            FormulaId? formulaId,
+            ParamStructureId? structureId,
+            StandardFamilyId? standardFamilyId,
             string paramName,
             int priority,
             ParamValue result,
@@ -284,7 +282,35 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 激活规则
         /// </summary>
-        public void Active() => IsActive = true;
+        public void Active()
+        {
+            // 1. 必须关联公式
+            if (FormulaId == null)
+                throw new InvalidOperationException("规则必须关联公式后才能激活");
+
+            // 2. 必须关联参数结构（可选，根据业务决定）
+            // if (StructureId == null)
+            //     throw new InvalidOperationException("规则必须关联参数结构后才能激活");
+
+            // 3. 必须有有效的条件模式
+            if (Pattern == null)
+                throw new InvalidOperationException("规则必须包含条件模式");
+
+            // 4. 条件模式不能为空（至少有一种匹配规则）
+            if (!Pattern.EqualMatches.Any()
+                && !Pattern.ComparisonMatches.Any()
+                && !Pattern.InMatches.Any()
+                && !Pattern.CompositeMatches.Any())
+            {
+                throw new InvalidOperationException("条件模式不能为空");
+            }
+
+            // 5. 必须有结果值
+            if (Result == null || Result.Value == null)
+                throw new InvalidOperationException("规则必须包含结果值");
+
+            IsActive = true;
+        }
 
         /// <summary>
         /// 禁用规则

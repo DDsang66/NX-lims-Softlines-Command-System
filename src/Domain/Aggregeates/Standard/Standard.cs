@@ -1,4 +1,4 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
+﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -17,7 +17,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 
         public Status Status { get; private set; } = Status.Draft; 
 
-        public StandardFamilyId StandardFamilyCode { get; private set; } = null!;
+        public StandardFamilyId? StandardFamilyCode { get; private set; } = null!;
         private Standard() { }
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         public static Standard Create(
             StandardId id,
             string standardCode,
-            StandardFamilyId familyCode,
+            StandardFamilyId? familyCode,
             string? nameEn,
             string? nameChn,
             Status status)
@@ -65,10 +65,10 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         internal static Standard Reconstitute(
             StandardId idStandard,
             string standardCode,
-            string standardCodeNameEn,
-            string standardCodeNameChn,
+            string? standardCodeNameEn,
+            string? standardCodeNameChn,
             Status status,
-            StandardFamilyId standardFamilyCode)
+            StandardFamilyId? standardFamilyCode)
         {
             return new Standard
             {

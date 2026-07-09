@@ -1,6 +1,8 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+
+namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj
 {
-    public sealed record StandardId
+    public sealed record StandardId:IAggregateRootId
     {
         public string Value { get; }
 

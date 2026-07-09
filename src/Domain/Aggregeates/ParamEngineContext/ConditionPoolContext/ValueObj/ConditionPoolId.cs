@@ -1,6 +1,8 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+
+namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj
 {
-    public class ConditionPoolId
+    public class ConditionPoolId:IAggregateRootId
     {
         public string Value { get; private set; }
         public ConditionPoolId(string value)

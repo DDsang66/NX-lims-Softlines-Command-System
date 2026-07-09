@@ -1,4 +1,4 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Shared.Interface;
+﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
@@ -9,7 +9,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     public sealed class Formula : IAggregateRoot
     {
         public FormulaId Id { get; private set; }
-        public StandardFamilyId FamilyId { get; private set; }  // 所属标准族
+        public StandardFamilyId? FamilyId { get; private set; }  // 所属标准族
         public string Name { get; private set; }  // "BallastDerivation"
         public string ParamName { get; private set; }  // 生成的参数名 "Ballast"
         public List<string> ConditionFields { get; private set; }  // ["FiberDominantType", "BuyerSpecified"]
@@ -28,9 +28,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public static Formula Create(
             FormulaId id, 
             string name, 
-            string paramName, 
+            string paramName,
+            StandardFamilyId? familyId,
             IEnumerable<string> conditionFields,
-            StandardFamilyId familyId,
             string expressionTemplate, 
             string? description = null
             )
@@ -55,13 +55,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Id = id,
                 Name = name.Trim(),
                 ParamName = paramName.Trim(),
+                FamilyId = familyId,
                 ConditionFields = fields,
                 ExpressionTemplate = expressionTemplate ?? string.Empty,
                 Description = description?.Trim(),
-                IsActive = true,
+                IsActive = false,//默认草稿态
                 Version = 1,
                 EffectiveDate = DateTime.UtcNow,
-                FamilyId = familyId
             };
 
             // 如果需要发布领域事件，可在应用层或这里添加：
@@ -89,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             string name,
             string paramName,
             IEnumerable<string> conditionFields,
-            StandardFamilyId familyId,
+            StandardFamilyId? familyId,
             string expressionTemplate,
             int version,
             bool isActive,
@@ -104,7 +104,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 ConditionFields = conditionFields.ToList(),
                 FamilyId = familyId,
                 ExpressionTemplate = expressionTemplate,
-                Description =  description?.Trim(),
+                Description =  description,
                 Version = version,
                 IsActive = isActive,
                 EffectiveDate = effectiveDate
@@ -127,7 +127,26 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 激活公式，使其参与计算。通常在创建或修改公式后需要调用此方法来启用公式的计算功能。
         /// </summary>
-        public void Activate() => IsActive = true;
+        public void Activate()
+        {
+            // 1. 必须有归属
+            if (FamilyId == null)
+                throw new InvalidOperationException("Formula must be attached to a StandardFamily before activation");
+
+            // 2. 必须有表达式模板
+            if (string.IsNullOrWhiteSpace(ExpressionTemplate))
+                throw new InvalidOperationException("ExpressionTemplate is required for activation");
+
+            // 3. 必须有条件字段
+            if (ConditionFields == null || ConditionFields.Count == 0)
+                throw new InvalidOperationException("At least one condition field is required for activation");
+
+            // 4. 校验表达式模板语法
+            //if (!ValidateExpressionTemplate())
+            //    throw new InvalidOperationException("Invalid expression template format");
+
+            IsActive = true;
+        } 
 
         /// <summary>
         /// 管理公式的条件集合（保持不变式）
