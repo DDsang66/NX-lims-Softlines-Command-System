@@ -1,4 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj;
 
@@ -10,7 +12,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     public sealed class ConditionPool : IAggregateRoot
     {
         public ConditionPoolId Id { get; private set; }
-        public string SourceId { get; private set; } = string.Empty;  // 关联的申请单ID
+        public OrderId SourceId { get; private set; } = string.Empty;  // 关联的申请单ID
+        public CheckListId CheckListId { get; private set; } = new CheckListId(new Guid());  // 关联的检查单ID
         private readonly Dictionary<string, object?> _conditions = new(StringComparer.OrdinalIgnoreCase);
         public IReadOnlyDictionary<string, object?> Conditions => _conditions;
         public DateTime CreatedAt { get; private set; }
@@ -25,14 +28,31 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <param name="sourceId"></param>
         /// <param name="initial"></param>
         /// <exception cref="ArgumentNullException"></exception>
-        public ConditionPool(ConditionPoolId id, string sourceId, IDictionary<string, object?> initial = null!)
+        public static ConditionPool Create(
+            ConditionPoolId id,
+            OrderId sourceId,
+            CheckListId checkListId,
+            IDictionary<string, object?> initial = null!)
         {
-            Id = id ?? throw new ArgumentNullException(nameof(id));
-            SourceId = sourceId ?? throw new ArgumentNullException(nameof(sourceId));
+            var pool = new ConditionPool
+            {
+                Id = id ?? throw new ArgumentNullException(nameof(id)),
+                SourceId = sourceId ?? throw new ArgumentNullException(nameof(sourceId)),
+                CheckListId = checkListId ?? throw new ArgumentNullException(nameof(checkListId)),
+                CreatedAt = DateTime.UtcNow,
+                Status = ConditionPoolStatus.Draft
+            };
+
             if (initial != null)
             {
-                foreach (var kv in initial) _conditions[kv.Key] = kv.Value;
+                foreach (var kv in initial)
+                {
+                    // 可以在这里添加值的验证逻辑
+                    pool._conditions[kv.Key] = kv.Value;
+                }
             }
+
+            return pool;
         }
 
         /// <summary>

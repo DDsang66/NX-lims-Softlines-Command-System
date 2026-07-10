@@ -38,5 +38,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<StandardFamily> GetByIdAsync(StandardFamilyId id, CancellationToken ct);
+
+        /// <summary>
+        /// 通过标准Id获取标准族
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<StandardFamily> GetByStandardIdAsync(StandardId id, CancellationToken ct);
+
     }
 }

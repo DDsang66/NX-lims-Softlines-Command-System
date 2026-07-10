@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext
@@ -20,7 +21,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="standardFamilyId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(string standardFamilyId,CancellationToken ct);
+        Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(StandardFamilyId standardFamilyId,CancellationToken ct);
 
         /// <summary>
         /// 根据参数名称查询结构

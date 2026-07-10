@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections;
-using System.Globalization;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using System;
+using System.Collections;
+using System.Globalization;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
 {
     /// <summary>
     /// 值比较器
     /// </summary>
-    public class ValueComparer : IValueComparer
+    public class ValueComparer : IValueComparer, IScopedDependency
     {
         /// <summary>
         /// 等值比较（支持数字、字符串、布尔值等类型的宽松比较）

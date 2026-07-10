@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System.Threading.Tasks;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerateService
@@ -12,7 +13,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
     /// 应用层协调器：负责跨聚合加载、调用富化器/引擎/补偿服务、并返回最终 ParamSet
     /// - 不直接持久化（调用方可在事务边界内保存）
     /// </summary>
-    public class ParamGenerationCoordinator
+    public class ParamGenerationCoordinator:IScopedDependency
     {
         private readonly IParamStructureRepository _structureRepo;
         private readonly IFormulaRepository _formulaRepo;
@@ -50,6 +51,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             // 2. 前置验证（结构层面）
             var v = structure.ValidateConditionPool(pool);
             if (v.IsFailure) return Result<ParamSet>.Fail(v.Error);
+
+            //ConditionPool调用ConditionEnricher进行富化，确保所有条件字段都被填充
+            //交由Formula进行语义检查，确保所有必需的条件字段都存在
 
             // 3. 加载 Formula 并做语义检查
             var formula = await _formulaRepo.GetByIdAsync(structure.FormulaId, ct);

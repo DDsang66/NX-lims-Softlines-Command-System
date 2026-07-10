@@ -2,14 +2,19 @@
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj
 {
-    public class ConditionPoolId:IAggregateRootId
+    /// <summary>
+    /// ConditionPoolId使用Guid
+    /// </summary>
+    public class ConditionPoolId : IAggregateRootId
     {
-        public string Value { get; private set; }
-        public ConditionPoolId(string value)
+        public Guid Value { get; private set; }
+
+        public ConditionPoolId(Guid value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("ConditionPoolId required", nameof(value));
+            if (value == Guid.Empty) throw new ArgumentException("ConditionPoolId cannot be empty", nameof(value));
             Value = value;
         }
-        public override string ToString() => Value;
+
+        public override string ToString() => Value.ToString();
     }
 }

@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
 {
@@ -12,7 +13,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
     /// 若规则的 StopOnMatch 为 true，则匹配后立即停止调度（全局停止）。
     /// 若需要按参数名单独停止或替换策略，可在此扩展。
     /// </summary>
-    public class ParamGenerationEngine:IParamGenerationEngine
+    public class ParamGenerationEngine:IParamGenerationEngine,IScopedDependency
     {
         private readonly IConditionAccessor _accessor;
         private readonly IValueComparer _comparer;

@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using System;
+using System.Collections.Generic;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
 {
     /// <summary>
     /// 条件访问器
     /// </summary>
-    public class ConditionAccessor : IConditionAccessor
+    public class ConditionAccessor : IConditionAccessor, IScopedDependency
     {
         public bool TryGet(ConditionPool pool, string path, out object? value)
         {

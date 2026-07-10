@@ -1,12 +1,13 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison
 {
     /// <summary>
     /// 值比较器接口
     /// </summary>
-    public interface IValueComparer
+    public interface IValueComparer:IScopedDependency
     {
         bool AreEqual(object? a, object? b);
         bool Compare(object? a, ComparisonOperator op, object? b);

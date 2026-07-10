@@ -1,12 +1,22 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
+﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 {
     public class ParamStructureRepository:IParamStructureRepository,IScopedDependency
     {
+        private readonly dbContext _dbContext;
+
+        public ParamStructureRepository(dbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
         /// <summary>
         /// 查询结构
         /// </summary>
@@ -24,7 +34,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <param name="standardFamilyId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(string standardFamilyId, CancellationToken ct)
+        public async Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(StandardFamilyId standardFamilyId, CancellationToken ct)
         {
             return null;
         }
@@ -48,6 +58,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task AddAsync(ParamStructure paramStructure, CancellationToken ct) 
         {
+            var paramStructurePo = paramStructure.Adapt<BasicParamStructure>();
+
+           await  _dbContext.AddAsync(paramStructurePo, ct);
+
             await Task.CompletedTask;
         }
 

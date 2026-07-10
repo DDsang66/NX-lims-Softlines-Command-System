@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public StandardFamilyId? FamilyId { get; private set; }  // 所属标准族
         public string Name { get; private set; }  // "BallastDerivation"
         public string ParamName { get; private set; }  // 生成的参数名 "Ballast"
-        public List<string> ConditionFields { get; private set; }  // ["FiberDominantType", "BuyerSpecified"]
+        public List<string> ConditionFields { get; private set; }  // ["FiberDominantType", "BuyerSpecified"]等具体语义的字段名(不可再切割)
         public string ExpressionTemplate { get; private set; }  // "FiberDominantType + BuyerSpecified ->Ballst" 范式样本
         public string Description { get; private set; }
         public int Version { get; private set; }  // 版本号

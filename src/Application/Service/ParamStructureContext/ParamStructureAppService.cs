@@ -1,5 +1,5 @@
 ﻿using Mapster;
-using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
@@ -31,7 +31,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
         {
             var paramStructureId = new ParamStructureId(dto.ParamStructureId);
 
-            var paramStructure = dto.Adapt<ParamStructure>();//已与Mapping调用工厂Create聚合根
+            var paramStructure = dto.Adapt<ParamStructure>();//已于Mapping调用工厂Create聚合根
 
             await  _paramStructureRepository.AddAsync(paramStructure, ct);
 
@@ -40,7 +40,63 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
             return Result.Ok();
         }
 
+        /// <summary>
+        /// 更新参数结构
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> UpdateParamStructureAsync(AddParamStructureDto dto, CancellationToken ct)
+        {
+            var paramStructureId = new ParamStructureId(dto.ParamStructureId);
 
+            var paramStructure = await _paramStructureRepository.GetByIdAsync(paramStructureId, ct);
 
+            //paramStructure.Update(dto);
+
+            await  _paramStructureRepository.UpdateAsync(paramStructure, ct);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 删除参数结构
+        /// </summary>
+        /// <param name="paramStructureId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> RemoveParamStructureAsync(string paramStructureId, CancellationToken ct) 
+        {
+            var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
+
+            if (paramStructure == null)
+            {
+                return Result.Fail("参数结构不存在");
+            }
+
+            //paramStructure.Remove();
+
+            //await  _paramStructureRepository.RemoveAsync(paramStructure, ct);
+
+            await  _unitOfWork.SaveChangesAsync();
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 获取参数结构列表
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result<ParamStructureResponseDto>> GetParamStructureListAsync(string paramStructureId, CancellationToken ct)
+        {
+            var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
+
+            var dtoList = paramStructure.Adapt<ParamStructureResponseDto>();
+
+            return Result<ParamStructureResponseDto>.Ok(dtoList);
+        }   
     }
 }

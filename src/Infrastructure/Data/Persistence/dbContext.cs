@@ -262,10 +262,7 @@ public partial class dbContext : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("standard_family_code_id");
-            entity.Property(e => e.Type)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("type");
+            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date");
         });
 
         modelBuilder.Entity<BasicStandard>(entity =>
@@ -311,6 +308,8 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("standard_family_code");
+            entity.Property(e => e.Version).HasColumnName("version");
+            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date");
         });
 
         modelBuilder.Entity<Composition>(entity =>

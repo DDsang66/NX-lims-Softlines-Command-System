@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.CustomXmlSchemaReferences;
-namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamStructureContext
 {
     public record AddParamStructureDto
     {
@@ -32,6 +33,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
         /// 结构
         /// </summary>
         public SchemaDto ParamSchema { get; set; } = new SchemaDto();
+
+        /// <summary>
+        /// 规则id
+        /// </summary>
+        public IEnumerable<string>? RuleIds { get; set; }
     }
 
 
@@ -58,7 +64,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
         /// <summary>
         /// 类型
         /// </summary>
-        public Type ValueType { get; set; } = typeof(string); //  // typeof(string)
+        public string ValueType { get; set; } = typeof(string).FullName ?? string.Empty; //  // typeof(string)
 
         /// <summary>
         /// 描述
@@ -89,7 +95,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
         /// <summary>
         /// 条件类型
         /// </summary>
-        public Type FieldType { get; set; } = typeof(string);   // typeof(string)
+        public string FieldType { get; set; } = typeof(string).FullName ?? string.Empty;   // typeof(string)
 
         /// <summary>
         /// 是否必须
@@ -110,7 +116,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
         /// <summary>
         /// 类型
         /// </summary>
-        public Type ValueType { get; set; } = typeof(string); //  // typeof(string)
+        public string ValueType { get; set; } = typeof(string).FullName ?? string.Empty; //  // typeof(string)
 
         /// <summary>
         /// 参数可选值

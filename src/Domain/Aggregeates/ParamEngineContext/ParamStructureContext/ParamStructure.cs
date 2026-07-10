@@ -33,12 +33,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             FormulaId? formulaId,
             string paramName,
             ParamSchema schema,
-            IEnumerable<ParamRuleId>? ruleIds = null,
+            IEnumerable<ParamRuleId>? ruleIds,
             DateTime? effectiveDate = null)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
-            if (familyId == null) throw new ArgumentNullException(nameof(familyId));
-            if (formulaId == null) throw new ArgumentNullException(nameof(formulaId));
             if (string.IsNullOrWhiteSpace(paramName)) throw new ArgumentException("paramName required", nameof(paramName));
             if (schema == null) throw new ArgumentNullException(nameof(schema));
             if (schema.RequiredParam == null)
