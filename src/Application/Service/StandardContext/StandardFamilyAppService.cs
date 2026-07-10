@@ -47,6 +47,25 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
         }
 
         /// <summary>
+        /// 更新标准族自有字段
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> UpdateStandardFamilyAsync(StandardFamilyUpdateDto dto, CancellationToken ct) 
+        {
+            var standardFamilyId = new StandardFamilyId(dto.StandardFamilyId);
+
+            var standardFamily = await _standardFamilyRepository.GetByIdAsync(standardFamilyId,ct);
+
+            //standardFamily.Update();
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        /// <summary>
         /// 移除标准族
         /// </summary>
         /// <returns></returns>
