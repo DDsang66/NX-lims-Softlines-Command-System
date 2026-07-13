@@ -19,9 +19,11 @@ public partial class BasicFormula
 
     public int? Version { get; set; }
 
-    public DateTime EffectiveDate { get; set; }
+    public DateTime? EffectiveDate { get; set; }
 
     public bool IsActive { get; set; }
 
-    public string? StandardFamilyCodeId { get; set; } 
+    public virtual ICollection<FormulaStandardfamily> FormulaStandardfamilies { get; set; } = new List<FormulaStandardfamily>();
+
+    public virtual ICollection<ParamstructureFormula> ParamstructureFormulas { get; set; } = new List<ParamstructureFormula>();
 }

@@ -13,13 +13,45 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         private readonly List<FormulaId> _formulaIds = new();
         private readonly List<ParamStructureId> _paramStructureIds = new();
         private readonly List<ParamRuleId> _sharedRuleIds = new();
+
+        /// <summary>
+        /// 标准族id
+        /// </summary>
         public StandardFamilyId Id { get; private set; }
-        public string StandardFamilyCode { get; private set; }  // "ISO 6330 Family"
+
+        /// <summary>
+        /// 标准族名称
+        /// </summary>
+        public string StandardFamilyCode { get; private set; } 
+
+        /// <summary>
+        /// 标准id集合
+        /// </summary>
         public IReadOnlyCollection<StandardId> StandardIds => _standardIds.AsReadOnly();
+
+        /// <summary>
+        /// 公式id集合
+        /// </summary>
         public IReadOnlyCollection<FormulaId> FormulaIds => _formulaIds.AsReadOnly();
+
+        /// <summary>
+        /// 参数结构id集合
+        /// </summary>
         public IReadOnlyCollection<ParamStructureId> ParamStructureIds => _paramStructureIds.AsReadOnly();
+
+        /// <summary>
+        /// 共享规则id集合
+        /// </summary>
         public IReadOnlyCollection<ParamRuleId> SharedRuleIds => _sharedRuleIds.AsReadOnly();
+
+        /// <summary>
+        /// 版本
+        /// </summary>
         public int Version { get; private set; }
+
+        /// <summary>
+        /// 生效日期
+        /// </summary>
         public DateTime EffectiveDate { get; private set; }
 
         private StandardFamily() { }
@@ -94,6 +126,33 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             return family;
         }
 
+        /// <summary>
+        /// 更新标准族
+        /// </summary>
+        /// <param name="standardFamilyCode"></param>
+        /// <param name="effectiveDate"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public void Update(
+            string standardFamilyCode,
+            DateTime effectiveDate
+            ) 
+        {
+            if (standardFamilyCode != null)
+            {
+                if (string.IsNullOrWhiteSpace(standardFamilyCode))
+                    throw new ArgumentException("Name required", nameof(standardFamilyCode));
+                StandardFamilyCode = standardFamilyCode.Trim();
+            }
+
+            if (effectiveDate != null)
+            {
+                EffectiveDate = effectiveDate;
+            }
+
+            // 版本自增
+            Version++;
+        }
 
         /// <summary>
         /// 判断是否包含指定标准（通过 ID）

@@ -23,7 +23,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         }
 
         [HttpPut("update")]
-        public async Task<IActionResult> UpdateParamStructure([FromBody] AddParamStructureDto dto, CancellationToken ct)
+        public async Task<IActionResult> UpdateParamStructure([FromBody] UpdateParamStructureDto dto, CancellationToken ct)
         {
             var result = await _paramStructureAppService.UpdateParamStructureAsync(dto, ct);
 

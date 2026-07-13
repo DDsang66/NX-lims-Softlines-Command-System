@@ -92,13 +92,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(x => x.IdStandard)
                 .ToListAsync(ct);
 
-            var fomulaIdTask =   _dbContext.BasicFormulas
-                .Where(x => x.StandardFamilyCodeId == id.Value)
+            var fomulaIdTask =   _dbContext.FormulaStandardfamilies
+                .Where(x => x.IdStandardFamily == id.Value)
                 .Select(x=>x.FormulaId)
                 .ToListAsync(ct);
 
-            var structureIdTask =  _dbContext.BasicParamStructures
-                .Where(x => x.StandardFamilyCodeId == id.Value)
+            var structureIdTask =  _dbContext.ParamsturctureStandardfamilies
+                .Where(x => x.IdStandardFamily == id.Value)
                 .Select(x => x.ParamStructureId)
                 .ToListAsync(ct);
 
@@ -152,13 +152,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(x => x.IdStandard)
                 .ToListAsync(ct);
 
-            var fomulaIdTask = _dbContext.BasicFormulas
-                .Where(x => x.StandardFamilyCodeId == standardFamilyId)
+            var fomulaIdTask = _dbContext.FormulaStandardfamilies
+                .Where(x => x.IdStandardFamily == standardFamilyId)
                 .Select(x => x.FormulaId)
                 .ToListAsync(ct);
 
-            var structureIdTask = _dbContext.BasicParamStructures
-                .Where(x => x.StandardFamilyCodeId == standardFamilyId)
+            var structureIdTask = _dbContext.ParamsturctureStandardfamilies
+                .Where(x => x.IdStandardFamily == standardFamilyId)
                 .Select(x => x.ParamStructureId)
                 .ToListAsync(ct);
 

@@ -58,6 +58,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
 
             var standardFamily = await _standardFamilyRepository.GetByIdAsync(standardFamilyId,ct);
 
+
+            if (standardFamily == null) return Result.Fail("标准族不存在");
+
+            // 统一更新
+            standardFamily.Update(
+                standardFamilyCode: dto.StandardFamilyCode,
+                effectiveDate: DateTime.UtcNow
+            );
+
+            await _standardFamilyRepository.UpdateAsync(standardFamily, ct);
             //standardFamily.Update();
 
             await _unitOfWork.SaveChangesAsync(ct);
@@ -154,7 +164,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
                 standardFamily.AddFormula(formula.Id);
 
                 // 3.2 Formula 修改自身的状态（更新外键指向，以及自身状态流转）
-                //formula.BindToStandardFamily(standardFamilyId);
+                //formula.AddStandardFamily(standardFamilyId);
             }
 
             // 4. StandardFamily 自身的版本更新

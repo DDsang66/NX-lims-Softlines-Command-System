@@ -1,4 +1,4 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamStructureContext
+﻿namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamRuleContext
 {
     /// <summary>
     /// 更新参数规则请求DTO
@@ -13,12 +13,12 @@
         /// <summary>
         /// 所属公式ID（可更新）
         /// </summary>
-        public string FormulaId { get; set; }
+        public string FormulaId { get; set; } = string.Empty;
 
         /// <summary>
         /// 参数名（可更新）
         /// </summary>
-        public string ParamName { get; set; }
+        public string ParamName { get; set; } =string.Empty;
 
         /// <summary>
         /// 优先级（可更新）

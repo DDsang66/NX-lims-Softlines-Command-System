@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
@@ -42,7 +43,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         /// 3. 加载规则并调用引擎生成
         /// 4. 调用补偿服务得到最终 ParamSet
         /// </summary>
-        public async Task<Result<ParamSet>> GenerateForStructure(string structureId, ConditionPool pool,CancellationToken ct)
+        public async Task<Result<ParamSet>> GenerateForStructure(string formulaId,string structureId, ConditionPool pool,CancellationToken ct)
         {
             // 1. 加载结构
             var structure = await _structureRepo.GetByIdAsync(new ParamStructureId(structureId),ct);
@@ -56,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             //交由Formula进行语义检查，确保所有必需的条件字段都存在
 
             // 3. 加载 Formula 并做语义检查
-            var formula = await _formulaRepo.GetByIdAsync(structure.FormulaId, ct);
+            var formula = await _formulaRepo.GetByIdAsync(new FormulaId(formulaId), ct);
             if (formula == null) return Result<ParamSet>.Fail("Formula not found");
 
             var missing = formula.RequiredConditions().Where(f => !pool.HasCondition(f)).ToList();

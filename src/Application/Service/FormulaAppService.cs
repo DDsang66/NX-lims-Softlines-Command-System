@@ -1,15 +1,18 @@
 ﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System.Drawing.Printing;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service
 {
-    public class FormulaAppService
+    public class FormulaAppService: IFormulaAppService,IScopedDependency
     {
         private readonly IFormulaRepository _formulaRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -33,9 +36,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 formulaId,
                 dto.Name,
                 dto.ParamName,
-                string.IsNullOrEmpty(dto.StandardFamilyId)
-                ? null
-                : new StandardFamilyId(dto.StandardFamilyId),
+                dto.StandardFamilyIds?
+                .Select(id => new StandardFamilyId(id))
+                ?? new List<StandardFamilyId?>(),
+                dto.ParamStructureIds?
+                .Select(id => new ParamStructureId(id)) 
+                ?? new List<ParamStructureId?>(),
                 dto.ConditionFields,
                 dto.ExpressionTemplate,
                 dto.Description);

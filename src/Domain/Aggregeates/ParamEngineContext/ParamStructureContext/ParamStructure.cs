@@ -12,15 +12,44 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 {
     public sealed class ParamStructure : IAggregateRoot
     {
+        /// <summary>
+        /// 参数结构ID
+        /// </summary>
         public ParamStructureId Id { get; private set; }
-        public StandardFamilyId? FamilyId { get; private set; }  // 关联标准族
-        public FormulaId? FormulaId { get; private set; }       // 引用 Formula 聚合
-        public string ParamName { get; private set; } = string.Empty;  // 例如 "Ballast"
-        public ParamSchema Schema { get; private set; } 
-        public List<ParamRuleId> ApplicableRuleIds { get; private set; } = new();
-        public DateTime EffectiveDate { get; private set; }
 
-        //状态
+        private readonly List<StandardFamilyId?> _standardFamilyIds = new();
+        private readonly List<ParamRuleId> _ruleIds  = new();
+        private readonly List<FormulaId?> _formulaIds = new();
+
+        /// <summary>
+        /// 适用标准族
+        /// </summary>
+        public IReadOnlyCollection<StandardFamilyId?> StandardFamilyIds => _standardFamilyIds.AsReadOnly();
+
+        /// <summary>
+        /// 适用公式
+        /// </summary>
+        public IReadOnlyCollection<FormulaId?> FormulaIds => _formulaIds.AsReadOnly();
+       
+        /// <summary>
+        /// 适用规则
+        /// </summary>
+        public IReadOnlyCollection<ParamRuleId> ApplicableRuleIds => _ruleIds.AsReadOnly();
+        
+        /// <summary>
+        /// 参数名称
+        /// </summary>
+        public string ParamName { get; private set; } = string.Empty;  // 例如 "Ballast"
+        
+        /// <summary>
+        /// 参数定义
+        /// </summary>
+        public ParamSchema Schema { get; private set; } 
+        
+        /// <summary>
+        /// 生效日期
+        /// </summary>
+        public DateTime EffectiveDate { get; private set; }
 
         private ParamStructure() { }
 
@@ -29,29 +58,111 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         public static ParamStructure Create(
             ParamStructureId id,
-            StandardFamilyId? familyId,
-            FormulaId? formulaId,
+            IEnumerable<StandardFamilyId?> standardFamilyIds,
+            IEnumerable<FormulaId?> formulaIds,
             string paramName,
             ParamSchema schema,
-            IEnumerable<ParamRuleId>? ruleIds,
+            IEnumerable<ParamRuleId?> ruleIds,
             DateTime? effectiveDate = null)
         {
-            if (id == null) throw new ArgumentNullException(nameof(id));
-            if (string.IsNullOrWhiteSpace(paramName)) throw new ArgumentException("paramName required", nameof(paramName));
-            if (schema == null) throw new ArgumentNullException(nameof(schema));
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+            if (string.IsNullOrWhiteSpace(paramName))
+                throw new ArgumentException("paramName required", nameof(paramName));
+            if (schema == null)
+                throw new ArgumentNullException(nameof(schema));
             if (schema.RequiredParam == null)
                 throw new ArgumentException("Schema must contain at least one ParamDefinition", nameof(schema));
 
             var ps = new ParamStructure
             {
                 Id = id,
-                FamilyId = familyId,
-                FormulaId = formulaId,
                 ParamName = paramName.Trim(),
                 Schema = schema,
-                ApplicableRuleIds = ruleIds?.ToList() ?? new List<ParamRuleId>(),
                 EffectiveDate = effectiveDate ?? DateTime.UtcNow
             };
+
+            // 2. 初始化集合：将传入的 Id 集合添加到私有字段中
+            if (standardFamilyIds != null)
+            {
+                foreach (var familyId in standardFamilyIds.Where(f => f != null))
+                {
+                    ps._standardFamilyIds.Add(familyId);
+                }
+            }
+
+            if (formulaIds != null)
+            {
+                foreach (var formulaId in formulaIds.Where(f => f != null))
+                {
+                    ps._formulaIds.Add(formulaId);
+                }
+            }
+
+            if (ruleIds != null) 
+            {
+                foreach (var ruleId in ruleIds.Where(f => f != null)) 
+                {
+                    ps._ruleIds.Add(ruleId);
+                }
+            }
+
+            return ps;
+        }
+
+        /// <summary>
+        /// 从数据库重建
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="familyId"></param>
+        /// <param name="formulaId"></param>
+        /// <param name="paramName"></param>
+        /// <param name="schema"></param>
+        /// <param name="ruleIds"></param>
+        /// <param name="effectiveDate"></param>
+        /// <returns></returns>
+        public static ParamStructure Reconstitute(
+            ParamStructureId id,
+            IEnumerable<StandardFamilyId?> standardFamilyIds, // 3. 修改为集合
+            IEnumerable<FormulaId?> formulaIds,               // 4. 修改为集合
+            string paramName,
+            ParamSchema schema,
+            IEnumerable<ParamRuleId>? ruleIds,
+            DateTime effectiveDate
+            )
+        {
+            var ps = new ParamStructure
+            {
+                Id = id,
+                ParamName = paramName.Trim(),
+                Schema = schema,
+                EffectiveDate = effectiveDate
+            };
+
+            // 5. 重建集合：将数据库读取的 Id 集合还原到私有字段中
+            if (standardFamilyIds != null)
+            {
+                foreach (var familyId in standardFamilyIds.Where(f => f != null))
+                {
+                    ps._standardFamilyIds.Add(familyId);
+                }
+            }
+
+            if (formulaIds != null)
+            {
+                foreach (var formulaId in formulaIds.Where(f => f != null))
+                {
+                    ps._formulaIds.Add(formulaId);
+                }
+            }
+
+            if (ruleIds != null)
+            {
+                foreach (var ruleId in ruleIds.Where(f => f != null))
+                {
+                    ps._ruleIds.Add(ruleId);
+                }
+            }
 
             return ps;
         }
@@ -62,7 +173,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public ParamDefinition MainParamDefinition => Schema.RequiredParam;
 
         /// <summary>
-        /// 验证二级条件池是否满足结构要求（结构层面）
+        /// 验证一级条件池是否满足结构要求（结构层面）
         /// - 只做字段存在性、白名单基础校验
         /// - 更复杂的语义校验（表达式、数据类型细化）由 Formula/语义分析器完成
         /// </summary>
@@ -134,27 +245,5 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         /// <param name="effective"></param>
         public void UpdateEffectiveDate(DateTime effective) => EffectiveDate = effective;
-
-        /// <summary>
-        /// 添加适用规则
-        /// </summary>
-        /// <param name="ruleId"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public void AddRule(ParamRuleId ruleId)
-        {
-            if (ruleId == null) throw new ArgumentNullException(nameof(ruleId));
-            if (!ApplicableRuleIds.Contains(ruleId)) ApplicableRuleIds.Add(ruleId);
-        }
-
-        /// <summary>
-        /// 移除适用规则
-        /// </summary>
-        /// <param name="ruleId"></param>
-        /// <exception cref="ArgumentNullException"></exception>
-        public void RemoveRule(ParamRuleId ruleId)
-        {
-            if (ruleId == null) throw new ArgumentNullException(nameof(ruleId));
-            ApplicableRuleIds.Remove(ruleId);
-        }
     }
 }

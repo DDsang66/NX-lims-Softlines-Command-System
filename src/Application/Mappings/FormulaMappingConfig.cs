@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using System.Text.Json;
@@ -14,7 +15,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             //转化为数据库模型
             config.NewConfig<Formula, BasicFormula>()
                 .Map(dest => dest.FormulaId, src => src.Id.Value)
-                .Map(dest => dest.StandardFamilyCodeId, src => src.FamilyId == null ? null : src.FamilyId.Value)
                 .Map(dest => dest.Name, src => src.Name)
                 .Map(dest => dest.ParamName, src => src.ParamName)
                 .Map(dest => dest.ConditionFields, src => JsonSerializer.Serialize(src.ConditionFields, (JsonSerializerOptions?)null))
@@ -25,21 +25,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.EffectiveDate, src => src.EffectiveDate);
 
             //转化为领域模型,用开放的领域方法重建
-            config.NewConfig<BasicFormula, Formula>()
-                .MapWith(src => Formula.Reconstitute(
-                    new FormulaId(src.FormulaId),
-                    src.Name,
-                    src.ParamName,
-                    JsonSerializer.Deserialize<List<string>>(src.ConditionFields!, (JsonSerializerOptions?)null) ?? new List<string>(),
-                    string.IsNullOrEmpty(src.StandardFamilyCodeId)
-                    ? null
-                    : new StandardFamilyId(src.StandardFamilyCodeId),
-                    src.ExpressionTemplate!,
-                    src.Version??0,
-                    src.IsActive,
-                    src.EffectiveDate,
-                    src.Description
-                ));
+            //config.NewConfig<BasicFormula, Formula>()
+            //    .MapWith(src => Formula.Reconstitute(
+            //        new FormulaId(src.FormulaId),
+            //        src.Name,
+            //        src.ParamName,
+            //        JsonSerializer.Deserialize<List<string>>(src.ConditionFields!, (JsonSerializerOptions?)null) ?? new List<string>(),
+            //        src.ExpressionTemplate!,
+            //        src.Version??0,
+            //        src.IsActive,
+            //        src.EffectiveDate,
+            //        src.Description
+            //    ));
         }
      }
 }

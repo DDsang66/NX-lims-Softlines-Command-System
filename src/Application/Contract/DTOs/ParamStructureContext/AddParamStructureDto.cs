@@ -12,12 +12,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamSt
         /// <summary>
         /// 标准族id
         /// </summary>
-        public string? StandardFamilyId { get; set; }
+        public IEnumerable<string>? StandardFamilyIds { get; set; }
 
         /// <summary>
         /// 所属公式Id
         /// </summary>
-        public string? FormulaId { get; set; }
+        public IEnumerable<string>? FormulaIds { get; set; }
+
+        /// <summary>
+        /// 规则id
+        /// </summary>
+        public IEnumerable<string>? RuleIds { get; set; }
 
         /// <summary>
         /// 参数名称
@@ -33,11 +38,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamSt
         /// 结构
         /// </summary>
         public SchemaDto ParamSchema { get; set; } = new SchemaDto();
-
-        /// <summary>
-        /// 规则id
-        /// </summary>
-        public IEnumerable<string>? RuleIds { get; set; }
     }
 
 

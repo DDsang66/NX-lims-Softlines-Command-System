@@ -18,12 +18,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             config.NewConfig<AddParamStructureDto, ParamStructure>()
                 .MapWith(src => ParamStructure.Create(
                     new ParamStructureId(src.ParamStructureId),
-                    string.IsNullOrEmpty(src.StandardFamilyId)
-                    ? null
-                    : new StandardFamilyId(src.StandardFamilyId),
-                    string.IsNullOrEmpty(src.FormulaId)
-                    ? null
-                    : new FormulaId(src.FormulaId),
+                    src.StandardFamilyIds == null
+                    ? new List<StandardFamilyId>()
+                    : src.StandardFamilyIds.Select(id => new StandardFamilyId(id)).ToList(),
+                    src.FormulaIds == null
+                    ? new List<FormulaId>()
+                    : src.FormulaIds.Select(id => new FormulaId(id)).ToList(),
                     src.ParamName,
                     src.ParamSchema.Adapt<ParamSchema>(),  // Mapster 递归映射
                     src.RuleIds == null
@@ -77,8 +77,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             // 领域模型 → 数据库模型
             config.NewConfig<ParamStructure, BasicParamStructure>()
                 .Map(dest => dest.ParamStructureId, src => src.Id.Value)
-                .Map(dest => dest.StandardFamilyCodeId, src => src.FamilyId == null ? null : src.FamilyId.Value)
-                .Map(dest => dest.FormulaId, src => src.FormulaId == null ? null : src.FormulaId.Value)
                 .Map(dest => dest.ParamName, src => src.ParamName)
                 .Map(dest => dest.Schema, 
                 src => JsonSerializer.Serialize(

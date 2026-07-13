@@ -31,6 +31,12 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<Composition> Compositions { get; set; }
 
+    public virtual DbSet<FormulaStandardfamily> FormulaStandardfamilies { get; set; }
+
+    public virtual DbSet<ParamstructureFormula> ParamstructureFormulas { get; set; }
+
+    public virtual DbSet<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; }
+
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -120,7 +126,9 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Description)
                 .HasColumnType("text")
                 .HasColumnName("description");
-            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date");
+            entity.Property(e => e.EffectiveDate)
+                .HasColumnType("datetime")
+                .HasColumnName("effective_date");
             entity.Property(e => e.ExpressionTemplate)
                 .HasColumnType("text")
                 .HasColumnName("expression_template");
@@ -133,10 +141,6 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("param_name");
-            entity.Property(e => e.StandardFamilyCodeId)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("standard_family_code_id");
             entity.Property(e => e.Version).HasColumnName("version");
         });
 
@@ -247,10 +251,9 @@ public partial class dbContext : DbContext
             entity.Property(e => e.AllowedValue)
                 .HasColumnType("text")
                 .HasColumnName("allowed_value");
-            entity.Property(e => e.FormulaId)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("formula_id");
+            entity.Property(e => e.EffectiveDate)
+                .HasColumnType("datetime")
+                .HasColumnName("effective_date");
             entity.Property(e => e.ParamName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -258,11 +261,6 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Schema)
                 .HasColumnType("text")
                 .HasColumnName("schema");
-            entity.Property(e => e.StandardFamilyCodeId)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("standard_family_code_id");
-            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date");
         });
 
         modelBuilder.Entity<BasicStandard>(entity =>
@@ -304,12 +302,14 @@ public partial class dbContext : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("id_standard_family");
+            entity.Property(e => e.EffectiveDate)
+                .HasColumnType("datetime")
+                .HasColumnName("effective_date");
             entity.Property(e => e.StandardFamilyCode)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("standard_family_code");
             entity.Property(e => e.Version).HasColumnName("version");
-            entity.Property(e => e.EffectiveDate).HasColumnName("effective_date");
         });
 
         modelBuilder.Entity<Composition>(entity =>
@@ -353,6 +353,81 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("tertiary_classification_en");
+        });
+
+        modelBuilder.Entity<FormulaStandardfamily>(entity =>
+        {
+            entity.ToTable("formula_standardfamily");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FormulaId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("formula_id");
+            entity.Property(e => e.IdStandardFamily)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("id_standard_family");
+
+            entity.HasOne(d => d.Formula).WithMany(p => p.FormulaStandardfamilies)
+                .HasForeignKey(d => d.FormulaId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_formula_standardfamily_basic_formula");
+
+            entity.HasOne(d => d.IdStandardFamilyNavigation).WithMany(p => p.FormulaStandardfamilies)
+                .HasForeignKey(d => d.IdStandardFamily)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_formula_standardfamily_basic_standard_family");
+        });
+
+        modelBuilder.Entity<ParamstructureFormula>(entity =>
+        {
+            entity.ToTable("paramstructure_formula");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.FormulaId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("formula_id");
+            entity.Property(e => e.ParamStructureId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("param_structure_id");
+
+            entity.HasOne(d => d.Formula).WithMany(p => p.ParamstructureFormulas)
+                .HasForeignKey(d => d.FormulaId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_paramstructure_formula_basic_formula");
+
+            entity.HasOne(d => d.ParamStructure).WithMany(p => p.ParamstructureFormulas)
+                .HasForeignKey(d => d.ParamStructureId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_paramstructure_formula_basic_param_structure");
+        });
+
+        modelBuilder.Entity<ParamsturctureStandardfamily>(entity =>
+        {
+            entity.ToTable("paramsturcture_standardfamily");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.IdStandardFamily)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("id_standard_family");
+            entity.Property(e => e.ParamStructureId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("param_structure_id");
+
+            entity.HasOne(d => d.IdStandardFamilyNavigation).WithMany(p => p.ParamsturctureStandardfamilies)
+                .HasForeignKey(d => d.IdStandardFamily)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_paramsturcture_standardfamily_basic_standard_family");
+
+            entity.HasOne(d => d.ParamStructure).WithMany(p => p.ParamsturctureStandardfamilies)
+                .HasForeignKey(d => d.ParamStructureId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_paramsturcture_standardfamily_basic_param_structure");
         });
 
         modelBuilder.Entity<SampleInfo>(entity =>

@@ -20,7 +20,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<Result> UpdateParamStructureAsync(AddParamStructureDto dto, CancellationToken ct);
+        Task<Result> UpdateParamStructureAsync(UpdateParamStructureDto dto, CancellationToken ct);
 
         /// <summary>
         /// 删除

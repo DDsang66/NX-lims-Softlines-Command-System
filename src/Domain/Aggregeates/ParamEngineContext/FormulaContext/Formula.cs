@@ -1,15 +1,20 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using System.Collections.Generic;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext
 {
     public sealed class Formula : IAggregateRoot
     {
         public FormulaId Id { get; private set; }
-        public StandardFamilyId? FamilyId { get; private set; }  // 所属标准族
+        private readonly List<ParamStructureId?> _paramSturctureIds = new();
+        private readonly List<StandardFamilyId?> _standardFamilyIds = new();
+        public IReadOnlyCollection<ParamStructureId?> ParamSturctureIds => _paramSturctureIds.AsReadOnly();
+        public IReadOnlyCollection<StandardFamilyId?> StandardFamilyIds => _standardFamilyIds.AsReadOnly();
         public string Name { get; private set; }  // "BallastDerivation"
         public string ParamName { get; private set; }  // 生成的参数名 "Ballast"
         public List<string> ConditionFields { get; private set; }  // ["FiberDominantType", "BuyerSpecified"]等具体语义的字段名(不可再切割)
@@ -26,19 +31,24 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 持久化请通过 IFormulaRepository 在应用层完成（例如 repository.Add(formula) 后提交事务）
         /// </summary>
         public static Formula Create(
-            FormulaId id, 
-            string name, 
+            FormulaId id,
+            string name,
             string paramName,
-            StandardFamilyId? familyId,
+            IEnumerable<StandardFamilyId?> standardFamilyIds,
+            IEnumerable<ParamStructureId?> paramStructureIds,
             IEnumerable<string> conditionFields,
-            string expressionTemplate, 
+            string expressionTemplate,
             string? description = null
             )
         {
-            if (id == null) throw new ArgumentNullException(nameof(id));
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name required", nameof(name));
-            if (string.IsNullOrWhiteSpace(paramName)) throw new ArgumentException("ParamName required", nameof(paramName));
-            if (conditionFields == null) throw new ArgumentNullException(nameof(conditionFields));
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name required", nameof(name));
+            if (string.IsNullOrWhiteSpace(paramName))
+                throw new ArgumentException("ParamName required", nameof(paramName));
+            if (conditionFields == null)
+                throw new ArgumentNullException(nameof(conditionFields));
 
             // 规范化、去重并校验字段名
             var fields = conditionFields
@@ -55,20 +65,34 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Id = id,
                 Name = name.Trim(),
                 ParamName = paramName.Trim(),
-                FamilyId = familyId,
                 ConditionFields = fields,
                 ExpressionTemplate = expressionTemplate ?? string.Empty,
                 Description = description?.Trim(),
-                IsActive = false,//默认草稿态
+                IsActive = false,
                 Version = 1,
                 EffectiveDate = DateTime.UtcNow,
             };
 
-            // 如果需要发布领域事件，可在应用层或这里添加：
-            // f.AddDomainEvent(new FormulaCreatedEvent(f.Id.Value));
+            // 3. 初始化 StandardFamilyIds 集合
+            if (standardFamilyIds != null)
+            {
+                foreach (var familyId in standardFamilyIds.Where(fid => fid != null))
+                {
+                    f._standardFamilyIds.Add(familyId);
+                }
+            }
+
+            if (paramStructureIds != null) 
+            {
+                foreach (var paramStructureId in paramStructureIds.Where(psid => psid != null))
+                {
+                    f._paramSturctureIds.Add(paramStructureId);
+                }
+            }
 
             return f;
         }
+
 
         /// <summary>
         /// 根据持久化数据重新构建 Formula 聚合根的实例（工厂方法，仅在内存中创建并保证不变式）
@@ -85,30 +109,49 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <param name="effectiveDate"></param>
         /// <returns></returns>
         internal static Formula Reconstitute(
-            FormulaId id,
-            string name,
-            string paramName,
-            IEnumerable<string> conditionFields,
-            StandardFamilyId? familyId,
-            string expressionTemplate,
-            int version,
-            bool isActive,
-            DateTime effectiveDate,
-            string? description = null)
+           FormulaId id,
+           string name,
+           string paramName,
+           IEnumerable<string> conditionFields,
+           IEnumerable<StandardFamilyId?> standardFamilyIds,
+           IEnumerable<ParamStructureId?> paramStructureIds,
+           string expressionTemplate,
+           int version,
+           bool isActive,
+           DateTime effectiveDate,
+           string? description = null)
         {
-            return new Formula
+            var f = new Formula
             {
                 Id = id,
                 Name = name,
                 ParamName = paramName,
                 ConditionFields = conditionFields.ToList(),
-                FamilyId = familyId,
                 ExpressionTemplate = expressionTemplate,
-                Description =  description,
+                Description = description,
                 Version = version,
                 IsActive = isActive,
                 EffectiveDate = effectiveDate
             };
+
+            // 5. 重建 StandardFamilyIds 集合
+            if (standardFamilyIds != null)
+            {
+                foreach (var familyId in standardFamilyIds.Where(fid => fid != null))
+                {
+                    f._standardFamilyIds.Add(familyId);
+                }
+            }
+
+            if (paramStructureIds != null)
+            {
+                foreach (var paramStructureId in paramStructureIds.Where(psid => psid != null))
+                {
+                    f._paramSturctureIds.Add(paramStructureId);
+                }
+            }
+
+            return f;
         }
 
 
@@ -130,8 +173,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public void Activate()
         {
             // 1. 必须有归属
-            if (FamilyId == null)
-                throw new InvalidOperationException("Formula must be attached to a StandardFamily before activation");
+            if (_standardFamilyIds.Count == 0)
+                throw new InvalidOperationException("Formula must be attached to at least one StandardFamily before activation");
 
             // 2. 必须有表达式模板
             if (string.IsNullOrWhiteSpace(ExpressionTemplate))
@@ -146,7 +189,50 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             //    throw new InvalidOperationException("Invalid expression template format");
 
             IsActive = true;
-        } 
+        }
+
+
+        /// <summary>
+        /// 添加关联的标准族
+        /// </summary>
+        public void AddStandardFamily(StandardFamilyId familyId)
+        {
+            if (familyId == null) throw new ArgumentNullException(nameof(familyId));
+            if (!_standardFamilyIds.Contains(familyId)) // 保证幂等性/去重
+            {
+                _standardFamilyIds.Add(familyId);
+            }
+        }
+
+        /// <summary>
+        /// 移除关联的标准族
+        /// </summary>
+        public void RemoveStandardFamily(StandardFamilyId familyId)
+        {
+            if (familyId == null) throw new ArgumentNullException(nameof(familyId));
+            _standardFamilyIds.Remove(familyId);
+        }
+
+        /// <summary>
+        /// 添加关联的参数结构
+        /// </summary>
+        public void AddParamStructure(ParamStructureId paramStructureId)
+        {
+            if (paramStructureId == null) throw new ArgumentNullException(nameof(paramStructureId));
+            if (!_paramSturctureIds.Contains(paramStructureId))
+            {
+                _paramSturctureIds.Add(paramStructureId);
+            }
+        }
+
+        /// <summary>
+        /// 移除关联的参数结构
+        /// </summary>
+        public void RemoveParamStructure(ParamStructureId paramStructureId)
+        {
+            if (paramStructureId == null) throw new ArgumentNullException(nameof(paramStructureId));
+            _paramSturctureIds.Remove(paramStructureId);
+        }
 
         /// <summary>
         /// 管理公式的条件集合（保持不变式）
@@ -166,6 +252,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 ? Result.Fail("missing")
                 : Result.Ok();
         }
+
 
         //•	发布领域事件：FormulaCreated、FormulaUpdated、FormulaActivated 等，通知规则/结构需要重新编译或同步
     }

@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> UpdateParamStructureAsync(AddParamStructureDto dto, CancellationToken ct)
+        public async Task<Result> UpdateParamStructureAsync(UpdateParamStructureDto dto, CancellationToken ct)
         {
             var paramStructureId = new ParamStructureId(dto.ParamStructureId);
 
