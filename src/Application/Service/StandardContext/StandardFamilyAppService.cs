@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations.Operations;
-using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.StandardContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;

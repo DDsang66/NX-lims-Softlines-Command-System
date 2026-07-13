@@ -15,16 +15,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
     public class ParamRequireConditionGenerateService: IScopedDependency, IParamRequireConditionGenerateService
     {
         private readonly IParamStructureRepository _paramStructureRepository;
-        //private readonly ICheckListRepository _checkListRepository;
+        private readonly ICheckListRepository _checkListRepository;
         //private readonly IOrderRepository _orderRepository;
         private readonly IStandardFamilyRepository _standardFamilyRepository;
 
         public ParamRequireConditionGenerateService(
             IParamStructureRepository paramStructureRepository, 
-            IStandardFamilyRepository standardFamilyRepository)
+            IStandardFamilyRepository standardFamilyRepository,
+            ICheckListRepository checkListRepository)
         {
             _paramStructureRepository = paramStructureRepository;
             _standardFamilyRepository = standardFamilyRepository;
+            _checkListRepository = checkListRepository;
         }
 
         /// <summary>
@@ -35,17 +37,21 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         public async Task<Result<IDictionary<string, object?>>> GenerateRequiredConditionsAsync(CheckListId checklistid,CancellationToken ct)
         {
             //获取已经生成的Checklist
-            //var checklist = await _checkListRepository.GetByIdAsync(checklistid, ct);
+            var checklist = await _checkListRepository.GetByIdAsync(checklistid, ct);
 
             var standardIds = new List<StandardId>();
 
             //循环查询checklist中的所有项目-标准
-            //foreach (var item in checklist.Items)
-            //{
-            //    var standardId = item.StandardId;
-            //    standardIds.Add(standardId);
-            //}
+            foreach (var item in checklist.Items)
+            {
+                foreach (var standardId in item.StandardIds)
+                {
+                    standardIds.Add(standardId);
+                }
+            }
+
             var standardFamilyIds = new List<StandardFamilyId>();
+
             //获取所有标准对应的标准族
             foreach (var standardId in standardIds) 
             {

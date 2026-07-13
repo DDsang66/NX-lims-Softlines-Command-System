@@ -51,5 +51,28 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
 
             return Result.Ok();
         }
+
+        /// <summary>
+        /// 回收前端的输入，更新条件池
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> UpdateConditionPoolAsync(UpdateConditionPoolDto dto, CancellationToken ct) 
+        {
+            var conditionPoolId = new ConditionPoolId(dto.ConditionPoolId);
+
+            //查询
+
+            //调用condition.Update()更新自身_conditions条件字典
+            //参考格式:{
+            //                "MachineType": "TypeA",
+            //                "Temperature": "40°C",
+            //                  "WashingProcess": "4N"
+            //                 }
+
+
+            return Result.Ok();
+        }
     }
 }
