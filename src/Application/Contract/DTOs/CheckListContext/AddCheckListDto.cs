@@ -1,8 +1,28 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
-
-namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj
+﻿namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext
 {
-    public class CheckListItem
+    public record AddCheckListDto
+    {
+
+        /// <summary>
+        /// 关联申请单Id
+        /// </summary>
+        public string SourceId { get; set; } = string.Empty;  // 关联的申请单ID
+
+        /// <summary>
+        /// 测试清单中的测试项
+        /// </summary>
+        public IReadOnlyList<CheckListItemDto> Items { get; set; }= new List<CheckListItemDto>();
+
+        /// <summary>
+        /// 备注
+        /// </summary>
+        public string? Remark { get; set; } = string.Empty;
+
+    }
+
+
+
+    public record CheckListItemDto 
     {
         /// <summary>
         /// 测试项目ID
@@ -23,11 +43,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// 买家自定义测试方法ID
         /// </summary>
         public string BuyerModifiedTextMethodId { get; set; } = string.Empty;
-
-        /// <summary>
-        /// 参数集
-        /// </summary>
-        public ParamSet? Param { get; set; } = new();
 
         /// <summary>
         /// 样品列表
