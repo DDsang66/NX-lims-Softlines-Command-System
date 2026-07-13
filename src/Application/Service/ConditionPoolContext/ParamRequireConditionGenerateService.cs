@@ -86,32 +86,53 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
             {
                 foreach (var requirement in paramStructure.Schema.ConditionRequirements)
                 {
-                    condition[requirement.FieldName] = new
+                    // 如果字段已存在，可以选择保留第一个或合并信息
+                    if (!condition.ContainsKey(requirement.FieldName))
                     {
-                        Type = requirement.FieldType,
-                        IsRequired = requirement.IsRequired,
-                        AllowedValues = requirement.AllowedValues
-                    };
+                        condition[requirement.FieldName] = new
+                        {
+                            Type = requirement.FieldType,
+                            IsRequired = requirement.IsRequired,
+                            AllowedValues = requirement.AllowedValues
+                        };
+                    }
+                    else
+                    {
+                        var existing = (dynamic)condition[requirement.FieldName];
+                        // 合并AllowedValues
+                        var mergedValues = existing.AllowedValues
+                            .Concat(requirement.AllowedValues)
+                            .Distinct()
+                            .ToList();
+
+                        condition[requirement.FieldName] = new
+                        {
+                            Type = requirement.FieldType,
+                            IsRequired = requirement.IsRequired || existing.IsRequired,
+                            AllowedValues = mergedValues
+                        };
+                    }
                 }
             }
-//            condition格式示例
-//                {
-//                "MachineType": {
-//                    "Type": "System.String",
-//                        "IsRequired": true,
-//                        "AllowedValues": ["Natural", "Synthetic"]
-//                        },
-//                  "Temperature": {
-//                    "Type": "System.Double",
-//                        "IsRequired": true,
-//                        "AllowedValues": []
-//                        },
-//                  "WashingProcess": {
-//                    "Type": "System.String",
-//                        "IsRequired": false,
-//                        "AllowedValues": ["Normal", "Gentle", "Heavy"]
-//                        }
-//                     }
+
+            //            condition格式示例
+            //                {
+            //                "MachineType": {
+            //                    "Type": "System.String",
+            //                        "IsRequired": true,
+            //                        "AllowedValues": ["Natural", "Synthetic"]
+            //                        },
+            //                  "Temperature": {
+            //                    "Type": "System.Double",
+            //                        "IsRequired": true,
+            //                        "AllowedValues": [30,40,50,60,70,80,90]
+            //                        },
+            //                  "WashingProcess": {
+            //                    "Type": "System.String",
+            //                        "IsRequired": true,
+            //                        "AllowedValues": ["Normal", "Gentle", "Mild"]
+            //                        }
+            //                     }
 
             return Result<IDictionary<string, object?>>.Ok(condition);
         }

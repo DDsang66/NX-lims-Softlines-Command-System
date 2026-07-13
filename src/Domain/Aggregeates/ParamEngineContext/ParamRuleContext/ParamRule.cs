@@ -15,15 +15,54 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 {
     public sealed class ParamRule : IAggregateRoot
     {
+        /// <summary>
+        /// 参数规则id
+        /// </summary>
         public ParamRuleId Id { get; private set; }
+
+        /// <summary>
+        /// 所属公式
+        /// </summary>
         public FormulaId? FormulaId { get; private set; } // 所属公式
+
+        /// <summary>
+        /// 所属结构
+        /// </summary>
         public ParamStructureId? StructureId { get; private set; } // 所属结构
+
+        /// <summary>
+        /// 所属标准族
+        /// </summary>
         public StandardFamilyId? StandardFamilyId { get; private set; } // 所属标准族
+
+        /// <summary>
+        /// 所属条件池
+        /// </summary>
         public string ParamName { get; private set; } // 生成的参数名
+
+        /// <summary>
+        /// 优先级
+        /// </summary>
         public int Priority { get; private set; }  // 优先级（数字越小越高）
+
+        /// <summary>
+        /// 条件匹配模式
+        /// </summary>
         public ConditionPattern Pattern { get; private set; } // 条件匹配模式
+
+        /// <summary>
+        /// 规则匹配后的初始结果
+        /// </summary>
         public ParamValue Result { get; private set; } // 规则匹配后的初始结果，无副作用
+
+        /// <summary>
+        /// 命中停止
+        /// </summary>
         public bool StopOnMatch { get; private set; } // 是否命中即停止
+
+        /// <summary>
+        /// 是否激活
+        /// </summary>
         public bool IsActive { get; private set; }
 
         // 私有构造函数

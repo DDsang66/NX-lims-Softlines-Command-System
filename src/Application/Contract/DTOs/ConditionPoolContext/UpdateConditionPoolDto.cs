@@ -7,6 +7,6 @@
         /// </summary>
         public Guid ConditionPoolId { get; set; }
 
-
+        public Dictionary<string, object?> Conditions { get; set; }=new Dictionary<string, object?>();
     }
 }

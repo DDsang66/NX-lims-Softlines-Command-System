@@ -10,18 +10,61 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 {
     public sealed class Formula : IAggregateRoot
     {
+        /// <summary>
+        /// 公式ID
+        /// </summary>
         public FormulaId Id { get; private set; }
         private readonly List<ParamStructureId?> _paramSturctureIds = new();
         private readonly List<StandardFamilyId?> _standardFamilyIds = new();
+
+        /// <summary>
+        /// 参数结构 Id
+        /// </summary>
         public IReadOnlyCollection<ParamStructureId?> ParamSturctureIds => _paramSturctureIds.AsReadOnly();
+
+        /// <summary>
+        /// 标准族 Id
+        /// </summary>
         public IReadOnlyCollection<StandardFamilyId?> StandardFamilyIds => _standardFamilyIds.AsReadOnly();
+
+        /// <summary>
+        /// 公式名称
+        /// </summary>
         public string Name { get; private set; }  // "BallastDerivation"
+
+        /// <summary>
+        /// 生成参数名
+        /// </summary>
         public string ParamName { get; private set; }  // 生成的参数名 "Ballast"
+
+        /// <summary>
+        /// 条件字段
+        /// </summary>
         public List<string> ConditionFields { get; private set; }  // ["FiberDominantType", "BuyerSpecified"]等具体语义的字段名(不可再切割)
+      
+        /// <summary>
+        /// 公式模板
+        /// </summary>
         public string ExpressionTemplate { get; private set; }  // "FiberDominantType + BuyerSpecified ->Ballst" 范式样本
+        
+        /// <summary>
+        /// 描述
+        /// </summary>
         public string Description { get; private set; }
+
+        /// <summary>
+        /// 版本号
+        /// </summary>
         public int Version { get; private set; }  // 版本号
+
+        /// <summary>
+        /// 生效日期
+        /// </summary>
         public DateTime EffectiveDate { get; private set; }  // 生效日期
+
+        /// <summary>
+        /// 公式是否启用
+        /// </summary>
         public bool IsActive { get; private set; }
 
         private Formula() { }

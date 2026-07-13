@@ -183,9 +183,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
             foreach (var requirement in Schema.ConditionRequirements)
             {
+                //存在性验证
                 if (requirement.IsRequired && !pool.HasCondition(requirement.FieldName))
                     return Result.Fail($"Missing required condition: {requirement.FieldName}");
 
+                // 白名单验证
                 if (pool.HasCondition(requirement.FieldName) && requirement.AllowedValues != null && requirement.AllowedValues.Any())
                 {
                     var value = pool.GetConditionValue<object>(requirement.FieldName);

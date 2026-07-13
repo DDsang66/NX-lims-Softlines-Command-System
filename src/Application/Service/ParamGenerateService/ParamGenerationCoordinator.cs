@@ -39,7 +39,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         /// <summary>
         /// 主流程：
         /// 1. 加载 ParamStructure
-        /// 2. 使用 ParamStructure/Formula 验证 ConditionPool
+        /// 2. 使用 ParamStructure/Formula 验证 ConditionPool,对其中的差异值进行条件富化
         /// 3. 加载规则并调用引擎生成
         /// 4. 调用补偿服务得到最终 ParamSet
         /// </summary>
@@ -56,7 +56,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             //ConditionPool调用ConditionEnricher进行富化，确保所有条件字段都被填充
             //交由Formula进行语义检查，确保所有必需的条件字段都存在
 
-            // 3. 加载 Formula 并做语义检查
+            // 3. 加载 Formula 并做二级条件池语义检查
             var formula = await _formulaRepo.GetByIdAsync(new FormulaId(formulaId), ct);
             if (formula == null) return Result<ParamSet>.Fail("Formula not found");
 

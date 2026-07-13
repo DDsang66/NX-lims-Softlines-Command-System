@@ -56,7 +56,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
 
             await  _paramStructureRepository.UpdateAsync(paramStructure, ct);
 
-            await _unitOfWork.SaveChangesAsync();
+            await  _unitOfWork.SaveChangesAsync();
 
             return Result.Ok();
         }

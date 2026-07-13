@@ -81,10 +81,35 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <param name="fieldName"></param>
         /// <param name="value"></param>
         /// <exception cref="ArgumentException"></exception>
-        public void AddOrUpdate(string fieldName, object? value)
+        public void Update(Dictionary<string, object?> values)
         {
-            if (string.IsNullOrWhiteSpace(fieldName)) throw new ArgumentException(nameof(fieldName));
-            _conditions[fieldName] = value;
+            if (Status != ConditionPoolStatus.Draft)
+                throw new InvalidOperationException("Can only submit values in Draft status");
+
+            // 校验字段存在性
+            foreach (var fieldName in values.Keys)
+            {
+                if (!_conditions.ContainsKey(fieldName))
+                    throw new ArgumentException($"Unknown field: {fieldName}");
+            }
+
+            // 校验必填,所有条件均存在才进行下一步
+            if (_conditions != null)
+            {
+                foreach (var (fieldName, meta) in _conditions)
+                {
+                    if (!values.ContainsKey(fieldName) || values[fieldName] == null)
+                        throw new ArgumentException($"Required field missing: {fieldName}");
+                }
+            }
+
+            // 覆盖值（清空后填充）
+            _conditions.Clear();
+
+            foreach (var (fieldName, value) in values)
+            {
+                _conditions[fieldName] = value;
+            }
         }
 
         /// <summary>
