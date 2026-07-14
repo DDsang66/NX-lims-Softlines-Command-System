@@ -21,6 +21,8 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.EventOutBoxUtil;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Service.WashLabel;
+using NX_lims_Softlines_Command_System.src.Application.Contract.WashLabel;
 using OfficeOpenXml;
 using System.Reflection;
 using System.Text;
@@ -66,6 +68,10 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddScoped<OrderReportingQueryProvider>();
             builder.Services.AddSingleton<JwtService>();
             builder.Services.AddScoped<RenderService>();
+            // WashLabel — 洗标识别 (Singleton模板加载 + AI服务)
+            var templatePath = Path.Combine(builder.Environment.ContentRootPath, "templates");
+            builder.Services.AddSingleton(new TemplateLoader(templatePath));
+            builder.Services.AddHttpClient<IWashLabelAnalysisService, WashLabelAnalysisService>();
             builder.Services.AddScoped<RenderRepos>();
             builder.Services.AddHttpContextAccessor();
 
