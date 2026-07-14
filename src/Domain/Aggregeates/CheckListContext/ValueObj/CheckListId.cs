@@ -1,8 +1,9 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj
 {
-    public class CheckListId: IAggregateRootId
+    public class CheckListId: AggregateRootId
     {
         public Guid Value { get; private set; }
 

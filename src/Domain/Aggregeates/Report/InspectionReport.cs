@@ -1,10 +1,11 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Report.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 using System.Security.Cryptography.Xml;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Report
 {
-    public sealed class InspectionReport: IAggregateRoot
+    public sealed class InspectionReport: AggregateRoot
     {
         public Guid ReportId { get; private set; }  // 标识
 

@@ -1,8 +1,10 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj
 {
-    public sealed record StandardId:IAggregateRootId
+    public class StandardId : AggregateRootId
     {
         public string Value { get; }
 
@@ -17,14 +19,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.Value
         }
 
         // 2. 显式重写 ToString，解决输出 {IdStandard { Value = ... }} 的问题
-        public override string ToString() => Value;
+        public override string ToString() => Value.ToString();
 
-        // 3. 实现与字符串的比较逻辑
-        public bool Equals(string? other) => Value == other;
+        public bool Equals(StandardId? other) => other != null && string.Equals(Value, other.Value, StringComparison.Ordinal);
 
-        // 4. 保持原有的隐式转换
-        public static implicit operator string(StandardId code) => code.Value;
-        public static implicit operator StandardId(string value) => new(value);
+        public override int GetHashCode() => Value.GetHashCode(StringComparison.Ordinal);
     }
-
 }

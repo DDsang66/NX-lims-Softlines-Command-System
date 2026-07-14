@@ -1,29 +1,29 @@
-using Microsoft.EntityFrameworkCore;
-using OfficeOpenXml;
+using AutoMapper;
+using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Reflection;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using NX_lims_Softlines_Command_System.Application;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Application.Services.ExcelService;
 using NX_lims_Softlines_Command_System.Application.Services.Factory;
 using NX_lims_Softlines_Command_System.Application.Services.Interfaces;
-
-using NX_lims_Softlines_Command_System.Domain.Model;
-using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.Application.Services.UserService;
-using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
-using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos;
+using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.FeedBackRepos;
+using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.RenderRepos;
-using NX_lims_Softlines_Command_System.Application;
+using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
+using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using NX_lims_Softlines_Command_System.src.Domain;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure;
-using NX_lims_Softlines_Command_System.src.Domain;
-using AutoMapper;
-using Mapster;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.EventOutBoxUtil;
+using OfficeOpenXml;
+using System.Reflection;
+using System.Text;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -37,13 +37,17 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddAutoRegister(
                 ApplicationAssemblyMarker.Assembly,
                 InfrastructureAssemblyMarker.Assembly,
-                DomainAssemblyMarker.Assembly
-                );
+                DomainAssemblyMarker.Assembly);
 
             TypeAdapterConfig.GlobalSettings.Scan(typeof(Program).Assembly);
 
             builder.Services.AddMapster();
 
+            builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
+                typeof(ApplicationAssemblyMarker).Assembly,
+                typeof(InfrastructureAssemblyMarker).Assembly));
+
+            builder.Services.AddHostedService<EventPublisherBackgroundService>();
 
             // Add services to the container.
             var licenseType = builder.Configuration.GetValue<string>("EPPlus:License");

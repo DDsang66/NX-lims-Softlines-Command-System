@@ -9,7 +9,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
     /// 订单聚合根
     /// —个订单 = 同一 ReportNumber 下的多个 OrderLine（按 TestGroup 拆分）
     /// </summary>
-    public sealed class Order : IAggregateRoot
+    public sealed class Order : AggregateRoot
     {
         private readonly List<OrderLine> _lines = new();
 

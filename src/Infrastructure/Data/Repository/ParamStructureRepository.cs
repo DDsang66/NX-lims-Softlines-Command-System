@@ -96,9 +96,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     }, ct);
                 }
             }
-
-            // 4. 提交所有更改
-            await _dbContext.SaveChangesAsync(ct);
         }
 
         /// <summary>

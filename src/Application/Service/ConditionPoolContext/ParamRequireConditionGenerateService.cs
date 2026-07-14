@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
             {
                 foreach (var standardId in item.StandardIds)
                 {
-                    standardIds.Add(standardId);
+                    standardIds.Add(new StandardId(standardId));
                 }
             }
 

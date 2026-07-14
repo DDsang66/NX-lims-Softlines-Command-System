@@ -5,7 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 {
-    public sealed class Standard : Entity, IAggregateRoot
+    public sealed class Standard : AggregateRoot
     {
         public StandardId IdStandard { get; private set; } = null!;
 

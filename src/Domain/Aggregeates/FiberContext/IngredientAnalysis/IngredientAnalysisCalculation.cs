@@ -2,10 +2,11 @@
 using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis
 {
-    public sealed class IngredientAnalysisCalculation : IAggregateRoot
+    public sealed class IngredientAnalysisCalculation : AggregateRoot
     {
         private List<FiberComponent> _components = new();
         public long Id { get; private set; } /*AnalysisId*/

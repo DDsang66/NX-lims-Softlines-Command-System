@@ -1,8 +1,9 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj
 {
-    public class FormulaId:IAggregateRootId
+    public class FormulaId:AggregateRootId
     {
         public string Value { get; private set; }
 
@@ -11,7 +12,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("FormulaId required", nameof(value));
             Value = value;
         }
-
-        public override string ToString() => Value;
+        public override string ToString() => Value.ToString();
     }
 }

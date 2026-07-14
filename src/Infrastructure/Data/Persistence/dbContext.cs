@@ -33,9 +33,13 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<FormulaStandardfamily> FormulaStandardfamilies { get; set; }
 
+    public virtual DbSet<OutboxEntry> OutboxEntries { get; set; }
+
     public virtual DbSet<ParamstructureFormula> ParamstructureFormulas { get; set; }
 
     public virtual DbSet<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; }
+
+    public virtual DbSet<ProcessedEvent> ProcessedEvents { get; set; }
 
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
 
@@ -380,6 +384,40 @@ public partial class dbContext : DbContext
                 .HasConstraintName("FK_formula_standardfamily_basic_standard_family");
         });
 
+        modelBuilder.Entity<OutboxEntry>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__OutboxEn__3214EC07A5FC2690");
+
+            entity.ToTable("outbox_entry");
+
+            entity.HasIndex(e => e.AggregateRootId, "IX_OutboxEntry_AggregateRootId");
+
+            entity.HasIndex(e => e.EventId, "IX_OutboxEntry_EventId").IsUnique();
+
+            entity.HasIndex(e => new { e.Published, e.OccurredOn }, "IX_OutboxEntry_Published_OccurredOn");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("(newid())")
+                .HasColumnName("id");
+            entity.Property(e => e.AggregateRootId)
+                .HasMaxLength(200)
+                .HasColumnName("aggregate_root_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DeadLettered).HasColumnName("dead_lettered");
+            entity.Property(e => e.Error).HasColumnName("error");
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.EventType)
+                .HasMaxLength(500)
+                .HasColumnName("event_type");
+            entity.Property(e => e.OccurredOn).HasColumnName("occurred_on");
+            entity.Property(e => e.Payload).HasColumnName("payload");
+            entity.Property(e => e.Published).HasColumnName("published");
+            entity.Property(e => e.PublishedAt).HasColumnName("published_at");
+            entity.Property(e => e.RetryCount).HasColumnName("retry_count");
+        });
+
         modelBuilder.Entity<ParamstructureFormula>(entity =>
         {
             entity.ToTable("paramstructure_formula");
@@ -430,6 +468,21 @@ public partial class dbContext : DbContext
                 .HasConstraintName("FK_paramsturcture_standardfamily_basic_param_structure");
         });
 
+        modelBuilder.Entity<ProcessedEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__processe__3214EC07B0EC46CB");
+
+            entity.ToTable("processed_event");
+
+            entity.HasIndex(e => e.EventId, "UQ_ProcessedEvent_EventId").IsUnique();
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.ProcessedAt)
+                .HasDefaultValueSql("(getutcdate())")
+                .HasColumnName("processed_at");
+        });
+
         modelBuilder.Entity<SampleInfo>(entity =>
         {
             entity.HasKey(e => e.IdSample);
@@ -440,12 +493,6 @@ public partial class dbContext : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("id_sample");
-            entity.Property(e => e.ApparelLocation)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("apparel_location");
-            entity.Property(e => e.IndexCarelabel).HasColumnName("index_carelabel");
-            entity.Property(e => e.IndexComposition).HasColumnName("index_composition");
             entity.Property(e => e.Remark)
                 .IsUnicode(false)
                 .HasColumnName("remark");
@@ -457,13 +504,6 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("sample_code");
-            entity.Property(e => e.SampleDescription)
-                .IsUnicode(false)
-                .HasColumnName("sample_description");
-            entity.Property(e => e.Structure)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("structure");
         });
 
         OnModelCreatingPartial(modelBuilder);

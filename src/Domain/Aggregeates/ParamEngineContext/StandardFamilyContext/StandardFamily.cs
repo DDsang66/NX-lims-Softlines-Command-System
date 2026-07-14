@@ -4,10 +4,11 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext
 {
-    public sealed class StandardFamily : IAggregateRoot
+    public sealed class StandardFamily : AggregateRoot
     {
         private readonly List<StandardId> _standardIds = new();
         private readonly List<FormulaId> _formulaIds = new();

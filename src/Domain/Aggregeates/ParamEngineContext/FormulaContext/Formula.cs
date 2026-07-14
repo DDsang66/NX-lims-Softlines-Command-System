@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext
 {
-    public sealed class Formula : IAggregateRoot
+    public sealed class Formula : AggregateRoot
     {
         /// <summary>
         /// 公式ID

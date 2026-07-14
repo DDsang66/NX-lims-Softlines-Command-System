@@ -41,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
         }
 
         /// <summary>
-        /// 更新参数结构
+        /// 更新自身参数结构
         /// </summary>
         /// <param name="dto"></param>
         /// <param name="ct"></param>
@@ -52,11 +52,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
 
             var paramStructure = await _paramStructureRepository.GetByIdAsync(paramStructureId, ct);
 
-            //paramStructure.Update(dto);
+            var schema = dto.ParamSchema.Adapt<ParamSchema>();
+
+            paramStructure.Update(dto.ParamName, schema);
 
             await  _paramStructureRepository.UpdateAsync(paramStructure, ct);
 
-            await  _unitOfWork.SaveChangesAsync();
+            await  _unitOfWork.CommitTransactionAsync(ct);
 
             return Result.Ok();
         }
@@ -76,9 +78,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
                 return Result.Fail("参数结构不存在");
             }
 
-            //paramStructure.Remove();
-
-            //await  _paramStructureRepository.RemoveAsync(paramStructure, ct);
+            //await _paramStructureRepository.RemoveAsync(paramStructure, ct);
 
             await  _unitOfWork.SaveChangesAsync();
 

@@ -2,10 +2,11 @@
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext
 {
-    public sealed class CheckList: IAggregateRoot
+    public sealed class CheckList: AggregateRoot
     {
         /// <summary>
         /// 测试清单ID

@@ -1,8 +1,9 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj
 {
-    public class ParamRuleId:IAggregateRootId
+    public class ParamRuleId:AggregateRootId
     {
         public string Value { get; }
         public ParamRuleId(string value)
@@ -10,6 +11,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("ParamRuleId required", nameof(value));
             Value = value;
         }
-        public override string ToString() => Value;
+        public override string ToString() => Value.ToString();
     }
 }

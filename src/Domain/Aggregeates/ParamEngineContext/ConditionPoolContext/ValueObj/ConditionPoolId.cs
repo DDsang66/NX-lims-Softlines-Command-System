@@ -1,11 +1,12 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj
 {
     /// <summary>
     /// ConditionPoolId使用Guid
     /// </summary>
-    public class ConditionPoolId : IAggregateRootId
+    public class ConditionPoolId : AggregateRootId
     {
         public Guid Value { get; private set; }
 

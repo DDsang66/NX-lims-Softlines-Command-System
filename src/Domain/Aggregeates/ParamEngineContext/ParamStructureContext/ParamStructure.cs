@@ -6,11 +6,12 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Events;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext
 {
-    public sealed class ParamStructure : IAggregateRoot
+    public sealed class ParamStructure : AggregateRoot
     {
         /// <summary>
         /// 参数结构ID
@@ -166,6 +167,80 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
             return ps;
         }
+
+        /// <summary>
+        /// 更新除外键以外的字段
+        /// </summary>
+        public void Update(string paramName, ParamSchema schema)
+        {
+            if (string.IsNullOrWhiteSpace(paramName))
+                throw new ArgumentException("paramName required", nameof(paramName));
+            if (schema == null)
+                throw new ArgumentNullException(nameof(schema));
+            if (schema.RequiredParam == null)
+                throw new ArgumentException("Schema must contain at least one ParamDefinition", nameof(schema));
+          
+            // 执行更细致的 Schema 内部结构校验
+            ValidateSchemaStructure(schema);
+
+            ParamName = paramName.Trim();
+            Schema = schema;
+            EffectiveDate = DateTime.UtcNow;
+
+            //领域事件，通知对应formula参数结构更新
+            AddDomainEvent(new ParamStructureUpdatedEvent(Id, ParamName, Schema));
+         }
+
+        /// <summary>
+        /// 校验 Schema 的内部结构一致性
+        /// </summary>
+        private void ValidateSchemaStructure(ParamSchema schema)
+        {
+            var mainParam = schema.RequiredParam;
+
+            // 1. 校验主参数定义的完整性
+            if (string.IsNullOrWhiteSpace(mainParam.Name))
+                throw new ArgumentException("MainParamDefinition Name is required.", nameof(schema));
+
+            if (mainParam.DefaultValue == null)
+                throw new ArgumentException($"MainParamDefinition '{mainParam.Name}' must have a default value for compensation.", nameof(schema));
+
+            // 2. 校验条件要求
+            if (schema.ConditionRequirements != null)
+            {
+                foreach (var req in schema.ConditionRequirements)
+                {
+                    if (string.IsNullOrWhiteSpace(req.FieldName))
+                        throw new ArgumentException("ConditionRequirement FieldName cannot be empty.", nameof(schema));
+
+                    // 条件字段不能与主参数字段同名，避免逻辑混淆
+                    if (req.FieldName == mainParam.Name)
+                        throw new ArgumentException($"Condition field '{req.FieldName}' cannot have the same name as the main param.", nameof(schema));
+                }
+            }
+
+            // 3. 校验限制规则
+            if (schema.Limitations != null)
+            {
+                var validParamNames = new HashSet<string> { mainParam.Name };
+                if (schema.ConditionRequirements != null)
+                {
+                    foreach (var req in schema.ConditionRequirements)
+                    {
+                        if (!string.IsNullOrWhiteSpace(req.FieldName))
+                            validParamNames.Add(req.FieldName);
+                    }
+                }
+
+                foreach (var limitationKey in schema.Limitations.Keys)
+                {
+                    // 限制规则必须关联到已存在的参数
+                    if (!validParamNames.Contains(limitationKey))
+                        throw new ArgumentException($"Limitation key '{limitationKey}' does not match any defined param or condition.", nameof(schema));
+                }
+            }
+        }
+
 
         /// <summary>
         /// 主参数定义（Schema.RequiredParam）

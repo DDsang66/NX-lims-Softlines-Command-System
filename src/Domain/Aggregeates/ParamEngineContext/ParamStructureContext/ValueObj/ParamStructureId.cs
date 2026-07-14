@@ -1,8 +1,9 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj
 {
-    public class ParamStructureId : IAggregateRootId
+    public class ParamStructureId : AggregateRootId
     {
         public string Value { get; }
 
@@ -12,7 +13,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             Value = value;
         }
 
-        public override string ToString() => Value;
+        public override string ToString() => Value.ToString();
 
         public override bool Equals(object? obj) => Equals(obj as ParamStructureId);
 

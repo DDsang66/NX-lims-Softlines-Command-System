@@ -3,13 +3,14 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.V
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext
 {
     /// <summary>
     /// 条件池聚合根
     /// </summary>
-    public sealed class ConditionPool : IAggregateRoot
+    public sealed class ConditionPool : AggregateRoot
     {
         public ConditionPoolId Id { get; private set; }
         public OrderId SourceId { get; private set; } = string.Empty;  // 关联的申请单ID

@@ -8,12 +8,13 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext
 {
-    public sealed class ParamRule : IAggregateRoot
+    public sealed class ParamRule : AggregateRoot
     {
         /// <summary>
         /// 参数规则id
