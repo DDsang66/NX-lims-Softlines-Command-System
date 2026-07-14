@@ -46,10 +46,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             // ParamDefinitionDto → ParamDefinition
             config.NewConfig<ParamDefinitionDto, ParamDefinition>()
                 .Map(dest => dest.Name, src => src.Name)
-                .Map(dest => dest.ValueType, src =>
-                 string.IsNullOrEmpty(src.ValueType)
-                 ? typeof(string)
-                 : Type.GetType(src.ValueType) ?? typeof(string))
+                .Map(dest => dest.ValueTypeName, src =>
+                string.IsNullOrEmpty(src.ValueType)
+                ? "System.String"
+                : src.ValueType)
                 .Map(dest => dest.Description, src => src.Description)
                 .Map(dest => dest.IsNullable, src => src.IsNullable)
                 .Map(dest => dest.DefaultValue, src => src.DefaultValue);
@@ -57,19 +57,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             // ConditionRequirementDto → ConditionRequirement
             config.NewConfig<ConditionRequirementDto, ConditionRequirement>()
                 .Map(dest => dest.FieldName, src => src.FieldName)
-                .Map(dest => dest.FieldType, src =>
-                 string.IsNullOrEmpty(src.FieldType)
-                 ? typeof(string)
-                 : Type.GetType(src.FieldType) ?? typeof(string))
+                .Map(dest => dest.ValueTypeName, src =>
+                string.IsNullOrEmpty(src.FieldType)
+                ? "System.String"
+                : src.FieldType)
                 .Map(dest => dest.IsRequired, src => src.IsRequired)
                 .Map(dest => dest.AllowedValues, src => src.AllowedValues);
 
             // ParamLimitationDto → ParamLimitation
             config.NewConfig<ParamLimitationDto, ParamLimitation>()
-                .Map(dest => dest.ValueType, src =>
-                 string.IsNullOrEmpty(src.ValueType)
-                 ? typeof(string)
-                 : Type.GetType(src.ValueType) ?? typeof(string))
+                .Map(dest => dest.ValueTypeName, src =>
+                string.IsNullOrEmpty(src.ValueType)
+                ? "System.String"
+                : src.ValueType)
                 .Map(dest => dest.AllowedValues, src => src.AllowedValues)
                 .Map(dest => dest.Min, src => src.Min)
                 .Map(dest => dest.Max, src => src.Max);

@@ -54,6 +54,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
                 .ToListAsync(ct);
 
             var events = new List<DomainEvent>();
+
             foreach (var entry in entries)
             {
                 var eventType = Type.GetType(entry.EventType);

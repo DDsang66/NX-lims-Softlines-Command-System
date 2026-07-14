@@ -91,7 +91,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
                     {
                         condition[requirement.FieldName] = new
                         {
-                            Type = requirement.FieldType,
+                            Type = requirement.FieldName.GetType(),
                             IsRequired = requirement.IsRequired,
                             AllowedValues = requirement.AllowedValues
                         };
@@ -107,7 +107,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
 
                         condition[requirement.FieldName] = new
                         {
-                            Type = requirement.FieldType,
+                            Type = requirement.FieldName.GetType(),
                             IsRequired = requirement.IsRequired || existing.IsRequired,
                             AllowedValues = mergedValues
                         };

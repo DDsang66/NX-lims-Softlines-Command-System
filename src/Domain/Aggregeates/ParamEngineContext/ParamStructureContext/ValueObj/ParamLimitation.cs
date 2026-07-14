@@ -1,10 +1,15 @@
 ﻿using System.Globalization;
+using System.Text.Json.Serialization;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj
 {
     public class ParamLimitation
     {
-        public Type? ValueType { get; set; } // 可选：若与 ParamDefinition.ValueType 重复可不设置
+        public string ValueTypeName { get; set; } = "System.String";
+
+        // 运行时获取 Type（不序列化）
+        [JsonIgnore]
+        public Type ValueType => Type.GetType(ValueTypeName) ?? typeof(string);// 可选：若与 ParamDefinition.ValueType 重复可不设置
         public List<object>? AllowedValues { get; set; } = null;
         public object? Min { get; set; } = null;
         public object? Max { get; set; } = null;

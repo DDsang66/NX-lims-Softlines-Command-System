@@ -184,40 +184,41 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         {
             // 1. 添加基础信息
             var formulaPo = formula.Adapt<BasicFormula>();
+
             await _context.AddAsync(formulaPo, ct);
 
-            // 2. 处理关联关系
-            foreach (var familyId in formula.StandardFamilyIds.Where(id => id != null))
-            {
-                if (!await _context.FormulaStandardfamilies
-                    .AnyAsync(af =>
-                        af.FormulaId == formulaPo.FormulaId &&
-                        af.IdStandardFamily == familyId!.Value,
-                        ct))
-                {
-                    await _context.AddAsync(new FormulaStandardfamily
-                    {
-                        FormulaId = formulaPo.FormulaId,
-                        IdStandardFamily = familyId!.Value
-                    }, ct);
-                }
-            }
+            // 2. 后续通过事件处理关联关系
+            //foreach (var familyId in formula.StandardFamilyIds.Where(id => id != null))
+            //{
+            //    if (!await _context.FormulaStandardfamilies
+            //        .AnyAsync(af =>
+            //            af.FormulaId == formulaPo.FormulaId &&
+            //            af.IdStandardFamily == familyId!.Value,
+            //            ct))
+            //    {
+            //        await _context.AddAsync(new FormulaStandardfamily
+            //        {
+            //            FormulaId = formulaPo.FormulaId,
+            //            IdStandardFamily = familyId!.Value
+            //        }, ct);
+            //    }
+            //}
 
-            foreach (var paramId in formula.ParamSturctureIds.Where(id => id != null))
-            {
-                if (!await _context.ParamstructureFormulas
-                    .AnyAsync(af =>
-                        af.FormulaId == formulaPo.FormulaId &&
-                        af.ParamStructureId == paramId.Value,
-                        ct))
-                {
-                    await _context.AddAsync(new ParamstructureFormula
-                    {
-                        FormulaId = formulaPo.FormulaId,
-                        ParamStructureId = paramId!.Value
-                    }, ct);
-                }
-            }
+            //foreach (var paramId in formula.ParamSturctureIds.Where(id => id != null))
+            //{
+            //    if (!await _context.ParamstructureFormulas
+            //        .AnyAsync(af =>
+            //            af.FormulaId == formulaPo.FormulaId &&
+            //            af.ParamStructureId == paramId.Value,
+            //            ct))
+            //    {
+            //        await _context.AddAsync(new ParamstructureFormula
+            //        {
+            //            FormulaId = formulaPo.FormulaId,
+            //            ParamStructureId = paramId!.Value
+            //        }, ct);
+            //    }
+            //}
         }
 
         /// <summary>
@@ -237,33 +238,33 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 2. 更新基础信息
             formula.Adapt(existingPo);
 
-            // 3. 处理 StandardFamily 关联
-            var targetFamilyIds = formula.StandardFamilyIds.Select(id => id!.Value).ToList();
-            var currentFamilyIds = existingPo.FormulaStandardfamilies.Select(f => f.IdStandardFamily).ToList();
+            //// 3. 处理 StandardFamily 关联
+            //var targetFamilyIds = formula.StandardFamilyIds.Select(id => id!.Value).ToList();
+            //var currentFamilyIds = existingPo.FormulaStandardfamilies.Select(f => f.IdStandardFamily).ToList();
 
-            // 添加新关联
-            foreach (var newId in targetFamilyIds.Except(currentFamilyIds))
-            {
-                existingPo.FormulaStandardfamilies.Add(new FormulaStandardfamily
-                {
-                    FormulaId = existingPo.FormulaId,
-                    IdStandardFamily = newId
-                });
-            }
+            //// 添加新关联
+            //foreach (var newId in targetFamilyIds.Except(currentFamilyIds))
+            //{
+            //    existingPo.FormulaStandardfamilies.Add(new FormulaStandardfamily
+            //    {
+            //        FormulaId = existingPo.FormulaId,
+            //        IdStandardFamily = newId
+            //    });
+            //}
 
-            // 4. 处理 ParamStructure 关联
-            var targetParamIds = formula.ParamSturctureIds.Select(id => id!.Value).ToList();
-            var currentParamIds = existingPo.ParamstructureFormulas.Select(p => p.ParamStructureId).ToList();
+            //// 4. 处理 ParamStructure 关联
+            //var targetParamIds = formula.ParamSturctureIds.Select(id => id!.Value).ToList();
+            //var currentParamIds = existingPo.ParamstructureFormulas.Select(p => p.ParamStructureId).ToList();
 
-            // 添加新关联
-            foreach (var newId in targetParamIds.Except(currentParamIds))
-            {
-                existingPo.ParamstructureFormulas.Add(new ParamstructureFormula
-                {
-                    FormulaId = existingPo.FormulaId,
-                    ParamStructureId = newId
-                });
-            }
+            //// 添加新关联
+            //foreach (var newId in targetParamIds.Except(currentParamIds))
+            //{
+            //    existingPo.ParamstructureFormulas.Add(new ParamstructureFormula
+            //    {
+            //        FormulaId = existingPo.FormulaId,
+            //        ParamStructureId = newId
+            //    });
+            //}
         }
 
         /// <summary>
@@ -292,30 +293,30 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 // 更新基础信息
                 formula.Adapt(po);
 
-                // 更新关联关系（复用 UpdateAsync 中的逻辑）
-                var targetFamilyIds = formula.StandardFamilyIds.Select(id => id!.Value).ToList();
-                var currentFamilyIds = po.FormulaStandardfamilies.Select(f => f.IdStandardFamily).ToList();
+                //// 更新关联关系（复用 UpdateAsync 中的逻辑）
+                //var targetFamilyIds = formula.StandardFamilyIds.Select(id => id!.Value).ToList();
+                //var currentFamilyIds = po.FormulaStandardfamilies.Select(f => f.IdStandardFamily).ToList();
 
-                foreach (var newId in targetFamilyIds.Except(currentFamilyIds))
-                {
-                    po.FormulaStandardfamilies.Add(new FormulaStandardfamily
-                    {
-                        FormulaId = po.FormulaId,
-                        IdStandardFamily = newId
-                    });
-                }
+                //foreach (var newId in targetFamilyIds.Except(currentFamilyIds))
+                //{
+                //    po.FormulaStandardfamilies.Add(new FormulaStandardfamily
+                //    {
+                //        FormulaId = po.FormulaId,
+                //        IdStandardFamily = newId
+                //    });
+                //}
 
-                var targetParamIds = formula.ParamSturctureIds.Select(id => id!.Value).ToList();
-                var currentParamIds = po.ParamstructureFormulas.Select(p => p.ParamStructureId).ToList();
+                //var targetParamIds = formula.ParamSturctureIds.Select(id => id!.Value).ToList();
+                //var currentParamIds = po.ParamstructureFormulas.Select(p => p.ParamStructureId).ToList();
 
-                foreach (var newId in targetParamIds.Except(currentParamIds))
-                {
-                    po.ParamstructureFormulas.Add(new ParamstructureFormula
-                    {
-                        FormulaId = po.FormulaId,
-                        ParamStructureId = newId
-                    });
-                }
+                //foreach (var newId in targetParamIds.Except(currentParamIds))
+                //{
+                //    po.ParamstructureFormulas.Add(new ParamstructureFormula
+                //    {
+                //        FormulaId = po.FormulaId,
+                //        ParamStructureId = newId
+                //    });
+                //}
             }
         }
 
@@ -333,9 +334,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             if (formulaPo == null)
                 return;
 
-            // 2. 删除所有关联（级联删除或手动删除）
-            _context.FormulaStandardfamilies.RemoveRange(formulaPo.FormulaStandardfamilies);
-            _context.ParamstructureFormulas.RemoveRange(formulaPo.ParamstructureFormulas);
+            //// 2. 删除所有关联（级联删除或手动删除）
+            //_context.FormulaStandardfamilies.RemoveRange(formulaPo.FormulaStandardfamilies);
+            //_context.ParamstructureFormulas.RemoveRange(formulaPo.ParamstructureFormulas);
 
             // 3. 删除主记录
             _context.BasicFormulas.Remove(formulaPo);

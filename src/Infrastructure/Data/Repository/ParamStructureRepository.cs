@@ -61,41 +61,44 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         {
             // 1. 转换并保存主表
             var paramStructurePo = paramStructure.Adapt<BasicParamStructure>();
+
             await _dbContext.AddAsync(paramStructurePo, ct);
 
+            //外键关联索引通过发布领域方法触发单独的仓储去保存
+            //
             // 2. 处理与 StandardFamily 的关联
-            foreach (var familyId in paramStructure.StandardFamilyIds.Where(id => id != null))
-            {
-                if (!await _dbContext.ParamsturctureStandardfamilies
-                    .AnyAsync(af =>
-                        af.ParamStructureId == paramStructurePo.ParamStructureId &&
-                        af.IdStandardFamily == familyId!.Value,
-                        ct))
-                {
-                    await _dbContext.AddAsync(new ParamsturctureStandardfamily
-                    {
-                        ParamStructureId = paramStructurePo.ParamStructureId,
-                        IdStandardFamily = familyId!.Value
-                    }, ct);
-                }
-            }
+            //foreach (var familyId in paramStructure.StandardFamilyIds.Where(id => id != null))
+            //{
+            //    if (!await _dbContext.ParamsturctureStandardfamilies
+            //        .AnyAsync(af =>
+            //            af.ParamStructureId == paramStructurePo.ParamStructureId &&
+            //            af.IdStandardFamily == familyId!.Value,
+            //            ct))
+            //    {
+            //        await _dbContext.AddAsync(new ParamsturctureStandardfamily
+            //        {
+            //            ParamStructureId = paramStructurePo.ParamStructureId,
+            //            IdStandardFamily = familyId!.Value
+            //        }, ct);
+            //    }
+            //}
 
             // 3. 处理与 Formula 的关联
-            foreach (var formulaId in paramStructure.FormulaIds.Where(id => id != null))
-            {
-                if (!await _dbContext.ParamstructureFormulas
-                    .AnyAsync(af =>
-                        af.ParamStructureId == paramStructurePo.ParamStructureId &&
-                        af.FormulaId == formulaId!.Value,
-                        ct))
-                {
-                    await _dbContext.AddAsync(new ParamstructureFormula
-                    {
-                        FormulaId = formulaId!.Value,
-                        ParamStructureId = paramStructurePo.ParamStructureId
-                    }, ct);
-                }
-            }
+            //foreach (var formulaId in paramStructure.FormulaIds.Where(id => id != null))
+            //{
+            //    if (!await _dbContext.ParamstructureFormulas
+            //        .AnyAsync(af =>
+            //            af.ParamStructureId == paramStructurePo.ParamStructureId &&
+            //            af.FormulaId == formulaId!.Value,
+            //            ct))
+            //    {
+            //        await _dbContext.AddAsync(new ParamstructureFormula
+            //        {
+            //            FormulaId = formulaId!.Value,
+            //            ParamStructureId = paramStructurePo.ParamStructureId
+            //        }, ct);
+            //    }
+            //}
         }
 
         /// <summary>
