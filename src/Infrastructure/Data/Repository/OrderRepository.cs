@@ -41,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         {
             var lineIds = order.Lines.Select(l => l.Id).ToList();
             var existingRows = await _context.LabTestInfos
-                .Where(i => i.ReportNumber == order.Id!.Value && lineIds.Contains(i.Id))
+                .Where(i => i.ReportNumber == order.ReportNumbr && lineIds.Contains(i.Id))
                 .ToListAsync(ct);
 
             foreach (var line in order.Lines)
@@ -74,22 +74,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// </summary>
         public async Task<Order?> GetByIdAsync(OrderId id, CancellationToken ct)
         {
-            var rows = await _context.LabTestInfos
-                .Where(i => i.ReportNumber == id!.Value && i.IsDelete == "N")
-                .ToListAsync(ct);
+            //var rows = await _context.LabTestInfos
+            //    .Where(i => i.ReportNumber == id!.Value && i.IsDelete == "N")
+            //    .ToListAsync(ct);
 
-            if (rows.Count == 0) return null;
+            //if (rows.Count == 0) return null;
 
-            var first = rows.First();
-            var metadata = OrderMetadata.Create(
-                first.OrderEntryPerson ?? string.Empty,
-                first.CustomerService ?? string.Empty,
-                null,  // remark 在行级别
-                first.LastUpdateTime ?? DateTimeOffset.UtcNow);
+            //var first = rows.First();
+            //var metadata = OrderMetadata.Create(
+            //    first.OrderEntryPerson ?? string.Empty,
+            //    first.CustomerService ?? string.Empty,
+            //    null,  // remark 在行级别
+            //    first.LastUpdateTime ?? DateTimeOffset.UtcNow);
 
-            var lines = rows.Select(MapToLine).ToList();
+            //var lines = rows.Select(MapToLine).ToList();
 
-            return Order.Reconstitute(id, metadata, lines);
+            //return Order.Reconstitute(id, metadata, lines);
+            return null;
         }
 
         /// <summary>
@@ -97,10 +98,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// </summary>
         public async Task<bool> ExistsAsync(OrderId id, string testGroup, CancellationToken ct)
         {
-            return await _context.LabTestInfos
-                .AnyAsync(i => i.ReportNumber == id!.Value
-                    && i.TestGroup == testGroup
-                    && i.IsDelete == "N", ct);
+            //return await _context.LabTestInfos
+            //    .AnyAsync(i => i.ReportNumber == id!.Value
+            //        && i.TestGroup == testGroup
+            //        && i.IsDelete == "N", ct);
+
+            return true;
         }
 
         public async Task<string?> GetReportNumberByLineIdAsync(long lineId, CancellationToken ct)
@@ -120,7 +123,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             return new LabTestInfo
             {
                 Id = line.Id,
-                ReportNumber = order.Id!.Value,
+                ReportNumber = order.ReportNumbr,
                 OrderEntryPerson = order.Metadata.OrderEntryPerson,
                 CustomerService = order.Metadata.CustomerService,
                 TestGroup = line.TestGroup,

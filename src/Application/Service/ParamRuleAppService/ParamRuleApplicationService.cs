@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.NX_lims_Softlines_Command_System.src.Application.ParamEngineContext.Dtos;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
@@ -17,18 +18,40 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 {
     public class ParamRuleApplicationService: IParamRuleApplicationService,IScopedDependency
     {
+        /// <summary>
+        /// 仓储
+        /// </summary>
         private readonly IParamRuleRepository _pararmRuleRepository;
+
+        /// <summary>
+        /// 规则激活校验服务
+        /// </summary>
+        private readonly RuleActiveValidateService _ruleActiveValidateService;
+
+        /// <summary>
+        /// 规则自然语言翻译服务
+        /// </summary>
         private readonly IRuleTranslationService _ruleTranslationService;
+
+        /// <summary>
+        /// 公式仓储
+        /// </summary>
         private readonly IFormulaRepository _formulaRepository;
+
+        /// <summary>
+        /// 工作单元
+        /// </summary>
         private readonly IUnitOfWork _unitOfWork;
 
         public ParamRuleApplicationService(
             IParamRuleRepository pararmRuleRepository,
+            RuleActiveValidateService ruleActiveValidateService,
             IRuleTranslationService ruleTranslationService,
             IFormulaRepository formulaRepository,
             IUnitOfWork unitOfWork)
         {
             _pararmRuleRepository = pararmRuleRepository;
+            _ruleActiveValidateService = ruleActiveValidateService;
             _ruleTranslationService = ruleTranslationService;
             _formulaRepository = formulaRepository;
             _unitOfWork = unitOfWork;
@@ -56,15 +79,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 new ParamValue(request.ParamResult)
             );
 
-            // 3. 激活规则(待其余聚合根逻辑完善后用单独的方法激活)
-            rule.Active();
-
-            // 4. 持久化
             await _pararmRuleRepository.AddAsync(rule,ct);
 
             await _unitOfWork.SaveChangesAsync();
 
-            // 5. 返回
             return Result.Ok();
         }
 
@@ -94,15 +112,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 result: result
             );
 
-            // 4. 激活规则(待其余聚合根逻辑完善后用单独的方法激活)
-            rule.Active();
-
-            // 5. 持久化
             await  _pararmRuleRepository.AddAsync(rule, ct);
 
             await _unitOfWork.SaveChangesAsync();
 
-            // 6. 返回
             return Result.Ok();
         }
 
@@ -126,7 +139,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             //var pattern = _ruleTranslationService.TranslateFromDto(request, ct);
 
             // 3. 更新规则
-            existingRule.ChangePriority(request.Priority);
+            //existingRule.ChangePriority(request.Priority);
 
             //existingRule.Pattern = pattern; // 注意：这里通过聚合根方法去更新
 
@@ -140,6 +153,33 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         }
 
         /// <summary>
+        /// 激活规则
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> ActiveParamRuleAsync(string id, CancellationToken ct)
+        {
+            var ruleId = new ParamRuleId(id);
+
+            var rule = await _pararmRuleRepository.GetByIdAsync(ruleId, ct);
+
+            var isOk = await _ruleActiveValidateService.ValidateRuleActivationAsync(ruleId, ct);
+
+            if (!isOk.IsSuccess) 
+            {
+                //调用规则激活校验集合进行验证后激活
+                rule.Active();
+            }
+
+            await _pararmRuleRepository.UpdateAsync(rule, ct);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return Result.Ok();
+        }
+
+        /// <summary>
         /// 获取参数规则
         /// </summary>
         /// <param name="id"></param>
@@ -148,6 +188,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         public async Task<Result> GetParamRuleAsync(string id,CancellationToken ct)
         {
             var rule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(id), ct);
+
             if (rule == null)
                 throw new Exception($"Param rule with id {id} not found");
 

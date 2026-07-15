@@ -6,7 +6,7 @@
         /// <summary>
         /// 关联申请单Id
         /// </summary>
-        public string SourceId { get; set; } = string.Empty;  // 关联的申请单ID
+        public Guid SourceId { get; set; } // 关联的申请单ID
 
         /// <summary>
         /// 测试清单中的测试项

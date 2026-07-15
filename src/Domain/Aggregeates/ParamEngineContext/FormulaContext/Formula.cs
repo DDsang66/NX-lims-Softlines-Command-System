@@ -211,7 +211,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public void Deactivate() => IsActive = false;
 
         /// <summary>
-        /// 激活公式，使其参与计算。通常在创建或修改公式后需要调用此方法来启用公式的计算功能。
+        /// 激活公式，使其参与计算。
+        /// 通常在创建或修改公式后需要调用此方法来启用公式的计算功能。
         /// </summary>
         public void Activate()
         {
@@ -277,26 +278,5 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             _paramSturctureIds.Remove(paramStructureId);
         }
 
-        /// <summary>
-        /// 管理公式的条件集合（保持不变式）
-        /// </summary>
-        /// <param name="pool"></param>
-        /// <returns></returns>
-        public Result ValidateConditionPool(ConditionPool pool)
-        {
-            //对条件池验证置与该聚合根的原因是，当前位置直接检测已富化条件池的完整性
-            //避免在计算公式时出现缺失条件的情况。
-            //Formula 描述“哪些原子条件构成该参数的推导范式”，把需要的字段、类型和基本语义放在 Formula 可避免多处重复定义。
-            var missing = ConditionFields
-                .Where(f => !pool.HasCondition(f))
-                .ToList();
-
-            return missing.Any()
-                ? Result.Fail("missing")
-                : Result.Ok();
-        }
-
-
-        //•	发布领域事件：FormulaCreated、FormulaUpdated、FormulaActivated 等，通知规则/结构需要重新编译或同步
     }
 }

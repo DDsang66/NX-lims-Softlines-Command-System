@@ -50,32 +50,32 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
 
             try
             {
-                var firstRow = dto.Rows.First();
-                if (string.IsNullOrWhiteSpace(firstRow.ReportNum) || firstRow.OrderEntry == null)
-                    return false;
+                //var firstRow = dto.Rows.First();
+                //if (string.IsNullOrWhiteSpace(firstRow.ReportNum) || firstRow.OrderEntry == null)
+                //    return false;
 
-                foreach (var row in dto.Rows)
-                {
-                    if (await _repository.ExistsAsync(new OrderId(row.ReportNum!), row.Group!, CancellationToken.None))
-                        return false;
-                }
+                //foreach (var row in dto.Rows)
+                //{
+                //    if (await _repository.ExistsAsync(new OrderId(dto.Id!), row.Group!, CancellationToken.None))
+                //        return false;
+                //}
 
-                var cs = dto.Rows[0].Cs;
-                var csName = await _lookup.ResolveCsNameAsync(cs);
-                var order = Order.Create(firstRow.ReportNum, firstRow.OrderEntry, csName, dto.Remark);
+                //var cs = dto.Rows[0].Cs;
+                //var csName = await _lookup.ResolveCsNameAsync(cs);
+                //var order = Order.Create(firstRow.ReportNum, firstRow.OrderEntry, csName, dto.Remark);
 
-                foreach (var row in dto.Rows)
-                {
-                    order.AddLine(
-                        lineId: new SnowflakeIdGenerator().NextId(),
-                        testGroup: row.Group!,
-                        express: StringToExpress(row.Express),
-                        dueDate: row.DueDate ?? DateTimeOffset.UtcNow,
-                        labIn: row.LabIn ?? DateTimeOffset.UtcNow,
-                        remark: row.Remark);
-                }
+                //foreach (var row in dto.Rows)
+                //{
+                //    order.AddLine(
+                //        lineId: new SnowflakeIdGenerator().NextId(),
+                //        testGroup: row.Group!,
+                //        express: StringToExpress(row.Express),
+                //        dueDate: row.DueDate ?? DateTimeOffset.UtcNow,
+                //        labIn: row.LabIn ?? DateTimeOffset.UtcNow,
+                //        remark: row.Remark);
+                //}
 
-                await _repository.AddAsync(order, CancellationToken.None);
+                //await _repository.AddAsync(order, CancellationToken.None);
                 return true;
             }
             catch
@@ -93,37 +93,37 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
 
             try
             {
-                foreach (var row in dto.Rows)
-                {
-                    if (row.RecordId == null || !long.TryParse(row.RecordId, out var lineId))
-                        continue;
+                //foreach (var row in dto.Rows)
+                //{
+                //    if (row.RecordId == null || !long.TryParse(row.RecordId, out var lineId))
+                //        continue;
 
-                    var reportNum = await _repository.GetReportNumberByLineIdAsync(lineId, CancellationToken.None);
-                    if (reportNum == null) continue;
+                //    var reportNum = await _repository.GetReportNumberByLineIdAsync(lineId, CancellationToken.None);
+                //    if (reportNum == null) continue;
 
-                    var order = await _repository.GetByIdAsync(new OrderId(reportNum), CancellationToken.None);
-                    if (order == null) continue;
+                //    var order = await _repository.GetByIdAsync(new OrderId(), CancellationToken.None);
+                //    if (order == null) continue;
 
-                    order.UpdateLine(lineId,
-                        express: StringToExpress(row.Express),
-                        dueDate: row.ReportDueDate,
-                        labIn: row.OrderInTime,
-                        sampleCount: row.TestSampleNum,
-                        itemCount: row.TestItemNum,
-                        reviewer: await ResolveUserName(row.ReviewerId),
-                        engineer: row.TestEngineer,
-                        remark: row.Remark,
-                        delayType: row.DelayType,
-                        delayReason: row.DelayReason);
+                //    order.UpdateLine(lineId,
+                //        express: StringToExpress(row.Express),
+                //        dueDate: row.ReportDueDate,
+                //        labIn: row.OrderInTime,
+                //        sampleCount: row.TestSampleNum,
+                //        itemCount: row.TestItemNum,
+                //        reviewer: await ResolveUserName(row.ReviewerId),
+                //        engineer: row.TestEngineer,
+                //        remark: row.Remark,
+                //        delayType: row.DelayType,
+                //        delayReason: row.DelayReason);
 
-                    order.ApplyTimeBasedStatusTransition(lineId,
-                        reviewer: await ResolveUserName(row.ReviewerId),
-                        engineer: row.TestEngineer,
-                        reviewFinishTime: row.ReviewFinishTime,
-                        labOutTime: row.LabOutTime);
+                //    order.ApplyTimeBasedStatusTransition(lineId,
+                //        reviewer: await ResolveUserName(row.ReviewerId),
+                //        engineer: row.TestEngineer,
+                //        reviewFinishTime: row.ReviewFinishTime,
+                //        labOutTime: row.LabOutTime);
 
-                    await _repository.UpdateAsync(order, CancellationToken.None);
-                }
+                //    await _repository.UpdateAsync(order, CancellationToken.None);
+                //}
                 return true;
             }
             catch
@@ -141,19 +141,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
 
             try
             {
-                foreach (var item in req.Items)
-                {
-                    if (!long.TryParse(item.RecordId, out var recordId)) continue;
+                //foreach (var item in req.Items)
+                //{
+                //    if (!long.TryParse(item.RecordId, out var recordId)) continue;
 
-                    var reportNum2 = await _repository.GetReportNumberByLineIdAsync(recordId, CancellationToken.None);
-                    if (reportNum2 == null) continue;
+                //    var reportNum2 = await _repository.GetReportNumberByLineIdAsync(recordId, CancellationToken.None);
+                //    if (reportNum2 == null) continue;
 
-                    var order2 = await _repository.GetByIdAsync(new OrderId(reportNum2), CancellationToken.None);
-                    if (order2 == null) continue;
+                //    var order2 = await _repository.GetByIdAsync(new OrderId(reportNum2), CancellationToken.None);
+                //    if (order2 == null) continue;
 
-                    order2.DeleteLine(recordId);
-                    await _repository.UpdateAsync(order2, CancellationToken.None);
-                }
+                //    order2.DeleteLine(recordId);
+                //    await _repository.UpdateAsync(order2, CancellationToken.None);
+                //}
                 return true;
             }
             catch
@@ -164,7 +164,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
 
         public Task<Order?> GetOrderByIdAsync(string reportNumber)
         {
-            return _repository.GetByIdAsync(new OrderId(reportNumber), CancellationToken.None);
+            //return _repository.GetByIdAsync(new OrderId(reportNumber), CancellationToken.None);
+            return null;
         }
 
         private static OrderExpress StringToExpress(string? s) => s switch

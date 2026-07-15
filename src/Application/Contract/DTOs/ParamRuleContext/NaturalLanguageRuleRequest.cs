@@ -10,17 +10,17 @@
         /// <summary>
         /// 关联规则id
         /// </summary>
-        public string? FormulaId { get; set; } 
+        public string FormulaId { get; set; } = string.Empty;
 
         /// <summary>
         /// 参数结构id
         /// </summary>
-        public string? ParamStructureId { get; set; }
+        public string ParamStructureId { get; set; } = string.Empty;
 
         /// <summary>
         /// 标准族id
         /// </summary>
-        public string? StandardFamilyId { get; set; }
+        public string StandardFamilyId { get; set; } = string.Empty;
 
         /// <summary>
         /// 参数字段名称

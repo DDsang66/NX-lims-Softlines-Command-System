@@ -14,7 +14,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         private readonly List<OrderLine> _lines = new();
 
         public OrderId Id { get; private set; } = null!;
-
+        public string ReportNumbr { get; private set; } = string.Empty;
+        public string TestGroup { get; private set; } = string.Empty;
         /// <summary>
         /// 订单行（只读）
         /// </summary>
@@ -54,7 +55,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 
             var order = new Order
             {
-                Id = new OrderId(reportNumber),
+                Id = new OrderId(new Guid()),
                 Metadata = OrderMetadata.Create(orderEntryPerson, customerService, remark, DateTimeOffset.UtcNow)
             };
 
@@ -71,7 +72,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             if (id == null) throw new ArgumentNullException(nameof(id));
             if (metadata == null) throw new ArgumentNullException(nameof(metadata));
 
-            var order = new Order { Id = id, Metadata = metadata };
+            var order = new Order 
+            { 
+                Id = id,
+                Metadata = metadata 
+            };
             if (lines != null) order._lines.AddRange(lines);
             return order;
         }

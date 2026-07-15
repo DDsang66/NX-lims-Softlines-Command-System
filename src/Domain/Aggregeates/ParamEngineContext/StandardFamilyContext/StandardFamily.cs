@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
+﻿using DocumentFormat.OpenXml.Vml;
+using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
@@ -10,10 +11,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 {
     public sealed class StandardFamily : AggregateRoot
     {
-        private readonly List<StandardId> _standardIds = new();
-        private readonly List<FormulaId> _formulaIds = new();
-        private readonly List<ParamStructureId> _paramStructureIds = new();
-        private readonly List<ParamRuleId> _sharedRuleIds = new();
+        private readonly List<StandardId?> _standardIds = new();
+        private readonly List<FormulaId?> _formulaIds = new();
+        private readonly List<ParamStructureId?> _paramStructureIds = new();
+        private readonly List<ParamRuleId?> _sharedRuleIds = new();
 
         /// <summary>
         /// 标准族id
@@ -28,22 +29,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 标准id集合
         /// </summary>
-        public IReadOnlyCollection<StandardId> StandardIds => _standardIds.AsReadOnly();
+        public IReadOnlyCollection<StandardId?> StandardIds => _standardIds.AsReadOnly();
 
         /// <summary>
         /// 公式id集合
         /// </summary>
-        public IReadOnlyCollection<FormulaId> FormulaIds => _formulaIds.AsReadOnly();
+        public IReadOnlyCollection<FormulaId?> FormulaIds => _formulaIds.AsReadOnly();
 
         /// <summary>
         /// 参数结构id集合
         /// </summary>
-        public IReadOnlyCollection<ParamStructureId> ParamStructureIds => _paramStructureIds.AsReadOnly();
+        public IReadOnlyCollection<ParamStructureId?> ParamStructureIds => _paramStructureIds.AsReadOnly();
 
         /// <summary>
         /// 共享规则id集合
         /// </summary>
-        public IReadOnlyCollection<ParamRuleId> SharedRuleIds => _sharedRuleIds.AsReadOnly();
+        public IReadOnlyCollection<ParamRuleId?> SharedRuleIds => _sharedRuleIds.AsReadOnly();
 
         /// <summary>
         /// 版本
@@ -60,8 +61,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public static StandardFamily Create(
             StandardFamilyId id,
             string name
-            //IEnumerable<StandardId> standardIds,
-            //string version
             )
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name required", nameof(name));
@@ -76,12 +75,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Version = 1,
                 EffectiveDate = DateTime.UtcNow
             };
-
-            //if (standardIds != null)
-            //{
-            //    foreach (var sid in standardIds.Distinct())
-            //        family._standardIds.Add(sid);
-            //}
 
             //family.AddDomainEvent(new StandardFamilyCreatedEvent(id, name));
 
@@ -103,10 +96,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public static StandardFamily Reconstitute(
             StandardFamilyId id,
             string code,
-            List<StandardId> standardIds,
-            List<FormulaId> formulaIds,
-            List<ParamStructureId> paramStructureIds,
-            List<ParamRuleId> sharedRuleIds,
+            List<StandardId?> standardIds,
+            List<FormulaId?> formulaIds,
+            List<ParamStructureId?> paramStructureIds,
+            List<ParamRuleId?> sharedRuleIds,
             int version,
             DateTime effectiveDate)
         {
@@ -118,12 +111,30 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 EffectiveDate = effectiveDate
             };
 
-            // 通过领域方法或反射填充私有集合
-            foreach (var sid in standardIds) family._standardIds.Add(sid);
-            foreach (var fid in formulaIds) family._formulaIds.Add(fid);
-            foreach (var pid in paramStructureIds) family._paramStructureIds.Add(pid);
-            foreach (var rid in sharedRuleIds) family._sharedRuleIds.Add(rid);
+            // 安全地填充可空 ID 列表
+            if (standardIds != null)
+            {
+                foreach (var sid in standardIds.Distinct())
+                    family._standardIds.Add(sid);
+            }
 
+            if (formulaIds != null)
+            {
+                foreach (var fid in formulaIds.Distinct())
+                    family._formulaIds.Add(fid);
+            }
+
+            if (paramStructureIds != null)
+            {
+                foreach (var pid in paramStructureIds.Distinct())
+                    family._paramStructureIds.Add(pid);                
+            }
+
+            if (sharedRuleIds != null)
+            {
+                foreach (var rid in sharedRuleIds.Distinct())
+                    family._sharedRuleIds.Add(rid!);
+            }
             return family;
         }
 
@@ -136,8 +147,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <exception cref="ArgumentException"></exception>
         public void Update(
             string standardFamilyCode,
-            DateTime effectiveDate
-            ) 
+            DateTime effectiveDate) 
         {
             if (standardFamilyCode != null)
             {
@@ -152,8 +162,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             }
 
             // 版本自增
-            Version++;
+            UpdateVersion();
         }
+
+        /// <summary>
+        /// 删除标准族
+        /// </summary>
+        public void Remove() 
+        {
+            //AddDomainEvent(new StandardFamilyRemovedEvent(Id));
+            //领域事件通知私有关联标准
+        }
+
 
         /// <summary>
         /// 判断是否包含指定标准（通过 ID）
@@ -239,5 +259,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
             //AddDomainEvent(new FamilyVersionUpdatedEvent(Id, oldVersion, newVersion));
         }
+
     }
 }

@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System.Threading.Tasks;
@@ -21,15 +22,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         private readonly IParamRuleRepository _ruleRepo;
         private readonly IParamGenerationEngine _engine;
         private readonly IParamCompensationService _compensation;
+        private readonly IConditionPoolValidateService _conditionPoolValidateService;
 
         public ParamGenerationCoordinator(
             IParamStructureRepository structureRepo,
             IFormulaRepository formulaRepo,
             IParamRuleRepository ruleRepo,
             IParamGenerationEngine engine,
-            IParamCompensationService compensation)
+            IParamCompensationService compensation,
+            IConditionPoolValidateService conditionPoolValidateService)
         {
             _structureRepo = structureRepo;
+            _conditionPoolValidateService = conditionPoolValidateService;
             _formulaRepo = formulaRepo;
             _ruleRepo = ruleRepo;
             _engine = engine;
@@ -50,7 +54,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             if (structure == null) return Result<ParamSet>.Fail("ParamStructure not found");
 
             // 2. 前置验证（结构层面）
-            var v = structure.ValidateConditionPool(pool);
+            var v =await  _conditionPoolValidateService.EnsureConditionPoolConformance(structure, pool);
             if (v.IsFailure) return Result<ParamSet>.Fail(v.Error);
 
             //ConditionPool调用ConditionEnricher进行富化，确保所有条件字段都被填充
@@ -70,7 +74,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             var generated = _engine.Generate(pool, rules);
 
             // 6. 补偿
-            var final = _compensation.ApplyCompensation(generated, structure.Schema);
+            var final = _compensation.ConformToStructure(generated, structure);
 
             return Result<ParamSet>.Ok(final);
         }

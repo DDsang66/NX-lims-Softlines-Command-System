@@ -13,7 +13,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     public sealed class ConditionPool : AggregateRoot
     {
         public ConditionPoolId Id { get; private set; }
-        public OrderId SourceId { get; private set; } = string.Empty;  // 关联的申请单ID
+        public OrderId SourceId { get; private set; }   // 关联的申请单ID
         public CheckListId CheckListId { get; private set; } = new CheckListId(new Guid());  // 关联的检查单ID
         private readonly Dictionary<string, object?> _conditions = new(StringComparer.OrdinalIgnoreCase);
         public IReadOnlyDictionary<string, object?> Conditions => _conditions;
@@ -118,5 +118,21 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         /// <param name="fieldName"></param>
         public void Remove(string fieldName) => _conditions.Remove(fieldName);
+
+        /// <summary>
+        /// 将条件池状态改为已验证
+        /// </summary>
+        public void ChangeToValidated() => Status = ConditionPoolStatus.Validated;
+
+        /// <summary>
+        /// 将条件池状态改为已过期
+        /// </summary>
+        public void ChangeToExpired() => Status = ConditionPoolStatus.Expired;
+
+
+        /// <summary>
+        /// 将条件池状态改为草稿
+        /// </summary>
+        public void ChangeToDraft() => Status = ConditionPoolStatus.Draft;
     }
 }

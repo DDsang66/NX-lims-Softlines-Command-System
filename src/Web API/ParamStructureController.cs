@@ -37,5 +37,13 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
 
             return Ok(result);
         }
+
+        [HttpGet("list/{paramStructureId}")]
+        public async Task<IActionResult> GetParamStructureList(string paramStructureId, CancellationToken ct) 
+        {
+            var result = await _paramStructureAppService.GetParamStructureListAsync(paramStructureId, ct);
+
+            return Ok(result);
+        }
     }
 }

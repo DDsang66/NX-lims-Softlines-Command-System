@@ -11,22 +11,27 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// <summary>
         /// 测试清单ID
         /// </summary>
-        public CheckListId Id { get; set; }
+        public CheckListId Id { get; private set; }
 
         /// <summary>
         /// 关联申请单Id
         /// </summary>
-        public OrderId SourceId { get; set; } = string.Empty;  // 关联的申请单ID
+        public OrderId SourceId { get; private set; } // 关联的申请单ID
         
         /// <summary>
         /// 测试清单中的测试项
         /// </summary>
-        public IReadOnlyList<CheckListItem> Items { get; set; }
+        public IReadOnlyList<CheckListItem> Items { get; private set; }
+
+        /// <summary>
+        /// 创建时间
+        /// </summary>
+        public DateTime CreatedTime { get; private set; } = DateTime.Now;
 
         /// <summary>
         /// 备注
         /// </summary>
-        public string? Remark { get; set; } = string.Empty;
+        public string? Remark { get; private set; } = string.Empty;
 
         private CheckList() { }
 

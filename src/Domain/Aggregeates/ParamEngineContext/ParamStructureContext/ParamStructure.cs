@@ -175,13 +175,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         {
             if (string.IsNullOrWhiteSpace(paramName))
                 throw new ArgumentException("paramName required", nameof(paramName));
+
             if (schema == null)
                 throw new ArgumentNullException(nameof(schema));
-            if (schema.RequiredParam == null)
-                throw new ArgumentException("Schema must contain at least one ParamDefinition", nameof(schema));
-          
-            // 执行更细致的 Schema 内部结构校验
-            ValidateSchemaStructure(schema);
 
             ParamName = paramName.Trim();
             Schema = schema;
@@ -189,133 +185,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
             //领域事件，通知对应formula参数结构更新
             AddDomainEvent(new ParamStructureUpdatedEvent(Id, ParamName, Schema));
-         }
-
-        /// <summary>
-        /// 校验 Schema 的内部结构一致性
-        /// </summary>
-        private void ValidateSchemaStructure(ParamSchema schema)
-        {
-            var mainParam = schema.RequiredParam;
-
-            // 1. 校验主参数定义的完整性
-            if (string.IsNullOrWhiteSpace(mainParam.Name))
-                throw new ArgumentException("MainParamDefinition Name is required.", nameof(schema));
-
-            if (mainParam.DefaultValue == null)
-                throw new ArgumentException($"MainParamDefinition '{mainParam.Name}' must have a default value for compensation.", nameof(schema));
-
-            // 2. 校验条件要求
-            if (schema.ConditionRequirements != null)
-            {
-                foreach (var req in schema.ConditionRequirements)
-                {
-                    if (string.IsNullOrWhiteSpace(req.FieldName))
-                        throw new ArgumentException("ConditionRequirement FieldName cannot be empty.", nameof(schema));
-
-                    // 条件字段不能与主参数字段同名，避免逻辑混淆
-                    if (req.FieldName == mainParam.Name)
-                        throw new ArgumentException($"Condition field '{req.FieldName}' cannot have the same name as the main param.", nameof(schema));
-                }
-            }
-
-            // 3. 校验限制规则
-            if (schema.Limitations != null)
-            {
-                var validParamNames = new HashSet<string> { mainParam.Name };
-                if (schema.ConditionRequirements != null)
-                {
-                    foreach (var req in schema.ConditionRequirements)
-                    {
-                        if (!string.IsNullOrWhiteSpace(req.FieldName))
-                            validParamNames.Add(req.FieldName);
-                    }
-                }
-
-                foreach (var limitationKey in schema.Limitations.Keys)
-                {
-                    // 限制规则必须关联到已存在的参数
-                    if (!validParamNames.Contains(limitationKey))
-                        throw new ArgumentException($"Limitation key '{limitationKey}' does not match any defined param or condition.", nameof(schema));
-                }
-            }
         }
-
 
         /// <summary>
         /// 主参数定义（Schema.RequiredParam）
         /// </summary>
         public ParamDefinition MainParamDefinition => Schema.RequiredParam;
-
-        /// <summary>
-        /// 验证一级条件池是否满足结构要求（结构层面）
-        /// - 只做字段存在性、白名单基础校验
-        /// - 更复杂的语义校验（表达式、数据类型细化）由 Formula/语义分析器完成
-        /// </summary>
-        public Result ValidateConditionPool(ConditionPool pool)
-        {
-            if (pool == null) return Result.Fail("ConditionPool is null");
-
-            foreach (var requirement in Schema.ConditionRequirements)
-            {
-                //存在性验证
-                if (requirement.IsRequired && !pool.HasCondition(requirement.FieldName))
-                    return Result.Fail($"Missing required condition: {requirement.FieldName}");
-
-                // 白名单验证
-                if (pool.HasCondition(requirement.FieldName) && requirement.AllowedValues != null && requirement.AllowedValues.Any())
-                {
-                    var value = pool.GetConditionValue<object>(requirement.FieldName);
-                    if (!requirement.AllowedValues.Contains(value))
-                        return Result.Fail($"Condition '{requirement.FieldName}' has invalid value");
-                }
-            }
-
-            return Result.Ok();
-        }
-
-        /// <summary>
-        /// 接受来自引擎的初步生成结果，并执行本聚合的策略性处理（主要针对主参数）
-        /// - 责任：本地补偿策略、记录、局部越界检查（更复杂的全局补偿应由 ParamCompensationService 完成）
-        /// - 返回：最终的 ParamSet 供应用层持久化或进一步处理
-        /// </summary>
-        public ParamSet AcceptGeneratedResult(ParamSet generated)
-        {
-            if (generated == null) throw new ArgumentNullException(nameof(generated));
-
-            var result = new ParamSet();
-            var main = MainParamDefinition;
-            var name = main.Name;
-
-            if (generated.TryGetValue(name, out var value))
-            {
-                // 简单本地越界检查（若 Schema.Limitations 提供 IsValid 会使用）
-                if (Schema.Limitations != null && Schema.Limitations.TryGetValue(name, out var limitation))
-                {
-                    try
-                    {
-                        // 如果 limitation 未实现 IsValid，也允许通过（以兼容占位）
-                        var ok = limitation?.GetType().GetMethod("IsValid")?.Invoke(limitation, new[] { value }) as bool?;
-                        if (ok == false)
-                            throw new Exception($"{name} has invalid value: {value}");
-                    }
-                    catch (Exception) { throw; }
-                    catch
-                    {
-                        // 忽略 limitation 反射异常，允许继续（后续由 ParamCompensationService 进行严格校验）
-                    }
-                }
-
-                result.Add(name, value);
-            }
-            else
-            {
-                // 补偿：使用默认值
-                result.Add(name, main.DefaultValue);
-            }
-
-            return result;
-        }
 
         /// <summary>
         /// 更新生效日期

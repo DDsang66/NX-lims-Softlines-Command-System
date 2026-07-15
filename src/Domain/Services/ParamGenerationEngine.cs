@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
 {
@@ -15,50 +16,67 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
     /// </summary>
     public class ParamGenerationEngine:IParamGenerationEngine,IScopedDependency
     {
-        private readonly IConditionAccessor _accessor;
-        private readonly IValueComparer _comparer;
+        private readonly IConditionAccessor _conditionAccessor;
+        private readonly IValueComparer _valueComparer;
+        private readonly ILogger<ParamGenerationEngine> _logger;
 
-        public ParamGenerationEngine(IConditionAccessor accessor, IValueComparer comparer)
+        public ParamGenerationEngine(
+            IConditionAccessor conditionAccessor,
+            IValueComparer valueComparer,
+            ILogger<ParamGenerationEngine> logger)
         {
-            _accessor = accessor ?? throw new ArgumentNullException(nameof(accessor));
-            _comparer = comparer ?? throw new ArgumentNullException(nameof(comparer));
+            _conditionAccessor = conditionAccessor;
+            _valueComparer = valueComparer;
+            _logger = logger;
         }
 
         /// <summary>
-        /// 根据条件池和规则集生成参数集
+        /// 执行规则集，生成参数集
         /// </summary>
-        /// <param name="pool"></param>
-        /// <param name="rules"></param>
-        /// <returns></returns>
-        public ParamSet Generate(ConditionPool pool, IEnumerable<ParamRule> rules)
+        /// <param name="conditionPool">条件池，用于规则匹配</param>
+        /// <param name="rules">待执行的规则集</param>
+        /// <returns>包含所有匹配结果的参数集</returns>
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "ArgumentNullException will be thrown by constructor")]
+        public ParamSet Generate(ConditionPool conditionPool, IEnumerable<ParamRule> rules)
         {
-            //按Priority升序排序
             var ruleCollection = rules?.OrderBy(r => r.Priority).ToList() ?? new List<ParamRule>();
-
             var result = new ParamSet();
 
             foreach (var rule in ruleCollection)
             {
-                if (!rule.IsActive) continue;
+                if (!rule.IsActive)
+                {
+                    _logger.LogDebug("Rule '{RuleName}' is not active, skipping.", rule.ParamName);
+                    continue;
+                }
 
                 try
                 {
-                    if (rule.Match(pool, _accessor, _comparer))
+                    if (rule.Match(conditionPool, _conditionAccessor, _valueComparer))
                     {
-                        var p = rule.GetResult();
-                        result.Add(rule.ParamName, p?.Value);
+                        var ruleResult = rule.GetResult();
+                        var resultValue = ruleResult?.Value;
+
+                        // 写入结果
+                        result.SetValueOrFallback(rule.ParamName, resultValue,null);
+                        _logger.LogInformation("Rule '{RuleName}' matched and added value '{Value}' to result.", rule.ParamName, resultValue);
+
+                        // 尊重规则自身的 StopOnMatch 配置
                         if (rule.StopOnMatch)
-                            break; // 简化策略：匹配到即停止
+                        {
+                            _logger.LogInformation("Rule '{RuleName}' has StopOnMatch enabled, stopping execution.", rule.ParamName);
+                            break;
+                        }
                     }
                 }
-                catch (KeyNotFoundException)
+                catch (KeyNotFoundException ex)
                 {
-                    // 条件池缺失时，跳过该规则（调用方应在生成前做完整性校验）
+                    _logger.LogWarning(ex, "Rule '{RuleName}' failed to execute due to missing condition in pool. Skipping.", rule.ParamName);
                     continue;
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // 单条规则异常隔离：记录/跳过（日志可在 infra 注入）
+                    _logger.LogError(ex, "Rule '{RuleName}' encountered an unexpected error. Skipping.", rule.ParamName);
                     continue;
                 }
             }

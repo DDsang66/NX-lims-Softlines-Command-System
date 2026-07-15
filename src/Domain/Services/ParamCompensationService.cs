@@ -1,4 +1,5 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
@@ -11,51 +12,54 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         /// 检测生成参数是否满足 schema 的要求，若不满足则抛出异常。
         /// 根据 schema 补偿生成参数，若生成参数缺失，则使用 schema 中的默认值进行补偿。
         /// </summary>
-        public ParamSet ApplyCompensation(ParamSet generated, ParamSchema schema)
+        public ParamSet ConformToStructure(ParamSet generated, ParamStructure structure)
         {
-            if (schema == null) throw new ArgumentNullException(nameof(schema));
-            if (generated == null) throw new ArgumentNullException(nameof(generated));
+            // 1. 参数校验
+            ArgumentNullException.ThrowIfNull(generated);
+            ArgumentNullException.ThrowIfNull(structure);
 
-            var result = new ParamSet();
-            var main = schema.RequiredParam ?? throw new ArgumentException("Schema.RequiredParam is required", nameof(schema));
+            var main = structure.MainParamDefinition;
+            if (main == null)
+                throw new ArgumentException("Structure's MainParamDefinition is required", nameof(structure));
+
             var name = main.Name;
-
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Main parameter name is required in schema", nameof(schema));
+                throw new ArgumentException("Main parameter name is required in structure", nameof(structure));
 
+            // 2. 尝试获取生成的值
             if (generated.TryGetValue(name, out var value))
             {
-                // 空值处理：如果值为 null 且参数不可空，则认为越界
+                // 2.1 空值处理
                 if (value == null && !main.IsNullable)
-                    throw new Exception(name);
+                    throw new Exception("Main parameter cannot be null");
 
-                // 若存在 limitation，优先使用其 IsValid 校验（传入回退类型）
-                if (schema.Limitations != null && schema.Limitations.TryGetValue(name, out var lim) && lim != null)
+                // 2.2 合规性校验（依赖接口多态，避免反射）
+                if (structure.Schema.Limitations != null &&
+                    structure.Schema.Limitations.TryGetValue(name, out var limitation) &&
+                    limitation is IParamLimitation validator)
                 {
-                    var ok = true;
                     try
                     {
-                        ok = lim.IsValid(value, main.ValueType);
+                        if (!validator.IsValid(value))
+                            throw new Exception("Parameter value violates limitations");
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        // 如果 limitation 校验抛异常，视为校验失败
-                        ok = false;
+                        // 将校验过程中的异常包装为领域异常，保留原始错误信息
+                        throw new Exception("Limitation validation failed", ex);
                     }
-
-                    if (!ok)
-                        throw new Exception(name);
                 }
 
-                result.Add(name, value);
+                // 值合法，写入结果
+                generated.SetValueOrFallback(name, value, main.DefaultValue);
             }
             else
             {
-                // 补偿：使用默认值（由 ParamDefinition 提供）
-                result.Add(name, main.DefaultValue);
+                // 3. 缺失补偿：直接使用默认值
+                generated.SetValueOrFallback(name, null, main.DefaultValue);
             }
 
-            return result;
+            return generated;
         }
     }
 }

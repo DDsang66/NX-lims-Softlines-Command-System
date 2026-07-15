@@ -22,10 +22,10 @@ using NX_lims_Softlines_Command_System.src.Infrastructure;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.EventOutBoxUtil;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Service.WashLabel;
-using NX_lims_Softlines_Command_System.src.Application.Contract.WashLabel;
 using OfficeOpenXml;
 using System.Reflection;
 using System.Text;
+using NX_lims_Softlines_Command_System.src.Application.Interface.WashLabel;
 
 namespace NX_lims_Softlines_Command_System
 {

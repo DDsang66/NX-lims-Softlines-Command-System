@@ -2,7 +2,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.WashLabel;
-using NX_lims_Softlines_Command_System.src.Application.Contract.WashLabel;
+using NX_lims_Softlines_Command_System.src.Application.Interface.WashLabel;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service.WashLabel;
 
@@ -10,7 +11,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service.WashLabel;
 /// 通义千问 (Qwen-VL) 视觉识别服务。
 /// 使用模板图片作为视觉 Few-Shot 示例提高识别精度。
 /// </summary>
-public class WashLabelAnalysisService : IWashLabelAnalysisService
+public class WashLabelAnalysisService : IWashLabelAnalysisService,ISingletonDependency
 {
     private readonly HttpClient _httpClient;
     private readonly TemplateLoader _templates;
@@ -106,11 +107,11 @@ public class WashLabelAnalysisService : IWashLabelAnalysisService
 参考图中展示了各类洗护符号的正确名称。请严格按照参考图中的命名方式，将用户图中的每个符号匹配到对应的 ISO 标准名称。
 
 【五类符号命名规范】
-- **水洗 (washing)**：洗涤盆符号。"Washing [温度]°C [normal/mild/very mild] process"、"Hand wash [温度]°C"、"Do not wash"
+- **水洗 (washing)**：洗涤盆符号。"Washing [温度]°C [normal/mild/gentle] process"、"Hand wash [温度]°C"、"Do not wash"
 - **漂白 (bleaching)**：三角形符号。"Chlorine bleach allowed" / "Only non-chlorine bleach" / "Do not bleach"
 - **干燥 (drying)**：正方形符号。"Tumble dry [normal/low heat]" / "Do not tumble dry" / "Line dry" / "Dry flat" / "Drip dry"
 - **熨烫 (ironing)**：熨斗符号。"Iron [low/medium/high] (max [温度]°C)" / "Do not iron"
-- **干洗 (dryCleaning)**：圆形符号。"Dry clean [P/F] [normal/mild]" / "Do not dry clean" / "Professional wet clean"
+- **干洗 (dryCleaning)**：圆形符号。"Dry clean [P/F] [Tetrachloroethylene Normal/Petroleum Normal]" /圆形符号下方出现横杠 "Dry clean [P/F] [Tetrachloroethylene Sensitive/Petroleum Sensitive]"/ "Do not dry clean" / "Professional wet clean"
 
 【重要规则】
 1. name 字段必须使用上述 ISO 标准英文术语，与参考图命名风格一致
@@ -121,11 +122,11 @@ public class WashLabelAnalysisService : IWashLabelAnalysisService
 【欧洲洗涤代码速查表（ISO 6330）】
 - 3N = Washing 30°C normal process
 - 3M = Washing 30°C mild process
-- 3G = Washing 30°C very mild process
+- 3G = Washing 30°C gentle process
 - 3H = Hand wash 30°C
 - 4N = Washing 40°C normal process
 - 4M = Washing 40°C mild process
-- 4G = Washing 40°C very mild process
+- 4G = Washing 40°C gentle process
 - 4H = Hand wash 40°C
 - 5N = Washing 50°C normal process
 - 5M = Washing 50°C mild process
@@ -139,7 +140,7 @@ public class WashLabelAnalysisService : IWashLabelAnalysisService
 洗涤盆符号内部水位线下方：
 - 1 条横线 = normal process（如 3N=30°C normal）
 - 2 条横线 = mild process（如 3M=30°C mild）
-- 3 条横线 = very mild process（如 3G=30°C very mild）
+- 3 条横线 = gentle process（如 3G=30°C gentle）
 - 没有横线 = Hand wash（如 3H=Hand wash）
 请仔细观察洗涤盆内的横线数量，这是唯一判别依据。不要只看温度数字猜测 process 类型。
 

@@ -8,10 +8,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
 
         public IReadOnlyDictionary<string, object?> Values => _values;
 
-        public void Add(string name, object? value)
+        public void SetValueOrFallback(string name, object value, object fallbackValue)
         {
-            if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException(nameof(name));
-            _values[name] = value;
+            _values[name] = value ?? fallbackValue;
         }
 
         public bool TryGetValue(string name, out object? value) => _values.TryGetValue(name, out value);

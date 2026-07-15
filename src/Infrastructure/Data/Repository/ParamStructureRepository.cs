@@ -1,11 +1,14 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 {
@@ -26,7 +29,42 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task<ParamStructure> GetByIdAsync(ParamStructureId id, CancellationToken ct) 
         {
-            return null;
+            var paramStructurePo = await _dbContext.BasicParamStructures.FindAsync(id.Value, ct);
+
+            if (paramStructurePo == null) 
+                throw new Exception("未找到对应的参数结构");
+
+            //查询所有paramStructurePo对应的StandardFamilyId
+            var standardFamilyIds = await  _dbContext.ParamsturctureStandardfamilies
+                .Where(af => af.ParamStructureId == paramStructurePo.ParamStructureId)
+                .Select(af => new StandardFamilyId(af.IdStandardFamily))
+                .ToListAsync(ct);
+
+            var formulaIds = await  _dbContext.ParamstructureFormulas
+                .Where(af => af.ParamStructureId == paramStructurePo.ParamStructureId)
+                .Select(af => new FormulaId(af.FormulaId))
+                .ToListAsync(ct);
+
+            var ruleIds = await  _dbContext.BasicParamRules
+                .Where(br => br.ParamStructureId == paramStructurePo.ParamStructureId)
+                .Select(br => new ParamRuleId(br.RuleId))
+                .ToListAsync(ct);
+
+            var paramStructure = ParamStructure.Reconstitute(
+                id,
+                standardFamilyIds,
+                formulaIds,
+                paramStructurePo.ParamName,
+                JsonSerializer.Deserialize<ParamSchema>(paramStructurePo.Schema!, 
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                })!,
+                ruleIds,
+                paramStructurePo.EffectiveDate);
+
+
+            return paramStructure;
         }
 
         /// <summary>

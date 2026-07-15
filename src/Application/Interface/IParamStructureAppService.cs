@@ -29,5 +29,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Result> RemoveParamStructureAsync(string paramStructureId, CancellationToken ct);
+
+        /// <summary>
+        /// 获取参数结构列表
+        /// </summary>
+        /// <param name="paramStructureId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Result<ParamStructureResponseDto>> GetParamStructureListAsync(string paramStructureId, CancellationToken ct);
     }
 }

@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using NX_lims_Softlines_Command_System.src.Application.Contract.WashLabel;
+using NX_lims_Softlines_Command_System.src.Application.Interface.WashLabel;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API.WashLabel;
 
