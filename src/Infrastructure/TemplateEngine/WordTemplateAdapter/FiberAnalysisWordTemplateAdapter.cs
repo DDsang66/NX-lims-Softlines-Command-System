@@ -193,6 +193,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                                 flatData["Bottle"] = string.Join("    ",
                                     bottleTexts.Concat(crucibleTexts));
                             }
+
+                            // Weighing Bottle 表
+                            var weighingData = ExpandWeighingBottleData(multi.MultiFiberRowUnits);
+                            foreach (var kv in weighingData)
+                                flatData[kv.Key] = kv.Value;
                         }
                         break;
                 }
@@ -251,6 +256,70 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 result[$"Rate_{rowIndex}"] = unit.Rate == 0 ? "" : unit.Rate.ToString("F2") + "%";
 
                 rowIndex++;
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// 展开 Weighing Bottle 表数据。
+        /// 规则：一个溶解组（相同 Section）共用一个称量瓶，A/B 两平行试验独立随机。
+        /// WeighingA/WeighingB 只在 Section 首行填值，TotalA/TotalB 每行都填。
+        /// </summary>
+        private static Dictionary<string, string> ExpandWeighingBottleData(List<MultiFiberRowUnit> units)
+        {
+            var result = new Dictionary<string, string>();
+            var rng = new Random();
+            string lastSection = "";
+            decimal weighingA = 0m;
+            decimal weighingB = 0m;
+            string lastDescription = "";
+
+            for (int i = 0; i < units.Count; i++)
+            {
+                var unit = units[i];
+                var row = i + 1;
+
+                // Section 变 → 新称量瓶
+                if (unit.Section != lastSection || string.IsNullOrWhiteSpace(unit.Section))
+                {
+                    if (!string.IsNullOrWhiteSpace(unit.Section) && unit.Section != "/")
+                    {
+                        weighingA = (260000m + rng.Next(0, 90001)) / 10000m;
+                        weighingB = (260000m + rng.Next(0, 90001)) / 10000m;
+                        lastSection = unit.Section;
+                        result[$"WeighingA{row}"] = weighingA.ToString("F4");
+                        result[$"WeighingB{row}"] = weighingB.ToString("F4");
+                    }
+                }
+                else
+                {
+                    // 同 Section 后续行留空
+                    result[$"WeighingA{row}"] = "";
+                    result[$"WeighingB{row}"] = "";
+                }
+
+                // Description — Section 去重逻辑（同 ExpandMultiFiberRowUnits）
+                if (!string.IsNullOrWhiteSpace(unit.Section) && unit.Section != lastDescription)
+                {
+                    result[$"Description{row}"] = unit.Section;
+                    lastDescription = unit.Section;
+                }
+                else
+                {
+                    result[$"Description{row}"] = "";
+                }
+
+                // Component
+                result[$"Component{row}"] = unit.Sum;
+
+                // sampleA / sampleB — GSMTrail 为 0 则留空
+                result[$"sampleA{row}"] = unit.GSMTrail1 == 0 ? "" : unit.GSMTrail1.ToString("F4");
+                result[$"sampleB{row}"] = unit.GSMTrail2 == 0 ? "" : unit.GSMTrail2.ToString("F4");
+
+                // TotalA / TotalB — 每行都填（用组瓶重 + 当前行 GSMTrail）
+                result[$"TotalA{row}"] = (weighingA + unit.GSMTrail1).ToString("F4");
+                result[$"TotalB{row}"] = (weighingB + unit.GSMTrail2).ToString("F4");
             }
 
             return result;
