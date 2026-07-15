@@ -7,7 +7,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.V
     /// </summary>
     public sealed class OrderId:AggregateRootId
     {
-        public Guid Value { get; private set; }
+        public Guid Value { get; }
 
         public OrderId(Guid value)
         {

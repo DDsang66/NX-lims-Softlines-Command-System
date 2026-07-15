@@ -5,14 +5,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 {
     public class ParamLimitation
     {
-        public string ValueTypeName { get; set; } = "System.String";
+        public string ValueTypeName { get; init; } = "System.String";
 
         // 运行时获取 Type（不序列化）
         [JsonIgnore]
         public Type ValueType => Type.GetType(ValueTypeName) ?? typeof(string);// 可选：若与 ParamDefinition.ValueType 重复可不设置
-        public List<object>? AllowedValues { get; set; } = null;
-        public object? Min { get; set; } = null;
-        public object? Max { get; set; } = null;
+        public List<object>? AllowedValues { get; init; } = null;
+        public object? Min { get; init; } = null;
+        public object? Max { get; init; } = null;
 
         public ParamLimitation() { }
 

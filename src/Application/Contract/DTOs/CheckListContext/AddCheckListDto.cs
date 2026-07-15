@@ -6,7 +6,7 @@
         /// <summary>
         /// 关联申请单Id
         /// </summary>
-        public Guid SourceId { get; set; } // 关联的申请单ID
+        public IEnumerable<Guid?> SourceId { get; set; }// 关联的申请单ID
 
         /// <summary>
         /// 测试清单中的测试项
@@ -43,6 +43,11 @@
         /// 买家自定义测试方法ID
         /// </summary>
         public string BuyerModifiedTextMethodId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 测试小组
+        /// </summary>
+        public string TestGroup { get; set; } = string.Empty;
 
         /// <summary>
         /// 样品列表

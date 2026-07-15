@@ -188,13 +188,22 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         /// 例如：没有被任何检测项目引用，或者相关的Schema/Rule都处于草稿状态等
         /// </summary>
         /// <returns></returns>
-        public Result Draft() 
-        {
-            //逻辑
+        public void Draft() => this.Status = Status.Draft;
 
-            //领域事件
-            return Result.Ok();
-        }
+        /// <summary>
+        /// 将当前标准设置为“已废弃”状态
+        /// </summary>
+        public void Deprecated() => this.Status = Status.Deprecated;
+
+        /// <summary>
+        /// 将当前标准设置为“被替代”状态
+        /// </summary>
+        public void Superseded() => this.Status = Status.Superseded;
+
+        /// <summary>
+        /// 将当前标准设置为“待审核”状态
+        /// </summary>
+        public void Pending() => this.Status = Status.Pending;
 
     }
 }

@@ -5,7 +5,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
 {
     public class CheckListId: AggregateRootId
     {
-        public Guid Value { get; private set; }
+        public Guid Value { get; }
 
         public CheckListId(Guid value)
         {

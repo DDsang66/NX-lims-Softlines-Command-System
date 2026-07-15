@@ -1,9 +1,18 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj
+namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext
 {
-    public class CheckListItem
+    public class CheckListItem : Entity
     {
+        /// <summary>
+        /// 测试项标识
+        /// 已继承实体基类，无需重复定义
+        /// </summary>
+        //public Guid Id { get; set; } = Guid.NewGuid();
+
         /// <summary>
         /// 测试项目ID
         /// </summary>
@@ -23,6 +32,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// 买家自定义测试方法ID
         /// </summary>
         public string BuyerModifiedTextMethodId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 测试小组
+        /// </summary>
+        public TestGroup TestGroup { get; set; } = new();
 
         /// <summary>
         /// 参数集

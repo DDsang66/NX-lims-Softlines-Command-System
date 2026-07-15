@@ -1,13 +1,13 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext
 {
     public sealed class CheckList: AggregateRoot
     {
+        private readonly List<OrderId?> _orderIds = new();
         /// <summary>
         /// 测试清单ID
         /// </summary>
@@ -16,8 +16,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// <summary>
         /// 关联申请单Id
         /// </summary>
-        public OrderId SourceId { get; private set; } // 关联的申请单ID
-        
+        public IReadOnlyCollection<OrderId?> OderIds => _orderIds.AsReadOnly();
+
         /// <summary>
         /// 测试清单中的测试项
         /// </summary>
@@ -44,7 +44,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
         public static CheckList Create(
-            OrderId sourceId,
+            IEnumerable<OrderId?> orderIds,
             IReadOnlyList<CheckListItem> items,
             string? remark)
         {
@@ -53,15 +53,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             if (items == null || items.Count == 0)
                 throw new ArgumentNullException("items");
 
-            if (sourceId == null)
-                throw new ArgumentNullException("source");
-            return new CheckList
+             var c = new CheckList
+             {
+                 Id = id,
+                 Items = items,
+                 Remark = remark
+             };
+
+            if (orderIds != null)
             {
-                Id = id,
-                SourceId = sourceId,
-                Items = items,
-                Remark = remark
-            };
+                foreach (var orderId in orderIds.Where(oid => oid != null))
+                {
+                    c._orderIds.Add(orderId);
+                }
+            }
+
+            return c;
         }
     }
 }
