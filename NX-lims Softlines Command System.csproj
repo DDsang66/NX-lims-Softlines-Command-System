@@ -8,6 +8,8 @@
     <UserSecretsId>4d43e3d3-7507-48a7-a74f-9f950cc90f5e</UserSecretsId>
     <DockerDefaultTargetOS>Windows</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+    <!-- 排除运行时生成的临时文件，避免 StaticWebAssets 锁定 -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);wwwroot\DocxModel\SaveDocx\**;wwwroot\ExcelModel\SavingExcel\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

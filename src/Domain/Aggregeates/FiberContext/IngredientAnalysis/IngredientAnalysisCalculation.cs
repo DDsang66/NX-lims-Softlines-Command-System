@@ -101,6 +101,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 3.5) 设备选型（对应 Excel L23/O23/R23/L24/O24）
             var orderedFiberNames = GetOrderedFiberNames();
             var equipment = SelectEquipment(orderedFiberNames.Count, orderedFiberNames);
+            // cellulosic fibre 追加额外显微镜
+            if (orderedFiberNames.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
+                equipment = equipment with { Microscope = string.IsNullOrEmpty(equipment.Microscope)
+                    ? MICROSCOPE_CELLULOSIC
+                    : equipment.Microscope + " / " + MICROSCOPE_CELLULOSIC };
             result = result.WithEquipment(equipment);
 
             // 3.6) 自动拼接 Methods（对应 Excel L4 公式）
@@ -218,8 +223,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     RateTrail2 = rateTrail2,
                     Avg = avg,
                     Correct = 1,
-                    MoistureRegain = 0,  // 拆分法无回潮率概念，或从配置取
-                    Rate = 0             // 暂不计算
+                    MoistureRegain = 0,
+                    Rate = 0,
+                    CellulosicSubFibers = s.CellulosicSubFibers ?? new()
                 });
 
                 yarnIndex++;
@@ -262,20 +268,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
                 var combinedAbbreviation = string.Join("/", abbreviations);
 
-                // 第1行：起始行（所有成分缩写拼接）
-                units.Add(new MultiFiberRowUnit
+                // 第1行：起始行（所有成分缩写拼接）— 多组分才需要（单组分缩写不含'/'会被误判为成分）
+                if (componentCount > 1)
                 {
-                    Section = section,
-                    Sum = combinedAbbreviation,
-                    GSMTrail1 = startGsm1,
-                    GSMTrail2 = startGsm2,
-                    RateTrail1 = SafeDivide(startGsm1, totalGSMTrail1),
-                    RateTrail2 = SafeDivide(startGsm2, totalGSMTrail2),
-                    Avg = (SafeDivide(startGsm1, totalGSMTrail1) + SafeDivide(startGsm2, totalGSMTrail2)) / 2,
-                    Correct = 1,
-                    MoistureRegain = 0,
-                    Rate = 0
-                });
+                    units.Add(new MultiFiberRowUnit
+                    {
+                        Section = section,
+                        Sum = combinedAbbreviation,
+                        GSMTrail1 = startGsm1,
+                        GSMTrail2 = startGsm2,
+                        RateTrail1 = SafeDivide(startGsm1, totalGSMTrail1),
+                        RateTrail2 = SafeDivide(startGsm2, totalGSMTrail2),
+                        Avg = (SafeDivide(startGsm1, totalGSMTrail1) + SafeDivide(startGsm2, totalGSMTrail2)) / 2,
+                        Correct = 1,
+                        MoistureRegain = 0,
+                        Rate = 0
+                    });
+                }
 
                 for (int i = 0; i < componentCount; i++)
                 {
@@ -317,7 +326,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         Avg = (rateTrail1 + rateTrail2) / 2,
                         Correct = 1,
                         MoistureRegain = 0,
-                        Rate = 0
+                        Rate = 0,
+                        CellulosicSubFibers = current.CellulosicSubFibers ?? new()
                     });
                 }
             }
@@ -399,8 +409,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <param name="remarkLabel"></param>
         /// <param name="calculatedFiberResult"></param>
         /// <returns></returns>
-        private CalculatedRemarkResult GenerateRecommendedLabel(RemarkLabel remarkLabel, List<CalculatedFiberResult> calculatedFiberResult) 
+        private CalculatedRemarkResult GenerateRecommendedLabel(RemarkLabel remarkLabel, List<CalculatedFiberResult> calculatedFiberResult)
         {
+            var isAatcc = Methods.FirstOrDefault()?.StartsWith("AATCC", StringComparison.OrdinalIgnoreCase) == true;
+
             var result = new CalculatedRemarkResult {
                 RecommendedLabel = new List<string>(remarkLabel.RecommendedLabel),
                 ResultRemark = remarkLabel.ResultRemark,
@@ -413,7 +425,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 VerifyResult = remarkLabel.VerifyResult,
                 FinalResult = remarkLabel.FinalResult,
                 Results = CalculateFormattedResults(calculatedFiberResult, 1, "F1"),
-                Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0")
+                Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0", isAatcc)
             };
 
             return result;
@@ -425,7 +437,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <param name="calculatedFiberResult">计算结果</param>
         /// <param name="decimalPlaces">保留小数位（0=整数, 1=1位小数）</param>
         /// <param name="format">格式化字符串（F0 或 F1）</param>
-        private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format)
+        private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format, bool isAatcc = false)
         {
             // 单组分：每个纤维固定 100%，不求和
             if (calculatedFiberResult.All(c => c is SingleCalculatedFiberItem))
@@ -438,6 +450,28 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             // 1. 提取原始成分数据
             var rawComponents = ExtractComponents(calculatedFiberResult);
+
+            // 1.5 AATCC 美标：原始 Rate < 5% 且非弹性纤维 → 合并为 "other fiber"
+            if (isAatcc)
+            {
+                var normal = new List<(string Name, decimal Rate)>();
+                decimal otherSum = 0m;
+
+                foreach (var c in rawComponents)
+                {
+                    bool isElastic = c.Name.Equals("Spandex", StringComparison.OrdinalIgnoreCase)
+                                  || c.Name.Equals("Elastane", StringComparison.OrdinalIgnoreCase);
+                    if (c.Rate < 5m && !isElastic)
+                        otherSum += c.Rate;
+                    else
+                        normal.Add(c);
+                }
+
+                if (otherSum > 0)
+                    normal.Add(("other fiber", otherSum));
+
+                rawComponents = normal;
+            }
 
             // 2. 四舍五入
             var rounded = rawComponents
@@ -471,9 +505,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 }
             }
 
-            // 5. 格式化输出（按Rate从大到小排序）
+            // 5. 格式化输出（other fiber 始终第一，其余按 Rate 从大到小排序）
             return rounded
-                .OrderByDescending(r => r.RoundedRate)
+                .OrderBy(r => r.Name == "other fiber" ? 0 : 1)
+                .ThenByDescending(r => r.RoundedRate)
                 .Select(r => $"{r.RoundedRate.ToString(format)}% {r.Name}")
                 .ToList();
         }
@@ -494,11 +529,25 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         break;
 
                     case MultiCalculatedFiberItem multi when multi.MultiFiberRowUnits != null:
-                        var items = multi.MultiFiberRowUnits
-                            .Where(r => !string.IsNullOrWhiteSpace(r.Sum))
-                            .Where(r => !r.Sum.Contains('/'))  // 排除缩写拼接的起始行（如 E/T）
-                            .Select(r => (r.Sum, r.Rate));
-                        components.AddRange(items);
+                        foreach (var r in multi.MultiFiberRowUnits)
+                        {
+                            if (string.IsNullOrWhiteSpace(r.Sum) || r.Sum.Contains('/'))
+                                continue;  // 排除缩写拼接的起始行（如 E/T）
+
+                            // cellulosic fibre 展开为子纤维
+                            if ((r.Sum == "*cellulosic fibre" || r.Sum == "*Regenerated cellulose fibre") && r.CellulosicSubFibers.Count > 0)
+                            {
+                                foreach (var sub in r.CellulosicSubFibers)
+                                {
+                                    if (!string.IsNullOrWhiteSpace(sub.FiberName) && sub.Percentage > 0)
+                                        components.Add((sub.FiberName, r.Rate * sub.Percentage / 100m));
+                                }
+                            }
+                            else
+                            {
+                                components.Add((r.Sum, r.Rate));
+                            }
+                        }
                         break;
                 }
             }
@@ -577,19 +626,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         }
 
         /// <summary>
-        /// 多组分：从 _components 中提取所有纤维名称
+        /// 多组分：从 _components 中提取所有纤维名称。cellulosic fibre 展开为子纤维名。
         /// </summary>
         private string GetMultipleFiberNames()
         {
             var dissolvedNames = _components
                 .OfType<DissolvedFiberComponent>()
                 .SelectMany(d => d.DissolutionUnits)
-                .Select(u => u.FiberName)
+                .SelectMany(u => (u.FiberName == "*cellulosic fibre" || u.FiberName == "*Regenerated cellulose fibre") && u.CellulosicSubFibers.Count > 0
+                    ? u.CellulosicSubFibers.Where(s => !string.IsNullOrWhiteSpace(s.FiberName)).Select(s => s.FiberName)
+                    : new[] { u.FiberName })
                 .Distinct();
 
             var splittingNames = _components
                 .OfType<SplittingFiberComponent>()
-                .Select(s => s.FiberName)
+                .SelectMany(s => (s.FiberName == "*cellulosic fibre" || s.FiberName == "*Regenerated cellulose fibre") && s.CellulosicSubFibers.Count > 0
+                    ? s.CellulosicSubFibers.Where(c => !string.IsNullOrWhiteSpace(c.FiberName)).Select(c => c.FiberName)
+                    : new[] { s.FiberName })
                 .Distinct();
 
             return string.Join("/", dissolvedNames.Concat(splittingNames));
@@ -625,30 +678,37 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             var isIso = standard.Equals("ISO1833", StringComparison.OrdinalIgnoreCase);
             var isDin = standard.Equals("DIN EN ISO 1833", StringComparison.OrdinalIgnoreCase);
+            var isFz = standard.StartsWith("FZ/T 01057.1-4", StringComparison.OrdinalIgnoreCase);
 
-            // 非 ISO/DIN：直接返回原值
-            if (!isIso && !isDin) return standard;
+            // 非 ISO/DIN/FZ：直接返回原值
+            if (!isIso && !isDin && !isFz) return standard;
 
-            // 3 组分走 -2 号
-            if (fibers.Count == 3)
-                return isIso ? $"{ISO_QUALITATIVE} {ISO1833_2}"
-                             : $"{DIN_QUALITATIVE} DIN EN ISO 1833-2:2020";
+            // 3 组分走 -2 号（仅 ISO/DIN）
+            if ((isIso || isDin) && fibers.Count == 3)
+                return isIso
+                    ? $"{ISO_QUALITATIVE} {ISO1833_2}"
+                    : $"{DIN_QUALITATIVE} DIN EN ISO 1833-2:2020";
 
-            // 从成分对查子标准号
+            // 从成分对查子标准号（仅 ISO/DIN）
             var subStandards = new List<string>();
-            for (int i = 0; i < fibers.Count - 1; i++)
+            if (isIso || isDin)
             {
-                var s = LookupSubStandard(fibers[i], fibers[i + 1]);
-                if (!string.IsNullOrEmpty(s) && !subStandards.Contains(s))
-                    subStandards.Add(s);
+                for (int i = 0; i < fibers.Count - 1; i++)
+                {
+                    var s = LookupSubStandard(fibers[i], fibers[i + 1]);
+                    if (!string.IsNullOrEmpty(s) && !subStandards.Contains(s))
+                        subStandards.Add(s);
+                }
             }
 
-            // 有拆分列时加 -1
             var parts = new List<string>();
             if (isIso) parts.Add(ISO_QUALITATIVE);
-            else parts.Add(DIN_QUALITATIVE);
+            else if (isDin) parts.Add(DIN_QUALITATIVE);
+            // FZ/T 不添加前缀
 
-            // -1 号（暂不判断拆分列，先不加）
+            if (isFz)
+                parts.Add(standard);  // 保留原标准号
+
             parts.AddRange(subStandards);
 
             // DIN 版：替换 ISO 前缀为 DIN EN
@@ -656,6 +716,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 parts = parts.Select(p => DIN1833_D5x.Contains(p)
                     ? "DIN EN " + p
                     : p).ToList();
+
+            // cellulosic 子标准补加
+            bool hasCellulosic = fibers.Any(f =>
+                f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre");
+            if (hasCellulosic)
+            {
+                if (isIso || isDin)
+                    parts.Add("ISO 20705:2019");
+                else if (isFz)
+                    parts.Add("FZ/T 01057.3–2007 / FZ/T 30003-2009");
+            }
 
             return string.Join(" ", parts);
         }
@@ -765,6 +836,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
         // 设备编码常量（对应 Excel L23/O23/R23/L24/O24）
         private const string MICROSCOPE = "Microscope:SFL-NGB-EQP-056";
+        private const string MICROSCOPE_CELLULOSIC = "Microscope: SFL_NGB_EQP_268";
         private const string OVEN = "Oven:SFL-NGB-EQP-164";
         private const string BALANCE = "Balance:SFL-NGB-EQP-061";
         private const string WATER_BATH = "Water bath:SFL-NGB-EQP-046";

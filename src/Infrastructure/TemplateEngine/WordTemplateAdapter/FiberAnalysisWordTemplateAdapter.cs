@@ -11,10 +11,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 拍平为模板可直接使用的 Dictionary<string, string>
         /// 数组/嵌套结构留空，后续单独处理
         /// </summary>
-        public Dictionary<string, string> Adapt(AnalysisResult analysisResult)
+        public (Dictionary<string, string> Values, HashSet<string> RedBookmarks) Adapt(AnalysisResult analysisResult)
         {
             var flatData = new Dictionary<string, string>();
             var Data = new Dictionary<string, string>();
+            var redBookmarks = new HashSet<string>();
 
             // 基础字段（直接映射）
             flatData["ReportNumber"] = analysisResult.ReportNumber;
@@ -59,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }
             // flatData["CalculatedFiberResult"] = ?;  // 复杂对象列表，需逐行展开
             var fiberData = ExpandCalculatedFiberResult(
-                analysisResult.CalculatedFiberResult);
+                analysisResult.CalculatedFiberResult, redBookmarks);
             foreach (var kv in fiberData)
             {
                 flatData[kv.Key] = kv.Value;
@@ -101,16 +102,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 Data[kv.Key] = kv.Value;
             }
 
-            return Data.ToDictionary(
+            var values = Data.ToDictionary(
                 kv => kv.Key,
-                kv => kv.Value?.ToString() ?? string.Empty); ;
+                kv => kv.Value?.ToString() ?? string.Empty);
+            return (values, redBookmarks);
         }
 
         /// <summary>
         /// 展开 CalculatedFiberResult 到扁平字典
         /// </summary>
         private Dictionary<string, string> ExpandCalculatedFiberResult(
-            List<CalculatedFiberResult> calculatedFiberResult)
+            List<CalculatedFiberResult> calculatedFiberResult, HashSet<string> redBookmarks)
         {
             var flatData = new Dictionary<string, string>();
 
@@ -148,6 +150,19 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                             foreach (var kv in rowData)
                             {
                                 flatData[kv.Key] = kv.Value;
+                            }
+
+                            // 平行样差异 >1% 标红
+                            int rowIdx = 1;
+                            foreach (var unit in multi.MultiFiberRowUnits)
+                            {
+                                if (unit.RateTrail1 > 0 && unit.RateTrail2 > 0
+                                    && Math.Abs(unit.RateTrail1 - unit.RateTrail2) > 1m)
+                                {
+                                    redBookmarks.Add($"RateTrail1_{rowIdx}");
+                                    redBookmarks.Add($"RateTrail2_{rowIdx}");
+                                }
+                                rowIdx++;
                             }
 
                             // Bottle / Crucible 编号

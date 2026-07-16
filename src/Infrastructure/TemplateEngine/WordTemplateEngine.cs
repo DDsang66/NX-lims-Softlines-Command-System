@@ -27,27 +27,27 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// </summary>
         /// <param name="filePath">Word文档路径</param>
         /// <param name="bookmarkValues">书签名-值字典</param>
-        public void ReplaceText(string filePath, Dictionary<string, string> bookmarkValues)
+        public void ReplaceText(string filePath, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks = null)
         {
             if (bookmarkValues == null || !bookmarkValues.Any()) return;
 
             using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true))
             {
                 // 正文部件
-                ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues);
+                ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues, redBookmarks);
                 doc.MainDocumentPart.Document!.Save();
 
                 // 页眉
                 foreach (var headerPart in doc.MainDocumentPart!.HeaderParts)
                 {
-                    ReplaceBookmarksInPart(headerPart, bookmarkValues);
+                    ReplaceBookmarksInPart(headerPart, bookmarkValues, redBookmarks);
                     headerPart.Header?.Save();
                 }
 
                 // 页脚
                 foreach (var footerPart in doc.MainDocumentPart.FooterParts)
                 {
-                    ReplaceBookmarksInPart(footerPart, bookmarkValues);
+                    ReplaceBookmarksInPart(footerPart, bookmarkValues, redBookmarks);
                     footerPart.Footer?.Save();
                 }
             }
@@ -57,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// 在指定部件中替换书签
         /// 优先在原有 Run/Text 上就地替换以保留样式；若不存在则寻找局部最近的 RunProperties 并克隆；最后才插入无样式 Run。
         /// </summary>
-        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> bookmarkValues)
+        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks)
         {
             var bookmarks = part.RootElement!.Descendants<BookmarkStart>()
                 .Where(b => bookmarkValues.ContainsKey(b.Name!))
@@ -85,6 +85,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                         t.Remove();
                     InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], existingRunWithText);
 
+                    // 标红：检查是否在 redBookmarks 中
+                    if (redBookmarks != null && redBookmarks.Contains(bookmark.Name))
+                        ApplyRedColor(existingRunWithText);
+
                     // 删除书签范围内除保留的 run 之外的其他元素
                     foreach (var elem in contentElements.ToList())
                     {
@@ -105,6 +109,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                     var newRun = new Run(nearestRunProps.CloneNode(true) as RunProperties);
                     InsertRunAfterBookmark(bookmark, newRun);
                     InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
+                    if (redBookmarks != null && redBookmarks.Contains(bookmark.Name))
+                        ApplyRedColor(newRun);
                 }
                 else
                 {
@@ -112,8 +118,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                     var newRun = new Run();
                     InsertRunAfterBookmark(bookmark, newRun);
                     InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
+                    if (redBookmarks != null && redBookmarks.Contains(bookmark.Name))
+                        ApplyRedColor(newRun);
                 }
             }
+        }
+
+        /// <summary>
+        /// 将 Run 的字体颜色设为红色（FF0000）
+        /// </summary>
+        private static void ApplyRedColor(Run run)
+        {
+            run.RunProperties ??= new RunProperties();
+            var color = run.RunProperties.Elements<Color>().FirstOrDefault();
+            if (color != null)
+                color.Val = "FF0000";
+            else
+                run.RunProperties.Append(new Color { Val = "FF0000" });
         }
 
         /// <summary>

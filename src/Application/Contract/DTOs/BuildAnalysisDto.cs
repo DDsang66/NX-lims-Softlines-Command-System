@@ -64,6 +64,7 @@
         public string FiberName { get; set; } = string.Empty;
         public float GSMTrail1 { get; set; } = 0;
         public float GSMTrail2 { get; set; } = 0;
+        public List<CellulosicSubFiberDto> CellulosicSubFibers { get; set; } = new();
     }
 
     /// <summary>
@@ -74,6 +75,16 @@
         public string FiberName { get; set; } = string.Empty;
         public float GSMTrail1 { get; set; } = 0;
         public float GSMTrail2 { get; set; } = 0;
+        public List<CellulosicSubFiberDto> CellulosicSubFibers { get; set; } = new();
+    }
+
+    /// <summary>
+    /// cellulosic 子纤维 DTO
+    /// </summary>
+    public record CellulosicSubFiberDto
+    {
+        public string FiberName { get; set; } = string.Empty;
+        public decimal Percentage { get; set; }
     }
 
     /// <summary>

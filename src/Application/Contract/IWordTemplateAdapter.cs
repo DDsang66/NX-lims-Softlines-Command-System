@@ -4,6 +4,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract
 {
     public interface IWordTemplateAdapter
     {
-        Dictionary<string, string> Adapt(AnalysisResult analysisResult);
+        (Dictionary<string, string> Values, HashSet<string> RedBookmarks) Adapt(AnalysisResult analysisResult);
     }
 }

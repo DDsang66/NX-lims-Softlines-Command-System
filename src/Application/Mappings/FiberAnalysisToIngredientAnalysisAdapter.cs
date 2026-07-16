@@ -159,7 +159,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                             FiberName = GetStringProperty(row, "fiberName"),
                             GSMTrail1 = GetFloatProperty(row, "gsmTrail1"),
                             GSMTrail2 = GetFloatProperty(row, "gsmTrail2"),
-                            SplittingOrder = order++
+                            SplittingOrder = order++,
+                            CellulosicSubFibers = ParseCellulosicSubFibers(row)
                         });
                     }
                 }
@@ -188,7 +189,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                             FiberName = GetStringProperty(row, "fiberName"),
                             GSMTrail1 = GetFloatProperty(row, "gsmTrail1"),
                             GSMTrail2 = GetFloatProperty(row, "gsmTrail2"),
-                            DissolutionStep = globalStep++
+                            DissolutionStep = globalStep++,
+                            CellulosicSubFibers = ParseCellulosicSubFibers(row)
                         };
                         units.Add(unit);
                     }
@@ -229,6 +231,26 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     return result;
             }
             return 0f;
+        }
+
+        private static List<CellulosicSubFiber> ParseCellulosicSubFibers(JsonElement row)
+        {
+            var list = new List<CellulosicSubFiber>();
+            if (!row.TryGetProperty("cellulosicSubFibers", out var arr)
+                || arr.ValueKind != JsonValueKind.Array)
+                return list;
+
+            foreach (var item in arr.EnumerateArray())
+            {
+                var name = GetStringProperty(item, "fiberName");
+                if (string.IsNullOrWhiteSpace(name)) continue;
+                var pct = 0m;
+                if (item.TryGetProperty("percentage", out var pctProp)
+                    && pctProp.ValueKind == JsonValueKind.Number)
+                    pct = pctProp.GetDecimal();
+                list.Add(new CellulosicSubFiber { FiberName = name, Percentage = pct });
+            }
+            return list;
         }
     }
 }

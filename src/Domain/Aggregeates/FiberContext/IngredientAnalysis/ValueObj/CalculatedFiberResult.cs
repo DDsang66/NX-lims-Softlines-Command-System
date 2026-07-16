@@ -45,12 +45,13 @@
         public string Sum { get; init; } = string.Empty;
         public decimal GSMTrail1 { get; init; }
         public decimal GSMTrail2 { get; init; }
-        public decimal RateTrail1 { get; init; } 
-        public decimal RateTrail2 { get; init; } 
+        public decimal RateTrail1 { get; init; }
+        public decimal RateTrail2 { get; init; }
         public decimal Avg { get; init; }
         public decimal Correct { get; init; }
         public decimal MoistureRegain { get; init; }
-        public decimal Rate { get; init; } 
+        public decimal Rate { get; init; }
+        public List<CellulosicSubFiber> CellulosicSubFibers { get; init; } = new();
     }
 
 }

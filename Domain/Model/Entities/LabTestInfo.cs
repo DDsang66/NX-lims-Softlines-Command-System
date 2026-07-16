@@ -9,6 +9,8 @@ public partial class LabTestInfo
 
     public string? ReportNumber { get; set; }
 
+    public Guid? OrderId { get; set; }
+
     public string? Reviewer { get; set; }
 
     public string? TestEngineer { get; set; }

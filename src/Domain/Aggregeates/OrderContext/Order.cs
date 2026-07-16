@@ -12,7 +12,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
     public sealed class Order : AggregateRoot<OrderId,Guid>
     {
         private readonly List<OrderLine> _lines = new();
-        public string ReportNumbr { get; private set; } = string.Empty;
+        public OrderId Id { get; private set; } = null!;
+        public string ReportNumber { get; private set; } = string.Empty;
         public string TestGroup { get; private set; } = string.Empty;
         /// <summary>
         /// 订单行（只读）
@@ -52,6 +53,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             var order = new Order
             {
                 Id = new OrderId(new Guid()),
+                ReportNumber = reportNumber,
                 Metadata = OrderMetadata.Create(orderEntryPerson, customerService, remark, DateTimeOffset.UtcNow)
             };
 
@@ -63,15 +65,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         /// <summary>
         /// 从持久化重建订单（由 Repository 调用）
         /// </summary>
-        public static Order Reconstitute(OrderId id, OrderMetadata metadata, IEnumerable<OrderLine> lines)
+        public static Order Reconstitute(OrderId id, string reportNumber, OrderMetadata metadata, IEnumerable<OrderLine> lines)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
+            if (string.IsNullOrWhiteSpace(reportNumber)) throw new ArgumentException("Report number is required", nameof(reportNumber));
             if (metadata == null) throw new ArgumentNullException(nameof(metadata));
 
-            var order = new Order 
-            { 
+            var order = new Order
+            {
                 Id = id,
-                Metadata = metadata 
+                ReportNumber = reportNumber,
+                Metadata = metadata
             };
             if (lines != null) order._lines.AddRange(lines);
             return order;
