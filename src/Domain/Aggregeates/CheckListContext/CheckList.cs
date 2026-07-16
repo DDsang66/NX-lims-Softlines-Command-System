@@ -5,13 +5,9 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext
 {
-    public sealed class CheckList: AggregateRoot
+    public sealed class CheckList: AggregateRoot<CheckListId,Guid>
     {
         private readonly List<OrderId?> _orderIds = new();
-        /// <summary>
-        /// 测试清单ID
-        /// </summary>
-        public CheckListId Id { get; private set; }
 
         /// <summary>
         /// 关联申请单Id

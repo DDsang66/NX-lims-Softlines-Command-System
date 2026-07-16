@@ -117,7 +117,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
             foreach (var standard in standards)
             {
                 // 3.1 StandardFamily 记录意图（内部校验是否已存在、数量限制等业务规则）
-                standardFamily.AddStandard(standard.IdStandard); // 假设 AddStandard 需要 long/Guid
+                standardFamily.AddStandard(standard.Id); // 假设 AddStandard 需要 long/Guid
 
                 // 3.2 Standard 修改自身的状态（更新 StandardFamilyId 外键指向，及自身状态流转）
                 standard.BindToStandardFamily(standardFamilyId);

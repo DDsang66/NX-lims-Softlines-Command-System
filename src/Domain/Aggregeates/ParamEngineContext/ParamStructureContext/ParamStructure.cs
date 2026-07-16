@@ -11,12 +11,12 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext
 {
-    public sealed class ParamStructure : AggregateRoot
+    public sealed class ParamStructure : AggregateRoot<ParamStructureId,string>
     {
         /// <summary>
         /// 参数结构ID
         /// </summary>
-        public ParamStructureId Id { get; private set; }
+        //public ParamStructureId Id { get; private set; }
 
         private readonly List<StandardFamilyId?> _standardFamilyIds = new();
         private readonly List<ParamRuleId> _ruleIds  = new();
@@ -51,8 +51,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 生效日期
         /// </summary>
         public DateTime EffectiveDate { get; private set; }
-
-        private ParamStructure() { }
 
         /// <summary>
         /// 工厂：创建单参数结构，保证 Schema 至少包含一项主参数定义

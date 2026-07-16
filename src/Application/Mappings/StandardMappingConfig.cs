@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<Standard, BasicStandard>()
-                   .Map(dest => dest.IdStandard, src => src.IdStandard.Value)
+                   .Map(dest => dest.IdStandard, src => src.Id.Value)
                    .Map(dest => dest.StandardCode, src => src.StandardCode)
                    .Map(dest => dest.StandardCodeNameEn, src => src.StandardCodeNameEn)
                    .Map(dest => dest.StandardCodeNameChn, src => src.StandardCodeNameChn)

@@ -9,7 +9,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext
 {
-    public sealed class StandardFamily : AggregateRoot
+    public sealed class StandardFamily : AggregateRoot<StandardFamilyId,string>
     {
         private readonly List<StandardId?> _standardIds = new();
         private readonly List<FormulaId?> _formulaIds = new();
@@ -19,12 +19,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 标准族id
         /// </summary>
-        public StandardFamilyId Id { get; private set; }
+        //public StandardFamilyId Id { get; private set; }
 
         /// <summary>
         /// 标准族名称
         /// </summary>
-        public string StandardFamilyCode { get; private set; } 
+        public string StandardFamilyCode { get; private set; } = string.Empty;
 
         /// <summary>
         /// 标准id集合
@@ -56,7 +56,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         public DateTime EffectiveDate { get; private set; }
 
-        private StandardFamily() { }
+        //private StandardFamily() { }
 
         public static StandardFamily Create(
             StandardFamilyId id,

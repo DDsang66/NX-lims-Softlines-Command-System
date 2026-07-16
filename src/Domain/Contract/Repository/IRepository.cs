@@ -8,9 +8,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
     /// </summary>
     /// <typeparam name="T">聚合根标记接口</typeparam>
     /// <typeparam name="TId">聚合根唯一标识标记接口</typeparam>
-    public interface IRepository<T, TId> 
-        where T: IAggregateRoot 
-        where TId: IAggregateRootId
+    public interface IRepository<T, TId,TValue> 
+        where T: IAggregateRoot<TId, TValue> 
+        where TId: IAggregateRootId<TValue>
+        where TValue : notnull
     {
         /// <summary>
         /// 添加聚合根

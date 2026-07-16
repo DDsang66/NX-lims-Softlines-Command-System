@@ -5,16 +5,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.V
     /// <summary>
     /// 订单标识值对象（即 ReportNumber，如 "87.405.26.0001.01"）
     /// </summary>
-    public sealed class OrderId:AggregateRootId
+    public sealed class OrderId:AggregateRootId<Guid>
     {
-        public Guid Value { get; }
-
         public OrderId(Guid value)
+            :base(value)
         {
-            if (value == Guid.Empty) throw new ArgumentException("OrderId cannot be empty", nameof(value));
-            Value = value;
+            if (value == Guid.Empty)
+                throw new ArgumentNullException("OrderId cannot be empty", nameof(value));
         }
-
-        public override string ToString() => Value.ToString();
     }
 }

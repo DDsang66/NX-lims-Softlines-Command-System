@@ -9,11 +9,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
     /// 订单聚合根
     /// —个订单 = 同一 ReportNumber 下的多个 OrderLine（按 TestGroup 拆分）
     /// </summary>
-    public sealed class Order : AggregateRoot
+    public sealed class Order : AggregateRoot<OrderId,Guid>
     {
         private readonly List<OrderLine> _lines = new();
-
-        public OrderId Id { get; private set; } = null!;
         public string ReportNumbr { get; private set; } = string.Empty;
         public string TestGroup { get; private set; } = string.Empty;
         /// <summary>
@@ -25,8 +23,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         /// 订单元数据
         /// </summary>
         public OrderMetadata Metadata { get; private set; } = null!;
-
-        private Order() { }
 
         /* ================================================================
          * 工厂方法

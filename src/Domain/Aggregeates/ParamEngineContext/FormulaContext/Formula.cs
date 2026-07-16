@@ -8,14 +8,15 @@ using System.Collections.Generic;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext
 {
-    public sealed class Formula : AggregateRoot
+    public sealed class Formula : AggregateRoot<FormulaId,string>
     {
+        private readonly List<ParamStructureId?> _paramSturctureIds = new();
+
+        private readonly List<StandardFamilyId?> _standardFamilyIds = new();
         /// <summary>
         /// 公式ID
         /// </summary>
-        public FormulaId Id { get; private set; }
-        private readonly List<ParamStructureId?> _paramSturctureIds = new();
-        private readonly List<StandardFamilyId?> _standardFamilyIds = new();
+        //public FormulaId Id { get; private set; }
 
         /// <summary>
         /// 参数结构 Id
@@ -66,8 +67,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 公式是否启用
         /// </summary>
         public bool IsActive { get; private set; }
-
-        private Formula() { }
 
         /// <summary>
         /// 创建 Formula 聚合根的实例（工厂方法，仅在内存中创建并保证不变式）

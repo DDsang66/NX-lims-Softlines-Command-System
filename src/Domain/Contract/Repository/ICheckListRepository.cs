@@ -4,7 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
 {
-    public interface ICheckListRepository: IRepository<CheckList,CheckListId>,IScopedDependency
+    public interface ICheckListRepository: IRepository<CheckList,CheckListId,Guid>,IScopedDependency
     {
         /// <summary>
         /// 添加聚合根

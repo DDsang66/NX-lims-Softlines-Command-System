@@ -5,7 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
 {
-    public interface IStandardFamilyRepository:IScopedDependency,IRepository<StandardFamily,StandardFamilyId>
+    public interface IStandardFamilyRepository:IScopedDependency,IRepository<StandardFamily,StandardFamilyId,string>
     {
         /// <summary>
         /// 添加标准族

@@ -5,9 +5,12 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 {
-    public sealed class Standard : AggregateRoot
+    public sealed class Standard : AggregateRoot<StandardId,string>
     {
-        public StandardId IdStandard { get; private set; } = null!;
+        /// <summary>
+        /// 标准聚合根的Id，用于初始化标准的基本信息
+        /// </summary>
+        //public StandardId IdStandard { get; private set; } = null!;
 
         public string StandardCode { get; private set; } = null!;
 
@@ -18,7 +21,6 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         public Status Status { get; private set; } = Status.Draft; 
 
         public StandardFamilyId? StandardFamilyCode { get; private set; } = null!;
-        private Standard() { }
 
         /// <summary>
         /// 工厂方法用于创建标准聚合根实例，包含必要的属性和可选的参数集合
@@ -46,7 +48,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
 
             var standard = new Standard
             {
-                IdStandard = id,
+                Id = id,
                 StandardCode = standardCode,
                 StandardFamilyCode = familyCode,
                 StandardCodeNameEn = nameEn,
@@ -72,7 +74,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
         {
             return new Standard
             {
-                IdStandard = idStandard,
+                Id = idStandard,
                 StandardCode = standardCode,
                 StandardCodeNameEn = standardCodeNameEn,
                 StandardCodeNameChn = standardCodeNameChn,

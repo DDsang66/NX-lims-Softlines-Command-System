@@ -5,7 +5,7 @@ using System.Security.Cryptography.Xml;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Report
 {
-    public sealed class InspectionReport: AggregateRoot
+    public sealed class InspectionReport
     {
         public Guid ReportId { get; private set; }  // 标识
 

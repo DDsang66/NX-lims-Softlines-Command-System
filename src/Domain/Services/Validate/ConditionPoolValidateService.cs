@@ -1,4 +1,6 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -18,8 +20,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
         /// </summary>
         public async Task<Result> EnsureConditionPoolConformance(ParamStructure structure, ConditionPool pool)
         {
-            if (structure == null) return Result.Fail("ParamStructure is null");
-            if (pool == null) return Result.Fail("ConditionPool is null");
+            if (structure == null)
+                return Result.Fail("ParamStructure is null");
+
+            if (pool == null) 
+                return Result.Fail("ConditionPool is null");
 
             foreach (var requirement in structure.Schema.ConditionRequirements)
             {
@@ -38,6 +43,28 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
                         return Result.Fail($"Condition '{requirement.FieldName}' has invalid value");
                 }
             }
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 验证二级条件池是否满足公式要求（公式层面）
+        /// </summary>
+        /// <param name="formula"></param>
+        /// <param name="pool"></param>
+        /// <returns></returns>
+        public async Task<Result> EnsureConditionPoolWithFormula(Formula formula, ConditionPool pool) 
+        {
+            if (formula == null) 
+                return Result.Fail("Formula is null");
+
+            if (pool == null)
+                return Result.Fail("ConditionPool is null");
+
+            var missing = formula.RequiredConditions().Where(f => !pool.HasCondition(f)).ToList();
+
+            if (missing.Any())
+                return Result.Fail($"Missing required conditions: {string.Join(',', missing)}");
 
             return Result.Ok();
         }

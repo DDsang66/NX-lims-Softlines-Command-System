@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Share.Interface
         /// <param name="event"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task StoreAsync(DomainEvent @event, CancellationToken ct);
+        Task StoreAsync(IDomainEvent @event, CancellationToken ct);
 
         /// <summary>
         /// 获取未发布的事件
@@ -20,7 +20,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Share.Interface
         /// <param name="batchSize"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<IEnumerable<DomainEvent>> GetUnpublishedEventsAsync(int batchSize, CancellationToken ct);
+        Task<IEnumerable<IDomainEvent>> GetUnpublishedEventsAsync(int batchSize, CancellationToken ct);
         
         /// <summary>
         /// 标记事件为已发布

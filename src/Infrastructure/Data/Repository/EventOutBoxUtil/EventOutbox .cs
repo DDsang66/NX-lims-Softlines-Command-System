@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
-using NX_lims_Softlines_Command_System.src.Domain.Events;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
@@ -19,20 +17,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
 
         /// <summary>
         /// 将一个领域事件存入 Outbox 表
-        /// 这个方法通常在业务事务中被调用，与修改聚合根的操作在同一个 DbContext 和事务中
         /// </summary>
-        /// <param name="event"></param>
+        /// <param name="event">非泛型接口，可接受任何 DomainEvent<TValue></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task StoreAsync(DomainEvent @event, CancellationToken ct)
+        public async Task StoreAsync(IDomainEvent @event, CancellationToken ct) // 改为 IDomainEvent
         {
+            // 注意这里提取 AggregateRootId 的方式：
+            // 因为 IDomainEvent 没有泛型的 AggregateRootId 属性，
+            // 我们需要通过反射或者动态获取，最简单的方式是利用 object 的 ToString()
+            // 你之前在 AggregateRootId 基类中重写了 ToString() 返回 Value.ToString()，所以这里直接用即可！
+
             var entry = new OutboxEntry
             {
                 EventId = @event.EventId,
-                EventType = @event.GetType().FullName!,
+                EventType = @event.GetType().FullName!, // 存储的是具体泛型类的完整名称，如 "xxx.TestItemCreatedEvent"
                 Payload = JsonSerializer.Serialize(@event, @event.GetType()),
                 OccurredOn = @event.OccurredOn,
-                AggregateRootId = @event.AggregateRootId.ToString()!,
+                // 动态获取 AggregateRootId 的字符串值
+                AggregateRootId = GetAggregateRootIdString(@event),
                 Published = false
             };
 
@@ -40,12 +43,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
         }
 
         /// <summary>
-        /// 获取一批未发布的事件。这是后台消费者调用的核心方法
+        /// 获取一批未发布的事件
         /// </summary>
         /// <param name="batchSize"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<DomainEvent>> GetUnpublishedEventsAsync(int batchSize, CancellationToken ct)
+        public async Task<IEnumerable<IDomainEvent>> GetUnpublishedEventsAsync(int batchSize, CancellationToken ct) // 返回 IDomainEvent
         {
             var entries = await _dbContext.Set<OutboxEntry>()
                 .Where(e => !e.Published)
@@ -53,14 +56,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
                 .Take(batchSize)
                 .ToListAsync(ct);
 
-            var events = new List<DomainEvent>();
+            var events = new List<IDomainEvent>(); // 存储为 IDomainEvent
 
             foreach (var entry in entries)
             {
                 var eventType = Type.GetType(entry.EventType);
                 if (eventType != null)
                 {
-                    var @event = JsonSerializer.Deserialize(entry.Payload, eventType) as DomainEvent;
+                    // 反序列化为具体的泛型类（如 DomainEvent<string> 的子类）
+                    var @event = JsonSerializer.Deserialize(entry.Payload, eventType) as IDomainEvent;
                     if (@event != null) events.Add(@event);
                 }
             }
@@ -69,14 +73,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
         }
 
         /// <summary>
-        /// 在成功处理一个事件后，将其标记为已发布
+        /// 标记一个事件为已发布
         /// </summary>
         /// <param name="eventId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
         public async Task MarkAsPublishedAsync(Guid eventId, CancellationToken ct)
         {
-            var entry = await  _dbContext.Set<OutboxEntry>()
+            var entry = await _dbContext.Set<OutboxEntry>()
                 .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
 
             if (entry != null)
@@ -88,7 +92,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
         }
 
         /// <summary>
-        /// 事件处理失败时，增加重试计数并记录错误
+        /// 增加重试次数
         /// </summary>
         /// <param name="eventId"></param>
         /// <param name="error"></param>
@@ -108,7 +112,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
         }
 
         /// <summary>
-        /// 将无法处理的事件标记为“死信”（Dead Letter）
+        /// 标记一个事件为死信
         /// </summary>
         /// <param name="eventId"></param>
         /// <param name="ct"></param>
@@ -126,7 +130,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
         }
 
         /// <summary>
-        /// 根据事件ID查询出箱记录，通常用于调试或特定场景下的查询
+        /// 获取一个事件
         /// </summary>
         /// <param name="eventId"></param>
         /// <param name="ct"></param>
@@ -135,6 +139,24 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository.Ev
         {
             return await _dbContext.Set<OutboxEntry>()
                 .FirstOrDefaultAsync(e => e.EventId == eventId, ct);
+        }
+
+        // === 辅助方法：提取聚合根 ID 字符串 ===
+        private string GetAggregateRootIdString(IDomainEvent @event)
+        {
+            // 因为具体的 DomainEvent<TValue> 继承了包含 AggregateRootId 属性的基类，
+            // 我们可以通过反射获取这个属性的值，并调用其 ToString()。
+            // 由于我们在 AggregateRootId 基类重写了 ToString() 返回 Value.ToString()，
+            // 这是最通用且安全的做法。
+
+            var property = @event.GetType().GetProperty("AggregateRootId");
+            if (property != null)
+            {
+                var idValue = property.GetValue(@event);
+                return idValue?.ToString() ?? string.Empty;
+            }
+
+            return string.Empty;
         }
     }
 }

@@ -6,7 +6,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis
 {
-    public sealed class IngredientAnalysisCalculation : AggregateRoot
+    public sealed class IngredientAnalysisCalculation
     {
         private List<FiberComponent> _components = new();
         public long Id { get; private set; } /*AnalysisId*/

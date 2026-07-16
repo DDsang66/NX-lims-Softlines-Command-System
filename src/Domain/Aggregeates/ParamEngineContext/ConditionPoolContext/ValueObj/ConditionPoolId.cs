@@ -6,16 +6,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     /// <summary>
     /// ConditionPoolId使用Guid
     /// </summary>
-    public class ConditionPoolId : AggregateRootId
+    public class ConditionPoolId : AggregateRootId<Guid>
     {
-        public Guid Value { get; private set; }
-
         public ConditionPoolId(Guid value)
+            :base(value) 
         {
-            if (value == Guid.Empty) throw new ArgumentException("ConditionPoolId cannot be empty", nameof(value));
-            Value = value;
-        }
+            if (value == Guid.Empty) 
+                throw new ArgumentNullException("ConditionPoolId cannot be empty", nameof(value));
 
-        public override string ToString() => Value.ToString();
+        }
     }
 }

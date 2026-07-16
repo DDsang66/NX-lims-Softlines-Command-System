@@ -14,12 +14,12 @@ using System.Text.RegularExpressions;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext
 {
-    public sealed class ParamRule : AggregateRoot
+    public sealed class ParamRule : AggregateRoot<ParamRuleId, string>
     {
         /// <summary>
         /// 参数规则id
         /// </summary>
-        public ParamRuleId Id { get; private set; }
+        //public ParamRuleId Id { get; private set; }
 
         /// <summary>
         /// 所属公式
@@ -67,7 +67,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public bool IsActive { get; private set; }
 
         // 私有构造函数
-        private ParamRule() { }
+        //private ParamRule() { }
 
         /// <summary>
         /// 静态工厂方法：创建参数规则聚合根

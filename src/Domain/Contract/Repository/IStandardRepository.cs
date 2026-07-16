@@ -4,7 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
 {
-    public interface IStandardRepository:IScopedDependency,IRepository<Standard,StandardId>
+    public interface IStandardRepository:IScopedDependency,IRepository<Standard,StandardId,string>
     {
         /// <summary>
         /// 添加标准

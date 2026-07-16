@@ -3,14 +3,13 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj
 {
-    public class ParamRuleId:AggregateRootId
+    public class ParamRuleId:AggregateRootId<string>
     {
-        public string Value { get; }
         public ParamRuleId(string value)
+            :base(value)
         {
-            if (string.IsNullOrWhiteSpace(value)) throw new ArgumentException("ParamRuleId required", nameof(value));
-            Value = value;
+            if (string.IsNullOrWhiteSpace(value))
+                throw new ArgumentNullException("ParamRuleId required", nameof(value));
         }
-        public override string ToString() => Value.ToString();
     }
 }

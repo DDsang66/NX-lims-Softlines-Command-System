@@ -54,8 +54,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             if (structure == null) return Result<ParamSet>.Fail("ParamStructure not found");
 
             // 2. 前置验证（结构层面）
-            var v =await  _conditionPoolValidateService.EnsureConditionPoolConformance(structure, pool);
-            if (v.IsFailure) return Result<ParamSet>.Fail(v.Error);
+            var v1 = await  _conditionPoolValidateService.EnsureConditionPoolConformance(structure, pool);
+            if (v1.IsFailure) return Result<ParamSet>.Fail(v1.Error);
 
             //ConditionPool调用ConditionEnricher进行富化，确保所有条件字段都被填充
             //交由Formula进行语义检查，确保所有必需的条件字段都存在
@@ -64,8 +64,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             var formula = await _formulaRepo.GetByIdAsync(new FormulaId(formulaId), ct);
             if (formula == null) return Result<ParamSet>.Fail("Formula not found");
 
-            var missing = formula.RequiredConditions().Where(f => !pool.HasCondition(f)).ToList();
-            if (missing.Any()) return Result<ParamSet>.Fail($"Missing required conditions: {string.Join(',', missing)}");
+            var v2 = await _conditionPoolValidateService.EnsureConditionPoolWithFormula(formula, pool);
+            if (v2.IsFailure) return Result<ParamSet>.Fail($"Missing required conditions: {string.Join(',', v2)}");
 
             // 4. 加载规则
             var rules = await _ruleRepo.GetByIdsAsync(structure.ApplicableRuleIds, ct);

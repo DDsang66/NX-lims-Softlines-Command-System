@@ -8,11 +8,12 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+using System.Reflection;
 using static Microsoft.IO.RecyclableMemoryStreamManager;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
 {
-    public class UnitOfWork : IUnitOfWork,IScopedDependency
+    public class UnitOfWork : IUnitOfWork, IScopedDependency
     {
         private readonly LabDbContextSec _labDbContextSec;
         private readonly dbContext _context;
@@ -40,13 +41,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
             // 1. 收集事件（保存前）
             var events = CollectDomainEvents();
 
+            var result = await _context.SaveChangesAsync(cancellationToken);
+
             // 2. 事件存入 Outbox（同一事务，保证原子性）
             foreach (var @event in events)
             {
                 await _eventOutbox.StoreAsync(@event, cancellationToken);
             }
-
-            var result = await _context.SaveChangesAsync(cancellationToken);
 
             // 4. 清空聚合根事件
             ClearDomainEvents();
@@ -77,14 +78,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
                 //await  _labDbContextSec.SaveChangesAsync(cancellationToken);
                 var events = CollectDomainEvents();
 
+                //保存更改
+                await _context.SaveChangesAsync(cancellationToken);
+
                 // 3. 事件存入 Outbox
                 foreach (var @event in events)
                 {
                     await _eventOutbox.StoreAsync(@event, cancellationToken);
                 }
-
-                //保存更改
-                await _context.SaveChangesAsync(cancellationToken);
 
                 //提交事务
                 await _transaction.CommitAsync(cancellationToken);
@@ -140,11 +141,35 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
         /// 收集事件
         /// </summary>
         /// <returns></returns>
-        private List<DomainEvent> CollectDomainEvents()
+        private List<IDomainEvent> CollectDomainEvents()
         {
-            return _context.ChangeTracker.Entries<IAggregateRoot>()
-                .SelectMany(e => e.Entity.DomainEvents)
-                .ToList();
+            var domainEvents = new List<IDomainEvent>();
+
+            var entities = _context.ChangeTracker.Entries()
+                .Select(e => e.Entity)
+                .Where(e => e != null);
+
+            foreach (var entity in entities)
+            {
+                var type = entity!.GetType();
+
+                // 判断是否实现了 IAggregateRoot<,>
+                var implementsAggregateRoot = type.GetInterfaces()
+                    .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAggregateRoot<,>));
+
+                if (!implementsAggregateRoot) continue;
+
+                // 读取 DomainEvents 公共属性（若存在）
+                var prop = type.GetProperty("DomainEvents", BindingFlags.Instance | BindingFlags.Public);
+                if (prop == null) continue;
+
+                if (prop.GetValue(entity) is IEnumerable<IDomainEvent> events)
+                {
+                    domainEvents.AddRange(events);
+                }
+            }
+
+            return domainEvents;
         }
 
         /// <summary>
@@ -152,9 +177,29 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
         /// </summary>
         private void ClearDomainEvents()
         {
-            _context.ChangeTracker.Entries<IAggregateRoot>()
-                .ToList()
-                .ForEach(e => e.Entity.ClearDomainEvents());
+            //_context.ChangeTracker.Entries<IAggregateRoot>()
+            //    .ToList()
+            //    .ForEach(e => e.Entity.ClearDomainEvents());
+
+
+            var entities = _context.ChangeTracker.Entries()
+                .Select(e => e.Entity)
+                .Where(e => e != null);
+
+            foreach (var entity in entities)
+            {
+                var type = entity!.GetType();
+
+                // 判断是否实现了 IAggregateRoot<,>
+                var implementsAggregateRoot = type.GetInterfaces()
+                    .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IAggregateRoot<,>));
+
+                if (!implementsAggregateRoot) continue;
+
+                // 尝试调用 ClearDomainEvents 方法（可能是接口或基类公开的方法）
+                var method = type.GetMethod("ClearDomainEvents", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                method?.Invoke(entity, null);
+            }
         }
     }
 }

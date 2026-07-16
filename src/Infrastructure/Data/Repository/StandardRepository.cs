@@ -41,9 +41,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task UpdateAsync(Standard standard, CancellationToken ct)
         {
-            var standardPo = await _context.FindAsync<BasicStandard>(standard.IdStandard.Value, ct);
+            var standardPo = await _context.FindAsync<BasicStandard>(standard.Id.Value, ct);
             if (standardPo == null)
-                throw new Exception($"标准 {standard.IdStandard.Value} 不存在");
+                throw new Exception($"标准 {standard.Id.Value} 不存在");
 
             // 使用 Mapster 的 Adapt 方法将领域模型的变更覆盖到已追踪的 PO 上
             // 注意：这里不能直接 standard.Adapt<BasicStandard>()，因为会生成新对象
@@ -58,7 +58,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task UpdateRangeAsync(IEnumerable<Standard> standards, CancellationToken ct)
         {
             var standardsList = standards.ToList();
-            var ids = standardsList.Select(s => s.IdStandard.Value).ToList();
+            var ids = standardsList.Select(s => s.Id.Value).ToList();
 
             var existingPos = await _context.BasicStandards
                 .Where(s => ids.Contains(s.IdStandard))
@@ -68,8 +68,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             foreach (var standard in standardsList)
             {
-                if (!existingDict.TryGetValue(standard.IdStandard.Value, out var po))
-                    throw new Exception($"标准 {standard.IdStandard.Value} 不存在");
+                if (!existingDict.TryGetValue(standard.Id.Value, out var po))
+                    throw new Exception($"标准 {standard.Id.Value} 不存在");
 
                 // 同 UpdateAsync，映射到已有对象
                 standard.Adapt(po);
