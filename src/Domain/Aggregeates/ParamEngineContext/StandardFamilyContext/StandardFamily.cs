@@ -42,11 +42,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public IReadOnlyCollection<ParamStructureId?> ParamStructureIds => _paramStructureIds.AsReadOnly();
 
         /// <summary>
-        /// 共享规则id集合
-        /// </summary>
-        public IReadOnlyCollection<ParamRuleId?> SharedRuleIds => _sharedRuleIds.AsReadOnly();
-
-        /// <summary>
         /// 版本
         /// </summary>
         public int Version { get; private set; }
@@ -99,7 +94,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             List<StandardId?> standardIds,
             List<FormulaId?> formulaIds,
             List<ParamStructureId?> paramStructureIds,
-            List<ParamRuleId?> sharedRuleIds,
             int version,
             DateTime effectiveDate)
         {
@@ -128,12 +122,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             {
                 foreach (var pid in paramStructureIds.Distinct())
                     family._paramStructureIds.Add(pid);                
-            }
-
-            if (sharedRuleIds != null)
-            {
-                foreach (var rid in sharedRuleIds.Distinct())
-                    family._sharedRuleIds.Add(rid!);
             }
             return family;
         }

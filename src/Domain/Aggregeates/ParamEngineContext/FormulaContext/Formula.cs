@@ -3,8 +3,10 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext
 {
@@ -228,10 +230,81 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 throw new InvalidOperationException("At least one condition field is required for activation");
 
             // 4. 校验表达式模板语法
-            //if (!ValidateExpressionTemplate())
-            //    throw new InvalidOperationException("Invalid expression template format");
+            ValidateExpression();
 
             IsActive = true;
+        }
+
+
+        /// <summary>
+        /// 基于 token 列表校验表达式模板：
+        /// - 必须包含且仅包含一个推导符（RangeOperator token）
+        /// - 所有 ConditionFields 必须以完整标识符出现在 token 列表中（忽略大小写）
+        /// 返回 Result.Ok() 表示通过，否则返回 Result.Fail(...) 并附带缺失字段信息
+        /// </summary>
+        /// <param name="tokens">由上层 Tokenizer 生成的 token 列表</param>
+        public Result ValidateExpressionTokens(IReadOnlyList<Token> tokens)
+        {
+            if (tokens == null || tokens.Count == 0)
+                return Result.Fail("ExpressionTemplate tokens are empty");
+
+            // 推导符数量检查
+            var arrowCount = tokens.Count(t => t.Type == TokenType.RangeOperator);
+            if (arrowCount == 0)
+                return Result.Fail("ExpressionTemplate must contain a derivation operator (→, ->, =>, to, ~).");
+            if (arrowCount > 1)
+                return Result.Fail("ExpressionTemplate must contain only one derivation operator.");
+
+            // 检查每个 ConditionField 是否以完整标识符出现在 tokens 中
+            var missing = new List<string>();
+            if (ConditionFields != null)
+            {
+                foreach (var field in ConditionFields.Where(f => !string.IsNullOrWhiteSpace(f)))
+                {
+                    var exists = tokens.Any(t =>
+                        t.Type == TokenType.Identifier &&
+                        string.Equals(t.Value, field, StringComparison.OrdinalIgnoreCase));
+                    if (!exists) missing.Add(field);
+                }
+            }
+
+            if (missing.Any())
+                return Result.Fail("Some condition fields are not present in the expression template", details: missing);
+
+            return Result.Ok();
+        }
+
+
+
+        /// <summary>
+        /// 校验表达式模板语法
+        /// </summary>
+        public void ValidateExpression()
+        {
+            if (string.IsNullOrWhiteSpace(ExpressionTemplate))
+                throw new InvalidOperationException("ExpressionTemplate is required");
+
+            var derivationOperators = new[] { "→", "->", "=>", "to", "~" };
+            var hasDerivation = derivationOperators.Any(op =>
+                op.Equals("to", StringComparison.OrdinalIgnoreCase)
+                    ? ExpressionTemplate.IndexOf("to", StringComparison.OrdinalIgnoreCase) >= 0
+                    : ExpressionTemplate.Contains(op));
+
+            if (!hasDerivation)
+                throw new InvalidOperationException("ExpressionTemplate must contain a derivation operator like '->','=>','to','~' or '→'.");
+
+            if (ConditionFields != null)
+            {
+                foreach (var field in ConditionFields.Where(f => !string.IsNullOrWhiteSpace(f)))
+                {
+                    var escaped = Regex.Escape(field.Trim());
+                    var pattern = $@"\b{escaped}\b";
+                    if (!Regex.IsMatch(ExpressionTemplate ?? string.Empty, pattern, RegexOptions.IgnoreCase))
+                    {
+                        throw new InvalidOperationException($"Condition field '{field}' is not present in ExpressionTemplate.");
+                    }
+                }
+            }
         }
 
 

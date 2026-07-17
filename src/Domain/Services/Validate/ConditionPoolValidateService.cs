@@ -20,6 +20,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
         /// </summary>
         public async Task<Result> EnsureConditionPoolConformance(ParamStructure structure, ConditionPool pool)
         {
+            pool.ChangeToDraft();
+
             if (structure == null)
                 return Result.Fail("ParamStructure is null");
 
@@ -44,6 +46,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
                 }
             }
 
+            pool.ChangeToValidated();
+
             return Result.Ok();
         }
 
@@ -55,6 +59,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
         /// <returns></returns>
         public async Task<Result> EnsureConditionPoolWithFormula(Formula formula, ConditionPool pool) 
         {
+            pool.ChangeToDraft();
+
             if (formula == null) 
                 return Result.Fail("Formula is null");
 
@@ -65,6 +71,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
 
             if (missing.Any())
                 return Result.Fail($"Missing required conditions: {string.Join(',', missing)}");
+
+            pool.ChangeToValidated();
 
             return Result.Ok();
         }

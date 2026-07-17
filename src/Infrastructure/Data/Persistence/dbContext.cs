@@ -235,10 +235,6 @@ public partial class dbContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("param_structure_id");
             entity.Property(e => e.Priority).HasColumnName("priority");
-            entity.Property(e => e.StandardFamilyCodeId)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("standard_family_code_id");
             entity.Property(e => e.StopOnMatch).HasColumnName("stop_on_match");
         });
 

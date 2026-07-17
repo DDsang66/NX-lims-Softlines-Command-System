@@ -12,11 +12,30 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     /// </summary>
     public sealed class ConditionPool : AggregateRoot<ConditionPoolId,Guid>
     {
-        public OrderId SourceId { get; private set; }   // 关联的申请单ID
-        public CheckListId CheckListId { get; private set; } = new CheckListId(new Guid());  // 关联的检查单ID
+        /// <summary>
+        /// 关联的申请单ID
+        /// </summary>
+        public OrderId SourceId { get; private set; } = new OrderId(new Guid());
+
+        /// <summary>
+        /// 关联的检测清单ID
+        /// </summary>
+        public CheckListId CheckListId { get; private set; } = new CheckListId(new Guid());
+
+        /// <summary>
+        /// 条件池中的条件
+        /// </summary>
         private readonly Dictionary<string, object?> _conditions = new(StringComparer.OrdinalIgnoreCase);
         public IReadOnlyDictionary<string, object?> Conditions => _conditions;
+
+        /// <summary>
+        /// 条件池的创建时间
+        /// </summary>
         public DateTime CreatedAt { get; private set; }
+
+        /// <summary>
+        /// 条件池的状态
+        /// </summary>
         public ConditionPoolStatus Status { get; private set; }  // Draft, Validated, Expired
 
         /// <summary>

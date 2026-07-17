@@ -41,13 +41,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
             // 1. 收集事件（保存前）
             var events = CollectDomainEvents();
 
-            var result = await _context.SaveChangesAsync(cancellationToken);
-
             // 2. 事件存入 Outbox（同一事务，保证原子性）
             foreach (var @event in events)
             {
                 await _eventOutbox.StoreAsync(@event, cancellationToken);
             }
+
+            // 4) 再次保存 Outbox 变化（如果 _eventOutbox.StoreAsync 未保存）
+            var result = await _context.SaveChangesAsync(cancellationToken);
 
             // 4. 清空聚合根事件
             ClearDomainEvents();
@@ -78,14 +79,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
                 //await  _labDbContextSec.SaveChangesAsync(cancellationToken);
                 var events = CollectDomainEvents();
 
-                //保存更改
-                await _context.SaveChangesAsync(cancellationToken);
-
                 // 3. 事件存入 Outbox
                 foreach (var @event in events)
                 {
                     await _eventOutbox.StoreAsync(@event, cancellationToken);
                 }
+
+                //保存更改
+                await _context.SaveChangesAsync(cancellationToken);
 
                 //提交事务
                 await _transaction.CommitAsync(cancellationToken);

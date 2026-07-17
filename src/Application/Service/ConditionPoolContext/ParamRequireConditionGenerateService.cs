@@ -6,6 +6,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository;
@@ -18,15 +19,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         private readonly ICheckListRepository _checkListRepository;
         //private readonly IOrderRepository _orderRepository;
         private readonly IStandardFamilyRepository _standardFamilyRepository;
+        private readonly IGenerateRequiredConditionsService _generateRequiredConditionsService;
 
         public ParamRequireConditionGenerateService(
             IParamStructureRepository paramStructureRepository, 
             IStandardFamilyRepository standardFamilyRepository,
-            ICheckListRepository checkListRepository)
+            ICheckListRepository checkListRepository,
+            IGenerateRequiredConditionsService generateRequiredConditionsService)
         {
             _paramStructureRepository = paramStructureRepository;
             _standardFamilyRepository = standardFamilyRepository;
             _checkListRepository = checkListRepository;
+            _generateRequiredConditionsService = generateRequiredConditionsService;
         }
 
         /// <summary>
@@ -46,7 +50,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
             {
                 foreach (var standardId in item.StandardIds)
                 {
-                    standardIds.Add(new StandardId(standardId));
+                    standardIds.Add(standardId);
                 }
             }
 
@@ -75,64 +79,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
                 }
             }
 
-            var condition = new Dictionary<string, object?>();
-
-            // 从 ConditionRequirements 获取条件字段
-
-            //提取结构(ParamStructure)中的ConditionField[ConditionName,Type,allowedValues]等数据
-
-            //构建Condition字典对象[conditionName作为string，Type用于规范object类型]
-            foreach (var paramStructure in paramStructures)
-            {
-                foreach (var requirement in paramStructure.Schema.ConditionRequirements)
-                {
-                    // 如果字段已存在，可以选择保留第一个或合并信息
-                    if (!condition.ContainsKey(requirement.FieldName))
-                    {
-                        condition[requirement.FieldName] = new
-                        {
-                            Type = requirement.FieldName.GetType(),
-                            IsRequired = requirement.IsRequired,
-                            AllowedValues = requirement.AllowedValues
-                        };
-                    }
-                    else
-                    {
-                        var existing = (dynamic)condition[requirement.FieldName];
-                        // 合并AllowedValues
-                        var mergedValues = existing.AllowedValues
-                            .Concat(requirement.AllowedValues)
-                            .Distinct()
-                            .ToList();
-
-                        condition[requirement.FieldName] = new
-                        {
-                            Type = requirement.FieldName.GetType(),
-                            IsRequired = requirement.IsRequired || existing.IsRequired,
-                            AllowedValues = mergedValues
-                        };
-                    }
-                }
-            }
-
-            //            condition格式示例
-            //                {
-            //                "MachineType": {
-            //                    "Type": "System.String",
-            //                        "IsRequired": true,
-            //                        "AllowedValues": ["Natural", "Synthetic"]
-            //                        },
-            //                  "Temperature": {
-            //                    "Type": "System.Double",
-            //                        "IsRequired": true,
-            //                        "AllowedValues": [30,40,50,60,70,80,90]
-            //                        },
-            //                  "WashingProcess": {
-            //                    "Type": "System.String",
-            //                        "IsRequired": true,
-            //                        "AllowedValues": ["Normal", "Gentle", "Mild"]
-            //                        }
-            //                     }
+           var condition =  _generateRequiredConditionsService.GenerateRequiredConditions(paramStructures);
 
             return Result<IDictionary<string, object?>>.Ok(condition);
         }

@@ -18,11 +18,6 @@
         public string ParamStructureId { get; set; } = string.Empty;
 
         /// <summary>
-        /// 所属标准族
-        /// </summary>
-        public string StandardFamilyId { get; set; } = string.Empty;
-
-        /// <summary>
         /// 参数名
         /// </summary>
         public string ParamName { get; set; } = string.Empty;

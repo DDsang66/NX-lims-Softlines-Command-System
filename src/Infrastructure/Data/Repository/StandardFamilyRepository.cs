@@ -102,19 +102,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(x => x.ParamStructureId)
                 .ToListAsync(ct);
 
-            var ruleIdTask =  _dbContext.BasicParamRules
-                .Where(x => x.StandardFamilyCodeId == id.Value)
-                .Select(x => x.RuleId)
-                .ToListAsync(ct);
-
             // 等待所有查询完成
-            await Task.WhenAll(standardIdTask, fomulaIdTask, structureIdTask, ruleIdTask);
+            await Task.WhenAll(standardIdTask, fomulaIdTask, structureIdTask);
 
             // 从 Task 中获取结果
             var standardIdList = await standardIdTask;
             var fomulaIdList = await fomulaIdTask;
             var structureIdList = await structureIdTask;
-            var ruleIdList = await ruleIdTask;
 
             return StandardFamily.Reconstitute(
                 new StandardFamilyId(standardFamilyPo.IdStandardFamily),
@@ -122,7 +116,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 standardIdList.Select(id => new StandardId(id)).ToList(),
                 fomulaIdList.Select(id => new FormulaId(id)).ToList(),
                 structureIdList.Select(id => new ParamStructureId(id)).ToList(),
-                ruleIdList.Select(id => new ParamRuleId(id)).ToList(),
                 standardFamilyPo.Version,
                 standardFamilyPo.EffectiveDate
             );
@@ -162,19 +155,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(x => x.ParamStructureId)
                 .ToListAsync(ct);
 
-            var ruleIdTask = _dbContext.BasicParamRules
-                .Where(x => x.StandardFamilyCodeId == standardFamilyId)
-                .Select(x => x.RuleId)
-                .ToListAsync(ct);
-
             // 等待所有查询完成
-            await Task.WhenAll(standardIdTask, fomulaIdTask, structureIdTask, ruleIdTask);
+            await Task.WhenAll(standardIdTask, fomulaIdTask, structureIdTask);
 
             // 从 Task 中获取结果
             var standardIdList = await standardIdTask;
             var fomulaIdList = await fomulaIdTask;
             var structureIdList = await structureIdTask;
-            var ruleIdList = await ruleIdTask;
 
             return StandardFamily.Reconstitute(
                 new StandardFamilyId(standardFamilyPo.IdStandardFamily),
@@ -182,7 +169,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 standardIdList.Select(id => new StandardId(id)).ToList(),
                 fomulaIdList.Select(id => new FormulaId(id)).ToList(),
                 structureIdList.Select(id => new ParamStructureId(id)).ToList(),
-                ruleIdList.Select(id => new ParamRuleId(id)).ToList(),
                 standardFamilyPo.Version,
                 standardFamilyPo.EffectiveDate
             );

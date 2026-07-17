@@ -32,11 +32,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public ParamStructureId? StructureId { get; private set; } // 所属结构
 
         /// <summary>
-        /// 所属标准族
-        /// </summary>
-        public StandardFamilyId? StandardFamilyId { get; private set; } // 所属标准族
-
-        /// <summary>
         /// 所属条件池
         /// </summary>
         public string ParamName { get; private set; } // 生成的参数名
@@ -76,7 +71,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             ParamRuleId id,
             FormulaId? formulaId,
             ParamStructureId? structureId,
-            StandardFamilyId? standardFamilyId,
             string paramName,
             int priority,
             ConditionPattern pattern,
@@ -100,7 +94,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Id = id,
                 FormulaId = formulaId,
                 StructureId = structureId,
-                StandardFamilyId = standardFamilyId,
                 ParamName = paramName,
                 Priority = priority,
                 Pattern = pattern,
@@ -117,7 +110,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             ParamRuleId id,
             FormulaId? formulaId,
             ParamStructureId? structureId,
-            StandardFamilyId? standardFamilyId,
             string paramName,
             int priority,
             ParamValue result,
@@ -130,7 +122,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Id = id,
                 FormulaId = formulaId,
                 StructureId = structureId,
-                StandardFamilyId = standardFamilyId,
                 ParamName = paramName,
                 Priority = priority,
                 Result = result,
@@ -286,7 +277,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public ParamValue GetResult() => Result;
 
         /// <summary>
-        /// 声明当前规则所需的条件字段名集合（仅包含 EqualMatches 的字段名）
+        /// 声明当前规则所含有的的条件字段名集合（仅包含 EqualMatches 的字段名）
         /// </summary>
         /// <returns></returns>
         public IEnumerable<string> RequiredConditions()

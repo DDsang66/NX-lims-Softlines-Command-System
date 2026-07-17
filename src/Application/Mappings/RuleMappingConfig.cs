@@ -18,7 +18,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.RuleId, src => src.Id.Value)
                 .Map(dest => dest.FormulaId, src => src.FormulaId == null ? null : src.FormulaId.Value)
                 .Map(dest => dest.ParamStructureId, src => src.StructureId == null ? null : src.StructureId.Value)
-                .Map(dest => dest.StandardFamilyCodeId, src => src.StandardFamilyId == null ? null : src.StandardFamilyId.Value)
                 .Map(dest => dest.ParamName, src => src.ParamName)
                 .Map(dest => dest.Priority, src => src.Priority)
                 .Map(dest => dest.DefaultValue, src => src.Result.Value)
@@ -40,9 +39,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     string.IsNullOrEmpty(src.ParamStructureId) 
                     ? null 
                     : new ParamStructureId(src.ParamStructureId),
-                    string.IsNullOrEmpty(src.StandardFamilyCodeId) 
-                    ? null
-                    : new StandardFamilyId(src.StandardFamilyCodeId),
                     src.ParamName,
                     src.Priority,
                     new ParamValue(src.DefaultValue, null),

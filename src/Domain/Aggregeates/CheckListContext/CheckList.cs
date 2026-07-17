@@ -29,8 +29,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// </summary>
         public string? Remark { get; private set; } = string.Empty;
 
-        private CheckList() { }
-
         /// <summary>
         /// 创建测试清单
         /// </summary>

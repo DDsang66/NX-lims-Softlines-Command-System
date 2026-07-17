@@ -1,6 +1,7 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext
@@ -16,22 +17,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// <summary>
         /// 测试项目ID
         /// </summary>
-        public string TestItemId { get; set; } = string.Empty;
+        public TestItemId? TestItemId { get; set; }
 
         /// <summary>
         /// 买家自定义测试项目ID
         /// </summary>
-        public string BuyerModifiedTestItemId { get; set; } = string.Empty;
+        public string? BuyerModifiedTestItemId { get; set; } = string.Empty;
 
         /// <summary>
         /// 标准ID
         /// </summary>
-        public IEnumerable<string> StandardIds { get; set; } = Enumerable.Empty<string>();
+        public IEnumerable<StandardId?> StandardIds { get; set; } = Enumerable.Empty<StandardId>();
 
         /// <summary>
         /// 买家自定义测试方法ID
         /// </summary>
-        public string BuyerModifiedTextMethodId { get; set; } = string.Empty;
+        public string? BuyerModifiedTextMethodId { get; set; } = string.Empty;
 
         /// <summary>
         /// 测试小组
