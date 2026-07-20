@@ -1,6 +1,7 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine
@@ -10,6 +11,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine
     /// </summary>
     public interface IParamCompensationService: IScopedDependency
     {
-        ParamSet ConformToStructure(ParamSet generated, ParamStructure structure);
+        void CompensateParamWithStructure(ParamSet generated, string name, object actualValue, object defaultValue);
+
+        void CompensateWithItemDefinitions(ParamSet param, IEnumerable<ParamRequireDefinition> definitions);
+
     }
 }

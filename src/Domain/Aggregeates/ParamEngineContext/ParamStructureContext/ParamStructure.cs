@@ -20,7 +20,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
         private readonly List<StandardFamilyId?> _standardFamilyIds = new();
         private readonly List<ParamRuleId> _ruleIds  = new();
-        private readonly List<FormulaId?> _formulaIds = new();
 
         /// <summary>
         /// 适用标准族
@@ -28,14 +27,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public IReadOnlyCollection<StandardFamilyId?> StandardFamilyIds => _standardFamilyIds.AsReadOnly();
 
         /// <summary>
-        /// 适用公式
-        /// </summary>
-        public IReadOnlyCollection<FormulaId?> FormulaIds => _formulaIds.AsReadOnly();
-       
-        /// <summary>
         /// 适用规则
         /// </summary>
         public IReadOnlyCollection<ParamRuleId> ApplicableRuleIds => _ruleIds.AsReadOnly();
+
+        /// <summary>
+        /// 适用公式
+        /// </summary>
+        public FormulaId? FormulaId {get; private set; }
         
         /// <summary>
         /// 参数名称
@@ -45,7 +44,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 参数定义
         /// </summary>
-        public ParamSchema Schema { get; private set; } 
+        public ParamSchema Schema { get; private set; }
+
+        /// <summary>
+        /// 状态
+        /// </summary>
+        public Status Status { get; private set; } = Status.Draft;
         
         /// <summary>
         /// 生效日期
@@ -58,7 +62,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public static ParamStructure Create(
             ParamStructureId id,
             IEnumerable<StandardFamilyId?> standardFamilyIds,
-            IEnumerable<FormulaId?> formulaIds,
+            FormulaId? formulaId,
             string paramName,
             ParamSchema schema,
             IEnumerable<ParamRuleId?> ruleIds,
@@ -77,7 +81,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             {
                 Id = id,
                 ParamName = paramName.Trim(),
+                FormulaId = formulaId,
                 Schema = schema,
+                Status = Status.Draft,
                 EffectiveDate = effectiveDate ?? DateTime.UtcNow
             };
 
@@ -87,14 +93,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 foreach (var familyId in standardFamilyIds.Where(f => f != null))
                 {
                     ps._standardFamilyIds.Add(familyId);
-                }
-            }
-
-            if (formulaIds != null)
-            {
-                foreach (var formulaId in formulaIds.Where(f => f != null))
-                {
-                    ps._formulaIds.Add(formulaId);
                 }
             }
 
@@ -123,10 +121,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public static ParamStructure Reconstitute(
             ParamStructureId id,
             IEnumerable<StandardFamilyId?> standardFamilyIds, // 3. 修改为集合
-            IEnumerable<FormulaId?> formulaIds,               // 4. 修改为集合
+            IEnumerable<ParamRuleId>? ruleIds,
+            FormulaId? formulaId,               // 4. 修改为集合
             string paramName,
             ParamSchema schema,
-            IEnumerable<ParamRuleId>? ruleIds,
+            Status status,
             DateTime effectiveDate
             )
         {
@@ -134,6 +133,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             {
                 Id = id,
                 ParamName = paramName.Trim(),
+                FormulaId = formulaId,
+                Status = status,
                 Schema = schema,
                 EffectiveDate = effectiveDate
             };
@@ -144,14 +145,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 foreach (var familyId in standardFamilyIds.Where(f => f != null))
                 {
                     ps._standardFamilyIds.Add(familyId);
-                }
-            }
-
-            if (formulaIds != null)
-            {
-                foreach (var formulaId in formulaIds.Where(f => f != null))
-                {
-                    ps._formulaIds.Add(formulaId);
                 }
             }
 
@@ -185,6 +178,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             AddDomainEvent(new ParamStructureUpdatedEvent(Id, ParamName, Schema));
         }
 
+        public void CombineToFormula() 
+        {
+
+            //领域事件 add
+        }
+
+
         /// <summary>
         /// 主参数定义（Schema.RequiredParam）
         /// </summary>
@@ -195,5 +195,31 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         /// <param name="effective"></param>
         public void UpdateEffectiveDate(DateTime effective) => EffectiveDate = effective;
+
+        /// <summary>
+        /// 将当前结构设置为“激活”状态
+        /// </summary>
+        public void Active() => this.Status = Status.Active;
+
+        /// <summary>
+        /// 将当前j结构回退为草稿状态，要求必须满足某些条件，
+        /// </summary>
+        /// <returns></returns>
+        public void Draft() => this.Status = Status.Draft;
+
+        /// <summary>
+        /// 将当前结构设置为“已废弃”状态
+        /// </summary>
+        public void Deprecated() => this.Status = Status.Deprecated;
+
+        /// <summary>
+        /// 将当前结构设置为“被替代”状态
+        /// </summary>
+        public void Superseded() => this.Status = Status.Superseded;
+
+        /// <summary>
+        /// 将当前结构设置为“待审核”状态
+        /// </summary>
+        public void Pending() => this.Status = Status.Pending;
     }
 }

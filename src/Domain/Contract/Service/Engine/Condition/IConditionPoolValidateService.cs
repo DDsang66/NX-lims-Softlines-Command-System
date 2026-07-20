@@ -12,19 +12,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Co
     public interface IConditionPoolValidateService:IScopedDependency
     {
         /// <summary>
-        /// 验证一级条件池是否满足结构要求（结构层面）
+        /// 验证二级条件池是否满足结构公式要求
         /// </summary>
         /// <param name="structure"></param>
         /// <param name="pool"></param>
         /// <returns></returns>
-        Task<Result> EnsureConditionPoolConformance(ParamStructure structure, ConditionPool pool);
-
-        /// <summary>
-        /// 验证二级条件池是否满足公式要求（公式层面）
-        /// </summary>
-        /// <param name="formula"></param>
-        /// <param name="pool"></param>
-        /// <returns></returns>
-        Task<Result> EnsureConditionPoolWithFormula(Formula formula, ConditionPool pool);
+        Task<Result> ValidateConditionPool(ParamStructure structure, Formula formula, ConditionPool pool);
     }
 }

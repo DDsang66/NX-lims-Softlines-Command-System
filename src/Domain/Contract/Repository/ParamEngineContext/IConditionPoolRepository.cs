@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
@@ -27,5 +28,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="ct"></param>
         /// <returns>聚合根</returns>
         Task<ConditionPool> GetByIdAsync(ConditionPoolId aggregateRootId, CancellationToken ct);
+
+        /// <summary>
+        /// 根据检查单ID查询条件池
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<ConditionPool> GetByCheckListIdAsync(CheckListId id, CancellationToken ct);
     }
 }

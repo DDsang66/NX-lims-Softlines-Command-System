@@ -30,13 +30,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Result> UpdateParamRuleAsync(UpdateParamRuleRequest request, CancellationToken ct);
-        
-        /// <summary>
-        /// 获取参数规则
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<Result> GetParamRuleAsync(string id,CancellationToken ct);
+       
     }
 }

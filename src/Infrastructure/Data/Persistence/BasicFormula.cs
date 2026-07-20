@@ -24,6 +24,4 @@ public partial class BasicFormula
     public bool IsActive { get; set; }
 
     public virtual ICollection<FormulaStandardfamily> FormulaStandardfamilies { get; set; } = new List<FormulaStandardfamily>();
-
-    public virtual ICollection<ParamstructureFormula> ParamstructureFormulas { get; set; } = new List<ParamstructureFormula>();
 }

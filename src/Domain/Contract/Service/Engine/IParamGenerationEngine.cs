@@ -10,6 +10,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine
     /// </summary>
     public interface IParamGenerationEngine:IScopedDependency
     {
+        /// <summary>
+        /// 根据条件池和规则生成参数集
+        /// </summary>
+        /// <param name="pool"></param>
+        /// <param name="rules"></param>
+        /// <returns></returns>
         ParamSet Generate(ConditionPool pool, IEnumerable<ParamRule> rules);
     }
 }

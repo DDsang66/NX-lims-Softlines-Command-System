@@ -59,6 +59,8 @@
     <Folder Include="src\Application\Contract\ApiResult\" />
     <Folder Include="src\Domain\Aggregeates\OrderContext\" />
     <Folder Include="src\Domain\Aggregeates\MenuContext\" />
+    <Folder Include="src\Domain\Aggregeates\Standard\Enums\" />
+    <Folder Include="src\Infrastructure\Data\Queries\" />
     <Folder Include="test\Engine\ParamRuleTest\" />
     <Folder Include="wwwroot\DocxModel\SaveDocx\" />
   </ItemGroup>

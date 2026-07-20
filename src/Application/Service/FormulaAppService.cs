@@ -66,7 +66,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             var formula = await _formulaRepository.GetByIdAsync(formulaId, ct);
 
             //更新
-            //formula.Update();
+            formula.Update();
 
             await _formulaRepository.UpdateAsync(formula, ct);
 
@@ -75,6 +75,35 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             return Result.Ok();
         }
 
+        /// <summary>
+        /// 激活公式
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> ActiveFormulaAsync(string id, CancellationToken ct) 
+        {
+            var formulaId = new FormulaId(id);
+
+            var formula = await _formulaRepository.GetByIdAsync(formulaId, ct);
+
+            //注入领域服务进行验证
+
+            formula.Activate();
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 删除公式
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> DeleteFormulaAsync(string id, CancellationToken ct) 
+        {
+            return Result.Ok();
+        }
 
      }
 }

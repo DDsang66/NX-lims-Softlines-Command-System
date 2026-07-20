@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Vml;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using DocumentFormat.OpenXml.Vml;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
@@ -41,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .ToListAsync(ct);
 
             // 3. 查询关联的 ParamStructure
-            var paramStructureIds = await _context.ParamstructureFormulas
+            var paramStructureIds = await _context.BasicParamStructures
                 .Where(pf => pf.FormulaId == id.Value)
                 .Select(pf => pf.ParamStructureId)
                 .ToListAsync(ct);
@@ -83,10 +84,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Where(ff => idValues.Contains(ff.FormulaId))
                 .ToListAsync(ct);
 
-            var allParamAssociations = await _context.ParamstructureFormulas
-                .Where(pf => idValues.Contains(pf.FormulaId))
-                .ToListAsync(ct);
-
             // 3. 分组处理
             var result = new List<Formula>();
             foreach (var formulaPo in formulaPos)
@@ -99,10 +96,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     .Select(ff => ff.IdStandardFamily)
                     .ToList();
 
-                var paramStructureIds = allParamAssociations
+                var paramStructureIds = await _context.BasicParamStructures
                     .Where(pf => pf.FormulaId == formulaId)
                     .Select(pf => pf.ParamStructureId)
-                    .ToList();
+                    .ToListAsync(ct);
 
                 // 重建聚合根
                 result.Add(Formula.Reconstitute(
@@ -140,7 +137,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Where(ff => idValues.Contains(ff.FormulaId))
                 .ToListAsync(ct);
 
-            var allParamAssociations = await _context.ParamstructureFormulas
+            var allParamAssociations = await _context.BasicParamStructures
                 .Where(pf => idValues.Contains(pf.FormulaId))
                 .ToListAsync(ct);
 
@@ -229,7 +226,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 1. 获取现有实体
             var existingPo = await _context.BasicFormulas
                 .Include(f => f.FormulaStandardfamilies)
-                .Include(f => f.ParamstructureFormulas)
                 .FirstOrDefaultAsync(f => f.FormulaId == formula.Id.Value, ct);
 
             if (existingPo == null)
@@ -279,7 +275,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var existingPos = await _context.BasicFormulas
                 .Where(f => ids.Contains(f.FormulaId))
                 .Include(f => f.FormulaStandardfamilies)
-                .Include(f => f.ParamstructureFormulas)
                 .ToListAsync(ct);
 
             var existingDict = existingPos.ToDictionary(f => f.FormulaId);
@@ -328,7 +323,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 1. 获取实体及其关联
             var formulaPo = await _context.BasicFormulas
                 .Include(f => f.FormulaStandardfamilies)
-                .Include(f => f.ParamstructureFormulas)
                 .FirstOrDefaultAsync(f => f.FormulaId == id.Value, ct);
 
             if (formulaPo == null)

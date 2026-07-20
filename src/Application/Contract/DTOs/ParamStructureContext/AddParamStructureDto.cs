@@ -17,7 +17,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamSt
         /// <summary>
         /// 所属公式Id
         /// </summary>
-        public IEnumerable<string>? FormulaIds { get; set; }
+        public string FormulaId{ get; set; } = string.Empty;
 
         /// <summary>
         /// 规则id

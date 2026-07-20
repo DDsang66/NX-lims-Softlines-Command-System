@@ -48,5 +48,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// 样品列表
         /// </summary>
         public List<string> Samples { get; set; } = new();
+
+        /// <summary>
+        /// 项目状态
+        /// </summary>
+        public CheckListStatus Status { get; set; } = CheckListStatus.Created;
+       
+        /// <summary>
+        /// 测试清单ID
+        /// </summary>
+        public CheckListId CheckListId { get; set; } = new CheckListId(Guid.NewGuid());
     }
 }

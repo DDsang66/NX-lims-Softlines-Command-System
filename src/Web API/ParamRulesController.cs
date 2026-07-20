@@ -10,10 +10,12 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
     public class ParamRulesController : ControllerBase
     {
         private readonly IParamRuleApplicationService _applicationService;
+        private readonly IParamRuleQueryService _queryService;
 
-        public ParamRulesController(IParamRuleApplicationService applicationService)
+        public ParamRulesController(IParamRuleApplicationService applicationService, IParamRuleQueryService queryService)
         {
             _applicationService = applicationService;
+            _queryService = queryService;
         }
 
         [HttpPost("add-json")]
@@ -40,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         [HttpGet("{id}")]
         public async Task<IActionResult> GetParamRule(string id,CancellationToken ct)
         {
-            var result = await _applicationService.GetParamRuleAsync(id, ct);
+            var result = await _queryService.GetByIdAsync(id, ct);
             return Ok(result);
         }
     }

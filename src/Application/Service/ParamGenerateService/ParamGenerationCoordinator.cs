@@ -1,10 +1,16 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
+using NX_lims_Softlines_Command_System.src.Domain.Services.Compensation;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System.Threading.Tasks;
@@ -20,63 +26,109 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         private readonly IParamStructureRepository _structureRepo;
         private readonly IFormulaRepository _formulaRepo;
         private readonly IParamRuleRepository _ruleRepo;
+        private readonly ITestItemRepository _testItemRepository;
         private readonly IParamGenerationEngine _engine;
         private readonly IParamCompensationService _compensation;
         private readonly IConditionPoolValidateService _conditionPoolValidateService;
+        private readonly IParamValidateService _paramValidateService;
 
         public ParamGenerationCoordinator(
             IParamStructureRepository structureRepo,
             IFormulaRepository formulaRepo,
             IParamRuleRepository ruleRepo,
+            ITestItemRepository testItemRepository,
             IParamGenerationEngine engine,
             IParamCompensationService compensation,
-            IConditionPoolValidateService conditionPoolValidateService)
+            IConditionPoolValidateService conditionPoolValidateService,
+            IParamValidateService paramValidateService)
         {
             _structureRepo = structureRepo;
             _conditionPoolValidateService = conditionPoolValidateService;
             _formulaRepo = formulaRepo;
+            _testItemRepository = testItemRepository;
             _ruleRepo = ruleRepo;
             _engine = engine;
             _compensation = compensation;
+            _paramValidateService = paramValidateService;
         }
 
         /// <summary>
-        /// 主流程：
-        /// 1. 加载 ParamStructure
-        /// 2. 使用 ParamStructure/Formula 验证 ConditionPool,对其中的差异值进行条件富化
-        /// 3. 加载规则并调用引擎生成
-        /// 4. 调用补偿服务得到最终 ParamSet
+        /// 生成参数
         /// </summary>
-        public async Task<Result<ParamSet>> GenerateForStructure(string formulaId,string structureId, ConditionPool pool,CancellationToken ct)
+        /// <param name="structure"></param>
+        /// <param name="pool"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result<ParamSet>> GenerateAsync(
+            ParamStructure structure,
+            ConditionPool pool,
+            CancellationToken ct)
         {
-            // 1. 加载结构
-            var structure = await _structureRepo.GetByIdAsync(new ParamStructureId(structureId),ct);
-            if (structure == null) return Result<ParamSet>.Fail("ParamStructure not found");
+            // 加载 Formula（可选）
+            Formula? formula = null;
+            if (structure.FormulaId != null)
+            {
+                 formula = await  _formulaRepo.GetByIdAsync(structure.FormulaId, ct);
+            }
 
-            // 2. 前置验证（结构层面）
-            var v1 = await  _conditionPoolValidateService.EnsureConditionPoolConformance(structure, pool);
-            if (v1.IsFailure) return Result<ParamSet>.Fail(v1.Error);
+            // 2. 验证 ConditionPool
+            var validation = await _conditionPoolValidateService.ValidateConditionPool(structure, formula, pool);
 
-            //ConditionPool调用ConditionEnricher进行富化，确保所有条件字段都被填充
-            //交由Formula进行语义检查，确保所有必需的条件字段都存在
+            if (validation.IsFailure)
+                return Result<ParamSet>.Fail(validation.Error);
 
-            // 3. 加载 Formula 并做二级条件池语义检查
-            var formula = await _formulaRepo.GetByIdAsync(new FormulaId(formulaId), ct);
-            if (formula == null) return Result<ParamSet>.Fail("Formula not found");
-
-            var v2 = await _conditionPoolValidateService.EnsureConditionPoolWithFormula(formula, pool);
-            if (v2.IsFailure) return Result<ParamSet>.Fail($"Missing required conditions: {string.Join(',', v2)}");
-
-            // 4. 加载规则
+            // 3. 加载规则
             var rules = await _ruleRepo.GetByIdsAsync(structure.ApplicableRuleIds, ct);
 
-            // 5. 引擎生成
+            // 4. 引擎生成
             var generated = _engine.Generate(pool, rules);
 
-            // 6. 补偿
-            var final = _compensation.ConformToStructure(generated, structure);
+            // 5. 验证 + 补偿
+            var main = structure.MainParamDefinition;
+            var isValid = _paramValidateService.Validate(generated, structure);
 
-            return Result<ParamSet>.Ok(final);
+            generated.TryGetValue(main.Name, out var value);
+
+            if (isValid)
+                _compensation.CompensateParamWithStructure(generated, main.Name, value, main.DefaultValue);
+            else
+                _compensation.CompensateParamWithStructure(generated, main.Name, null, main.DefaultValue);
+
+            return Result<ParamSet>.Ok(generated);
         }
+
+        /// <summary>
+        /// 补偿服务：与TestItem定义的Param比较，计算差异值生成最终BasicParamSet
+        /// </summary>
+        /// <param name="itemId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result<ParamSet>> FinalGenerateAsync(TestItemId itemId, ParamSet param, CancellationToken ct) 
+        {
+            var testItem = await _testItemRepository.GetByIdAsync(itemId, ct);
+
+            if (testItem == null)
+                return Result<ParamSet>.Fail("TestItem not found");
+
+            var definitions = testItem.ParamRequireDefinition;
+
+            // 2. 领域逻辑：参数补偿（确保结构完整，缺失值补默认值）
+            // 将具体的 foreach 和赋值逻辑封装到领域服务中
+            _compensation.CompensateWithItemDefinitions(param, definitions);
+
+            // 3. 领域逻辑：参数验证（验证类型是否正确、是否符合业务规则，绝不修改 Param）
+            // 如果验证失败，返回包含错误信息的 Result
+            var validationResult = _paramValidateService.ValidateWithItemDefinitions(param, definitions);
+
+            if (!validationResult)
+            {
+                return Result<ParamSet>.Fail("参数验证失败：缺失、为空或类型不匹配。");
+            }
+
+            return Result<ParamSet>.Ok(param);
+        }
+
+
+        //买家自定义层覆盖
     }
 }

@@ -29,13 +29,17 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<BasicStandardFamily> BasicStandardFamilies { get; set; }
 
+    public virtual DbSet<CheckList> CheckLists { get; set; }
+
+    public virtual DbSet<CheckListItem> CheckListItems { get; set; }
+
     public virtual DbSet<Composition> Compositions { get; set; }
+
+    public virtual DbSet<ConditionPool> ConditionPools { get; set; }
 
     public virtual DbSet<FormulaStandardfamily> FormulaStandardfamilies { get; set; }
 
     public virtual DbSet<OutboxEntry> OutboxEntries { get; set; }
-
-    public virtual DbSet<ParamstructureFormula> ParamstructureFormulas { get; set; }
 
     public virtual DbSet<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; }
 
@@ -254,6 +258,10 @@ public partial class dbContext : DbContext
             entity.Property(e => e.EffectiveDate)
                 .HasColumnType("datetime")
                 .HasColumnName("effective_date");
+            entity.Property(e => e.FormulaId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("formula_id");
             entity.Property(e => e.ParamName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
@@ -261,6 +269,7 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Schema)
                 .HasColumnType("text")
                 .HasColumnName("schema");
+            entity.Property(e => e.Status).HasColumnName("status");
         });
 
         modelBuilder.Entity<BasicStandard>(entity =>
@@ -312,6 +321,58 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Version).HasColumnName("version");
         });
 
+        modelBuilder.Entity<CheckList>(entity =>
+        {
+            entity.ToTable("check_list");
+
+            entity.Property(e => e.CheckListId)
+                .ValueGeneratedNever()
+                .HasColumnName("check_list_id");
+            entity.Property(e => e.CreatedTime)
+                .HasColumnType("datetime")
+                .HasColumnName("created_time");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.Remark)
+                .HasMaxLength(250)
+                .IsUnicode(false)
+                .HasColumnName("remark");
+            entity.Property(e => e.Status).HasColumnName("status");
+        });
+
+        modelBuilder.Entity<CheckListItem>(entity =>
+        {
+            entity.ToTable("check_list_item");
+
+            entity.Property(e => e.CheckListItemId)
+                .ValueGeneratedNever()
+                .HasColumnName("check_list_item_id");
+            entity.Property(e => e.BuyerModifiedTestItem)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("buyer_modified_test_item");
+            entity.Property(e => e.BuyerModifiedTestStandard)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("buyer_modified_test_standard");
+            entity.Property(e => e.CheckListId).HasColumnName("check_list_id");
+            entity.Property(e => e.Param)
+                .HasColumnType("text")
+                .HasColumnName("param");
+            entity.Property(e => e.Samples)
+                .HasColumnType("text")
+                .HasColumnName("samples");
+            entity.Property(e => e.StandardId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("standard_id");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TestGroup).HasColumnName("test_group");
+            entity.Property(e => e.TestItemId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("test_item_id");
+        });
+
         modelBuilder.Entity<Composition>(entity =>
         {
             entity.HasKey(e => e.IdComposition);
@@ -353,6 +414,23 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("tertiary_classification_en");
+        });
+
+        modelBuilder.Entity<ConditionPool>(entity =>
+        {
+            entity.ToTable("condition_pool");
+
+            entity.Property(e => e.ConditionPoolId)
+                .ValueGeneratedNever()
+                .HasColumnName("condition_pool_id");
+            entity.Property(e => e.CheckListId).HasColumnName("check_list_id");
+            entity.Property(e => e.Conditions)
+                .HasColumnType("text")
+                .HasColumnName("conditions");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Status).HasColumnName("status");
         });
 
         modelBuilder.Entity<FormulaStandardfamily>(entity =>
@@ -412,31 +490,6 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Published).HasColumnName("published");
             entity.Property(e => e.PublishedAt).HasColumnName("published_at");
             entity.Property(e => e.RetryCount).HasColumnName("retry_count");
-        });
-
-        modelBuilder.Entity<ParamstructureFormula>(entity =>
-        {
-            entity.ToTable("paramstructure_formula");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.FormulaId)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("formula_id");
-            entity.Property(e => e.ParamStructureId)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("param_structure_id");
-
-            entity.HasOne(d => d.Formula).WithMany(p => p.ParamstructureFormulas)
-                .HasForeignKey(d => d.FormulaId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_paramstructure_formula_basic_formula");
-
-            entity.HasOne(d => d.ParamStructure).WithMany(p => p.ParamstructureFormulas)
-                .HasForeignKey(d => d.ParamStructureId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_paramstructure_formula_basic_param_structure");
         });
 
         modelBuilder.Entity<ParamsturctureStandardfamily>(entity =>

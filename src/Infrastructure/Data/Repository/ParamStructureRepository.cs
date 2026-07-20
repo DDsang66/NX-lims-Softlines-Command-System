@@ -6,6 +6,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using System.Text.Json;
@@ -40,11 +41,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(af => new StandardFamilyId(af.IdStandardFamily))
                 .ToListAsync(ct);
 
-            var formulaIds = await  _dbContext.ParamstructureFormulas
-                .Where(af => af.ParamStructureId == paramStructurePo.ParamStructureId)
-                .Select(af => new FormulaId(af.FormulaId))
-                .ToListAsync(ct);
-
             var ruleIds = await  _dbContext.BasicParamRules
                 .Where(br => br.ParamStructureId == paramStructurePo.ParamStructureId)
                 .Select(br => new ParamRuleId(br.RuleId))
@@ -53,14 +49,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var paramStructure = ParamStructure.Reconstitute(
                 id,
                 standardFamilyIds,
-                formulaIds,
+                ruleIds,
+                new FormulaId(paramStructurePo.FormulaId),
                 paramStructurePo.ParamName,
                 JsonSerializer.Deserialize<ParamSchema>(paramStructurePo.Schema!, 
                 new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 })!,
-                ruleIds,
+                (Status)paramStructurePo.Status,
                 paramStructurePo.EffectiveDate);
 
 
@@ -101,42 +98,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var paramStructurePo = paramStructure.Adapt<BasicParamStructure>();
 
             await _dbContext.AddAsync(paramStructurePo, ct);
-
-            //外键关联索引通过发布领域方法触发单独的仓储去保存
-            //
-            // 2. 处理与 StandardFamily 的关联
-            //foreach (var familyId in paramStructure.StandardFamilyIds.Where(id => id != null))
-            //{
-            //    if (!await _dbContext.ParamsturctureStandardfamilies
-            //        .AnyAsync(af =>
-            //            af.ParamStructureId == paramStructurePo.ParamStructureId &&
-            //            af.IdStandardFamily == familyId!.Value,
-            //            ct))
-            //    {
-            //        await _dbContext.AddAsync(new ParamsturctureStandardfamily
-            //        {
-            //            ParamStructureId = paramStructurePo.ParamStructureId,
-            //            IdStandardFamily = familyId!.Value
-            //        }, ct);
-            //    }
-            //}
-
-            // 3. 处理与 Formula 的关联
-            //foreach (var formulaId in paramStructure.FormulaIds.Where(id => id != null))
-            //{
-            //    if (!await _dbContext.ParamstructureFormulas
-            //        .AnyAsync(af =>
-            //            af.ParamStructureId == paramStructurePo.ParamStructureId &&
-            //            af.FormulaId == formulaId!.Value,
-            //            ct))
-            //    {
-            //        await _dbContext.AddAsync(new ParamstructureFormula
-            //        {
-            //            FormulaId = formulaId!.Value,
-            //            ParamStructureId = paramStructurePo.ParamStructureId
-            //        }, ct);
-            //    }
-            //}
         }
 
         /// <summary>

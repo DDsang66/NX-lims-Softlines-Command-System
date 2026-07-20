@@ -15,9 +15,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Share
             Value = value ?? throw new ArgumentNullException(nameof(value));
         }
 
+        /// <summary>
+        /// 隐式转换：AggregateRootId<TId> -> TId
+        /// 让 Mapster 等框架能自动识别如何提取底层值
+        /// </summary>
+        public static implicit operator TId(AggregateRootId<TId> id) => id.Value;
+
         // 使用 override 提供默认实现，并 sealed 防止子类意外改变 ID 的字符串表现形式
         public sealed override string ToString() => Value.ToString()!;
 
+        /// <summary>
+        /// 获取 AggregateRootId 的哈希值，确保基于 Value 的值相等性比较
+        /// </summary>
+        /// <returns></returns>
         public override int GetHashCode() => Value.GetHashCode();
 
         // 重写 Equals 方法，确保基于 Value 的值相等性比较

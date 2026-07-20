@@ -86,6 +86,28 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
         }
 
         /// <summary>
+        /// 激活参数结构
+        /// </summary>
+        /// <param name="paramStructureId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> ActiveParamStructureAsync(string paramStructureId, CancellationToken ct) 
+        {
+            var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
+
+            if (paramStructure == null)
+            {
+                return Result.Fail("参数结构不存在");
+            }
+
+            //注入领域服务验证
+
+            paramStructure.Active();
+
+            return Result.Ok();
+        }
+
+        /// <summary>
         /// 获取参数结构列表
         /// </summary>
         /// <param name="ct"></param>

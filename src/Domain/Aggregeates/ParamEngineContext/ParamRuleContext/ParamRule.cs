@@ -320,8 +320,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 throw new InvalidOperationException("规则必须关联公式后才能激活");
 
             // 2. 必须关联参数结构（可选，根据业务决定）
-            // if (StructureId == null)
-            //     throw new InvalidOperationException("规则必须关联参数结构后才能激活");
+            if (StructureId == null)
+                throw new InvalidOperationException("规则必须关联参数结构后才能激活");
 
             // 3. 必须有有效的条件模式
             if (Pattern == null)

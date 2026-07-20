@@ -36,7 +36,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         /// <param name="conditionPool">条件池，用于规则匹配</param>
         /// <param name="rules">待执行的规则集</param>
         /// <returns>包含所有匹配结果的参数集</returns>
-        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", Justification = "ArgumentNullException will be thrown by constructor")]
+        [SuppressMessage("Design", "CA1062:Validate arguments of public methods", 
+            Justification = "ArgumentNullException will be thrown by constructor")]
         public ParamSet Generate(ConditionPool conditionPool, IEnumerable<ParamRule> rules)
         {
             var ruleCollection = rules?.OrderBy(r => r.Priority).ToList() ?? new List<ParamRule>();

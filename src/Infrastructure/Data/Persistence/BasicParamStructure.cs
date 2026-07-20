@@ -13,9 +13,11 @@ public partial class BasicParamStructure
 
     public string? AllowedValue { get; set; }
 
+    public byte Status { get; set; }
+
     public DateTime EffectiveDate { get; set; }
 
-    public virtual ICollection<ParamstructureFormula> ParamstructureFormulas { get; set; } = new List<ParamstructureFormula>();
+    public string? FormulaId { get; set; }
 
     public virtual ICollection<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; } = new List<ParamsturctureStandardfamily>();
 }

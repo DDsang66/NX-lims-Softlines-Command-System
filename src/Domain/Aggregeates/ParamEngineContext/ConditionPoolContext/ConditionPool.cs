@@ -13,14 +13,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
     public sealed class ConditionPool : AggregateRoot<ConditionPoolId,Guid>
     {
         /// <summary>
-        /// 关联的申请单ID
-        /// </summary>
-        public OrderId SourceId { get; private set; } = new OrderId(new Guid());
-
-        /// <summary>
         /// 关联的检测清单ID
         /// </summary>
-        public CheckListId CheckListId { get; private set; } = new CheckListId(new Guid());
+        public CheckListId CheckListId { get; private set; } = new CheckListId(Guid.NewGuid());
 
         /// <summary>
         /// 条件池中的条件
@@ -46,15 +41,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <param name="initial"></param>
         /// <exception cref="ArgumentNullException"></exception>
         public static ConditionPool Create(
-            ConditionPoolId id,
-            OrderId sourceId,
             CheckListId checkListId,
             IDictionary<string, object?> initial = null!)
         {
             var pool = new ConditionPool
             {
-                Id = id ?? throw new ArgumentNullException(nameof(id)),
-                SourceId = sourceId ?? throw new ArgumentNullException(nameof(sourceId)),
+                Id = new ConditionPoolId(new Guid()),
                 CheckListId = checkListId ?? throw new ArgumentNullException(nameof(checkListId)),
                 CreatedAt = DateTime.UtcNow,
                 Status = ConditionPoolStatus.Draft

@@ -1,5 +1,6 @@
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 {
@@ -7,7 +8,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
     /// 订单行实体 — 一个 ReportNumber 下按 TestGroup 拆分的一行
     /// 仅由 Order 聚合根创建和修改
     /// </summary>
-    public sealed class OrderLine
+    public sealed class OrderLine:  Entity
     {
         public long Id { get; internal set; }
         public string TestGroup { get; internal set; } = string.Empty;

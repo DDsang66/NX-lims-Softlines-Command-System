@@ -21,9 +21,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     src.StandardFamilyIds == null
                     ? new List<StandardFamilyId>()
                     : src.StandardFamilyIds.Select(id => new StandardFamilyId(id)).ToList(),
-                    src.FormulaIds == null
-                    ? new List<FormulaId>()
-                    : src.FormulaIds.Select(id => new FormulaId(id)).ToList(),
+                    new FormulaId(src.FormulaId),
                     src.ParamName,
                     src.ParamSchema.Adapt<ParamSchema>(),  // Mapster 递归映射
                     src.RuleIds == null

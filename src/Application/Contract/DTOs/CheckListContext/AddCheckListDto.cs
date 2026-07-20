@@ -2,11 +2,10 @@
 {
     public record AddCheckListDto
     {
-
         /// <summary>
-        /// 关联申请单Id
+        /// 关联的订单ID
         /// </summary>
-        public IEnumerable<Guid?> SourceId { get; set; }// 关联的申请单ID
+        public Guid? SourceId { get; set; } = new Guid();// 关联的订单ID
 
         /// <summary>
         /// 测试清单中的测试项
@@ -32,7 +31,7 @@
         /// <summary>
         /// 买家自定义测试项目ID
         /// </summary>
-        public string BuyerModifiedTestItemId { get; set; } = string.Empty;
+        public string? BuyerModifiedTestItemId { get; set; } = string.Empty;
 
         /// <summary>
         /// 标准ID
@@ -42,12 +41,12 @@
         /// <summary>
         /// 买家自定义测试方法ID
         /// </summary>
-        public string BuyerModifiedTextMethodId { get; set; } = string.Empty;
+        public string? BuyerModifiedTextMethodId { get; set; } = string.Empty;
 
         /// <summary>
         /// 测试小组
         /// </summary>
-        public string TestGroup { get; set; } = string.Empty;
+        public int TestGroup { get; set; }
 
         /// <summary>
         /// 样品列表

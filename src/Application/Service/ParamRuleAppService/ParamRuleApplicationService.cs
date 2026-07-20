@@ -1,13 +1,11 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
-using Mapster;
-using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.NX_lims_Softlines_Command_System.src.Application.ParamEngineContext.Dtos;
+﻿using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -141,6 +139,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
             //existingRule.Pattern = pattern; // 注意：这里通过聚合根方法去更新
 
+            // 领域规则校验
+
             // 4. 持久化
             await _pararmRuleRepository.UpdateAsync(existingRule,ct);
 
@@ -175,22 +175,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             await _unitOfWork.SaveChangesAsync();
 
             return Result.Ok();
-        }
-
-        /// <summary>
-        /// 获取参数规则
-        /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<Result> GetParamRuleAsync(string id,CancellationToken ct)
-        {
-            var rule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(id), ct);
-
-            if (rule == null)
-                throw new Exception($"Param rule with id {id} not found");
-
-            return Result.Ok();//后续返回dto
         }
     }
 }

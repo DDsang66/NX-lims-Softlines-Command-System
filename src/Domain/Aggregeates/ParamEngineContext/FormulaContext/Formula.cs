@@ -198,7 +198,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             return f;
         }
 
-
+        /// <summary>
+        /// 更新公式
+        /// </summary>
+        public void Update() { }
 
         /// <summary>
         /// 返回公式声明的原子条件字段名（供前置验证）

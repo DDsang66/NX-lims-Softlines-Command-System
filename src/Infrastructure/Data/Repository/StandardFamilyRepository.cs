@@ -47,12 +47,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <exception cref="Exception"></exception>
         public async Task UpdateAsync(StandardFamily standardFamily, CancellationToken ct)
         {
-            var standardFamilyPo = await _dbContext.FindAsync<BasicStandardFamily>(standardFamily.Id.Value, ct);
+            var standardFamilyPo = standardFamily.Adapt<BasicStandardFamily>();
 
-            if (standardFamilyPo == null)
-                throw new Exception($"标准族 {standardFamily.Id.Value} 不存在");
-
-            standardFamilyPo.Adapt(standardFamily);
+            _dbContext.Update(standardFamilyPo);
 
             await Task.CompletedTask;
         }

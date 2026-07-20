@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ConditionPoolContext;
+﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
@@ -11,7 +12,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPoolContext
 {
-    public class ConditionPoolAppService:IScopedDependency
+    public class ConditionPoolAppService:IScopedDependency,IConditionPoolAppService
     {
         private readonly IParamRequireConditionGenerateService _paramRequireConditionGenerateService;
         private readonly IConditionPoolRepository _conditionPoolRepository;
@@ -44,12 +45,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
                 return Result.Fail(condition.Error);
 
             var conditionPool = ConditionPool.Create(
-                new ConditionPoolId(Guid.NewGuid()),
-                new OrderId(dto.OrderId),
                 checklistId,
                 condition.Value);
 
-            // Save changes to the database
+            await _conditionPoolRepository.AddAsync(conditionPool, ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
 
@@ -79,6 +78,21 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
             await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Ok();
+        }
+
+        /// <summary>
+        /// 获取条件池
+        /// </summary>
+        /// <param name="conditionPoolId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result<ConditionPoolResponseDto>> GetConditionPoolAsync(ConditionPoolId conditionPoolId, CancellationToken ct) 
+        {
+            var conditionPool = await _conditionPoolRepository.GetByIdAsync(conditionPoolId, ct);
+
+            var dto = conditionPool.Adapt<ConditionPoolResponseDto>();
+
+            return Result<ConditionPoolResponseDto>.Ok(dto);
         }
     }
 }

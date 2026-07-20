@@ -7,6 +7,16 @@
         /// </summary>
         public Guid ConditionPoolId { get; set; }
 
+        /// <summary>
+        /// 关联的测试清单ID
+        /// </summary>
+        public Guid CheckListId { get; set; } = Guid.Empty;
+
+        /// <summary>
+        /// 关联的订单ID
+        /// </summary>
+        public Guid OrderId { get; set; } = Guid.Empty;
+
         public Dictionary<string, object?> Conditions { get; set; }=new Dictionary<string, object?>();
     }
 }
