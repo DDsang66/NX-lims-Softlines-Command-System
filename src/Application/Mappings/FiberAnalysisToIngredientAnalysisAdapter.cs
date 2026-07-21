@@ -160,7 +160,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                             GSMTrail1 = GetFloatProperty(row, "gsmTrail1"),
                             GSMTrail2 = GetFloatProperty(row, "gsmTrail2"),
                             SplittingOrder = order++,
-                            CellulosicSubFibers = ParseCellulosicSubFibers(row)
+                            CellulosicSubFibers = ParseCellulosicSubFibers(row),
+                            BicomponentSubFibers = ParseBicomponentSubFibers(row)
                         });
                     }
                 }
@@ -190,7 +191,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                             GSMTrail1 = GetFloatProperty(row, "gsmTrail1"),
                             GSMTrail2 = GetFloatProperty(row, "gsmTrail2"),
                             DissolutionStep = globalStep++,
-                            CellulosicSubFibers = ParseCellulosicSubFibers(row)
+                            CellulosicSubFibers = ParseCellulosicSubFibers(row),
+                            BicomponentSubFibers = ParseBicomponentSubFibers(row)
                         };
                         units.Add(unit);
                     }
@@ -249,6 +251,25 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     && pctProp.ValueKind == JsonValueKind.Number)
                     pct = pctProp.GetDecimal();
                 list.Add(new CellulosicSubFiber { FiberName = name, Percentage = pct });
+            }
+            return list;
+        }
+
+        private static List<BicomponentSubFiber> ParseBicomponentSubFibers(JsonElement row)
+        {
+            var list = new List<BicomponentSubFiber>();
+            if (!row.TryGetProperty("bicomponentSubFibers", out var arr)
+                || arr.ValueKind != JsonValueKind.Array)
+                return list;
+
+            foreach (var item in arr.EnumerateArray())
+            {
+                list.Add(new BicomponentSubFiber
+                {
+                    FiberName = GetStringProperty(item, "fiberName"),
+                    GSMTrail1 = (decimal)GetFloatProperty(item, "gsmTrail1"),
+                    GSMTrail2 = (decimal)GetFloatProperty(item, "gsmTrail2")
+                });
             }
             return list;
         }

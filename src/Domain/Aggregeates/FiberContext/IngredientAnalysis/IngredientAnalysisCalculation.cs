@@ -207,25 +207,32 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             foreach (var s in splittings.OrderBy(x => x.SplittingOrder))
             {
-                var rateTrail1 = totalGSMTrail1 == 0 ? 0 : (decimal)s.GSMTrail1 / totalGSMTrail1 * 100;
+                // Bicomponent: 父 GSM 取子行第一个的数据
+                var actualGsm1 = s.BicomponentSubFibers.Count > 0
+                    ? s.BicomponentSubFibers[0].GSMTrail1
+                    : (decimal)s.GSMTrail1;
+                var actualGsm2 = s.BicomponentSubFibers.Count > 0
+                    ? s.BicomponentSubFibers[0].GSMTrail2
+                    : (decimal)s.GSMTrail2;
 
-                var rateTrail2 = totalGSMTrail2 == 0 ? 0 : (decimal)s.GSMTrail2 / totalGSMTrail2 * 100;
-
+                var rateTrail1 = totalGSMTrail1 == 0 ? 0 : actualGsm1 / totalGSMTrail1 * 100;
+                var rateTrail2 = totalGSMTrail2 == 0 ? 0 : actualGsm2 / totalGSMTrail2 * 100;
                 var avg = (rateTrail1 + rateTrail2) / 2;
 
                 units.Add(new MultiFiberRowUnit
                 {
                     Section = $"{{Yarn #{yarnIndex}}}",
                     Sum = s.FiberName,
-                    GSMTrail1 = (decimal)s.GSMTrail1,
-                    GSMTrail2 = (decimal)s.GSMTrail2,
+                    GSMTrail1 = actualGsm1,
+                    GSMTrail2 = actualGsm2,
                     RateTrail1 = rateTrail1,
                     RateTrail2 = rateTrail2,
                     Avg = avg,
                     Correct = 1,
                     MoistureRegain = 0,
                     Rate = 0,
-                    CellulosicSubFibers = s.CellulosicSubFibers ?? new()
+                    CellulosicSubFibers = s.CellulosicSubFibers ?? new(),
+                    BicomponentSubFibers = s.BicomponentSubFibers ?? new()
                 });
 
                 yarnIndex++;
@@ -292,8 +299,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     var isLast = i == componentCount - 1;
 
                     decimal ownGsm1, ownGsm2, curGsm1, curGsm2;
-                    curGsm1 = (decimal)current.GSMTrail1;
-                    curGsm2 = (decimal)current.GSMTrail2;
+                    curGsm1 = current.BicomponentSubFibers.Count > 0
+                        ? current.BicomponentSubFibers[0].GSMTrail1
+                        : (decimal)current.GSMTrail1;
+                    curGsm2 = current.BicomponentSubFibers.Count > 0
+                        ? current.BicomponentSubFibers[0].GSMTrail2
+                        : (decimal)current.GSMTrail2;
 
                     if (group.OriginalGSMTrail1 > 0)
                     {
@@ -327,7 +338,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         Correct = 1,
                         MoistureRegain = 0,
                         Rate = 0,
-                        CellulosicSubFibers = current.CellulosicSubFibers ?? new()
+                        CellulosicSubFibers = current.CellulosicSubFibers ?? new(),
+                        BicomponentSubFibers = current.BicomponentSubFibers ?? new()
                     });
                 }
             }
@@ -428,6 +440,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0", isAatcc)
             };
 
+            // Bicomponent/Biconstituent 格式化后处理
+            result = result with
+            {
+                Results = PostProcessBicomponent(result.Results, calculatedFiberResult, "F1"),
+                Recommendation = PostProcessBicomponent(result.Recommendation, calculatedFiberResult, "F0")
+            };
+
             return result;
         }
 
@@ -481,6 +500,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     RoundedRate = Math.Round(c.Rate, decimalPlaces, MidpointRounding.AwayFromZero)
                 })
                 .ToList();
+
+            // 2.5 取整后 0% → 1%，最大项同步扣减
+            for (int i = 0; i < rounded.Count; i++)
+            {
+                if (rounded[i].RoundedRate == 0m)
+                {
+                    rounded[i] = new { rounded[i].Name, RoundedRate = 1m };
+                    var maxIdx = 0;
+                    for (int j = 1; j < rounded.Count; j++)
+                        if (rounded[j].RoundedRate > rounded[maxIdx].RoundedRate) maxIdx = j;
+                    rounded[maxIdx] = new { rounded[maxIdx].Name,
+                        RoundedRate = rounded[maxIdx].RoundedRate - 1m };
+                }
+            }
 
             // 3. 计算总和
             var sum = rounded.Sum(r => r.RoundedRate);
@@ -542,6 +575,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                                     if (!string.IsNullOrWhiteSpace(sub.FiberName) && sub.Percentage > 0)
                                         components.Add((sub.FiberName, r.Rate * sub.Percentage / 100m));
                                 }
+                            }
+                            else if (IsBicomponentFiber(r.Sum) && r.BicomponentSubFibers.Count > 0)
+                            {
+                                // bicomponent：只加父行，子纤维由 PostProcessBicomponent 处理
+                                components.Add((r.Sum, r.Rate));
                             }
                             else
                             {
@@ -633,16 +671,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             var dissolvedNames = _components
                 .OfType<DissolvedFiberComponent>()
                 .SelectMany(d => d.DissolutionUnits)
-                .SelectMany(u => (u.FiberName == "*cellulosic fibre" || u.FiberName == "*Regenerated cellulose fibre") && u.CellulosicSubFibers.Count > 0
-                    ? u.CellulosicSubFibers.Where(s => !string.IsNullOrWhiteSpace(s.FiberName)).Select(s => s.FiberName)
-                    : new[] { u.FiberName })
+                .SelectMany(u => IsBicomponentFiber(u.FiberName) && u.BicomponentSubFibers.Count > 0
+                    ? u.BicomponentSubFibers.Where(b => !string.IsNullOrWhiteSpace(b.FiberName)).Select(b => b.FiberName)
+                    : (u.FiberName == "*cellulosic fibre" || u.FiberName == "*Regenerated cellulose fibre") && u.CellulosicSubFibers.Count > 0
+                        ? u.CellulosicSubFibers.Where(s => !string.IsNullOrWhiteSpace(s.FiberName)).Select(s => s.FiberName)
+                        : new[] { u.FiberName })
                 .Distinct();
 
             var splittingNames = _components
                 .OfType<SplittingFiberComponent>()
-                .SelectMany(s => (s.FiberName == "*cellulosic fibre" || s.FiberName == "*Regenerated cellulose fibre") && s.CellulosicSubFibers.Count > 0
-                    ? s.CellulosicSubFibers.Where(c => !string.IsNullOrWhiteSpace(c.FiberName)).Select(c => c.FiberName)
-                    : new[] { s.FiberName })
+                .SelectMany(s => IsBicomponentFiber(s.FiberName) && s.BicomponentSubFibers.Count > 0
+                    ? s.BicomponentSubFibers.Where(b => !string.IsNullOrWhiteSpace(b.FiberName)).Select(b => b.FiberName)
+                    : (s.FiberName == "*cellulosic fibre" || s.FiberName == "*Regenerated cellulose fibre") && s.CellulosicSubFibers.Count > 0
+                        ? s.CellulosicSubFibers.Where(c => !string.IsNullOrWhiteSpace(c.FiberName)).Select(c => c.FiberName)
+                        : new[] { s.FiberName })
                 .Distinct();
 
             return string.Join("/", dissolvedNames.Concat(splittingNames));
@@ -664,6 +706,21 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private const string ISO1833_22 = "ISO1833-22:2020";
         private const string ISO1833_24 = "ISO1833-24:2010";
 
+        // GB/T 2910.x 子标准常量（对应 fdb B 列）
+        private const string GB2910_1 = "GB/T 2910.1–2009";
+        private const string GB2910_2 = "GB/T 2910.2–2009";
+        private const string GB2910_3 = "GB/T 2910.3–2009";
+        private const string GB2910_4 = "GB/T 2910.4–2022";
+        private const string GB2910_6 = "GB/T 2910.6–2009";
+        private const string GB2910_7 = "GB/T 2910.7–2009";
+        private const string GB2910_12 = "GB/T 2910.12–2023";
+        private const string GB2910_18 = "GB/T 2910.18–2009";
+        private const string GB2910_22 = "GB/T 2910.22–2009";
+        private const string GB2910_24 = "GB/T 2910.24–2009";
+        private const string GB2910_ELASTANE = "GB/T 2910.";
+        private const string GB29862 = "GB/T 29862-2013";
+        private const string FZ01026 = "FZ/T 01026–2017";
+
         private static readonly HashSet<string> DIN1833_D5x = new(StringComparer.OrdinalIgnoreCase)
         {
             "ISO1833-1:2020", "ISO1833-2:2020", "ISO1833-3:2020", "ISO1833-4:2023",
@@ -671,60 +728,85 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             "ISO1833-18:2020", "ISO1833-22:2020", "ISO1833-24:2010"
         };
 
-        /// <summary>Excel L4: 根据标准体系和成分对自动拼接方法标准链</summary>
+        /// <summary>Excel L4+L6: 根据标准体系和成分对自动拼接方法标准链</summary>
         private static string BuildMethodString(string standard, List<string> fibers)
         {
             if (string.IsNullOrWhiteSpace(standard)) return string.Empty;
 
             var isIso = standard.Equals("ISO1833", StringComparison.OrdinalIgnoreCase);
             var isDin = standard.Equals("DIN EN ISO 1833", StringComparison.OrdinalIgnoreCase);
-            var isFz = standard.StartsWith("FZ/T 01057.1-4", StringComparison.OrdinalIgnoreCase);
+            var isGb = standard.StartsWith("FZ/T", StringComparison.OrdinalIgnoreCase)
+                    || standard.StartsWith("GB/T", StringComparison.OrdinalIgnoreCase);
 
-            // 非 ISO/DIN/FZ：直接返回原值
-            if (!isIso && !isDin && !isFz) return standard;
+            // 非 ISO/DIN/GB：直接返回原值
+            if (!isIso && !isDin && !isGb) return standard;
 
-            // 3 组分走 -2 号（仅 ISO/DIN）
-            if ((isIso || isDin) && fibers.Count == 3)
-                return isIso
-                    ? $"{ISO_QUALITATIVE} {ISO1833_2}"
-                    : $"{DIN_QUALITATIVE} DIN EN ISO 1833-2:2020";
+            var parts = new List<string>();
 
-            // 从成分对查子标准号（仅 ISO/DIN）
-            var subStandards = new List<string>();
+            // ========== ISO/DIN ==========
             if (isIso || isDin)
             {
+                // 3 组分 → -2
+                if (fibers.Count == 3)
+                    return isIso
+                        ? $"{ISO_QUALITATIVE} {ISO1833_2}"
+                        : $"{DIN_QUALITATIVE} DIN EN ISO 1833-2:2020";
+
+                parts.Add(isIso ? ISO_QUALITATIVE : DIN_QUALITATIVE);
+
+                var subStandards = new List<string>();
                 for (int i = 0; i < fibers.Count - 1; i++)
                 {
                     var s = LookupSubStandard(fibers[i], fibers[i + 1]);
                     if (!string.IsNullOrEmpty(s) && !subStandards.Contains(s))
                         subStandards.Add(s);
                 }
+                parts.AddRange(subStandards);
+
+                if (isDin)
+                    parts = parts.Select(p => DIN1833_D5x.Contains(p) ? "DIN EN " + p : p).ToList();
+
+                if (fibers.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
+                    parts.Add("ISO 20705:2019");
             }
 
-            var parts = new List<string>();
-            if (isIso) parts.Add(ISO_QUALITATIVE);
-            else if (isDin) parts.Add(DIN_QUALITATIVE);
-            // FZ/T 不添加前缀
-
-            if (isFz)
-                parts.Add(standard);  // 保留原标准号
-
-            parts.AddRange(subStandards);
-
-            // DIN 版：替换 ISO 前缀为 DIN EN
-            if (isDin)
-                parts = parts.Select(p => DIN1833_D5x.Contains(p)
-                    ? "DIN EN " + p
-                    : p).ToList();
-
-            // cellulosic 子标准补加
-            bool hasCellulosic = fibers.Any(f =>
-                f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre");
-            if (hasCellulosic)
+            // ========== GB (FZ/T / GB/T) ==========
+            if (isGb)
             {
-                if (isIso || isDin)
-                    parts.Add("ISO 20705:2019");
-                else if (isFz)
+                parts.Add(standard);
+
+                // T128: 燃烧法 → GB/T 29862
+                parts.Add(GB29862);
+
+                // T129: 有拆分列且无 elastane → GB/T 2910.1
+                var hasElastane = fibers.Any(f =>
+                    f.Equals("elastane", StringComparison.OrdinalIgnoreCase)
+                 || f.Equals("spandex", StringComparison.OrdinalIgnoreCase));
+                if (!hasElastane)
+                    parts.Add(GB2910_1);
+
+                // T130: GB 成分对 → GB 子标准
+                var gbSubs = new HashSet<string>();
+                for (int i = 0; i < fibers.Count - 1; i++)
+                {
+                    var g = LookupGbSubStandard(fibers[i], fibers[i + 1]);
+                    if (!string.IsNullOrEmpty(g))
+                        gbSubs.Add(g);
+                }
+                parts.AddRange(gbSubs);
+
+                // T131: 3组分 → GB/T 2910.2 / >3组分 → FZ/T 01026
+                if (fibers.Count == 3)
+                    parts.Add(GB2910_2);
+                else if (fibers.Count > 3)
+                    parts.Add(FZ01026);
+
+                // T132: elastane → GB/T 2910.
+                if (hasElastane)
+                    parts.Add(GB2910_ELASTANE);
+
+                // cellulosic
+                if (fibers.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
                     parts.Add("FZ/T 01057.3–2007 / FZ/T 30003-2009");
             }
 
@@ -750,11 +832,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             if (IsAnimal(f))
                 return ISO1833_4;
 
-            // elastane + elastomultiester/polyester → -11
-            if (IsElastane(f) && (s == "elastomultiester" || s == "polyester"))
-                return ISO1833_11;
-
-            // elastane + other → -12
+            // elastane + any → -12（DMF 法）
             if (IsElastane(f))
                 return ISO1833_12;
 
@@ -775,7 +853,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 return ISO1833_11;
 
             // cellulosic + linen/ramie → -22
-            if (IsRayonType(f) && (s == "linen" || s == "ramie"))
+            if (IsRayonType(f) && s == "linen")
                 return ISO1833_22;
 
             // polyester + any → -24
@@ -789,6 +867,116 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             return string.Empty;
         }
 
+        /// <summary>GB版成分对→子标准号映射（数据库B列，Excel N129-N132）</summary>
+        private static string LookupGbSubStandard(string first, string second)
+        {
+            var f = first.ToLowerInvariant();
+            var s = second.ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+
+            // Silk + wool → GB/T 2910.18
+            if (f == "silk" && s == "wool")
+                return GB2910_18;
+
+            // wool/Silk + 非spandex/elastane → GB/T 2910.4
+            if (IsAnimal(f) && s != "spandex" && s != "elastane")
+                return GB2910_4;
+
+            // polyamide/nylon + 非spandex/elastane → GB/T 2910.7
+            if ((f == "polyamide" || f == "nylon") && s != "spandex" && s != "elastane")
+                return GB2910_7;
+
+            // acrylic + any → GB/T 2910.12
+            if (f == "acrylic")
+                return GB2910_12;
+
+            // rayon系 + cotton → GB/T 2910.6
+            if (IsRayonType(f) && s == "cotton")
+                return GB2910_6;
+
+            // rayon系 + linen/ramie → GB/T 2910.22
+            if (IsRayonType(f) && (s == "linen" || s == "ramie"))
+                return GB2910_22;
+
+            // polyester + any → GB/T 2910.24
+            if (f == "polyester")
+                return GB2910_24;
+
+            // acetate → GB/T 2910.3
+            if (f == "acetate")
+                return GB2910_3;
+
+            return string.Empty;
+        }
+
+        private static bool IsBicomponentFiber(string name) =>
+            name is "Bicomponent Fiber" or "Biconstituent Fiber";
+
+        /// <summary>
+        /// Bicomponent/Biconstituent 格式化：
+        /// TestResult: "X% Polyester/Polyamide bicomponent (Y%Polyester Z%Polyamide)"
+        /// Recommendation: "X% Bicomponent Fiber (Y%Polyester Z%Polyamide)"
+        /// </summary>
+        private List<string> PostProcessBicomponent(List<string> results,
+            List<CalculatedFiberResult> calculatedFiberResult, string format)
+        {
+            var multi = calculatedFiberResult.OfType<MultiCalculatedFiberItem>().FirstOrDefault();
+            if (multi?.MultiFiberRowUnits == null) return results;
+
+            for (int i = 0; i < results.Count; i++)
+            {
+                var line = results[i];
+                if (!line.Contains("Bicomponent Fiber") && !line.Contains("Biconstituent Fiber")) continue;
+
+                var row = multi.MultiFiberRowUnits
+                    .FirstOrDefault(r => IsBicomponentFiber(r.Sum));
+                if (row == null || row.BicomponentSubFibers.Count != 2) continue;
+
+                var subs = row.BicomponentSubFibers;
+                var subGsmTotal = subs.Sum(s => s.GSMTrail1 + s.GSMTrail2);
+                if (subGsmTotal == 0) continue;
+
+                var parentPct = line.Split('%')[0].Trim();
+                var fullName = line.Contains("Bicomponent Fiber")
+                    ? "Bicomponent Fiber" : "Biconstituent Fiber";
+                var shortName = line.Contains("Bicomponent Fiber")
+                    ? "bicomponent" : "biconstituent";
+
+                var p1 = subs[0];
+                var p2 = subs[1];
+                var s1Name = p1.FiberName;
+                var s2Name = p2.FiberName;
+                var s1Gsm = p1.GSMTrail1 + p1.GSMTrail2;
+                var s2Gsm = p2.GSMTrail1 + p2.GSMTrail2;
+                var mr1 = LookupMoistureRegain(s1Name);
+                var mr2 = LookupMoistureRegain(s2Name);
+                var correctedS1 = s1Gsm * (1 + mr1 / 100m);
+                var correctedS2 = s2Gsm * (1 + mr2 / 100m);
+                var denominator = correctedS1;
+                if (denominator == 0) continue;
+
+                string s1Pct, s2Pct;
+                if (format == "F0")
+                {
+                    var s2Raw = (correctedS2 / denominator) * 100m;
+                    var s2Rounded = Math.Round(s2Raw, MidpointRounding.AwayFromZero);
+                    s2Pct = s2Rounded.ToString("F0");
+                    s1Pct = (100m - s2Rounded).ToString("F0");
+                }
+                else
+                {
+                    s2Pct = ((correctedS2 / denominator) * 100m).ToString("F1");
+                    s1Pct = ((1m - correctedS2 / denominator) * 100m).ToString("F1");
+                }
+
+                if (line.Contains("Biconstituent Fiber"))
+                    results[i] = $"{parentPct}% {fullName} ({s1Pct}%{s1Name} {s2Pct}%{s2Name})";
+                else
+                    results[i] = $"{parentPct}% {s1Name}/{s2Name} {shortName} ({s1Pct}%{s1Name} {s2Pct}%{s2Name})";
+            }
+
+            return results;
+        }
         private static bool IsAnimal(string f) => f == "wool" || f == "alpaca" || f == "cashmere" || f == "mohair" || f == "*animal" || f == "rabbit hair" || f == "silk";
         private static bool IsElastane(string f) => f == "elastane" || f == "spandex";
         private static bool IsCellulosic(string f) => f == "rayon" || f == "*re cellulose" || f == "viscose" || f == "modal" || f == "lyocell" || f == "cupro" || f == "cotton";

@@ -52,6 +52,7 @@
         public decimal MoistureRegain { get; init; }
         public decimal Rate { get; init; }
         public List<CellulosicSubFiber> CellulosicSubFibers { get; init; } = new();
+        public List<BicomponentSubFiber> BicomponentSubFibers { get; init; } = new();
     }
 
 }

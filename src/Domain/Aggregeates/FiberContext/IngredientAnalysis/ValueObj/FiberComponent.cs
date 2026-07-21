@@ -32,6 +32,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public float GSMTrail2 { get; init; }
         public int SplittingOrder { get; init; } // 拆分顺序
         public List<CellulosicSubFiber> CellulosicSubFibers { get; init; } = new();
+        public List<BicomponentSubFiber> BicomponentSubFibers { get; init; } = new();
     }
 
     /// <summary>
@@ -54,6 +55,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public float GSMTrail2 { get; init; }
         public int DissolutionStep { get; init; } // 溶解步骤
         public List<CellulosicSubFiber> CellulosicSubFibers { get; init; } = new();
+        public List<BicomponentSubFiber> BicomponentSubFibers { get; init; } = new();
     }
 
     /// <summary>
@@ -63,5 +65,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     {
         public string FiberName { get; init; } = string.Empty;
         public decimal Percentage { get; init; }
+    }
+
+    /// <summary>
+    /// Bicomponent/Biconstituent 双组分子纤维（固定的 Polyester + Polyamide，克重输入）
+    /// </summary>
+    public record BicomponentSubFiber
+    {
+        public string FiberName { get; init; } = string.Empty;
+        public decimal GSMTrail1 { get; init; }
+        public decimal GSMTrail2 { get; init; }
     }
 }

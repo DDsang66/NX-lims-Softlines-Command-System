@@ -65,6 +65,7 @@
         public float GSMTrail1 { get; set; } = 0;
         public float GSMTrail2 { get; set; } = 0;
         public List<CellulosicSubFiberDto> CellulosicSubFibers { get; set; } = new();
+        public List<BicomponentSubFiberDto> BicomponentSubFibers { get; set; } = new();
     }
 
     /// <summary>
@@ -76,6 +77,7 @@
         public float GSMTrail1 { get; set; } = 0;
         public float GSMTrail2 { get; set; } = 0;
         public List<CellulosicSubFiberDto> CellulosicSubFibers { get; set; } = new();
+        public List<BicomponentSubFiberDto> BicomponentSubFibers { get; set; } = new();
     }
 
     /// <summary>
@@ -85,6 +87,16 @@
     {
         public string FiberName { get; set; } = string.Empty;
         public decimal Percentage { get; set; }
+    }
+
+    /// <summary>
+    /// Bicomponent/Biconstituent 子纤维 DTO（克重输入，不是百分比）
+    /// </summary>
+    public record BicomponentSubFiberDto
+    {
+        public string FiberName { get; set; } = string.Empty;
+        public decimal GSMTrail1 { get; set; }
+        public decimal GSMTrail2 { get; set; }
     }
 
     /// <summary>
