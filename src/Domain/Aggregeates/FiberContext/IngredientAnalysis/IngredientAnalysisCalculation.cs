@@ -590,6 +590,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 }
             }
 
+            // 合并同名纤维（拆分和溶解中有相同纤维时百分比相加）
+            components = components
+                .GroupBy(c => c.Name)
+                .Select(g => (g.Key, g.Sum(c => c.Rate)))
+                .ToList();
+
             return components;
         }
 
