@@ -8,16 +8,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
     /// 订单行实体 — 一个 ReportNumber 下按 TestGroup 拆分的一行
     /// 仅由 Order 聚合根创建和修改
     /// </summary>
-    public sealed class OrderLine:  Entity
+    public sealed class OrderLine : Entity
     {
         public long Id { get; internal set; }
         public string TestGroup { get; internal set; } = string.Empty;
-        public OrderLineStatus Status { get; internal set; } = OrderLineStatus.InLab;
+        public OrderLineStatus Status { get; internal set; } = OrderLineStatus.EntryComplete;
         public OrderExpress Express { get; internal set; }
 
         // 人员
         public string? Reviewer { get; internal set; }
-        public string? TestEngineer { get; internal set; }
 
         // 时间
         public DateTimeOffset DueDate { get; internal set; }
@@ -38,44 +37,52 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         internal OrderLine() { }  // 仅聚合根创建
 
         /// <summary>
-        /// 计算急单类型（DueDate 与 LabIn 的天数差）
+        /// 审单完成 — 状态只能从 EntryComplete 流转到 ReviewComplete
         /// </summary>
-        public static OrderExpress ComputeExpress(DateTimeOffset dueDate, DateTimeOffset labIn)
+        internal void MarkReviewComplete(string reviewer, DateTimeOffset finishTime)
         {
-            var days = (dueDate - labIn).TotalDays;
-            return days switch
-            {
-                <= 1 => OrderExpress.SameDay,
-                <= 2 => OrderExpress.Shuttle,
-                <= 3 => OrderExpress.Express,
-                _ => OrderExpress.Regular
-            };
-        }
-
-        /// <summary>
-        /// 完成审核 — 状态只能从 InLab 流转到 ReviewFinished
-        /// </summary>
-        internal void MarkReviewFinished(string reviewer, DateTimeOffset finishTime)
-        {
-            if (Status != OrderLineStatus.InLab)
-                throw new InvalidOperationException($"Cannot mark review: current status is {Status}");
+            if (Status != OrderLineStatus.EntryComplete)
+                throw new InvalidOperationException($"Cannot mark review-complete: current status is {Status}");
 
             Reviewer = reviewer;
             ReviewFinishTime = finishTime;
-            Status = OrderLineStatus.ReviewFinished;
+            Status = OrderLineStatus.ReviewComplete;
         }
 
         /// <summary>
-        /// 出实验室 — 状态只能从 ReviewFinished 流转到 TestDone
+        /// 进入实验室 — 状态只能从 ReviewComplete 流转到 InLab
         /// </summary>
-        internal void MarkLabOut(string engineer, DateTimeOffset labOutTime)
+        internal void MarkLabIn(DateTimeOffset labInTime)
         {
-            if (Status != OrderLineStatus.ReviewFinished)
-                throw new InvalidOperationException($"Cannot mark lab-out: current status is {Status}");
+            if (Status != OrderLineStatus.ReviewComplete)
+                throw new InvalidOperationException($"Cannot mark lab-in: current status is {Status}");
 
-            TestEngineer = engineer;
-            LabOutTime = labOutTime;
+            LabIn = labInTime;
+            Status = OrderLineStatus.InLab;
+        }
+
+        /// <summary>
+        /// 测试完成 — 状态只能从 InLab 流转到 TestDone
+        /// </summary>
+        internal void MarkTestDone(DateTimeOffset testTime)
+        {
+            if (Status != OrderLineStatus.InLab)
+                throw new InvalidOperationException($"Cannot mark test-done: current status is {Status}");
+
+            ReviewFinishTime = testTime;
             Status = OrderLineStatus.TestDone;
+        }
+
+        /// <summary>
+        /// 报告已出 — 状态只能从 TestDone 流转到 ReportOut
+        /// </summary>
+        internal void MarkReportOut(DateTimeOffset reportTime)
+        {
+            if (Status != OrderLineStatus.TestDone)
+                throw new InvalidOperationException($"Cannot mark report-out: current status is {Status}");
+
+            LabOutTime = reportTime;
+            Status = OrderLineStatus.ReportOut;
         }
 
         /// <summary>
@@ -88,7 +95,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             int? sampleCount,
             int? itemCount,
             string? reviewer,
-            string? engineer,
             string? remark,
             string? delayType,
             string? delayReason)
@@ -99,9 +105,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             if (sampleCount.HasValue) SampleCount = sampleCount.Value;
             if (itemCount.HasValue) ItemCount = itemCount.Value;
             if (reviewer != null) Reviewer = reviewer;
-            if (engineer != null) TestEngineer = engineer;
             if (remark != null) Remark = remark;
-            Delay = DelayInfo.Create(delayType ?? Delay.Type, delayReason ?? Delay.Reason);
+            Delay = DelayInfo.Create(
+                string.IsNullOrWhiteSpace(delayType) ? Delay.Type : delayType,
+                string.IsNullOrWhiteSpace(delayReason) ? Delay.Reason : delayReason);
         }
 
         /// <summary>

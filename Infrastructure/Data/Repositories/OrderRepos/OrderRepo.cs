@@ -1,18 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Wordprocessing;
-using System.Drawing.Printing;
-using DocumentFormat.OpenXml.Vml.Office;
-using System.Collections.Concurrent;
-using DocumentFormat.OpenXml.Drawing;
-using Azure.Core;
-using DocumentFormat.OpenXml.Office2010.CustomUI;
-using Microsoft.VisualBasic;
-using DocumentFormat.OpenXml.Bibliography;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
 
 
@@ -23,9 +12,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
         private readonly LabDbContextSec _db;
         private readonly OrderQueryProvider _orderQueryProvider;
         private readonly OrderReportingQueryProvider _orderReportingQueryProvider;
-        private readonly ConcurrentDictionary<long, object> _orderLocks = new ConcurrentDictionary<long, object>();
-        public OrderRepo(
-            LabDbContextSec db,
+        public OrderRepo(LabDbContextSec db,
             OrderQueryProvider orderQueryProvider,
             OrderReportingQueryProvider orderReportingQueryProvider)
         {
@@ -33,214 +20,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
             _orderQueryProvider = orderQueryProvider;
             _orderReportingQueryProvider = orderReportingQueryProvider;
         }
-
-        /// <summary>
-        /// 表单数据添加
-        /// </summary>
-        public bool AddOrder(OrderDto order)
-        {
-            if (order == null) return false;
-            var rows = order.Rows;
-            // 检查所有rows中的记录是否已存在
-            foreach (var row in rows)
-            {
-                var existingRecord = _db.LabTestInfos.FirstOrDefault(i =>
-                    i.ReportNumber == row.ReportNum &&
-                    i.TestGroup == row.Group &&
-                    i.IsDelete == "N");
-
-                if (existingRecord != null)
-                {
-                    // 记录具体的重复信息
-                    var duplicateInfo = $"重复记录: ReportNum={row.ReportNum}, Group={row.Group}";
-                    // 可以在这里添加日志记录
-                    return false;
-                }
-
-                if (row.DueDate == null || row.LabIn == null)
-                {
-                    // 记录具体的重复信息
-
-                    // 可以在这里添加日志记录
-                    return false;
-                }
-            }
-
-            var snowflake = new SnowflakeIdGenerator();
-            foreach (var row in rows)
-            {
-                long snowId = snowflake.NextId();
-                var csName = _db.CustomerServices.FirstOrDefault(i => i.Id == row.Cs)!.CustomerService1;
-                var currentTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
-                string? remark = null;
-                if (order.Remark != null && row.Remark != null)
-                {
-                    remark = order.Remark + " - " + row.Remark;
-                }
-                else
-                {
-                    remark = string.IsNullOrEmpty(order.Remark) ? row.Remark : order.Remark;
-                }
-
-                var orderEntity = new LabTestInfo
-                {
-                    Id = snowId,
-                    ReportNumber = row.ReportNum,
-                    OrderEntryPerson = row.OrderEntry,
-                    Status = 1,
-                    Express = row.Express,
-                    CustomerService = csName,
-                    TestGroup = row.Group,
-                    Remark = remark,
-                    LastUpdateTime = currentTime,
-                    ReportDueDate = (row.DueDate ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
-                    OrderInTime = (row.LabIn ?? DateTimeOffset.Now).ToUniversalTime().ToOffset(TimeSpan.FromHours(8)),
-                    TestItemNum = 0,
-                    TestSampleNum = 0,
-                    IsDelete = "N"
-                };
-                _db.LabTestInfos.Add(orderEntity);
-            }
-            _db.SaveChanges();
-            return true;
-        }
-
-
-        /// <summary>
-        /// 表单数据更新
-        /// </summary>
-        public bool UpdateOrder(OrderUpdateDto order)
-        {
-            if (order == null)
-            {
-                throw new ArgumentNullException(nameof(order));
-            }
-
-            if (order.Rows == null || order.Rows.Count == 0)
-            {
-                return false; // 或者抛出异常
-            }
-            try
-            {
-                foreach (var item in order.Rows)
-                {
-                    if (item.RecordId == null)
-                    {
-                        return false; // 或者抛出异常
-                    }
-                    var orderLock = _orderLocks.GetOrAdd(long.Parse(item.RecordId), _ => new object());
-
-                    lock (orderLock)
-                    {
-
-                        // 获取现有订单信息
-                        var existingOrderInfo = _db.LabTestInfos.FirstOrDefault(o => o.Id == long.Parse(item.RecordId) && o.IsDelete == "N");
-                        //var existingOrderSchedule = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == long.Parse(item.RecordId));
-
-                        if (existingOrderInfo == null /*|| existingOrderSchedule == null *//*|| existingOrderInfo.TestGroup != item.TestGroup*/)
-                        {
-                            return false;
-                        }
-
-                        var reviewer = _db.Users.FirstOrDefault(u => u.UserId == item.ReviewerId)?.NickName;
-                        var cs = _db.CustomerServices.FirstOrDefault(u => u.Id == item.CsId)?.CustomerService1;
-                        var orderEntryPerson = _db.Users.FirstOrDefault(u => u.UserId == item.OrderEntryId)?.NickName;
-                        //labtestinfo表
-                        existingOrderInfo.Reviewer = reviewer;
-                        existingOrderInfo.CustomerService = cs;
-                        existingOrderInfo.OrderEntryPerson = orderEntryPerson;
-                        existingOrderInfo.Express = item.Express;
-                        existingOrderInfo.Remark = item.Remark;
-                        existingOrderInfo.ReportDueDate = item.ReportDueDate!.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
-                        existingOrderInfo.Express = item.Express;
-                        existingOrderInfo.LastUpdateTime = DateTimeOffset.Now.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
-                        existingOrderInfo.TestItemNum = item.TestItemNum;
-                        existingOrderInfo.TestSampleNum = item.TestSampleNum;
-                        if (existingOrderInfo.TestGroup != item.TestGroup) existingOrderInfo.TestGroup = item.TestGroup;
-                        /*if(existingOrderInfo.DelayType==null)*/
-                        existingOrderInfo.DelayType = item.DelayType;
-                        /*if (existingOrderInfo.DelayReason == null) */
-                        existingOrderInfo.DelayReason = item.DelayReason;
-                        //labtestschedule表
-                        if (item.ReviewFinishTime != null)
-                        {
-                            existingOrderInfo.Status = 2;
-                            existingOrderInfo.ReviewFinishTime = item.ReviewFinishTime.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
-                            //existingOrderSchedule.ReviewFinishTime = (item.ReviewFinishTime.Value).ToUniversalTime();
-                        }
-                        if (item.LabOutTime != null)
-                        {
-                            existingOrderInfo.Status = 3;
-                            existingOrderInfo.LabOutTime = item.LabOutTime.Value.ToUniversalTime().ToOffset(TimeSpan.FromHours(8));
-                            //existingOrderSchedule.LabOutTime = (item.LabOutTime.Value).ToUniversalTime();
-                        }
-                        _db.LabTestInfos.Update(existingOrderInfo);
-                        //_db.LabTestSchedules.Update(existingOrderSchedule);
-                    }
-                }
-                // 保存更改到数据库
-                _db.SaveChanges();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                // 记录异常日志
-                return false;
-            }
-        }
-
-
-        /// <summary>
-        /// 表单数据软删除
-        /// </summary>
-        public bool DeleteOrder(OrderDeleteRequest order)
-        {
-            var user = _db.Users.FirstOrDefault(u => u.UserId == order.UserId);
-            if (user == null) return false;
-            try
-            {
-                foreach (var item in order.Items)
-                {
-                    var orderLock = _orderLocks.GetOrAdd(long.Parse(item.RecordId), _ => new object());
-                    lock (orderLock)
-                    {
-                        long? recordId = long.Parse(item.RecordId);
-                        string reason = item.Reason;
-                        // 处理删除逻辑
-
-                        if (string.IsNullOrEmpty(reason) || recordId == null) continue;
-                        var orderEntity = _db.LabTestInfos.FirstOrDefault(o => o.Id == recordId);
-                        //var scheduleEntity = _db.LabTestSchedules.FirstOrDefault(o => o.IdSchedule == recordId);
-                        if (orderEntity == null/* || scheduleEntity == null*/) continue;
-                        else
-                        {
-                            orderEntity!.IsDelete = "Y";
-                        }
-                        //对当前动作进行日志记录
-                        var auditlog = new AuditChange
-                        {
-                            ChangeRecordId = new SnowflakeIdGenerator().NextId(),
-                            ReportNumber = orderEntity.ReportNumber,
-                            ColumnName = "IsDelete",
-                            OldValue = "N",
-                            NewValue = "Y",
-                            ChangePerson = user!.NickName,
-                            ChangeTime = DateTimeOffset.Now,
-                            Remark = reason,
-                        };
-                        _db.AuditChanges.Add(auditlog);
-                        _db.LabTestInfos.Update(orderEntity);
-                        _db.SaveChanges();
-                    }
-                }
-                return true;
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-        }
-
 
         /// <summary>
         /// 获取当前用户的订单列表
@@ -269,9 +48,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                     o.DelayType,
                     o.DelayReason,
                     o.LastUpdateTime,
-                    Status = o.Status == 1 ? "In Lab"
-                                         : o.Status == 2 ? "Review Finished"
-                                         : "Test Done"
+                    Status = o.Status == 1 ? "Entry Complete"
+                           : o.Status == 2 ? "Review Finished"
+                           : o.Status == 3 ? "In Lab"
+                           : o.Status == 4 ? "Test Done"
+                           : o.Status == 5 ? "Report Out"
+                           : "Unknown"
                 })
                 .ToListAsync();
 
@@ -326,12 +108,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
             var infoQuery = _orderQueryProvider.QueryLabTestInfo(queryParams, _db);
             var scheduleQuery = _orderQueryProvider.QueryLabTestSchedule(queryParams, _db);
 
-            // 获取共同的ID列表
-            var commonIds = infoQuery.Select(o => o.Id).ToList();
-
-            // 根据共同的ID筛选两个表的数据
-            var filteredInfo = infoQuery.Where(o => commonIds.Contains(o.Id) && o.IsDelete == "N").ToList();
-            var filteredSchedule = scheduleQuery.ToList();
+            // 交集由 MergeResults 的 INNER JOIN 保证，此处只做 IsDelete 过滤
+            var filteredInfo = infoQuery.Where(o => o.IsDelete == "N").ToList();
+            var filteredSchedule = scheduleQuery.Where(o => o.IsDelete == "N").ToList();
 
             // 合并结果
             IQueryable<LabTestJoinDto> result = _orderQueryProvider.MergeResults(filteredInfo.AsQueryable(), filteredSchedule.AsQueryable());
@@ -383,9 +162,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                                 LabOut = d.Schedule.LabOutTime,
                                 Status = d.Info.Status switch
                                 {
-                                    1 => "In Lab",
+                                    1 => "Entry Complete",
                                     2 => "Review Finished",
-                                    _ => "Test Done"
+                                    3 => "In Lab",
+                                    4 => "Test Done",
+                                    5 => "Report Out",
+                                    _ => "Unknown"
                                 }
                             })
                             .Distinct()
@@ -454,9 +236,12 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                         Remark = d.Info.Remark ?? string.Empty,
                         Status = d.Info.Status switch
                         {
-                            1 => "In Lab",
+                            1 => "Entry Complete",
                             2 => "Review Finished",
-                            _ => "Test Done"
+                            3 => "In Lab",
+                            4 => "Test Done",
+                            5 => "Report Out",
+                            _ => "Unknown"
                         }
                     })
                     .ToList();
@@ -1489,17 +1274,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
         }
 
 
-        //加急计算逻辑
-        private string? GetExpressName(DateOnly duedate, DateTime labindate)
-        {
-            string express = "-";
-            var days = (duedate.ToDateTime(new TimeOnly()) - labindate).TotalDays + 1;
-            if (days <= 2 && days > 0) express = "Same Day";
-            else if (days > 2 && days <= 3) express = "Shuttle";
-            else if (days > 3 && days <= 4) express = "Express";
-            else if (days > 4) express = "Regular";
-            return express;
-        }
     }
 }
 

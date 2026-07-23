@@ -14,7 +14,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         private readonly List<OrderLine> _lines = new();
         public OrderId Id { get; private set; } = null!;
         public string ReportNumber { get; private set; } = string.Empty;
-        public string TestGroup { get; private set; } = string.Empty;
         /// <summary>
         /// 订单行（只读）
         /// </summary>
@@ -52,7 +51,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 
             var order = new Order
             {
-                Id = new OrderId(new Guid()),
+                Id = new OrderId(Guid.NewGuid()),
                 ReportNumber = reportNumber,
                 Metadata = OrderMetadata.Create(orderEntryPerson, customerService, remark, DateTimeOffset.UtcNow)
             };
@@ -91,7 +90,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         public void AddLine(
             long lineId,
             string testGroup,
-            OrderExpress? express,
+            OrderExpress express,
             DateTimeOffset dueDate,
             DateTimeOffset labIn,
             string? remark = null)
@@ -102,14 +101,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             if (_lines.Any(l => l.TestGroup == testGroup && !l.IsDeleted))
                 throw new InvalidOperationException($"Test group '{testGroup}' already exists in this order");
 
-            var expr = express ?? OrderLine.ComputeExpress(dueDate, labIn);
-
             var line = new OrderLine
             {
                 Id = lineId,
                 TestGroup = testGroup,
-                Status = OrderLineStatus.InLab,
-                Express = expr,
+                Status = OrderLineStatus.EntryComplete,
+                Express = express,
                 DueDate = dueDate,
                 LabIn = labIn,
                 Remark = remark
@@ -125,27 +122,51 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
          * ================================================================ */
 
         /// <summary>
-        /// 标记一条行为"审核完成"
+        /// 审单完成 — 状态只能从 EntryComplete 流转到 ReviewComplete
         /// </summary>
-        public void MarkReviewFinished(long lineId, string reviewer, DateTimeOffset finishTime)
+        public void MarkReviewComplete(long lineId, string reviewer, DateTimeOffset finishTime)
         {
             var line = GetLine(lineId);
-            line.MarkReviewFinished(reviewer, finishTime);
+            line.MarkReviewComplete(reviewer, finishTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
             //AddDomainEvent(new ReviewCompletedEvent(Id, lineId));
         }
 
         /// <summary>
-        /// 标记一条行为"已出实验室"
+        /// 进入实验室 — 状态只能从 ReviewComplete 流转到 InLab
         /// </summary>
-        public void MarkLabOut(long lineId, string engineer, DateTimeOffset labOutTime)
+        public void MarkLabIn(long lineId, DateTimeOffset labInTime)
         {
             var line = GetLine(lineId);
-            line.MarkLabOut(engineer, labOutTime);
+            line.MarkLabIn(labInTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            //AddDomainEvent(new LabOutCompletedEvent(Id, lineId));
+            //AddDomainEvent(new LabInCompletedEvent(Id, lineId));
+        }
+
+        /// <summary>
+        /// 测试完成 — 状态只能从 InLab 流转到 TestDone
+        /// </summary>
+        public void MarkTestDone(long lineId, DateTimeOffset finishTime)
+        {
+            var line = GetLine(lineId);
+            line.MarkTestDone(finishTime);
+            Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
+
+            //AddDomainEvent(new TestDoneEvent(Id, lineId));
+        }
+
+        /// <summary>
+        /// 报告已出 — 状态只能从 TestDone 流转到 ReportOut
+        /// </summary>
+        public void MarkReportOut(long lineId, DateTimeOffset reportTime)
+        {
+            var line = GetLine(lineId);
+            line.MarkReportOut(reportTime);
+            Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
+
+            //AddDomainEvent(new ReportOutEvent(Id, lineId));
         }
 
         /// <summary>
@@ -159,13 +180,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             int? sampleCount = null,
             int? itemCount = null,
             string? reviewer = null,
-            string? engineer = null,
             string? remark = null,
             string? delayType = null,
             string? delayReason = null)
         {
             var line = GetLine(lineId);
-            line.Update(express, dueDate, labIn, sampleCount, itemCount, reviewer, engineer,
+            line.Update(express, dueDate, labIn, sampleCount, itemCount, reviewer,
                 remark, delayType, delayReason);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
@@ -173,25 +193,40 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         }
 
         /// <summary>
-        /// 处理审核相关的状态变更：若设置 ReviewFinishTime → 自动 ReviewFinished；若设置 LabOutTime → 自动 TestDone
+        /// 根据时间字段自动推进状态：
+        /// ReviewFinishTime → Entry→ReviewComplete | LabIn → ReviewComplete→InLab |
+        /// ReviewFinishTime → InLab→TestDone | LabOutTime → TestDone→ReportOut
         /// </summary>
         public void ApplyTimeBasedStatusTransition(
             long lineId,
             string? reviewer,
-            string? engineer,                    // 出实验室时的工程师
             DateTimeOffset? reviewFinishTime,
             DateTimeOffset? labOutTime)
         {
             var line = GetLine(lineId);
 
-            if (reviewFinishTime.HasValue && line.Status == OrderLineStatus.InLab)
+            // ReviewFinishTime 有值且状态为 EntryComplete → MarkReviewComplete
+            if (reviewFinishTime.HasValue && line.Status == OrderLineStatus.EntryComplete)
             {
-                line.MarkReviewFinished(reviewer ?? string.Empty, reviewFinishTime.Value);
+                line.MarkReviewComplete(reviewer ?? string.Empty, reviewFinishTime.Value);
             }
 
-            if (labOutTime.HasValue && line.Status == OrderLineStatus.ReviewFinished)
+            // LabIn 有值且状态为 ReviewComplete → MarkLabIn
+            else if (line.LabIn != default && line.Status == OrderLineStatus.ReviewComplete)
             {
-                line.MarkLabOut(engineer ?? string.Empty, labOutTime.Value);
+                line.MarkLabIn(line.LabIn);
+            }
+
+            // ReviewFinishTime 有值且状态为 InLab → MarkTestDone
+            else if (reviewFinishTime.HasValue && line.Status == OrderLineStatus.InLab)
+            {
+                line.MarkTestDone(reviewFinishTime.Value);
+            }
+
+            // LabOutTime 有值且状态为 TestDone → MarkReportOut
+            else if (labOutTime.HasValue && line.Status == OrderLineStatus.TestDone)
+            {
+                line.MarkReportOut(labOutTime.Value);
             }
 
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };

@@ -57,7 +57,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 row.ReviewFinishTime = line.ReviewFinishTime;
                 row.LabOutTime = line.LabOutTime;
                 row.Reviewer = line.Reviewer;
-                row.TestEngineer = line.TestEngineer;
                 row.TestSampleNum = line.SampleCount;
                 row.TestItemNum = line.ItemCount;
                 row.Remark = line.Remark;
@@ -132,7 +131,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 ReviewFinishTime = line.ReviewFinishTime,
                 LabOutTime = line.LabOutTime,
                 Reviewer = line.Reviewer,
-                TestEngineer = line.TestEngineer,
                 TestSampleNum = line.SampleCount,
                 TestItemNum = line.ItemCount,
                 Remark = line.Remark,
@@ -152,7 +150,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 Status = (OrderLineStatus)(row.Status ?? 1),
                 Express = StringToExpress(row.Express),
                 Reviewer = row.Reviewer,
-                TestEngineer = row.TestEngineer,
                 DueDate = row.ReportDueDate ?? DateTimeOffset.UtcNow,
                 LabIn = row.OrderInTime ?? DateTimeOffset.UtcNow,
                 ReviewFinishTime = row.ReviewFinishTime,
@@ -165,7 +162,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             };
         }
 
-        private static string ExpressToString(OrderExpress express) => express switch
+        internal static string ExpressToString(OrderExpress express) => express switch
         {
             OrderExpress.SameDay => "Same Day",
             OrderExpress.Shuttle => "Shuttle",
@@ -173,7 +170,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             _ => "Regular"
         };
 
-        private static OrderExpress StringToExpress(string? s) => s switch
+        internal static OrderExpress StringToExpress(string? s) => s switch
         {
             "Same Day" => OrderExpress.SameDay,
             "Shuttle" => OrderExpress.Shuttle,

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext;
@@ -5,7 +6,9 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Enums
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Application.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.OrderContext;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppService
 {
@@ -14,12 +17,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
         private readonly IOrderRepository _repository;
         private readonly IOrderQueryService _queryService;
         private readonly IOrderLookupService _lookup;
+        private readonly IWorkdayCalculator _workdayCalculator;
+        private readonly ILogger<OrderAppService> _logger;
 
-        public OrderAppService(IOrderRepository repository, IOrderQueryService queryService, IOrderLookupService lookup)
+        public OrderAppService(IOrderRepository repository, IOrderQueryService queryService, IOrderLookupService lookup, IWorkdayCalculator workdayCalculator, ILogger<OrderAppService> logger)
         {
             _repository = repository;
             _queryService = queryService;
             _lookup = lookup;
+            _workdayCalculator = workdayCalculator;
+            _logger = logger;
         }
 
         /* ================================================================
@@ -46,13 +53,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
         /// </summary>
         public async Task<bool> AddOrderAsync(OrderDto dto)
         {
-            if (dto?.Rows == null || dto.Rows.Count == 0) return false;
+            if (dto?.Rows == null || dto.Rows.Count == 0)
+            { _logger.LogWarning("AddOrder failed: Rows is null or empty"); return false; }
 
             try
             {
                 var firstRow = dto.Rows.First();
                 if (string.IsNullOrWhiteSpace(firstRow.ReportNum) || firstRow.OrderEntry == null)
-                    return false;
+                { _logger.LogWarning("AddOrder failed: ReportNum={ReportNum}, OrderEntry={OrderEntry}", firstRow.ReportNum, firstRow.OrderEntry); return false; }
 
                 var cs = dto.Rows[0].Cs;
                 var csName = await _lookup.ResolveCsNameAsync(cs);
@@ -66,7 +74,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
                     order.AddLine(
                         lineId: new SnowflakeIdGenerator().NextId(),
                         testGroup: row.Group!,
-                        express: StringToExpress(row.Express),
+                        express: await _workdayCalculator.ComputeExpressAsync(
+                            row.LabIn ?? DateTimeOffset.UtcNow,
+                            row.DueDate ?? DateTimeOffset.UtcNow),
                         dueDate: row.DueDate ?? DateTimeOffset.UtcNow,
                         labIn: row.LabIn ?? DateTimeOffset.UtcNow,
                         remark: row.Remark);
@@ -75,8 +85,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
                 await _repository.AddAsync(order, CancellationToken.None);
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "AddOrder failed");
                 return false;
             }
         }
@@ -90,6 +101,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
 
             try
             {
+                // 阶段 1: 收集 (lineId, orderId, row) 映射
+                var pending = new List<(long lineId, Guid orderId, OrderUpdate row)>();
                 foreach (var row in dto.Rows)
                 {
                     if (row.RecordId == null || !long.TryParse(row.RecordId, out var lineId))
@@ -98,33 +111,41 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
                     var orderId = await _repository.GetOrderIdByLineIdAsync(lineId, CancellationToken.None);
                     if (orderId == null) continue;
 
-                    var order = await _repository.GetByIdAsync(new OrderId(orderId.Value), CancellationToken.None);
+                    pending.Add((lineId, orderId.Value, row));
+                }
+
+                // 阶段 2: 按 orderId 分组，每组加载一次 → 修改所有行 → 保存一次
+                foreach (var group in pending.GroupBy(x => x.orderId))
+                {
+                    var order = await _repository.GetByIdAsync(new OrderId(group.Key), CancellationToken.None);
                     if (order == null) continue;
 
-                    order.UpdateLine(lineId,
-                        express: StringToExpress(row.Express),
-                        dueDate: row.ReportDueDate,
-                        labIn: row.OrderInTime,
-                        sampleCount: row.TestSampleNum,
-                        itemCount: row.TestItemNum,
-                        reviewer: await ResolveUserName(row.ReviewerId),
-                        engineer: row.TestEngineer,
-                        remark: row.Remark,
-                        delayType: row.DelayType,
-                        delayReason: row.DelayReason);
+                    foreach (var (lineId, _, row) in group)
+                    {
+                        order.UpdateLine(lineId,
+                            express: OrderRepository.StringToExpress(row.Express),
+                            dueDate: row.ReportDueDate,
+                            labIn: row.OrderInTime,
+                            sampleCount: row.TestSampleNum,
+                            itemCount: row.TestItemNum,
+                            reviewer: await ResolveUserName(row.ReviewerId),
+                            remark: row.Remark,
+                            delayType: row.DelayType,
+                            delayReason: row.DelayReason);
 
-                    order.ApplyTimeBasedStatusTransition(lineId,
-                        reviewer: await ResolveUserName(row.ReviewerId),
-                        engineer: row.TestEngineer,
-                        reviewFinishTime: row.ReviewFinishTime,
-                        labOutTime: row.LabOutTime);
+                        order.ApplyTimeBasedStatusTransition(lineId,
+                            reviewer: await ResolveUserName(row.ReviewerId),
+                            reviewFinishTime: row.ReviewFinishTime,
+                            labOutTime: row.LabOutTime);
+                    }
 
                     await _repository.UpdateAsync(order, CancellationToken.None);
                 }
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "UpdateOrder failed");
                 return false;
             }
         }
@@ -153,8 +174,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
                 }
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "DeleteOrder failed");
                 return false;
             }
         }
@@ -163,14 +185,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
         {
             return await _repository.GetByIdAsync(new OrderId(orderId), CancellationToken.None);
         }
-
-        private static OrderExpress StringToExpress(string? s) => s switch
-        {
-            "Same Day" => OrderExpress.SameDay,
-            "Shuttle" => OrderExpress.Shuttle,
-            "Express" => OrderExpress.Express,
-            _ => OrderExpress.Regular
-        };
 
         private async Task<string?> ResolveUserName(string? userId)
         {
