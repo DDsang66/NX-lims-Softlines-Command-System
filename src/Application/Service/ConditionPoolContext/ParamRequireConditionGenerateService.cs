@@ -7,6 +7,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
+using NX_lims_Softlines_Command_System.src.Domain.Services;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository;
@@ -19,18 +20,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         private readonly ICheckListRepository _checkListRepository;
         //private readonly IOrderRepository _orderRepository;
         private readonly IStandardFamilyRepository _standardFamilyRepository;
-        private readonly IGenerateRequiredConditionsService _generateRequiredConditionsService;
+        private readonly IConditionPoolDomainService _conditionPoolDomainService;
 
         public ParamRequireConditionGenerateService(
             IParamStructureRepository paramStructureRepository, 
             IStandardFamilyRepository standardFamilyRepository,
             ICheckListRepository checkListRepository,
-            IGenerateRequiredConditionsService generateRequiredConditionsService)
+            IConditionPoolDomainService conditionPoolDomainService)
         {
             _paramStructureRepository = paramStructureRepository;
             _standardFamilyRepository = standardFamilyRepository;
             _checkListRepository = checkListRepository;
-            _generateRequiredConditionsService = generateRequiredConditionsService;
+            _conditionPoolDomainService = conditionPoolDomainService;
         }
 
         /// <summary>
@@ -79,7 +80,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
                 }
             }
 
-           var condition =  _generateRequiredConditionsService.GenerateRequiredConditions(paramStructures);
+           var condition = _conditionPoolDomainService.GenerateRequiredConditions(paramStructures);
 
             return Result<IDictionary<string, object?>>.Ok(condition);
         }

@@ -56,9 +56,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     BuyerModifiedTestItem = src.BuyerModifiedTestItemId,
                     BuyerModifiedTestStandard = src.BuyerModifiedTextMethodId,
                     TestGroup = (byte)src.TestGroup,
-                    Param = src.Param == null
-                    ? null
-                    : JsonSerializer.Serialize(src.Param.Values, new JsonSerializerOptions { WriteIndented = true }),
+                    TestPointParams = JsonSerializer.Serialize(
+                        src.TestPointParams.ToDictionary(
+                            kvp => kvp.Key,
+                            kvp => kvp.Value // 如果 ParamSet 有 Values 属性
+                        ),
+                        new JsonSerializerOptions { WriteIndented = true }
+                    ),
                     Samples = string.Join(",", src.Samples),
                     Status = (byte)src.Status
                 });
@@ -101,9 +105,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     // 将 byte 强转回枚举类型
                     TestGroup = (TestGroup)src.TestGroup,
 
-                    // 将 Json 字符串反序列化回对象 (假设 Param.Values 的类型是 Dictionary<string, string> 或其他具体类型)
-                    // 请根据实际类型替换 Dictionary<string, object>
-                    Param = ReconstructParamSet(src.Param),
+                    // 使用 AddOrUpdateTestPointParam 方法重建 TestPointParams
+                    TestPointParams = ReconstructTestPointParams(src.TestPointParams),
+
                     // 将逗号拼接的字符串拆分为集合
                     Samples = string.IsNullOrEmpty(src.Samples)
                         ? new List<string>()
@@ -141,6 +145,43 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             {
                 // 如果 JSON 格式损坏，根据业务需求决定是抛出异常还是返回空
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// 辅助方法：重建 TestPointParams 字典
+        /// </summary>
+        private static Dictionary<string, ParamSet?> ReconstructTestPointParams(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return new Dictionary<string, ParamSet?>();
+
+            try
+            {
+                var dict = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, object?>>>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                if (dict == null)
+                    return new Dictionary<string, ParamSet?>();
+
+                // 创建一个新的字典，使用 AddOrUpdateTestPointParam 方法
+                var result = new Dictionary<string, ParamSet?>();
+                foreach (var kvp in dict)
+                {
+                    var paramSet = kvp.Value == null
+                        ? null
+                        : ParamSet.Reconstruct(kvp.Value);
+                    result.Add(kvp.Key, paramSet);
+                }
+
+                return result;
+            }
+            catch (JsonException)
+            {
+                // 如果 JSON 格式损坏，返回空字典
+                return new Dictionary<string, ParamSet?>();
             }
         }
     }

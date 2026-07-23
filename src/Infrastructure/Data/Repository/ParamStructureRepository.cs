@@ -72,7 +72,67 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(StandardFamilyId standardFamilyId, CancellationToken ct)
         {
-            return null;
+            // 1. 查询关联的 ParamStructure ID 列表
+            var paramStructureIds = await _dbContext.ParamsturctureStandardfamilies
+                .Where(af => af.IdStandardFamily == standardFamilyId)
+                .Select(af => new ParamStructureId(af.ParamStructureId))
+                .ToListAsync(ct);
+
+            if (!paramStructureIds.Any())
+            {
+                return Enumerable.Empty<ParamStructure>();
+            }
+
+            var idValues = paramStructureIds.Select(id => id.Value).ToList();
+
+            // 2. 批量查询 ParamStructure PO 实体
+            var paramStructurePos = await _dbContext.BasicParamStructures
+                .Where(ps => idValues.Contains(ps.ParamStructureId))
+                .ToListAsync(ct);
+
+            // 3. 批量查询关联的 StandardFamilyIds (根据你的实际表结构调整)
+            var standardFamilyMapping = await _dbContext.ParamsturctureStandardfamilies
+                .Where(af => idValues.Contains(af.ParamStructureId))
+                .GroupBy(af => af.ParamStructureId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(af => new StandardFamilyId(af.IdStandardFamily)).ToList(),
+                    ct);
+
+            // 4. 批量查询关联的 RuleIds (根据你的实际表结构调整，假设有 ParamStructureRule 关系表)
+            var ruleMapping = await _dbContext.BasicParamRules
+                .Where(ar => idValues.Contains(ar.ParamStructureId))
+                .GroupBy(ar => ar.ParamStructureId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(ar => new ParamRuleId(ar.RuleId)).ToList(),
+                    ct);
+
+            // 5. 遍历 PO 列表，批量重建聚合根
+            var paramStructures = paramStructurePos.Select(paramStructurePo =>
+            {
+                var id = new ParamStructureId(paramStructurePo.ParamStructureId); // 假设 ID 的构建方式
+
+                // 从字典中安全获取关联ID集合，如果不存在则赋空集合
+                var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<StandardFamilyId>());
+                var ruleIds = ruleMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<ParamRuleId>());
+
+                return ParamStructure.Reconstitute(
+                    id,
+                    standardFamilyIds,
+                    ruleIds,
+                    new FormulaId(paramStructurePo.FormulaId),
+                    paramStructurePo.ParamName,
+                    JsonSerializer.Deserialize<ParamSchema>(paramStructurePo.Schema!,
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        })!,
+                    (Status)paramStructurePo.Status,
+                    paramStructurePo.EffectiveDate);
+            });
+
+            return paramStructures;
         }
 
         /// <summary>

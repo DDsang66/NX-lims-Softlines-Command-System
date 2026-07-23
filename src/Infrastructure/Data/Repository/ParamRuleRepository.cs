@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
@@ -38,9 +39,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <param name="ids"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public Task<IEnumerable<ParamRule>> GetByIdsAsync(IEnumerable<ParamRuleId> ids,CancellationToken ct)
+        public async Task<IEnumerable<ParamRule>> GetByIdsAsync(IEnumerable<ParamRuleId> ids,CancellationToken ct)
         {
-            return null;
+            // 1. 防御性校验：如果为空，直接返回空集合，避免生成无效的 SQL (WHERE IN ())
+            if (ids == null || !ids.Any())
+            {
+                return Enumerable.Empty<ParamRule>();
+            }
+
+            // 2. 提取实际的主键值。因为 ParamRuleId 是自定义结构，需要取出它的 Value
+            // 尽早 ToList()，避免 IEnumerable 延迟执行带来的多次枚举问题
+            var idValues = ids.Select(id => id.Value).ToList();
+
+            // 3. 一次性从数据库批量查询，EF Core 会自动翻译为 WHERE Value IN (@p0, @p1...)
+            var paramRulePos = await _context.Set<BasicParamRule>()
+                .Where(po => idValues.Contains(po.RuleId)) // 注意：这里假设 BasicParamRule 的主键属性名叫 Value
+                .ToListAsync(ct);
+
+            // 4. 批量映射 (Mapster/AutoMapper 等)
+            return paramRulePos.Adapt<List<ParamRule>>();
         }
 
         /// <summary>

@@ -11,6 +11,8 @@ public partial class ConditionPool
 
     public DateTime CreatedAt { get; set; }
 
+    public string? TestPoints { get; set; }
+
     public byte Status { get; set; }
 
     public Guid CheckListId { get; set; }

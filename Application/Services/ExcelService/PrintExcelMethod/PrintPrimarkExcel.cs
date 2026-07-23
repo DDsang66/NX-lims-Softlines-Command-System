@@ -883,7 +883,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             [("Spirality")] = new Dictionary<string[], string>
             {
-                {new[] { "Fabric" }, "Spirality-F" },
+                {new[] { "Fabric" }, "Spirality-G" },
                 {new[] { "Garment" }, "Spirality-G" },
             },
             [("Dimensional Stability")] = new Dictionary<string[], string>

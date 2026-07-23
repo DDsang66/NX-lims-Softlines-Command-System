@@ -13,7 +13,7 @@ public partial class CheckListItem
 
     public byte TestGroup { get; set; }
 
-    public string? Param { get; set; }
+    public string? TestPointParams { get; set; }
 
     public string Samples { get; set; } = null!;
 

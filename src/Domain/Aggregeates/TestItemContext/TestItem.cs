@@ -1,4 +1,5 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
@@ -34,7 +35,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
         /// <summary>
         /// 测试项目级别的参数要求定义
         /// </summary>
-        public IReadOnlyCollection<ParamRequireDefinition> ParamRequireDefinition { get; private set; } =  new List<ParamRequireDefinition>();
+        private readonly List<ParamRequireDefinition> _paramRequireDefinitions = new();
+        public IReadOnlyList<ParamRequireDefinition> ParamRequireDefinitions => _paramRequireDefinitions;
 
         /// <summary>
         /// 状态
@@ -81,6 +83,41 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
             };
             return testItem;
 
+        }
+
+
+
+        /// <summary>
+        /// 根据标准类型，获取适用的参数名列表
+        /// </summary>
+        public List<string> GetRequiredParamNames(StandardType standardType)
+        {
+            return _paramRequireDefinitions
+                .Where(p => p.IsApplicableTo(standardType))
+                .Select(p => p.ParamName)
+                .ToList();
+        }
+
+        /// <summary>
+        /// 根据标准类型，获取完整的参数定义列表
+        /// </summary>
+        public List<ParamRequireDefinition> GetRequiredParams(StandardType standardType)
+        {
+            return _paramRequireDefinitions
+                .Where(p => p.IsApplicableTo(standardType))
+                .ToList();
+        }
+        /// <summary>
+        /// 根据标准类型，获取参数名+默认值的字典
+        /// 用于初始化 ConditionPool
+        /// </summary>
+        public Dictionary<string, object?> GetParamDefaults(StandardType standardType)
+        {
+            return _paramRequireDefinitions
+                .Where(p => p.IsApplicableTo(standardType))
+                .ToDictionary(
+                    p => p.ParamName,
+                    p => (object?)p.GetDefaultValue(standardType));
         }
     }
 }

@@ -145,7 +145,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <returns></returns>
         public bool Match(
             ConditionPool pool,
-            IConditionAccessor accessor,
+            IConditionPoolDomainService accessor,
             IValueComparer comparer)
         {
             if (!IsActive || Pattern == null || pool == null) return false;
@@ -194,7 +194,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         private bool EvaluateComposite(
             CompositeCondition composite,
             ConditionPool pool,
-            IConditionAccessor accessor,
+            IConditionPoolDomainService accessor,
             IValueComparer comparer)
         {
             if (composite == null) return true;

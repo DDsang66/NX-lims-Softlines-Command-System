@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Value
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext
 {
@@ -22,6 +23,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         private readonly Dictionary<string, object?> _conditions = new(StringComparer.OrdinalIgnoreCase);
         public IReadOnlyDictionary<string, object?> Conditions => _conditions;
+
+        /// <summary>
+        /// 使用此条件池的测点ID列表
+        /// </summary>
+        public ISet<string> TestPoints { get; private set; } = new HashSet<string>();
 
         /// <summary>
         /// 条件池的创建时间
@@ -46,7 +52,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         {
             var pool = new ConditionPool
             {
-                Id = new ConditionPoolId(new Guid()),
+                Id = new ConditionPoolId(Guid.NewGuid()),
                 CheckListId = checkListId ?? throw new ArgumentNullException(nameof(checkListId)),
                 CreatedAt = DateTime.UtcNow,
                 Status = ConditionPoolStatus.Draft
@@ -65,6 +71,44 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         }
 
         /// <summary>
+        /// 重建
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="checkListId"></param>
+        /// <param name="initial"></param>
+        /// <param name="createdAt"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public static ConditionPool Reconstitute(
+            ConditionPoolId id,
+            CheckListId checkListId,
+            IDictionary<string, object?> initial,
+            ISet<string> testPoints,
+            DateTime createdAt,
+            ConditionPoolStatus status
+            ) 
+        {
+            var pool = new ConditionPool
+            {
+                Id = id,
+                CheckListId = checkListId ?? throw new ArgumentNullException(nameof(checkListId)),
+                TestPoints = testPoints,
+                CreatedAt = DateTime.UtcNow,
+                Status = ConditionPoolStatus.Draft
+            };
+
+            foreach (var kv in initial)
+            {
+                // 可以在这里添加值的验证逻辑
+                pool._conditions[kv.Key] = kv.Value;
+            }
+
+            return pool;
+        }
+
+
+        /// <summary>
         /// 验证条件池中的条件是否存在
         /// </summary>
         /// <param name="fieldName"></param>
@@ -80,8 +124,26 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <exception cref="KeyNotFoundException"></exception>
         public T GetConditionValue<T>(string fieldName)
         {
-            if (!_conditions.TryGetValue(fieldName, out var v)) throw new KeyNotFoundException($"Condition '{fieldName}' not found");
-            return (T)Convert.ChangeType(v, typeof(T));
+            if (!_conditions.TryGetValue(fieldName, out var v))
+                throw new KeyNotFoundException($"Condition '{fieldName}' not found");
+
+            if (v == null)
+                return default!;
+
+            // 已经是目标类型
+            if (v is T typed)
+                return typed;
+
+            // JSON 序列化再反序列化（处理 JsonElement 等中间类型）
+            var json = JsonSerializer.Serialize(v, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+
+            return JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            }) ?? throw new InvalidOperationException($"Failed to deserialize '{fieldName}' to {typeof(T).Name}");
         }
 
         /// <summary>
@@ -110,14 +172,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                     if (!values.ContainsKey(fieldName) || values[fieldName] == null)
                         throw new ArgumentException($"Required field missing: {fieldName}");
                 }
-            }
 
-            // 覆盖值（清空后填充）
-            _conditions.Clear();
+                // 覆盖值（清空后填充）
+                _conditions.Clear();
 
-            foreach (var (fieldName, value) in values)
-            {
-                _conditions[fieldName] = value;
+                foreach (var (fieldName, value) in values)
+                {
+                    _conditions[fieldName] = value;
+                }
             }
         }
 
@@ -142,5 +204,63 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 将条件池状态改为草稿
         /// </summary>
         public void ChangeToDraft() => Status = ConditionPoolStatus.Draft;
+
+
+        /// <summary>
+        /// 将条件池状态改为已提交
+        /// </summary>
+        /// <param name="conditions"></param>
+        /// <param name="testPoints"></param>
+        public void MergeFrom(Dictionary<string, object?> conditions, List<string> testPoints)
+        {
+            // 内部处理非空判断和合并逻辑
+            if (conditions?.Any() == true)
+            {
+                Update(conditions);
+            }
+
+            AddTestPoints(testPoints);
+        }
+
+        /// <summary>
+        /// 添加测点到条件池
+        /// </summary>
+        /// <param name="testPoint">测点名称列表</param>
+        public void AddTestPoints(IEnumerable<string> testPoints)
+        {
+            foreach (var testPoint in testPoints)
+            {
+                if (string.IsNullOrWhiteSpace(testPoint))
+                {
+                    throw new ArgumentException("测点名称不能为空", nameof(testPoint));
+                }
+
+                TestPoints.Add(testPoint);
+            }
+        }
+
+        /// <summary>
+        /// 从条件池中移除测点
+        /// </summary>
+        /// <param name="testPoints">测点名称</param>
+        public void RemoveTestPoint(string testPoint)
+        {
+            if (string.IsNullOrWhiteSpace(testPoint))
+            {
+                throw new ArgumentException("测点名称不能为空", nameof(testPoint));
+            }
+
+            TestPoints.Remove(testPoint);
+        }
+
+        /// <summary>
+        /// 判断条件池是否包含指定测点
+        /// </summary>
+        /// <param name="testPointName">测点名称</param>
+        /// <returns>是否包含</returns>
+        public bool ContainsTestPoint(string testPoint)
+        {
+            return TestPoints.Contains(testPoint);
+        }
     }
 }

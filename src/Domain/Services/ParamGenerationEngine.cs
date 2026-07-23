@@ -16,12 +16,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
     /// </summary>
     public class ParamGenerationEngine:IParamGenerationEngine,IScopedDependency
     {
-        private readonly IConditionAccessor _conditionAccessor;
+        private readonly IConditionPoolDomainService _conditionAccessor;
         private readonly IValueComparer _valueComparer;
         private readonly ILogger<ParamGenerationEngine> _logger;
 
         public ParamGenerationEngine(
-            IConditionAccessor conditionAccessor,
+            IConditionPoolDomainService conditionAccessor,
             IValueComparer valueComparer,
             ILogger<ParamGenerationEngine> logger)
         {

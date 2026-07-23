@@ -5,7 +5,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
     public static class ExcelPepcoMapper
     {
         //WET
-
+        public static string[] MapWeight()
+        {
+            return new string[]
+            {
+                "A12", "A13","A14","A15","A16"
+            };
+       }
         public static string[] MapAppearance()
         {
             // 定义固定的单元格地址映射

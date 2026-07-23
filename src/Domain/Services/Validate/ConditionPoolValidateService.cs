@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+﻿using ClosedXML.Excel;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
@@ -30,7 +31,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
                     requirement.AllowedValues.Any())
                 {
                     var value = pool.GetConditionValue<object>(requirement.FieldName);
-                    if (!requirement.AllowedValues.Contains(value))
+
+                    var valueStr = value.ToString()?.Trim();//转化为字符串比较
+
+                    var result = requirement.AllowedValues
+                        .Select(v => v?.ToString()?.Trim())
+                        .Any(allowed => string.Equals(allowed, valueStr, StringComparison.OrdinalIgnoreCase));
+
+                    if (!result)
                         return Result.Fail($"Condition '{requirement.FieldName}' value not in allowed list");
                 }
             }

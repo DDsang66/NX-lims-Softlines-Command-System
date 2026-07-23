@@ -22,6 +22,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         Task UpdateAsync(ConditionPool aggregateRoot, CancellationToken ct);
 
         /// <summary>
+        /// 修改聚合根
+        /// </summary>
+        /// <param name="aggregateRoot"></param>
+        /// <returns></returns>
+        Task RemoveAsync(ConditionPoolId aggregateRootId, CancellationToken ct);
+
+        /// <summary>
         /// 查询聚合根
         /// </summary>
         /// <param name="aggregateRootId"></param>
@@ -35,6 +42,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<ConditionPool> GetByCheckListIdAsync(CheckListId id, CancellationToken ct);
+        Task<IEnumerable<ConditionPool>> GetByCheckListIdAsync(CheckListId id, CancellationToken ct);
+
+        /// <summary>
+        /// 根据检查单ID查询主草稿状态条件池
+        /// </summary>
+        /// <param name="checklistId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<ConditionPool> GetOriginalPoolByCheckListIdAsync(CheckListId checklistId, CancellationToken ct);
     }
 }

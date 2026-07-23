@@ -355,9 +355,6 @@ public partial class dbContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("buyer_modified_test_standard");
             entity.Property(e => e.CheckListId).HasColumnName("check_list_id");
-            entity.Property(e => e.Param)
-                .HasColumnType("text")
-                .HasColumnName("param");
             entity.Property(e => e.Samples)
                 .HasColumnType("text")
                 .HasColumnName("samples");
@@ -371,6 +368,9 @@ public partial class dbContext : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("test_item_id");
+            entity.Property(e => e.TestPointParams)
+                .HasColumnType("text")
+                .HasColumnName("test_point_params");
         });
 
         modelBuilder.Entity<Composition>(entity =>
@@ -431,6 +431,9 @@ public partial class dbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TestPoints)
+                .HasColumnType("text")
+                .HasColumnName("test_points");
         });
 
         modelBuilder.Entity<FormulaStandardfamily>(entity =>

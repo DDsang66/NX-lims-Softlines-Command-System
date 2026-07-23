@@ -52,7 +52,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         public async Task<Result<ParamSet>> GenerateForCheckListItemAsync(
-             CheckListItem checkListItem,
+            CheckListItem checkListItem,
             ConditionPool pool,
             CancellationToken ct)
         {

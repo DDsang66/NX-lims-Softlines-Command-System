@@ -44,7 +44,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Compensation
                 if (existingValue == null)
                 {
                     // 调用你原有的赋值逻辑，如果 DefaultValue 也为 null，则根据 SetValueOrFallback 的内部逻辑处理
-                    param.SetValueOrFallback(pd.ParamName, null, pd.ParamDefaultValue);
+                    param.SetValueOrFallback(pd.ParamName, null, pd.UniversalDefault);
                 }
             }
         }

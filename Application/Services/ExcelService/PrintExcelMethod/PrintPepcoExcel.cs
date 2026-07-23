@@ -30,6 +30,25 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             List<CheckListDto> checkLists = new List<CheckListDto>();
             foreach (var row in selectedRows!) checkLists.Add(new CheckListDto().CreateDto(row, menu, sampleDescription));
+            
+            var massPerUnitAreaRow = checkLists.FirstOrDefault(row =>new[] { "Seam Slippage" }.Contains(row.ItemName));
+
+            if (massPerUnitAreaRow != null && checkLists.FirstOrDefault(row => row.ItemName == "Mass per Unit Area") == null)
+            {
+                checkLists.Add(new CheckListDto
+                {
+                    ItemName = "Weight",
+                    Standard = "ISO 3801:1977",
+                    Parameter = "Single unit weight",
+                    Type = "Physics",
+                    Sample = massPerUnitAreaRow.Sample,
+                    Extra = null,
+                    MenuName = menu,
+                    sampleDescription = sampleDescription,
+                });
+            }
+
+
             foreach (var dto in checkLists)
             {
                 Console.WriteLine($"{dto.ItemName} -> {dto.Type}");
@@ -185,6 +204,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         }
         private static readonly Dictionary<string, string> TemplateSheetNamesNormal = new()
         {
+            ["Weight"] = "Weight",
             ["Pilling Resistance"] = "Pilling Resistance",
             ["Water Resistance-Hydrostatic Pressure"] = "Hydroatatic",
             ["Air Permeability"] = "Air Permeability",
@@ -221,6 +241,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
         };
         private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()
         {
+            ["Weight"] = (_, _) => ExcelPepcoMapper.MapWeight(),
             ["Pilling Resistance"] = (_, _) => ExcelPepcoMapper.MapPilling(),
             ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelPepcoMapper.MapHydroatatic(),
             ["Air Permeability"] = (_, _) => ExcelPepcoMapper.MapAir(),

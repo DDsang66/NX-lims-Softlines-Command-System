@@ -60,18 +60,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
 
         public static string[] MapSpirality(string? sampleDescription)
         {
-            // 定义固定的单元格地址映射
-            List<string>? stringMap = null;
-            var matched = new[] { "Garment", "Fabric"}
-                  .FirstOrDefault(key => sampleDescription?.Contains(key) == true);
-            // 定义固定的单元格地址映射
-            stringMap = matched switch
+            return new string[]
             {
-                "Garment" => new List<string> { "A29","A30" },
-                "Fabric" => new List<string> { "A10", "A11" },
-                _ => new List<string> { "A29","A30" }
+                "A7","A8","A9","A10","A11","A12" 
             };
-            return stringMap?.ToArray() ?? new string[0];
         }
 
         public static string[] MapCFtoEI(string? standard)

@@ -65,7 +65,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="ct"></param>
         /// <returns></returns>
         [HttpPut("{checkListId}")]
-        public async Task<Result> GenrateParam(Guid checkListId, CancellationToken ct) 
+        public async Task<Result> GenerateParam(Guid checkListId, CancellationToken ct) 
         {
             var result = await _checkListAppService.CalculateParamAsync(checkListId,ct);
 

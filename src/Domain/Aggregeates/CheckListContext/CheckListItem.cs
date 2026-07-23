@@ -39,15 +39,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// </summary>
         public TestGroup TestGroup { get; set; } = new();
 
-        /// <summary>
-        /// 参数集
-        /// </summary>
-        public ParamSet? Param { get; set; } = new();
+        ///// <summary>
+        ///// 参数集
+        ///// </summary>
+        //public ParamSet? Param { get; set; } = new();
 
         /// <summary>
         /// 样品列表
         /// </summary>
         public List<string> Samples { get; set; } = new();
+
+        /// <summary>
+        /// 测点参数集字典（每个测点对应一个参数集）
+        /// Key: 测点标识（可以是字符串形式的测点ID或其他唯一标识）
+        /// Value: 对应的参数集
+        /// </summary>
+        public IReadOnlyDictionary<string, ParamSet?> TestPointParams { get; set; } =
+            new Dictionary<string, ParamSet?>();
 
         /// <summary>
         /// 项目状态
@@ -58,5 +66,64 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// 测试清单ID
         /// </summary>
         public CheckListId CheckListId { get; set; } = new CheckListId(Guid.NewGuid());
+
+
+        /// <summary>
+        /// 添加或更新测点参数集
+        /// </summary>
+        /// <param name="testPointId">测点标识</param>
+        /// <param name="paramSet">参数集</param>
+        public void AddOrUpdateTestPointParam(string testPointId, ParamSet paramSet)
+        {
+            if (string.IsNullOrWhiteSpace(testPointId))
+            {
+                throw new ArgumentException("测点ID不能为空", nameof(testPointId));
+            }
+
+            if (paramSet == null)
+            {
+                throw new ArgumentNullException(nameof(paramSet));
+            }
+
+            var dictionary = (Dictionary<string, ParamSet>)TestPointParams;
+            dictionary[testPointId] = paramSet;
+            TestPointParams = dictionary;
+        }
+
+        /// <summary>
+        /// 移除测点参数集
+        /// </summary>
+        /// <param name="testPointId">测点标识</param>
+        /// <returns>是否成功移除</returns>
+        public bool RemoveTestPointParam(string testPointId)
+        {
+            if (string.IsNullOrWhiteSpace(testPointId))
+            {
+                throw new ArgumentException("测点ID不能为空", nameof(testPointId));
+            }
+
+            var dictionary = (Dictionary<string, ParamSet>)TestPointParams;
+            var removed = dictionary.Remove(testPointId);
+            if (removed)
+            {
+                TestPointParams = dictionary;
+            }
+            return removed;
+        }
+
+        /// <summary>
+        /// 获取测点参数集
+        /// </summary>
+        /// <param name="testPointId">测点标识</param>
+        /// <returns>参数集，如果不存在则返回null</returns>
+        public ParamSet? GetTestPointParam(string testPointId)
+        {
+            if (string.IsNullOrWhiteSpace(testPointId))
+            {
+                throw new ArgumentException("测点ID不能为空", nameof(testPointId));
+            }
+
+            return TestPointParams.TryGetValue(testPointId, out var paramSet) ? paramSet : null;
+        }
     }
 }

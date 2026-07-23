@@ -1,12 +1,20 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
+﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 {
     public class TestItemRepository: ITestItemRepository, IScopedDependency
     {
+        private readonly dbContext _dbContext;
+
+        public TestItemRepository(dbContext dbContext) 
+        {
+            _dbContext = dbContext;
+        }
         /// <summary>
         /// 添加聚合根
         /// </summary>
@@ -27,6 +35,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <param name="aggregateRootId"></param>
         /// <param name="ct"></param>
         /// <returns>聚合根</returns>
-        public async Task<TestItem> GetByIdAsync(TestItemId aggregateRootId, CancellationToken ct) { return null; }
+        public async Task<TestItem> GetByIdAsync(TestItemId aggregateRootId, CancellationToken ct) 
+        {
+            var testItemPo = await  _dbContext.FindAsync<BasicItem>(aggregateRootId.Value, ct);
+           
+            var testItem = testItemPo.Adapt<TestItem>();
+            
+            return testItem;
+        }
     }
 }

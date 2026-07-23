@@ -262,12 +262,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 if (dto.sampleDescription!.Contains("Fabric"))
                 {
-                    map["A3"] = (w, dto, reportNo) => "AATCC TM 135-2018t";
+                    map["A3"] = (w, dto, reportNo) => "AATCC TM 135-2025t";
                     map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 else if (dto.sampleDescription!.Contains("Garment"))
                 {
-                    map["A3"] = (w, dto, reportNo) => "AATCC TM 150-2018t/AATCC TS006";
+                    map["A3"] = (w, dto, reportNo) => "AATCC TM 150-2025t";
                     map["V5"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) == true ? "/ Iron" : w.IronMethod!;
                 }
                 return map;

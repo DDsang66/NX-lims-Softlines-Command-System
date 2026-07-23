@@ -31,7 +31,7 @@
         /// <summary>
         /// 买家自定义测试项目ID
         /// </summary>
-        public string? BuyerModifiedTestItemId { get; set; } = string.Empty;
+        public string? BuyerModifiedTestItemId { get; set; } = null;
 
         /// <summary>
         /// 标准ID
@@ -41,7 +41,7 @@
         /// <summary>
         /// 买家自定义测试方法ID
         /// </summary>
-        public string? BuyerModifiedTextMethodId { get; set; } = string.Empty;
+        public string? BuyerModifiedTextMethodId { get; set; } = null;
 
         /// <summary>
         /// 测试小组

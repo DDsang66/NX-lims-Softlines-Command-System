@@ -17,6 +17,11 @@
         /// </summary>
         public Guid OrderId { get; set; } = Guid.Empty;
 
+        /// <summary>
+        /// 测点列表
+        /// </summary>
+        public List<string> TestPoints { get; init; } = new();
+
         public Dictionary<string, object?> Conditions { get; set; }=new Dictionary<string, object?>();
     }
 }

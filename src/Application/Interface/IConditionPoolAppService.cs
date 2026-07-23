@@ -24,11 +24,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         Task<Result> UpdateConditionPoolAsync(UpdateConditionPoolDto dto, CancellationToken ct);
 
         /// <summary>
+        /// 分组条件池
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Result> GroupConditionPoolAsync(List<UpdateConditionPoolDto> dto, CancellationToken ct);
+
+        /// <summary>
         /// 获取条件池
         /// </summary>
         /// <param name="conditionPoolId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<Result<ConditionPoolResponseDto>> GetConditionPoolAsync(ConditionPoolId conditionPoolId, CancellationToken ct);
+        Task<Result<ConditionPoolResponseDto>> GetConditionPoolAsync(Guid conditionPoolId, CancellationToken ct);
     }
 }

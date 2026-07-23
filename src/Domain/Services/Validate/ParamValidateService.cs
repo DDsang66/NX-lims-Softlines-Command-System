@@ -134,9 +134,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
                 }
 
                 // 3. 验证类型正确性：如果值不为空，检查类型是否匹配
-                if (existing != null && pd.ParamType != null)
+                if (existing != null && pd.ParamTypeName != null)
                 {
-                    var expectedType = Type.GetType(pd.ParamType); // 假设定义里有 ParamType 字段
+                    var expectedType = Type.GetType(pd.ParamTypeName); // 假设定义里有 ParamType 字段
                     if (expectedType != null && !expectedType.IsAssignableFrom(existing.GetType()))
                     {
                         return false;

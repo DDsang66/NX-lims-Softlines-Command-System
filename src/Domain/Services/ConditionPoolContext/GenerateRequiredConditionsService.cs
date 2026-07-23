@@ -3,7 +3,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Services
+namespace NX_lims_Softlines_Command_System.src.Domain.Services.ConditionPoolContext
 {
     public class GenerateRequiredConditionsService: IGenerateRequiredConditionsService,IScopedDependency
     {
@@ -28,8 +28,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
                         condition[requirement.FieldName] = new
                         {
                             Type = requirement.FieldName.GetType(),
-                            IsRequired = requirement.IsRequired,
-                            AllowedValues = requirement.AllowedValues
+                            requirement.IsRequired,
+                            requirement.AllowedValues
                         };
                     }
                     else

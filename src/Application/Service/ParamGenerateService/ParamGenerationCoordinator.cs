@@ -110,7 +110,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             if (testItem == null)
                 return Result<ParamSet>.Fail("TestItem not found");
 
-            var definitions = testItem.ParamRequireDefinition;
+            var definitions = testItem.ParamRequireDefinitions;
 
             // 2. 领域逻辑：参数补偿（确保结构完整，缺失值补默认值）
             // 将具体的 foreach 和赋值逻辑封装到领域服务中

@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System;
 using System.Collections;
 using System.Globalization;
+using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
 {
@@ -23,6 +24,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         {
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
+
+            // JsonElement 先提取实际值
+            a = UnwrapJsonElement(a);
+            b = UnwrapJsonElement(b);
 
             if (TryConvertToDecimal(a, out var da) && TryConvertToDecimal(b, out var db))
                 return da == db;
@@ -117,19 +122,49 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         {
             d = 0m;
             if (v == null) return false;
-            try
+
+            // JsonElement 先解包
+            if (v is JsonElement je)
             {
-                if (v is decimal dec) { d = dec; return true; }
-                if (v is double db) { d = Convert.ToDecimal(db); return true; }
-                if (v is float f) { d = Convert.ToDecimal(f); return true; }
-                if (v is int i) { d = i; return true; }
-                if (v is long l) { d = l; return true; }
-                if (v is string s && decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
-                { d = parsed; return true; }
-                d = Convert.ToDecimal(v, CultureInfo.InvariantCulture);
-                return true;
+                v = je.ValueKind switch
+                {
+                    JsonValueKind.Number => je.GetDecimal(),
+                    JsonValueKind.String => je.GetString(),
+                    _ => null
+                };
+                if (v == null) return false;
             }
-            catch { return false; }
+
+            return v switch
+            {
+                decimal dec => (d = dec) == d,
+                double db => (d = (decimal)db) == d,
+                float f => (d = (decimal)f) == d,
+                int i => (d = i) == d,
+                long l => (d = l) == d,
+                string s => decimal.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out d),
+                IConvertible => decimal.TryParse(Convert.ToString(v), NumberStyles.Any, CultureInfo.InvariantCulture, out d),
+                _ => false
+            };
+        }
+
+        /// <summary>
+        /// 解包 JsonElement 为实际值
+        /// </summary>
+        private object? UnwrapJsonElement(object? value)
+        {
+            if (value is not JsonElement jsonElement)
+                return value;
+
+            return jsonElement.ValueKind switch
+            {
+                JsonValueKind.String => jsonElement.GetString(),
+                JsonValueKind.Number => jsonElement.TryGetDecimal(out var d) ? d : jsonElement.GetDouble(),
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                JsonValueKind.Null => null,
+                _ => value  // 其他类型保持原样
+            };
         }
 
         /// <summary>

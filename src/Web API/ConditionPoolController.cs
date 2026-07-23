@@ -29,5 +29,34 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
 
             return result;
         }
+
+        /// <summary>
+        /// 获取条件池
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        [HttpGet("{id}")]
+       public async Task<Result<ConditionPoolResponseDto>> GetConditionPoolAsync(Guid id, CancellationToken ct)
+        {
+            var result = await _conditionPoolAppService.GetConditionPoolAsync(id, ct);
+
+            return result;
+        }
+
+        /// <summary>
+        /// 分组条件池
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        [HttpPut("group")]
+        public async Task<Result> GroupConditionPoolAsync(List<UpdateConditionPoolDto> dto, CancellationToken ct) 
+        {
+            var result = await _conditionPoolAppService.GroupConditionPoolAsync(dto, ct);
+
+            return result;
+        }
+
     }
 }

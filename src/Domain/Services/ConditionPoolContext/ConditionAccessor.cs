@@ -4,7 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System;
 using System.Collections.Generic;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Services
+namespace NX_lims_Softlines_Command_System.src.Domain.Services.ConditionPoolContext
 {
     /// <summary>
     /// 条件访问器

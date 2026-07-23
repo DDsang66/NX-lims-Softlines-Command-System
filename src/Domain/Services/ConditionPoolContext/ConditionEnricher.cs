@@ -1,7 +1,7 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 
-namespace NX_lims_Softlines_Command_System.src.Domain.Services
+namespace NX_lims_Softlines_Command_System.src.Domain.Services.ConditionPoolContext
 {
     public class ConditionEnricher: IConditionEnricher
     {

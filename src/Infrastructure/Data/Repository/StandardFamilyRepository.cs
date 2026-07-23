@@ -79,45 +79,38 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task<StandardFamily?> GetByIdAsync(StandardFamilyId id, CancellationToken ct)
         {
-            var standardFamilyPo = await  _dbContext.FindAsync<BasicStandardFamily>(id.Value,ct);
+            var result = await _dbContext.BasicStandardFamilies
+                          .Where(sf => sf.IdStandardFamily == id)
+                          .Select(sf => new
+                          {
+                              Family = sf,
+                              StandardIds = _dbContext.BasicStandards
+                                  .Where(s => s.StandardFamilyCodeId == sf.IdStandardFamily)
+                                  .Select(s => s.IdStandard)
+                                  .ToList(),
+                              FormulaIds = _dbContext.FormulaStandardfamilies
+                                  .Where(f => f.IdStandardFamily == sf.IdStandardFamily)
+                                  .Select(f => f.FormulaId)
+                                  .ToList(),
+                              StructureIds = _dbContext.ParamsturctureStandardfamilies
+                                  .Where(p => p.IdStandardFamily == sf.IdStandardFamily)
+                                  .Select(p => p.ParamStructureId)
+                                  .ToList()
+                          })
+                          .FirstOrDefaultAsync(ct);
 
-            if (standardFamilyPo == null)
-                return null;
-
-            var standardIdTask =  _dbContext.BasicStandards
-                .Where(x => x.StandardFamilyCodeId == id.Value)
-                .Select(x => x.IdStandard)
-                .ToListAsync(ct);
-
-            var fomulaIdTask =   _dbContext.FormulaStandardfamilies
-                .Where(x => x.IdStandardFamily == id.Value)
-                .Select(x=>x.FormulaId)
-                .ToListAsync(ct);
-
-            var structureIdTask =  _dbContext.ParamsturctureStandardfamilies
-                .Where(x => x.IdStandardFamily == id.Value)
-                .Select(x => x.ParamStructureId)
-                .ToListAsync(ct);
-
-            // 等待所有查询完成
-            await Task.WhenAll(standardIdTask, fomulaIdTask, structureIdTask);
-
-            // 从 Task 中获取结果
-            var standardIdList = await standardIdTask;
-            var fomulaIdList = await fomulaIdTask;
-            var structureIdList = await structureIdTask;
+            if (result == null) return null;
 
             return StandardFamily.Reconstitute(
-                new StandardFamilyId(standardFamilyPo.IdStandardFamily),
-                standardFamilyPo.StandardFamilyCode,
-                standardIdList.Select(id => new StandardId(id)).ToList(),
-                fomulaIdList.Select(id => new FormulaId(id)).ToList(),
-                structureIdList.Select(id => new ParamStructureId(id)).ToList(),
-                standardFamilyPo.Version,
-                standardFamilyPo.EffectiveDate
+                new StandardFamilyId(result.Family.IdStandardFamily),
+                result.Family.StandardFamilyCode,
+                result.StandardIds.Select(id => new StandardId(id)).ToList(),
+                result.FormulaIds.Select(id => new FormulaId(id)).ToList(),
+                result.StructureIds.Select(id => new ParamStructureId(id)).ToList(),
+                result.Family.Version,
+                result.Family.EffectiveDate
             );
         }
-
 
         /// <summary>
         /// 根据标准id查询标准族
@@ -132,42 +125,36 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(x => x.StandardFamilyCodeId)
                 .FirstOrDefaultAsync(ct);
 
-            var standardFamilyPo = await _dbContext.FindAsync<BasicStandardFamily>(standardFamilyId, ct);
+            var result = await _dbContext.BasicStandardFamilies
+                .Where(sf => sf.IdStandardFamily == standardFamilyId)
+                .Select(sf => new
+                {
+                    Family = sf,
+                    StandardIds = _dbContext.BasicStandards
+                        .Where(s => s.StandardFamilyCodeId == sf.IdStandardFamily)
+                        .Select(s => s.IdStandard)
+                        .ToList(),
+                    FormulaIds = _dbContext.FormulaStandardfamilies
+                        .Where(f => f.IdStandardFamily == sf.IdStandardFamily)
+                        .Select(f => f.FormulaId)
+                        .ToList(),
+                    StructureIds = _dbContext.ParamsturctureStandardfamilies
+                        .Where(p => p.IdStandardFamily == sf.IdStandardFamily)
+                        .Select(p => p.ParamStructureId)
+                        .ToList()
+                })
+                .FirstOrDefaultAsync(ct);
 
-            if (standardFamilyPo == null)
-                return null;
-
-            var standardIdTask = _dbContext.BasicStandards
-                .Where(x => x.StandardFamilyCodeId == standardFamilyId)
-                .Select(x => x.IdStandard)
-                .ToListAsync(ct);
-
-            var fomulaIdTask = _dbContext.FormulaStandardfamilies
-                .Where(x => x.IdStandardFamily == standardFamilyId)
-                .Select(x => x.FormulaId)
-                .ToListAsync(ct);
-
-            var structureIdTask = _dbContext.ParamsturctureStandardfamilies
-                .Where(x => x.IdStandardFamily == standardFamilyId)
-                .Select(x => x.ParamStructureId)
-                .ToListAsync(ct);
-
-            // 等待所有查询完成
-            await Task.WhenAll(standardIdTask, fomulaIdTask, structureIdTask);
-
-            // 从 Task 中获取结果
-            var standardIdList = await standardIdTask;
-            var fomulaIdList = await fomulaIdTask;
-            var structureIdList = await structureIdTask;
+            if (result == null) return null;
 
             return StandardFamily.Reconstitute(
-                new StandardFamilyId(standardFamilyPo.IdStandardFamily),
-                standardFamilyPo.StandardFamilyCode,
-                standardIdList.Select(id => new StandardId(id)).ToList(),
-                fomulaIdList.Select(id => new FormulaId(id)).ToList(),
-                structureIdList.Select(id => new ParamStructureId(id)).ToList(),
-                standardFamilyPo.Version,
-                standardFamilyPo.EffectiveDate
+                new StandardFamilyId(result.Family.IdStandardFamily),
+                result.Family.StandardFamilyCode,
+                result.StandardIds.Select(id => new StandardId(id)).ToList(),
+                result.FormulaIds.Select(id => new FormulaId(id)).ToList(),
+                result.StructureIds.Select(id => new ParamStructureId(id)).ToList(),
+                result.Family.Version,
+                result.Family.EffectiveDate
             );
         }
 
