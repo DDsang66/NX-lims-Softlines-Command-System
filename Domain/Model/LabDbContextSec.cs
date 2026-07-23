@@ -65,6 +65,7 @@ public partial class LabDbContextSec : DbContext
     public virtual DbSet<LabelOption> LabelOptions { get; set; }
 
     public virtual DbSet<FiberDatabase> FiberDatabases { get; set; }
+    public virtual DbSet<Holiday> Holidays { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AdidasMethodItemMap>(entity =>
@@ -1085,6 +1086,17 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(500)
                 .IsUnicode(false)
                 .HasColumnName("text");
+        });
+
+        modelBuilder.Entity<Holiday>(entity =>
+        {
+            entity.HasKey(e => e.Date);
+            entity.ToTable("holiday");
+            entity.Property(e => e.Date).HasColumnName("date");
+            entity.Property(e => e.Name)
+                .HasMaxLength(100)
+                .HasColumnName("name");
+            entity.Property(e => e.IsMakeup).HasColumnName("is_makeup");
         });
 
         OnModelCreatingPartial(modelBuilder);
