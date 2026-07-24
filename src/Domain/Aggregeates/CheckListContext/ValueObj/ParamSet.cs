@@ -1,9 +1,10 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 using System;
 using System.Collections.Generic;
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj
 {
-    public class ParamSet
+    public class ParamSet:ValueObject
     {
         private readonly Dictionary<string, object?> _values = new(StringComparer.OrdinalIgnoreCase);
 
@@ -128,6 +129,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             if (existing != null) list.Add(existing);
             if (incoming != null) list.Add(incoming);
             return list.Count > 0 ? list : null;
+        }
+
+
+        protected override IEnumerable<object> GetEqualityComponents() 
+        {
+            yield return Values;
         }
     }
 }

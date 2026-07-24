@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Bibliography;
 using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Application.Service.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
@@ -10,10 +11,10 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
     [Route("api/[controller]")] 
     public class CheckListController : ControllerBase
     {
-        private readonly CheckListAppService _checkListAppService;
+        private readonly ICheckListAppService _checkListAppService;
 
         // 1. 通过构造函数依赖注入 AppService
-        public CheckListController(CheckListAppService checkListAppService)
+        public CheckListController(ICheckListAppService checkListAppService)
         {
             _checkListAppService = checkListAppService;
         }
@@ -50,7 +51,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="checkListId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        [HttpGet("{checkListId}")]
+        [HttpGet("{checkListId}/generate-param")]
         public async Task<Result<CheckListResponseDto>> GetCheckListById(Guid checkListId, CancellationToken ct) 
         {
             var result = await _checkListAppService.GetCheckListAsync(checkListId,ct);

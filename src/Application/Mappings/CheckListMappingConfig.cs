@@ -7,6 +7,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Value
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using System.Reflection;
 using System.Text.Json;

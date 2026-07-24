@@ -17,7 +17,7 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListContext
 {
-    public class CheckListAppService:IScopedDependency
+    public class CheckListAppService:IScopedDependency,ICheckListAppService
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICheckListRepository _checkListRepository;

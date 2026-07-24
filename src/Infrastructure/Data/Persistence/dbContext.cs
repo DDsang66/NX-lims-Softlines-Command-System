@@ -162,6 +162,11 @@ public partial class dbContext : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("id_item");
+            entity.Property(e => e.Description)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("description");
+            entity.Property(e => e.IsFeasible).HasColumnName("is_feasible");
             entity.Property(e => e.ItemNameChn)
                 .HasMaxLength(150)
                 .IsUnicode(false)
@@ -170,14 +175,11 @@ public partial class dbContext : DbContext
                 .HasMaxLength(150)
                 .IsUnicode(false)
                 .HasColumnName("item_name_en");
-            entity.Property(e => e.ItemTypeFir)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("item_type_fir");
-            entity.Property(e => e.ItemTypeSec)
-                .HasMaxLength(25)
-                .IsUnicode(false)
-                .HasColumnName("item_type_sec");
+            entity.Property(e => e.ParamRequireDenfinition)
+                .HasColumnType("text")
+                .HasColumnName("param_require_denfinition");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TestGroup).HasColumnName("test_group");
         });
 
         modelBuilder.Entity<BasicParam>(entity =>

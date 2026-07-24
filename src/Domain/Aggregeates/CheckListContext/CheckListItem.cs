@@ -3,6 +3,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.V
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext
 {

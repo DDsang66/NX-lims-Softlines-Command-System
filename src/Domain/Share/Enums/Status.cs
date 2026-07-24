@@ -1,4 +1,4 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Domain.Share
+﻿namespace NX_lims_Softlines_Command_System.src.Domain.Share.Enums
 {
     public enum Status
     {

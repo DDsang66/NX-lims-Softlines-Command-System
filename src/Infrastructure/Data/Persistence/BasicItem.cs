@@ -11,7 +11,13 @@ public partial class BasicItem
 
     public string ItemNameChn { get; set; } = null!;
 
-    public string? ItemTypeFir { get; set; }
+    public byte TestGroup { get; set; }
 
-    public string? ItemTypeSec { get; set; }
+    public string? Description { get; set; }
+
+    public byte Status { get; set; }
+
+    public string? ParamRequireDenfinition { get; set; }
+
+    public bool IsFeasible { get; set; }
 }

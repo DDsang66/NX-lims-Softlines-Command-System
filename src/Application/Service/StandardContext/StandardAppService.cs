@@ -6,6 +6,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardContext
 {

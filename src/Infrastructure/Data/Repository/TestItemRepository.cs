@@ -27,7 +27,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// </summary>
         /// <param name="aggregateRoot"></param>
         /// <returns></returns>
-        public async Task UpdateAsync(TestItem aggregateRoot, CancellationToken ct) { }
+        public async Task UpdateAsync(TestItem aggregateRoot, CancellationToken ct)
+        {
+            var testItemPo = aggregateRoot.Adapt<BasicItem>();
+
+            _dbContext.Update(testItemPo);
+        }
 
         /// <summary>
         /// 查询聚合根
