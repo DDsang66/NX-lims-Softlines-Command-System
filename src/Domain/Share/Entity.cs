@@ -17,7 +17,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Share
         /// </summary>
         /// <param name="id"></param>
         /// <exception cref="ArgumentException"></exception>
-        public void ReconstructId(Guid id)
+        public virtual void ReconstructId(Guid id)
         {
             if (id == Guid.Empty) throw new ArgumentException("Id cannot be empty.");
             Id = id; // 同类内部可以访问 protected set

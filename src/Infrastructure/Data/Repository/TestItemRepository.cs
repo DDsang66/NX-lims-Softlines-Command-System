@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract;
@@ -30,8 +31,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task UpdateAsync(TestItem aggregateRoot, CancellationToken ct)
         {
             var testItemPo = aggregateRoot.Adapt<BasicItem>();
+            // 1. 先在当前 DbContext 的本地跟踪图中查找同主键的旧实体
+            var localEntity = _dbContext.Set<BasicItem>().Local.FirstOrDefault(e => e.IdItem == testItemPo.IdItem);
 
-            _dbContext.Update(testItemPo);
+            // 2. 如果旧实体正在被跟踪，则将其从跟踪图中剥离
+            if (localEntity != null)
+            {
+                _dbContext.Entry(localEntity).State = EntityState.Detached;
+            }
+
+            // 3. 此时跟踪图中已无冲突，安全地附加新实体并标记为修改状态
+            _dbContext.Entry(testItemPo).State = EntityState.Modified;
         }
 
         /// <summary>

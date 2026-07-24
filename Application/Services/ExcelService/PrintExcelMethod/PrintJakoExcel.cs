@@ -322,9 +322,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Washing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => dto.Standard!,
-                ["B4"] = (w, dto, reportNo) => w.Program!,
-                ["E4"] = (w, dto, reportNo) => w.Temperature!,
+                ["A3"] = (w, dto, reportNo) => dto.Standard!??"DIN EN ISO 105-C06:2010",
+                ["B4"] = (w, dto, reportNo) => w.Program!??"A2S",
+                ["E4"] = (w, dto, reportNo) => w.Temperature!??"40",
                 ["L5"] = (w, dto, reportNo) => w.SteelBallNum.ToString()!
             },
             ["CF to Rubbing"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>

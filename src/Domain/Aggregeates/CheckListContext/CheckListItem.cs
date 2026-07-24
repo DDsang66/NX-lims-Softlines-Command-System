@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
@@ -62,12 +63,52 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// 项目状态
         /// </summary>
         public CheckListStatus Status { get; set; } = CheckListStatus.Created;
-       
+
         /// <summary>
         /// 测试清单ID
         /// </summary>
         public CheckListId CheckListId { get; set; } = new CheckListId(Guid.NewGuid());
 
+        /// <summary>
+        /// 重建
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="checkListId"></param>
+        /// <param name="testItemId"></param>
+        /// <param name="standardIds"></param>
+        /// <param name="buyerModifiedTestItemId"></param>
+        /// <param name="buyerModifiedTextMethodId"></param>
+        /// <param name="testGroup"></param>
+        /// <param name="testPointParams"></param>
+        /// <param name="samples"></param>
+        /// <param name="status"></param>
+        /// <returns></returns>
+        public static CheckListItem Reconstitute(
+            Guid id,
+            CheckListId checkListId,
+            TestItemId testItemId,
+            List<StandardId> standardIds,
+            string buyerModifiedTestItemId,
+            string buyerModifiedTextMethodId,
+            TestGroup testGroup,
+            IReadOnlyDictionary<string, ParamSet?> testPointParams,
+            List<string> samples,
+            CheckListStatus status)
+        {
+            return new CheckListItem
+            {
+                Id = id,
+                CheckListId = checkListId,
+                TestItemId = testItemId,
+                StandardIds = standardIds,
+                BuyerModifiedTestItemId = buyerModifiedTestItemId,
+                BuyerModifiedTextMethodId = buyerModifiedTextMethodId,
+                TestGroup = testGroup,
+                TestPointParams = testPointParams,
+                Samples = samples,
+                Status = status
+            };
+        }
 
         /// <summary>
         /// 添加或更新测点参数集

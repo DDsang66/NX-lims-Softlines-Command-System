@@ -55,22 +55,32 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task UpdateAsync(Domain.Aggregeates.CheckListContext.CheckList aggregateRoot, CancellationToken ct) 
         {
-            var checkListPo = aggregateRoot.Adapt<CheckList>();
+            var existingPo = await _dbContext.CheckLists.FindAsync(aggregateRoot.Id.Value);
 
-            // 手动映射并添加子实体到 PO 的集合中
+            aggregateRoot.Adapt(existingPo);
+
             if (aggregateRoot.Items != null)
             {
                 foreach (var item in aggregateRoot.Items)
                 {
-                    var itemPo = item.Adapt<Persistence.CheckListItem>();
-
-                     _dbContext.Update(itemPo);
+                    var itemPo = await _dbContext.CheckListItems.FindAsync(item.Id);
+                    itemPo.TestItemId = item.TestItemId == null ? string.Empty : item.TestItemId.Value;
+                    itemPo.StandardId = string.Join(",", item.StandardIds.Select(id => id.Value));
+                    itemPo.BuyerModifiedTestItem = item.BuyerModifiedTestItemId;
+                    itemPo.BuyerModifiedTestStandard = item.BuyerModifiedTextMethodId;
+                    itemPo.TestGroup = (byte)item.TestGroup;
+                    itemPo.TestPointParams = System.Text.Json.JsonSerializer.Serialize(
+                        item.TestPointParams,
+                        new System.Text.Json.JsonSerializerOptions
+                        {
+                            WriteIndented = false,
+                            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                        });
+                    itemPo.Samples = string.Join(",", item.Samples);
+                    itemPo.Status = (byte)item.Status;
                 }
             }
-
-            _dbContext.Update(checkListPo);
-
-            await Task.CompletedTask;
+            _dbContext.CheckLists.Update(existingPo);
         }
 
         /// <summary>

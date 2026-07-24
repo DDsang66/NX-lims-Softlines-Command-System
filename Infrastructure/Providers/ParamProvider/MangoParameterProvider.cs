@@ -1,9 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 
 namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvider
@@ -78,34 +80,46 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             string? largestVarName = await _helper.MaxCompositionType(infoDto.fiberComposition!)!;
             string menuName = infoDto.menuName!;
             if (menuName == null) { return null; }
+
+            var ElasticLoad = string.Empty;
+            var rate = _helper.CompositionRate(infoDto.fiberComposition, "Elastane") + _helper.CompositionRate(infoDto.fiberComposition, "Spandex");
+            if ((infoDto.menuName!).Contains("Woven")) return ElasticLoad = "30";
+            if (rate.HasValue && rate < 5) return ElasticLoad = "15";
+            if (rate.HasValue && 5 <= rate && rate < 11) return ElasticLoad = "20";
+            if (rate.HasValue && rate >= 11) return ElasticLoad = "25";
+
             // 2. 根据 Menu/Item 组合查表
-            return GetParameter(menuName, ItemName, largestVarName);//返回一个string类型的Parameter
+            return GetParameter(menuName, ItemName, largestVarName, ElasticLoad);//返回一个string类型的Parameter
         }
 
         // ---------- 2. 映射表 ----------
-        private static readonly Dictionary<(string Menu, string Item, string? Lv), string?> _map = new()
+        private static readonly Dictionary<(string Menu, string Item, string? Lv,string? elasticLoad), string?> _map = new()
         {
-            [("Knit(Mango)", "Pilling Resistance", "Vegetable")] = "Cycle: 14400 revs",
-            [("Knit(Mango)", "Pilling Resistance", "Man-made")] = "Cycle: 10800 revs",
-            [("Knit(Mango)", "Pilling Resistance", "Synthetic")] = "Cycle: 10800 revs",
-            [("Knit(Mango)", "Pilling Resistance", "Animal")] = "Cycle: 7200 revs",
-            [("Knit(Mango)", "Pilling Resistance", null)] = null,
-            [("Knit(Mango)", "CF to Light", null)] = "Light: L-5",
+            [("Knit(Mango)", "Pilling Resistance", "Vegetable",null)] = "Cycle: 14400 revs",
+            [("Knit(Mango)", "Pilling Resistance", "Man-made", null)] = "Cycle: 10800 revs",
+            [("Knit(Mango)", "Pilling Resistance", "Synthetic", null)] = "Cycle: 10800 revs",
+            [("Knit(Mango)", "Pilling Resistance", "Animal", null)] = "Cycle: 7200 revs",
+            [("Knit(Mango)", "Pilling Resistance", null, null)] = null,
+            [("Knit(Mango)", "CF to Light", null, null)] = "Light: L-5",
+            [("Knit(Mango)", "Extension and Recovery", null, "15")] = "Load: 15N",
+            [("Knit(Mango)", "Extension and Recovery", null, "20")] = "Load: 20N",
+            [("Knit(Mango)", "Extension and Recovery", null, "25")] = "Load: 25N",
 
-            [("Woven(Mango)", "Water Resistance-Hydrostatic Pressure", null)] = "Pressure: 90cm H2O",
-            [("Woven(Mango)", "CF to Light", null)] = "Light: L-5",
-            [("Woven(Mango)", "Snagging Resistance", null)] = "Cycle: 600 revs",
-            [("Woven(Mango)", "Pilling Resistance", null)] = "Cycle: 2000 revs",
-            [("Woven(Mango)", "Abrasion Resistance", null)] = "Load: 9KPa,Cycle: 15000 revs",
+            [("Woven(Mango)", "Water Resistance-Hydrostatic Pressure", null, null)] = "Pressure: 90cm H2O",
+            [("Woven(Mango)", "Extension and Recovery", null, "30")] = "Load: 30N",
+            [("Woven(Mango)", "CF to Light", null, null)] = "Light: L-5",
+            [("Woven(Mango)", "Snagging Resistance", null, null)] = "Cycle: 600 revs",
+            [("Woven(Mango)", "Pilling Resistance", null, null)] = "Cycle: 2000 revs",
+            [("Woven(Mango)", "Abrasion Resistance", null, null)] = "Load: 9KPa,Cycle: 15000 revs",
         };
 
-        private static string? GetParameter(string menu, string item, string? lv)
+        private static string? GetParameter(string menu, string item, string? lv, string? elasticLoad)
         {
             // 1) 先精确匹配 (Menu, Item, Lv)
-            if (_map.TryGetValue((menu, item, lv), out var exact)) return exact;
+            if (_map.TryGetValue((menu, item, lv, elasticLoad), out var exact)) return exact;
 
             // 2) 再匹配 (Menu, Item, any)
-            if (_map.TryGetValue((menu, item, null), out var fallback)) return fallback;
+            if (_map.TryGetValue((menu, item, null,null), out var fallback)) return fallback;
 
             return null!;
         }

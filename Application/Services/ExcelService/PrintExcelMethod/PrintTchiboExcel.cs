@@ -32,6 +32,22 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
             List<CheckListDto> checkLists = new List<CheckListDto>();
             foreach (var row in selectedRows!) checkLists.Add(new CheckListDto().CreateDto(row, menu, sampleDescription));
+            var massPerUnitAreaRow = checkLists.FirstOrDefault(row => new[] { "Seam Slippage" }.Contains(row.ItemName));
+
+            if (massPerUnitAreaRow != null && checkLists.FirstOrDefault(row => row.ItemName == "Weight") == null)
+            {
+                checkLists.Add(new CheckListDto
+                {
+                    ItemName = "Weight",
+                    Standard = "ISO 3801:1977",
+                    Parameter = "Single unit weight",
+                    Type = "Physics",
+                    Sample = massPerUnitAreaRow.Sample,
+                    Extra = null,
+                    MenuName = menu,
+                    sampleDescription = sampleDescription,
+                });
+            }
             foreach (var dto in checkLists)
             {
                 Console.WriteLine($"{dto.ItemName} -> {dto.Type}");
@@ -362,12 +378,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A36"] = (w, dto, reportNo) => dto.Standard!,
             },
         };
-        private static readonly Dictionary<string, Func<WetParameterIso,CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, Dictionary<string, Func<WetParameterIso,CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>>> PhyExtraMap = new()
+        private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>>> PhyExtraMap = new()
         {
-            ["Weight"]= (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
-            {
-                ["J1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
-                ["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
+            ["Weight"] = (wp, dto, esDto, ws, reportNo) => {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["J1"] = (wp, dto, esDto, ws, reportNo) => reportNo;
+                map["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!;
+                if (dto.Parameter!=null && dto.Parameter.Contains("Single"))
+                {
+                    map["S4"] = (wp, dto, esDto, ws, reportNo) => "单克重";
+                }
+                return map;
             },
             ["Yarn Count"] = (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
@@ -400,33 +421,33 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["M1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
                 ["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
             },
-            ["Extension and Recovery"] = (wp, dto, esDto, ws, reportNo) => 
+            ["Extension and Recovery"] = (wp, dto, esDto, ws, reportNo) =>
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
                 map["M1"] = (wp, dto, esDto, ws, reportNo) => reportNo;
                 map["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!;
-                map["AC7"] = (wp, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("N/A")?"N/A":"";
+                map["AC7"] = (wp, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("N/A") ? "N/A" : "";
                 if (dto.sampleDescription!.Contains("Woven") && !dto.Parameter!.Contains("N/A"))
                 {
                     map["F7"] = (wp, dto, esDto, ws, reportNo) => "30";
                     map["A5"] = (wp, dto, esDto, ws, reportNo) => dto.sampleDescription!.Contains("Loop") ?
-                    "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min" 
+                    "Woven/Non-woven Fabric: method B---Loop trials Perimeter =200mm Speed =100mm/min"
                     : "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
                 }
-                else if (dto.sampleDescription!.Contains("Knit") && !dto.Parameter!.Contains("N/A")) 
+                else if (dto.sampleDescription!.Contains("Knit") && !dto.Parameter!.Contains("N/A"))
                 {
                     map["A5"] = (wp, dto, esDto, ws, reportNo) => dto.sampleDescription!.Contains("Loop") ?
                     "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
                     "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
                     map["F7"] = (wp, dto, esDto, ws, reportNo) =>
-                    dto.sampleDescription!.Contains("3")?"3"
+                    dto.sampleDescription!.Contains("3") ? "3"
                     : dto.sampleDescription!.Contains("4") ? "4"
                     : dto.sampleDescription!.Contains("5") ? "5"
                     : dto.sampleDescription!.Contains("6") ? "6"
                     : dto.sampleDescription!.Contains("7") ? "7"
                     : dto.sampleDescription!.Contains("8") ? "8"
                     : dto.sampleDescription!.Contains("10") ? "10"
-                    :"14";
+                    : "14";
                 }
                 map["L7"] = (wp, dto, esDto, ws, reportNo) => "5";
                 return map;

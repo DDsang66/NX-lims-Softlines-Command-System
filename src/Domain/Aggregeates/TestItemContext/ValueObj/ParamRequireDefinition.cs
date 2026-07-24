@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using System.Text.Json.Serialization;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj
 {
@@ -22,7 +23,24 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
         public IReadOnlyDictionary<string, string> StandardDefaults { get; private set; }
             = new Dictionary<string, string>();
 
+        // 保留无参构造函数（EF Core 需要）
         private ParamRequireDefinition() { }
+
+        // ✅ JSON 反序列化专用构造函数
+        [JsonConstructor]
+        private ParamRequireDefinition(
+            string paramName,
+            string paramTypeName,
+            bool isRequired,
+            string? universalDefault,
+            IReadOnlyDictionary<string, string> standardDefaults)
+        {
+            ParamName = paramName;
+            ParamTypeName = paramTypeName;
+            IsRequired = isRequired;
+            UniversalDefault = universalDefault;
+            StandardDefaults = standardDefaults ?? new Dictionary<string, string>();
+        }
 
         /// <summary>
         /// 工厂创建参数定义
@@ -38,13 +56,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
             string? universalDefault = null,
             bool isRequired = true)
         {
-            return new ParamRequireDefinition
-            {
-                ParamName = paramName,
-                ParamTypeName = paramTypeName,
-                UniversalDefault = universalDefault,
-                IsRequired = isRequired
-            };
+            return new ParamRequireDefinition(
+                paramName,
+                paramTypeName,
+                isRequired,
+                universalDefault,
+                new Dictionary<string, string>());
         }
 
         /// <summary>
@@ -59,8 +76,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
         {
             var dict = new Dictionary<string, string>(StandardDefaults);
             dict[standardType.ToString()] = defaultValue;
-            StandardDefaults = dict;
-            return this;
+
+            // 返回新实例（值对象不可变，应该用新实例）
+            return new ParamRequireDefinition(
+                ParamName,
+                ParamTypeName,
+                IsRequired,
+                UniversalDefault,
+                dict);
         }
 
         /// <summary>

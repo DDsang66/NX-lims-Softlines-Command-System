@@ -60,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     TestPointParams = JsonSerializer.Serialize(
                         src.TestPointParams.ToDictionary(
                             kvp => kvp.Key,
-                            kvp => kvp.Value // 如果 ParamSet 有 Values 属性
+                            kvp => kvp.Value.Values// 如果 ParamSet 有 Values 属性
                         ),
                         new JsonSerializerOptions { WriteIndented = true }
                     ),
@@ -86,38 +86,27 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
 
             // ========== CheckListItem 反向映射 (数据库模型 => Entity) ==========
             config.NewConfig<src.Infrastructure.Data.Persistence.CheckListItem, CheckListItem>()
-                .MapWith(src => new CheckListItem
-                {
-                    CheckListId = new CheckListId(src.CheckListId),
-
-                    // 还原空字符串为 null
-                    TestItemId = string.IsNullOrEmpty(src.TestItemId) ? null : new TestItemId(src.TestItemId),
-
-                    // 将逗号拼接的字符串拆分为集合 (假设 StandardIds 是 List<string> 或 IEnumerable<string>)
-                    StandardIds = string.IsNullOrEmpty(src.StandardId)
-                    ? Enumerable.Empty<StandardId?>()
-                    : src.StandardId
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(s => (StandardId?)new StandardId(s)),
-
-                    BuyerModifiedTestItemId = src.BuyerModifiedTestItem,
-                    BuyerModifiedTextMethodId = src.BuyerModifiedTestStandard,
-
-                    // 将 byte 强转回枚举类型
-                    TestGroup = (TestGroup)src.TestGroup,
-
-                    // 使用 AddOrUpdateTestPointParam 方法重建 TestPointParams
-                    TestPointParams = ReconstructTestPointParams(src.TestPointParams),
-
-                    // 将逗号拼接的字符串拆分为集合
-                    Samples = string.IsNullOrEmpty(src.Samples)
+                .MapWith(src => CheckListItem.Reconstitute(
+                    src.CheckListItemId,
+                    new CheckListId(src.CheckListId),
+                    string.IsNullOrEmpty(src.TestItemId) 
+                    ? null 
+                    : new TestItemId(src.TestItemId),
+                    string.IsNullOrEmpty(src.StandardId)
+                        ? new List<StandardId>()
+                        : src.StandardId
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => new StandardId(s))
+                            .ToList(),
+                    src.BuyerModifiedTestItem ?? string.Empty,
+                    src.BuyerModifiedTestStandard ?? string.Empty,
+                    (TestGroup)src.TestGroup,
+                    ReconstructTestPointParams(src.TestPointParams),
+                    string.IsNullOrEmpty(src.Samples)
                         ? new List<string>()
                         : src.Samples.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
-
-                    // 将 byte 强转回枚举类型
-                    Status = (CheckListStatus)src.Status
-                });
-
+                    (CheckListStatus)src.Status
+                ));
         }
 
         /// <summary>

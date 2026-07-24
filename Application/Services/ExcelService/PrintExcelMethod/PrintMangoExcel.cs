@@ -170,6 +170,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Tear Strength"] = "Tear Strength",
             ["Abrasion Resistance"] = "Abrasion&Snagging Resistance",
             ["Snagging Resistance"] = "Abrasion&Snagging Resistance",
+            ["Extension and Recovery"] = "Elongation"
         };
         private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
@@ -200,6 +201,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["Tear Strength"] = (n, m, y) => ExcelMangoMapper.GetSTCellAddresses(n),
             ["Abrasion Resistance"] = (n, m, y) => ExcelMangoMapper.GetASCellAddresses(n),
             ["Snagging Resistance"] = (n, m, y) => ExcelMangoMapper.GetASCellAddresses(n),
+            ["Extension and Recovery"] = (n, m, y) => ExcelMangoMapper.GetElongationAddress(),
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
@@ -286,6 +288,32 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["J1"] = (dto, reportNo) => reportNo,
                 ["A3"] = (dto, reportNo) => dto.Standard!
+            },
+            ["Extension and Recovery"] = (dto, reportNo) =>
+            {
+                var map = new Dictionary<string, Func<CheckListDto, string, string>>();
+                switch (dto.MenuName)
+                {
+                    case "Knit(Mango)":
+                        map["M1"] = (dto, reportNo) => reportNo;
+                        map["A3"] = (dto, reportNo) => dto.Standard!;
+                        map["A5"] = (dto, reportNo) => "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
+                        map["F7"] = (dto, reportNo) => dto.Parameter!.Contains("15") ? "15"
+                        : dto.Parameter!.Contains("20") ? "20"
+                        : "25";
+                        map["L7"] = (dto, reportNo) => "5"!;
+                        break;
+                    case "Woven(Mango)":
+                        map["M1"] = (dto, reportNo) => reportNo;
+                        map["A3"] = (dto, reportNo) => dto.Standard!;
+                        map["A5"] = (dto, reportNo) => "Woven/Non-woven Fabric: method A---Stripe trials  Guage length=200mm  Speed =200mm/min.";
+                        map["F7"] = (dto, reportNo) => "30"!;
+                        map["L7"] = (dto, reportNo) => "5"!;
+                        break;
+                    default:
+                        break;
+                }
+                return map;
             },
             ["Pilling Resistance"] = (dto, reportNo) =>
             {

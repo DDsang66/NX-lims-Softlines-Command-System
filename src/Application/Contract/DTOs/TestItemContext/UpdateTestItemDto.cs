@@ -22,46 +22,46 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TestIte
         /// <summary>
         /// 描述
         /// </summary>
-        public string Description { get; private set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
 
         /// <summary>
         /// 测试组别
         /// </summary>
-        public int Group { get; private set; }
+        public int Group { get; set; }
 
         /// <summary>
         /// 是否在能力范围内
         /// </summary>
-        public bool IsFeasible { get; private set; }
+        public bool IsFeasible { get; set; }
 
         /// <summary>
         /// 项目状态
         /// </summary>
-        public int Status { get; private set; }
+        public int Status { get; set; }
 
         /// <summary>
         /// 项目参数定义
         /// </summary>
-        public IEnumerable<ParamRequireDefinitionDto> ParamRequireDefinitions { get; set; } = new List<ParamRequireDefinitionDto>();
+        public List<ParamRequireDefinitionDto> ParamRequireDefinitions { get; set; } = new List<ParamRequireDefinitionDto>();
     }
 
     public record ParamRequireDefinitionDto 
     {
-        public string ParamName { get; private set; } = string.Empty;
-        public string ParamTypeName { get; private set; } = "System.String";
-        public bool IsRequired { get; private set; }
+        public string ParamName { get; set; } = string.Empty;
+        public string ParamTypeName { get;  set; } = "System.String";
+        public bool IsRequired { get; set; }
 
         /// <summary>
         /// 通用默认值（所有标准适用）
         /// </summary>
-        public string? UniversalDefault { get; private set; }
+        public string? UniversalDefault { get; set; }
 
         /// <summary>
         /// 标准特定默认值（覆盖通用值）
         /// Key: StandardType 字符串
         /// Value: 默认值字符串
         /// </summary>
-        public IDictionary<string, string> StandardDefaults { get; private set; }
+        public IDictionary<string, string> StandardDefaults { get; set; }
             = new Dictionary<string, string>();
     }
 }

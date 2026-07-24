@@ -33,7 +33,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             
             var massPerUnitAreaRow = checkLists.FirstOrDefault(row =>new[] { "Seam Slippage" }.Contains(row.ItemName));
 
-            if (massPerUnitAreaRow != null && checkLists.FirstOrDefault(row => row.ItemName == "Mass per Unit Area") == null)
+            if (massPerUnitAreaRow != null && checkLists.FirstOrDefault(row => row.ItemName == "Weight") == null)
             {
                 checkLists.Add(new CheckListDto
                 {

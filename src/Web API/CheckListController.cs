@@ -51,7 +51,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="checkListId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        [HttpGet("{checkListId}/generate-param")]
+        [HttpGet("{checkListId}")]
         public async Task<Result<CheckListResponseDto>> GetCheckListById(Guid checkListId, CancellationToken ct) 
         {
             var result = await _checkListAppService.GetCheckListAsync(checkListId,ct);
@@ -65,7 +65,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="checkListId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        [HttpPut("{checkListId}")]
+        [HttpPut("{checkListId}/generate-param")]
         public async Task<Result> GenerateParam(Guid checkListId, CancellationToken ct) 
         {
             var result = await _checkListAppService.CalculateParamAsync(checkListId,ct);

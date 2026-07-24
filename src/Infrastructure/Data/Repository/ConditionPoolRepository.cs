@@ -40,9 +40,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task UpdateAsync(Domain.Aggregeates.ParamEngineContext.ConditionPoolContext.ConditionPool aggregateRoot, CancellationToken ct) 
         {
-            var conditionPoolPo = aggregateRoot.Adapt<src.Infrastructure.Data.Persistence.ConditionPool>();
+            var conditionPoolPo = await _dbContext.ConditionPools.FindAsync(aggregateRoot.Id.Value, ct);
 
-            _dbContext.Update(conditionPoolPo);
+            aggregateRoot.Adapt(conditionPoolPo);
+
+            _dbContext.ConditionPools.Update(conditionPoolPo);
         }
 
         /// <summary>

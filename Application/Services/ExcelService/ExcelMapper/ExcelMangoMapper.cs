@@ -51,6 +51,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
 
         }
 
+        public static string[] GetElongationAddress() 
+        {
+            return new string[] 
+            {
+                "A37"
+            };
+        }
         public static string[] GetPWDCellAddresses(string ItemName)
         {
             List<string>? stringPWD = null;

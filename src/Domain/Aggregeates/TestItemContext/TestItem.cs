@@ -172,13 +172,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
                 NameChn = nameChn.Trim();
             }
 
-            if (description != null)
-            {
-                if (string.IsNullOrWhiteSpace(description))
-                    throw new ArgumentException("Description cannot be empty.", nameof(description));
-                Description = description.Trim();
-            }
-
             if (isFeasible.HasValue)
                 IsFeasible = isFeasible.Value;
 
