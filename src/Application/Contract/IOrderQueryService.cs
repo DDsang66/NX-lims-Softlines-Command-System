@@ -1,4 +1,4 @@
-using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.OrderContext;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Contract
 {

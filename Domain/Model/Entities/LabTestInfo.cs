@@ -5,11 +5,11 @@ namespace NX_lims_Softlines_Command_System.Domain.Model.Entities;
 
 public partial class LabTestInfo
 {
-    public long Id { get; set; }
+    public Guid Id { get; set; }
 
     public string? ReportNumber { get; set; }
 
-    public Guid? OrderId { get; set; }
+    public string? OrderId { get; set; }
 
     public string? Reviewer { get; set; }
 

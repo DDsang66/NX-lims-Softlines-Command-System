@@ -3,9 +3,9 @@
     public record AddCheckListDto
     {
         /// <summary>
-        /// 关联的订单ID
+        /// 关联的订单ID（ReportNumber）
         /// </summary>
-        public Guid? SourceId { get; set; } = new Guid();// 关联的订单ID
+        public string? SourceId { get; set; }
 
         /// <summary>
         /// 测试清单中的测试项

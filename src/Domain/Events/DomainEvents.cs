@@ -24,7 +24,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Events
             AggregateRootId = aggregateRootId ?? throw new ArgumentNullException(nameof(aggregateRootId));
         }
 
-        // --- 以下是领域事件派发相关的静态方法（保持原逻辑，仅优化代码） ---
+        // --- 以下是领域事件派发相关的静态方法 ---
 
         public static List<IDomainEvent> GetEvents()
         {
@@ -43,6 +43,5 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Events
 
         // 实现接口方法
         public string GetAggregateRootIdString() => AggregateRootId.Value.ToString()!;
-
     }
 }

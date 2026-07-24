@@ -20,7 +20,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.OrderC
         /// <summary>判断 ReportNumber + TestGroup 是否已存在</summary>
         Task<bool> ExistsAsync(OrderId id, string testGroup, CancellationToken ct);
 
-        /// <summary>根据 LineId 查所属 ReportNumber</summary>
-        Task<Guid?> GetOrderIdByLineIdAsync(long lineId, CancellationToken ct);
+        /// <summary>根据 LineId 查所属 ReportNumber（订单标识）</summary>
+        Task<string?> GetOrderIdByLineIdAsync(Guid lineId, CancellationToken ct);
     }
 }

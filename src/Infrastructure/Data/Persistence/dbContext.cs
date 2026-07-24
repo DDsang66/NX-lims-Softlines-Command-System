@@ -333,7 +333,10 @@ public partial class dbContext : DbContext
             entity.Property(e => e.CreatedTime)
                 .HasColumnType("datetime")
                 .HasColumnName("created_time");
-            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.OrderId)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("order_id");
             entity.Property(e => e.Remark)
                 .HasMaxLength(250)
                 .IsUnicode(false)

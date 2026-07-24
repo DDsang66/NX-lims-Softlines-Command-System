@@ -3,15 +3,15 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj
 {
     /// <summary>
-    /// 订单标识值对象（即 ReportNumber，如 "87.405.26.0001.01"）
+    /// 订单标识 = 报告号（字符串业务主键）
     /// </summary>
-    public sealed class OrderId:AggregateRootId<Guid>
+    public sealed class OrderId : AggregateRootId<string>
     {
-        public OrderId(Guid value)
-            :base(value)
+        public OrderId(string reportNumber)
+            : base(reportNumber)
         {
-            if (value == Guid.Empty)
-                throw new ArgumentNullException("OrderId cannot be empty", nameof(value));
+            if (string.IsNullOrWhiteSpace(reportNumber))
+                throw new ArgumentException("OrderId (ReportNumber) cannot be empty", nameof(reportNumber));
         }
     }
 }

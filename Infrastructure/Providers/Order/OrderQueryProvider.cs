@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.OrderContext;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;

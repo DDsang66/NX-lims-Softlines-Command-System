@@ -390,7 +390,10 @@ public partial class LabDbContextSec : DbContext
                 .HasMaxLength(20)
                 .IsUnicode(false)
                 .HasColumnName("report_number");
-            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.OrderId)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("order_id");
             entity.Property(e => e.ReviewFinishTime).HasColumnName("review_finish_time");
             entity.Property(e => e.Reviewer)
                 .HasMaxLength(50)

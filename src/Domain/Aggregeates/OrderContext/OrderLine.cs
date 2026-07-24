@@ -7,10 +7,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
     /// <summary>
     /// 订单行实体 — 一个 ReportNumber 下按 TestGroup 拆分的一行
     /// 仅由 Order 聚合根创建和修改
+    /// Id 继承自 Entity 基类的 Guid
     /// </summary>
     public sealed class OrderLine : Entity
     {
-        public long Id { get; internal set; }
         public string TestGroup { get; internal set; } = string.Empty;
         public OrderLineStatus Status { get; internal set; } = OrderLineStatus.EntryComplete;
         public OrderExpress Express { get; internal set; }
@@ -28,7 +28,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         public int SampleCount { get; internal set; }
         public int ItemCount { get; internal set; }
 
-        // 备注 + 延迟
+        // RFID + 备注 + 延迟
+        public string? RfidCode { get; internal set; }
         public string? Remark { get; internal set; }
         public DelayInfo Delay { get; internal set; } = DelayInfo.None();
 
@@ -37,50 +38,38 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         internal OrderLine() { }  // 仅聚合根创建
 
         /// <summary>
-        /// 审单完成 — 状态只能从 EntryComplete 流转到 ReviewComplete
+        /// 审单完成 — 由扫码站决定，不校验前置状态
         /// </summary>
         internal void MarkReviewComplete(string reviewer, DateTimeOffset finishTime)
         {
-            if (Status != OrderLineStatus.EntryComplete)
-                throw new InvalidOperationException($"Cannot mark review-complete: current status is {Status}");
-
             Reviewer = reviewer;
             ReviewFinishTime = finishTime;
             Status = OrderLineStatus.ReviewComplete;
         }
 
         /// <summary>
-        /// 进入实验室 — 状态只能从 ReviewComplete 流转到 InLab
+        /// 进入实验室 — 由扫码站决定，不校验前置状态
         /// </summary>
         internal void MarkLabIn(DateTimeOffset labInTime)
         {
-            if (Status != OrderLineStatus.ReviewComplete)
-                throw new InvalidOperationException($"Cannot mark lab-in: current status is {Status}");
-
             LabIn = labInTime;
             Status = OrderLineStatus.InLab;
         }
 
         /// <summary>
-        /// 测试完成 — 状态只能从 InLab 流转到 TestDone
+        /// 测试完成 — 由扫码站决定，不校验前置状态
         /// </summary>
         internal void MarkTestDone(DateTimeOffset testTime)
         {
-            if (Status != OrderLineStatus.InLab)
-                throw new InvalidOperationException($"Cannot mark test-done: current status is {Status}");
-
             ReviewFinishTime = testTime;
             Status = OrderLineStatus.TestDone;
         }
 
         /// <summary>
-        /// 报告已出 — 状态只能从 TestDone 流转到 ReportOut
+        /// 报告已出 — 由扫码站决定，不校验前置状态
         /// </summary>
         internal void MarkReportOut(DateTimeOffset reportTime)
         {
-            if (Status != OrderLineStatus.TestDone)
-                throw new InvalidOperationException($"Cannot mark report-out: current status is {Status}");
-
             LabOutTime = reportTime;
             Status = OrderLineStatus.ReportOut;
         }

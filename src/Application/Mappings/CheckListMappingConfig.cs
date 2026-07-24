@@ -26,7 +26,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .MapWith(src => CheckList.Create(
                     src.SourceId == null
                     ? null
-                    : new OrderId(src.SourceId.Value),
+                    : new OrderId(src.SourceId),
                      src.Items.Select(i => i.Adapt<CheckListItem>()).ToList(),
                      src.Remark
                     ));
@@ -40,7 +40,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             config.NewConfig<CheckList, src.Infrastructure.Data.Persistence.CheckList>()
                 .MapWith(src => new src.Infrastructure.Data.Persistence.CheckList
                 {
-                    OrderId = src.OderId == null ? Guid.NewGuid() : src.OderId,
+                    OrderId = src.OderId == null ? string.Empty : src.OderId.Value,
                     CheckListId = src.Id,
                     CreatedTime = src.CreatedTime,
                     Status = (byte)src.Status

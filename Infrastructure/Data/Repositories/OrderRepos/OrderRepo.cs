@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
-using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.OrderContext;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
 
@@ -62,15 +62,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                 .GroupBy(x => new { x.ReportNumber, x.OrderEntryPerson, x.CustomerService })
                 .Select(g => new OrderOutput
                 {
-                    ReportNum = g.Key.ReportNumber,
-                    OrderEntry = g.Key.OrderEntryPerson,
-                    Cs = g.Key.CustomerService,
+                    ReportNumber = g.Key.ReportNumber,
+                    OrderEntryPerson = g.Key.OrderEntryPerson,
+                    CustomerServiceName = g.Key.CustomerService,
                     TestGroups = string.Join(",", g.Select(x => x.TestGroup).Distinct()),
-                    Groups = g.Select(x => new GroupOutput
+                    Lines = g.Select(x => new OrderLineOutput
                     {
-                        RecordId = x.Id.ToString(),
+                        LineId = x.Id.ToString(),
                         Express = x.Express,
-                        Group = x.TestGroup,
+                        TestGroup = x.TestGroup,
                         Remark = x.Remark,
                         DelayType = x.DelayType,
                         DelayReason = x.DelayReason,
@@ -78,7 +78,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                         DueDate = x.ReportDueDate?.ToUniversalTime(),
                         Status = x.Status
                     }).OrderBy(x =>
-                        x.Group switch
+                        x.TestGroup switch
                         {
                             "Physics" => 0,
                             "Wet" => 1,
@@ -88,7 +88,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                         })
                     .ToList()
                 })
-                .OrderByDescending(o => flat.Where(f => f.ReportNumber == o.ReportNum)
+                .OrderByDescending(o => flat.Where(f => f.ReportNumber == o.ReportNumber)
                 .Max(f => f.OrderInTime))
                 .ToArray();
 
@@ -142,15 +142,15 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                     {
                         var first = g.First();
 
-                        // 构造 GroupOutput
+                        // 构造 OrderLineOutput
                         var distinctGroups = g
-                            .Select(d => new GroupOutput
+                            .Select(d => new OrderLineOutput
                             {
-                                RecordId = d.Info.Id.ToString(),
+                                LineId = d.Info.Id.ToString(),
                                 Express = d.Info.Express ?? string.Empty,
-                                Group = d.Info.TestGroup ?? string.Empty,
-                                TestSampleNum = d.Info.TestSampleNum ?? 0,
-                                TestItemNum = d.Info.TestItemNum ?? 0,
+                                TestGroup = d.Info.TestGroup ?? string.Empty,
+                                SampleCount = d.Info.TestSampleNum ?? 0,
+                                ItemCount = d.Info.TestItemNum ?? 0,
                                 DelayType = d.Info.DelayType ?? string.Empty,
                                 DelayReason = d.Info.DelayReason ?? string.Empty,
                                 Remark = d.Info.Remark ?? string.Empty,
@@ -171,7 +171,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                                 }
                             })
                             .Distinct()
-                            .OrderBy(x => x.Group switch
+                            .OrderBy(x => x.TestGroup switch
                             {
                                 "Physics" => 0,
                                 "Wet" => 1,
@@ -183,13 +183,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
 
                         return new OrderOutput
                         {
-                            ReportNum = g.Key,
-                            OrderEntry = first.Info.OrderEntryPerson ?? string.Empty,
-                            OrderEntryId = _db.Users.FirstOrDefault(l => l.NickName == first.Info.OrderEntryPerson)?.UserId,
-                            Cs = first.Info.CustomerService ?? string.Empty,
-                            CsId = _db.CustomerServices.FirstOrDefault(l => l.CustomerService1 == first.Info.CustomerService)?.Id,
-                            TestGroups = string.Join(",", distinctGroups.Select(dg => dg.Group).Distinct()),
-                            Groups = distinctGroups
+                            ReportNumber = g.Key,
+                            OrderEntryPerson = first.Info.OrderEntryPerson ?? string.Empty,
+                            OrderEntryPersonId = _db.Users.FirstOrDefault(l => l.NickName == first.Info.OrderEntryPerson)?.UserId,
+                            CustomerServiceName = first.Info.CustomerService ?? string.Empty,
+                            CustomerServiceId = _db.CustomerServices.FirstOrDefault(l => l.CustomerService1 == first.Info.CustomerService)?.Id,
+                            TestGroups = string.Join(",", distinctGroups.Select(dg => dg.TestGroup).Distinct()),
+                            Lines = distinctGroups
                         };
                     })
                     .ToList();
@@ -211,13 +211,13 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                 var flat = fullData
                     .Select(d => new OrderSummary
                     {
-                        RecordId = d.Info.Id.ToString(),
-                        ReportNum = d.Info.ReportNumber ?? string.Empty,
-                        OrderEntry = d.Info.OrderEntryPerson ?? string.Empty,
-                        OrderEntryId = _db.Users.FirstOrDefault(l => l.NickName == d.Info.OrderEntryPerson)?.UserId,
+                        LineId = d.Info.Id.ToString(),
+                        ReportNumber = d.Info.ReportNumber ?? string.Empty,
+                        OrderEntryPerson = d.Info.OrderEntryPerson ?? string.Empty,
+                        OrderEntryPersonId = _db.Users.FirstOrDefault(l => l.NickName == d.Info.OrderEntryPerson)?.UserId,
                         Express = d.Info.Express ?? string.Empty,
-                        Cs = d.Info.CustomerService ?? string.Empty,
-                        CsId = _db.CustomerServices.FirstOrDefault(l => l.CustomerService1 == d.Info.CustomerService)?.Id,
+                        CustomerServiceName = d.Info.CustomerService ?? string.Empty,
+                        CustomerServiceId = _db.CustomerServices.FirstOrDefault(l => l.CustomerService1 == d.Info.CustomerService)?.Id,
                         TestGroup = d.Info.TestGroup ?? string.Empty,
                         ReviewFinish = d.Schedule.ReviewFinishTime,
                         Reviewer = d.Info.Reviewer ?? string.Empty,
@@ -229,8 +229,8 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                         //},
                         LabIn = d.Schedule.OrderInTime ?? DateTimeOffset.Now,
                         LabOut = d.Schedule.LabOutTime,
-                        TestSampleNum = d.Info.TestSampleNum ?? 0,
-                        TestItemNum = d.Info.TestItemNum ?? 0,
+                        SampleCount = d.Info.TestSampleNum ?? 0,
+                        ItemCount = d.Info.TestItemNum ?? 0,
                         DelayType = d.Info.DelayType ?? string.Empty,
                         DelayReason = d.Info.DelayReason ?? string.Empty,
                         Remark = d.Info.Remark ?? string.Empty,
@@ -306,7 +306,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
             };
 
             // 判断单号状态的方法
-            string DetermineStatus(IGrouping<string, LabTestInfo> group, HashSet<long> queryIds, string type)
+            string DetermineStatus(IGrouping<string, LabTestInfo> group, HashSet<Guid> queryIds, string type)
             {
                 var groupIds = group.Select(g => g.Id).ToHashSet();
 
@@ -425,7 +425,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
             };
 
             // 判断单号状态的方法
-            string DetermineStatus(IGrouping<string, LabTestInfo> group, HashSet<long> queryIds, string type)
+            string DetermineStatus(IGrouping<string, LabTestInfo> group, HashSet<Guid> queryIds, string type)
             {
                 var groupIds = group.Select(g => g.Id).ToHashSet();
 

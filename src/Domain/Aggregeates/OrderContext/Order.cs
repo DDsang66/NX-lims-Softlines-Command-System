@@ -1,19 +1,18 @@
 using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Events;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 {
     /// <summary>
     /// 订单聚合根
-    /// —个订单 = 同一 ReportNumber 下的多个 OrderLine（按 TestGroup 拆分）
+    /// 一个订单 = 同一 ReportNumber 下的多个 OrderLine（按 TestGroup 拆分）
     /// </summary>
-    public sealed class Order : AggregateRoot<OrderId,Guid>
+    public sealed class Order : AggregateRoot<OrderId, string>
     {
         private readonly List<OrderLine> _lines = new();
-        public OrderId Id { get; private set; } = null!;
-        public string ReportNumber { get; private set; } = string.Empty;
         /// <summary>
         /// 订单行（只读）
         /// </summary>
@@ -24,19 +23,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         /// </summary>
         public OrderMetadata Metadata { get; private set; } = null!;
 
+        /// <summary>
+        /// 余样码（订单级别，进单时分配）
+        /// </summary>
+        public string? ResidualSampleCode { get; private set; }
+
         /* ================================================================
          * 工厂方法
          * ================================================================ */
 
         /// <summary>
-        /// 创建新订单 — 同时创建多行（每个 TestGroup 一行）
+        /// 创建新订单 — ReportNumber 即是订单标识
         /// </summary>
         /// <param name="reportNumber">报告号</param>
         /// <param name="orderEntryPerson">录入人</param>
         /// <param name="customerService">客服</param>
         /// <param name="remark">备注</param>
         /// <returns>新创建的订单聚合根</returns>
-        /// <exception cref="ArgumentException">报告号为空或重复 TestGroup</exception>
         public static Order Create(
             string reportNumber,
             string orderEntryPerson,
@@ -51,12 +54,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 
             var order = new Order
             {
-                Id = new OrderId(Guid.NewGuid()),
-                ReportNumber = reportNumber,
+                Id = new OrderId(reportNumber),
                 Metadata = OrderMetadata.Create(orderEntryPerson, customerService, remark, DateTimeOffset.UtcNow)
             };
 
-            //order.AddDomainEvent(new OrderCreatedEvent(order.Id));
+            order.AddDomainEvent(new OrderCreatedEvent(order.Id));
 
             return order;
         }
@@ -64,19 +66,29 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         /// <summary>
         /// 从持久化重建订单（由 Repository 调用）
         /// </summary>
-        public static Order Reconstitute(OrderId id, string reportNumber, OrderMetadata metadata, IEnumerable<OrderLine> lines)
+        public static Order Reconstitute(OrderId id, OrderMetadata metadata, IEnumerable<OrderLine> lines, string? residualSampleCode = null)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
-            if (string.IsNullOrWhiteSpace(reportNumber)) throw new ArgumentException("Report number is required", nameof(reportNumber));
             if (metadata == null) throw new ArgumentNullException(nameof(metadata));
 
             var order = new Order
             {
                 Id = id,
-                ReportNumber = reportNumber,
-                Metadata = metadata
+                Metadata = metadata,
+                ResidualSampleCode = residualSampleCode
             };
-            if (lines != null) order._lines.AddRange(lines);
+            // 逐行校验：跳过已删除行，拒绝重复 TestGroup
+            if (lines != null)
+            {
+                foreach (var line in lines)
+                {
+                    if (line.IsDeleted) continue;
+                    if (order._lines.Any(l => l.TestGroup == line.TestGroup && !l.IsDeleted))
+                        throw new InvalidOperationException(
+                            $"Duplicate TestGroup '{line.TestGroup}' in reconstituted order");
+                    order._lines.Add(line);
+                }
+            }
             return order;
         }
 
@@ -86,14 +98,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 
         /// <summary>
         /// 添加订单行 — TestGroup 不可重复，DueDate/LabIn 必填
+        /// 行的 Guid Id 由 Entity 基类自动生成
         /// </summary>
         public void AddLine(
-            long lineId,
             string testGroup,
             OrderExpress express,
             DateTimeOffset dueDate,
             DateTimeOffset labIn,
-            string? remark = null)
+            string? remark = null,
+            string? rfidCode = null)
         {
             if (string.IsNullOrWhiteSpace(testGroup))
                 throw new ArgumentException("Test group is required", nameof(testGroup));
@@ -103,18 +116,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 
             var line = new OrderLine
             {
-                Id = lineId,
                 TestGroup = testGroup,
                 Status = OrderLineStatus.EntryComplete,
                 Express = express,
                 DueDate = dueDate,
                 LabIn = labIn,
+                RfidCode = rfidCode,
                 Remark = remark
             };
 
             _lines.Add(line);
 
-            //AddDomainEvent(new OrderLineAddedEvent(Id, lineId));
+            AddDomainEvent(new OrderLineAddedEvent(Id, line.Id));
         }
 
         /* ================================================================
@@ -122,74 +135,64 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
          * ================================================================ */
 
         /// <summary>
-        /// 审单完成 — 状态只能从 EntryComplete 流转到 ReviewComplete
+        /// 审单完成 — 由扫码站决定，不校验前置状态
         /// </summary>
-        public void MarkReviewComplete(long lineId, string reviewer, DateTimeOffset finishTime)
+        public void MarkReviewComplete(Guid lineId, string reviewer, DateTimeOffset finishTime)
         {
             var line = GetLine(lineId);
             line.MarkReviewComplete(reviewer, finishTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            //AddDomainEvent(new ReviewCompletedEvent(Id, lineId));
+            AddDomainEvent(new ReviewCompletedEvent(Id, lineId));
         }
 
         /// <summary>
-        /// 进入实验室 — 状态只能从 ReviewComplete 流转到 InLab
+        /// 进入实验室 — 由扫码站决定，不校验前置状态
         /// </summary>
-        public void MarkLabIn(long lineId, DateTimeOffset labInTime)
+        public void MarkLabIn(Guid lineId, DateTimeOffset labInTime)
         {
             var line = GetLine(lineId);
             line.MarkLabIn(labInTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            //AddDomainEvent(new LabInCompletedEvent(Id, lineId));
+            AddDomainEvent(new LabInCompletedEvent(Id, lineId));
         }
 
         /// <summary>
-        /// 测试完成 — 状态只能从 InLab 流转到 TestDone
+        /// 测试完成 — 由扫码站决定，不校验前置状态
         /// </summary>
-        public void MarkTestDone(long lineId, DateTimeOffset finishTime)
+        public void MarkTestDone(Guid lineId, DateTimeOffset finishTime)
         {
             var line = GetLine(lineId);
             line.MarkTestDone(finishTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            //AddDomainEvent(new TestDoneEvent(Id, lineId));
+            AddDomainEvent(new TestDoneEvent(Id, lineId));
         }
 
         /// <summary>
-        /// 报告已出 — 状态只能从 TestDone 流转到 ReportOut
+        /// 报告已出 — 由扫码站决定，不校验前置状态
         /// </summary>
-        public void MarkReportOut(long lineId, DateTimeOffset reportTime)
+        public void MarkReportOut(Guid lineId, DateTimeOffset reportTime)
         {
             var line = GetLine(lineId);
             line.MarkReportOut(reportTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            //AddDomainEvent(new ReportOutEvent(Id, lineId));
+            AddDomainEvent(new ReportOutEvent(Id, lineId));
         }
 
         /// <summary>
         /// 更新行数据
         /// </summary>
-        public void UpdateLine(
-            long lineId,
-            OrderExpress? express = null,
-            DateTimeOffset? dueDate = null,
-            DateTimeOffset? labIn = null,
-            int? sampleCount = null,
-            int? itemCount = null,
-            string? reviewer = null,
-            string? remark = null,
-            string? delayType = null,
-            string? delayReason = null)
+        public void UpdateLine(Guid lineId, UpdateLineCommand cmd)
         {
             var line = GetLine(lineId);
-            line.Update(express, dueDate, labIn, sampleCount, itemCount, reviewer,
-                remark, delayType, delayReason);
+            line.Update(cmd.Express, cmd.DueDate, cmd.LabIn, cmd.SampleCount, cmd.ItemCount,
+                cmd.Reviewer, cmd.Remark, cmd.DelayType, cmd.DelayReason);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            //AddDomainEvent(new OrderLineUpdatedEvent(Id, lineId));
+            AddDomainEvent(new OrderLineUpdatedEvent(Id, lineId));
         }
 
         /// <summary>
@@ -198,7 +201,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         /// ReviewFinishTime → InLab→TestDone | LabOutTime → TestDone→ReportOut
         /// </summary>
         public void ApplyTimeBasedStatusTransition(
-            long lineId,
+            Guid lineId,
             string? reviewer,
             DateTimeOffset? reviewFinishTime,
             DateTimeOffset? labOutTime)
@@ -208,40 +211,38 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             // ReviewFinishTime 有值且状态为 EntryComplete → MarkReviewComplete
             if (reviewFinishTime.HasValue && line.Status == OrderLineStatus.EntryComplete)
             {
-                line.MarkReviewComplete(reviewer ?? string.Empty, reviewFinishTime.Value);
+                MarkReviewComplete(lineId, reviewer ?? string.Empty, reviewFinishTime.Value);
             }
 
             // LabIn 有值且状态为 ReviewComplete → MarkLabIn
-            else if (line.LabIn != default && line.Status == OrderLineStatus.ReviewComplete)
+            if (line.LabIn != default && line.Status == OrderLineStatus.ReviewComplete)
             {
-                line.MarkLabIn(line.LabIn);
+                MarkLabIn(lineId, line.LabIn);
             }
 
             // ReviewFinishTime 有值且状态为 InLab → MarkTestDone
-            else if (reviewFinishTime.HasValue && line.Status == OrderLineStatus.InLab)
+            if (reviewFinishTime.HasValue && line.Status == OrderLineStatus.InLab)
             {
-                line.MarkTestDone(reviewFinishTime.Value);
+                MarkTestDone(lineId, reviewFinishTime.Value);
             }
 
             // LabOutTime 有值且状态为 TestDone → MarkReportOut
-            else if (labOutTime.HasValue && line.Status == OrderLineStatus.TestDone)
+            if (labOutTime.HasValue && line.Status == OrderLineStatus.TestDone)
             {
-                line.MarkReportOut(labOutTime.Value);
+                MarkReportOut(lineId, labOutTime.Value);
             }
-
-            Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
         }
 
         /// <summary>
         /// 软删除一行
         /// </summary>
-        public void DeleteLine(long lineId)
+        public void DeleteLine(Guid lineId)
         {
             var line = GetLine(lineId);
             line.Delete();
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            //AddDomainEvent(new OrderLineDeletedEvent(Id, lineId));
+            AddDomainEvent(new OrderLineDeletedEvent(Id, lineId));
         }
 
         /* ================================================================
@@ -254,7 +255,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
         public bool HasDuplicateGroup(string testGroup)
             => _lines.Any(l => l.TestGroup == testGroup && !l.IsDeleted);
 
-        private OrderLine GetLine(long lineId)
+        private OrderLine GetLine(Guid lineId)
         {
             var line = _lines.FirstOrDefault(l => l.Id == lineId && !l.IsDeleted);
             if (line == null)

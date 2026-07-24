@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
-using NX_lims_Softlines_Command_System.Application.DTO;
-using NX_lims_Softlines_Command_System.Application.Services.AuthenticationService;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.OrderContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
@@ -8,7 +7,6 @@ using NX_lims_Softlines_Command_System.src.Application.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.OrderContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
-using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppService
 {
@@ -51,7 +49,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
         /// <summary>
         /// 新增订单 — 成功返回 true，失败返回 false
         /// </summary>
-        public async Task<bool> AddOrderAsync(OrderDto dto)
+        public async Task<bool> AddOrderAsync(AddOrderRequest dto)
         {
             if (dto?.Rows == null || dto.Rows.Count == 0)
             { _logger.LogWarning("AddOrder failed: Rows is null or empty"); return false; }
@@ -59,27 +57,23 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
             try
             {
                 var firstRow = dto.Rows.First();
-                if (string.IsNullOrWhiteSpace(firstRow.ReportNum) || firstRow.OrderEntry == null)
-                { _logger.LogWarning("AddOrder failed: ReportNum={ReportNum}, OrderEntry={OrderEntry}", firstRow.ReportNum, firstRow.OrderEntry); return false; }
+                if (string.IsNullOrWhiteSpace(firstRow.ReportNumber) || firstRow.OrderEntryPerson == null)
+                { _logger.LogWarning("AddOrder failed: ReportNumber={ReportNumber}, OrderEntry={OrderEntry}", firstRow.ReportNumber, firstRow.OrderEntryPerson); return false; }
 
-                var cs = dto.Rows[0].Cs;
-                var csName = await _lookup.ResolveCsNameAsync(cs);
-                var order = Order.Create(firstRow.ReportNum, firstRow.OrderEntry, csName, dto.Remark);
+                var csName = await _lookup.ResolveCsNameAsync(firstRow.CustomerServiceId);
+                var order = Order.Create(firstRow.ReportNumber, firstRow.OrderEntryPerson, csName, dto.Remark);
 
                 foreach (var row in dto.Rows)
                 {
-                    if (await _repository.ExistsAsync(order.Id, row.Group!, CancellationToken.None))
-                        return false;
-
                     order.AddLine(
-                        lineId: new SnowflakeIdGenerator().NextId(),
-                        testGroup: row.Group!,
+                        testGroup: row.TestGroup!,
                         express: await _workdayCalculator.ComputeExpressAsync(
                             row.LabIn ?? DateTimeOffset.UtcNow,
                             row.DueDate ?? DateTimeOffset.UtcNow),
                         dueDate: row.DueDate ?? DateTimeOffset.UtcNow,
                         labIn: row.LabIn ?? DateTimeOffset.UtcNow,
-                        remark: row.Remark);
+                        remark: row.Remark,
+                        rfidCode: row.RfidCode);
                 }
 
                 await _repository.AddAsync(order, CancellationToken.None);
@@ -95,23 +89,23 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
         /// <summary>
         /// 更新订单行 — 成功返回 true，失败返回 false
         /// </summary>
-        public async Task<bool> UpdateOrderAsync(OrderUpdateDto dto)
+        public async Task<bool> UpdateOrderAsync(UpdateOrderRequest dto)
         {
             if (dto?.Rows == null || dto.Rows.Count == 0) return false;
 
             try
             {
                 // 阶段 1: 收集 (lineId, orderId, row) 映射
-                var pending = new List<(long lineId, Guid orderId, OrderUpdate row)>();
+                var pending = new List<(Guid lineId, string orderId, UpdateOrderItem row)>();
                 foreach (var row in dto.Rows)
                 {
-                    if (row.RecordId == null || !long.TryParse(row.RecordId, out var lineId))
+                    if (row.LineId == null || !Guid.TryParse(row.LineId, out var lineId))
                         continue;
 
                     var orderId = await _repository.GetOrderIdByLineIdAsync(lineId, CancellationToken.None);
                     if (orderId == null) continue;
 
-                    pending.Add((lineId, orderId.Value, row));
+                    pending.Add((lineId, orderId, row));
                 }
 
                 // 阶段 2: 按 orderId 分组，每组加载一次 → 修改所有行 → 保存一次
@@ -122,16 +116,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
 
                     foreach (var (lineId, _, row) in group)
                     {
-                        order.UpdateLine(lineId,
-                            express: OrderRepository.StringToExpress(row.Express),
-                            dueDate: row.ReportDueDate,
-                            labIn: row.OrderInTime,
-                            sampleCount: row.TestSampleNum,
-                            itemCount: row.TestItemNum,
-                            reviewer: await ResolveUserName(row.ReviewerId),
-                            remark: row.Remark,
-                            delayType: row.DelayType,
-                            delayReason: row.DelayReason);
+                        order.UpdateLine(lineId, new UpdateLineCommand(
+                            Express: row.Express.ToOrderExpress(),
+                            DueDate: row.DueDate,
+                            LabIn: row.LabIn,
+                            SampleCount: row.SampleCount,
+                            ItemCount: row.ItemCount,
+                            Reviewer: await ResolveUserName(row.ReviewerId),
+                            Remark: row.Remark,
+                            DelayType: row.DelayType,
+                            DelayReason: row.DelayReason
+                        ));
 
                         order.ApplyTimeBasedStatusTransition(lineId,
                             reviewer: await ResolveUserName(row.ReviewerId),
@@ -153,7 +148,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
         /// <summary>
         /// 软删除订单行 — 遍历 OrderDeleteRequest.Items，逐行删除
         /// </summary>
-        public async Task<bool> DeleteOrderAsync(OrderDeleteRequest req)
+        public async Task<bool> DeleteOrderAsync(DeleteOrderRequest req)
         {
             if (req?.Items == null || req.Items.Count == 0) return false;
 
@@ -161,12 +156,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
             {
                 foreach (var item in req.Items)
                 {
-                    if (!long.TryParse(item.RecordId, out var recordId)) continue;
+                    if (!Guid.TryParse(item.LineId, out var recordId)) continue;
 
                     var orderId = await _repository.GetOrderIdByLineIdAsync(recordId, CancellationToken.None);
                     if (orderId == null) continue;
 
-                    var order = await _repository.GetByIdAsync(new OrderId(orderId.Value), CancellationToken.None);
+                    var order = await _repository.GetByIdAsync(new OrderId(orderId), CancellationToken.None);
                     if (order == null) continue;
 
                     order.DeleteLine(recordId);
@@ -181,9 +176,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.OrderAppServi
             }
         }
 
-        public async Task<Order?> GetOrderByIdAsync(Guid orderId)
+        public async Task<Order?> GetOrderByIdAsync(string reportNumber)
         {
-            return await _repository.GetByIdAsync(new OrderId(orderId), CancellationToken.None);
+            return await _repository.GetByIdAsync(new OrderId(reportNumber), CancellationToken.None);
         }
 
         private async Task<string?> ResolveUserName(string? userId)

@@ -13,5 +13,5 @@ public partial class CheckList
 
     public byte Status { get; set; }
 
-    public Guid OrderId { get; set; }
+    public string OrderId { get; set; }
 }

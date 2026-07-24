@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NX_lims_Softlines_Command_System.Domain.Model;
 using NX_lims_Softlines_Command_System.Domain.Model.Entities;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext;
@@ -12,10 +13,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
     public class OrderRepository : IOrderRepository, IScopedDependency
     {
         private readonly LabDbContextSec _context;
+        private readonly ILogger<OrderRepository> _logger;
 
-        public OrderRepository(LabDbContextSec context)
+        public OrderRepository(LabDbContextSec context, ILogger<OrderRepository> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         /// <summary>
@@ -41,7 +44,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         {
             var lineIds = order.Lines.Select(l => l.Id).ToList();
             var existingRows = await _context.LabTestInfos
-                .Where(i => i.ReportNumber == order.ReportNumber && lineIds.Contains(i.Id))
+                .Where(i => i.ReportNumber == order.Id.Value && lineIds.Contains(i.Id))
                 .ToListAsync(ct);
 
             foreach (var line in order.Lines)
@@ -51,7 +54,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
                 row.TestGroup = line.TestGroup;
                 row.Status = (byte)line.Status;
-                row.Express = ExpressToString(line.Express);
+                row.Express = line.Express.ToDisplayString();
                 row.ReportDueDate = line.DueDate;
                 row.OrderInTime = line.LabIn;
                 row.ReviewFinishTime = line.ReviewFinishTime;
@@ -69,12 +72,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
-        /// 根据 ReportNumber 重建订单聚合根
+        /// 根据 ReportNumber（即 OrderId）重建订单聚合根
         /// </summary>
         public async Task<Order?> GetByIdAsync(OrderId id, CancellationToken ct)
         {
             var rows = await _context.LabTestInfos
-                .Where(i => i.OrderId == id.Value && i.IsDelete == "N")
+                .Where(i => i.ReportNumber == id.Value && i.IsDelete == "N")
                 .ToListAsync(ct);
 
             if (rows.Count == 0) return null;
@@ -83,12 +86,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var metadata = OrderMetadata.Create(
                 first.OrderEntryPerson ?? string.Empty,
                 first.CustomerService ?? string.Empty,
-                null,  // remark 在行级别
+                null,
                 first.LastUpdateTime ?? DateTimeOffset.UtcNow);
 
             var lines = rows.Select(MapToLine).ToList();
 
-            return Order.Reconstitute(id, first.ReportNumber ?? string.Empty, metadata, lines);
+            return Order.Reconstitute(id, metadata, lines);
         }
 
         /// <summary>
@@ -97,16 +100,16 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task<bool> ExistsAsync(OrderId id, string testGroup, CancellationToken ct)
         {
             return await _context.LabTestInfos
-                .AnyAsync(i => i.OrderId == id.Value
+                .AnyAsync(i => i.ReportNumber == id.Value
                     && i.TestGroup == testGroup
                     && i.IsDelete == "N", ct);
         }
 
-        public async Task<Guid?> GetOrderIdByLineIdAsync(long lineId, CancellationToken ct)
+        public async Task<string?> GetOrderIdByLineIdAsync(Guid lineId, CancellationToken ct)
         {
             return await _context.LabTestInfos
                 .Where(i => i.Id == lineId && i.IsDelete == "N")
-                .Select(i => i.OrderId)
+                .Select(i => i.ReportNumber)
                 .FirstOrDefaultAsync(ct);
         }
 
@@ -119,13 +122,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             return new LabTestInfo
             {
                 Id = line.Id,
+                ReportNumber = order.Id.Value,
                 OrderId = order.Id.Value,
-                ReportNumber = order.ReportNumber,
                 OrderEntryPerson = order.Metadata.OrderEntryPerson,
                 CustomerService = order.Metadata.CustomerService,
                 TestGroup = line.TestGroup,
                 Status = (byte)line.Status,
-                Express = ExpressToString(line.Express),
+                Express = line.Express.ToDisplayString(),
                 ReportDueDate = line.DueDate,
                 OrderInTime = line.LabIn,
                 ReviewFinishTime = line.ReviewFinishTime,
@@ -141,14 +144,24 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             };
         }
 
-        private static OrderLine MapToLine(LabTestInfo row)
+        private OrderLine MapToLine(LabTestInfo row)
         {
-            return new OrderLine
+            if (row.Status == null)
+                _logger.LogWarning("OrderLine {Id}: Status is NULL in DB, defaulting to EntryComplete", row.Id);
+            if (row.ReportDueDate == null)
+                _logger.LogWarning("OrderLine {Id}: ReportDueDate is NULL in DB, defaulting to UtcNow", row.Id);
+            if (row.OrderInTime == null)
+                _logger.LogWarning("OrderLine {Id}: OrderInTime is NULL in DB, defaulting to UtcNow", row.Id);
+            if (row.TestSampleNum == null)
+                _logger.LogWarning("OrderLine {Id}: TestSampleNum is NULL in DB, defaulting to 0", row.Id);
+            if (row.TestItemNum == null)
+                _logger.LogWarning("OrderLine {Id}: TestItemNum is NULL in DB, defaulting to 0", row.Id);
+
+            var line = new OrderLine
             {
-                Id = row.Id,
                 TestGroup = row.TestGroup ?? string.Empty,
                 Status = (OrderLineStatus)(row.Status ?? 1),
-                Express = StringToExpress(row.Express),
+                Express = row.Express.ToOrderExpress(),
                 Reviewer = row.Reviewer,
                 DueDate = row.ReportDueDate ?? DateTimeOffset.UtcNow,
                 LabIn = row.OrderInTime ?? DateTimeOffset.UtcNow,
@@ -160,22 +173,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 Delay = DelayInfo.Create(row.DelayType, row.DelayReason),
                 IsDeleted = row.IsDelete == "Y"
             };
+            line.ReconstructId(row.Id);
+            return line;
         }
-
-        internal static string ExpressToString(OrderExpress express) => express switch
-        {
-            OrderExpress.SameDay => "Same Day",
-            OrderExpress.Shuttle => "Shuttle",
-            OrderExpress.Express => "Express",
-            _ => "Regular"
-        };
-
-        internal static OrderExpress StringToExpress(string? s) => s switch
-        {
-            "Same Day" => OrderExpress.SameDay,
-            "Shuttle" => OrderExpress.Shuttle,
-            "Express" => OrderExpress.Express,
-            _ => OrderExpress.Regular
-        };
     }
 }

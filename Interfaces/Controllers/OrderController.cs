@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.OrderContext;
 using NX_lims_Softlines_Command_System.src.Application.Service.OrderAppService;
 
 
@@ -18,7 +18,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// 接收前端返回的Order表单
         /// </summary>
         [HttpPost("add")]
-        public async Task<IActionResult> OrderAdd([FromBody] OrderDto dto)
+        public async Task<IActionResult> OrderAdd([FromBody] AddOrderRequest dto)
         {
             bool answer = await _orderApp.AddOrderAsync(dto);
             if (answer)
@@ -32,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// 表单数据更新
         /// </summary>
         [HttpPost("update")]
-        public async Task<IActionResult> OrderUpdate([FromBody] OrderUpdateDto dto)
+        public async Task<IActionResult> OrderUpdate([FromBody] UpdateOrderRequest dto)
         {
             bool result = await _orderApp.UpdateOrderAsync(dto);
             if (result)
@@ -46,7 +46,7 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
         /// 单列数据删除
         /// </summary>
         [HttpPost("delete")]
-        public async Task<IActionResult> OrderDelete([FromBody] OrderDeleteRequest odr)
+        public async Task<IActionResult> OrderDelete([FromBody] DeleteOrderRequest odr)
         {
             bool result = await _orderApp.DeleteOrderAsync(odr);
             if (result)

@@ -53,6 +53,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="UHFReader288.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Application\Services\Global\" />
     <Folder Include="Domain\Model\Services\" />
     <Folder Include="Domain\ValueObjects\" />
