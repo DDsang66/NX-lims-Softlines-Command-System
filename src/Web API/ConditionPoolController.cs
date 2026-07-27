@@ -23,7 +23,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="ct"></param>
         /// <returns></returns>
         [HttpPost("add")]
-        public async Task<Result> AddConditionPoolAsync(AddConditionPoolDto dto, CancellationToken ct)
+        public async Task<Result> AddConditionPoolAsync([FromBody] AddConditionPoolDto dto, CancellationToken ct)
         {
             var result = await  _conditionPoolAppService.AddConditionPoolAsync(dto, ct);
 
@@ -51,7 +51,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="ct"></param>
         /// <returns></returns>
         [HttpPut("group")]
-        public async Task<Result> GroupConditionPoolAsync(List<UpdateConditionPoolDto> dto, CancellationToken ct) 
+        public async Task<Result> GroupConditionPoolAsync([FromBody] List<UpdateConditionPoolDto> dto, CancellationToken ct) 
         {
             var result = await _conditionPoolAppService.GroupConditionPoolAsync(dto, ct);
 

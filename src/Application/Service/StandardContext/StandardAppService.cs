@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.StandardContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.StandardContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
@@ -10,7 +11,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardContext
 {
-    public class StandardAppService: IScopedDependency
+    public class StandardAppService: IStandardAppService, IScopedDependency
     {
         private readonly IStandardRepository _standardRepository;
         private readonly IUnitOfWork _unitOfWork;
@@ -109,6 +110,26 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
             var standard = await _standardRepository.GetByIdAsync(standardId, ct);
 
             standard.Draft();
+
+            await _standardRepository.UpdateAsync(standard, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 将标准转变为草稿
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> DeprecatedStandardAsync(string id, CancellationToken ct)
+        {
+            var standardId = new StandardId(id);
+
+            var standard = await _standardRepository.GetByIdAsync(standardId, ct);
+
+            standard.Deprecated();
 
             await _standardRepository.UpdateAsync(standard, ct);
 

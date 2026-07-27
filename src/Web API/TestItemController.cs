@@ -17,7 +17,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         }
 
         [HttpPut("update")]
-        public async Task<Result> UpdateTestItemAsync(UpdateTestItemDto dto, CancellationToken ct)
+        public async Task<Result> UpdateTestItemAsync([FromBody] UpdateTestItemDto dto, CancellationToken ct)
         {
             var result = await _testItemAppService.UpdateTestItemAsync(dto,ct);
 

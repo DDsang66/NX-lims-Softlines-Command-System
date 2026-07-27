@@ -24,7 +24,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// </summary>
         /// <returns></returns>
         [HttpPost("add")]
-        public async Task<Result> AddCheckLIst(AddCheckListDto dto,CancellationToken ct)
+        public async Task<Result> AddCheckLIst([FromBody] AddCheckListDto dto,CancellationToken ct)
         {
             var result = await _checkListAppService.AddCheckList(dto,ct);
 
@@ -38,7 +38,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <param name="ct"></param>
         /// <returns></returns>
         [HttpPut("update")]
-        public async Task<Result> UpdateCheckList(UpdateCheckListDto dto, CancellationToken ct) 
+        public async Task<Result> UpdateCheckList([FromBody] UpdateCheckListDto dto, CancellationToken ct) 
         {
             var result = await _checkListAppService.UpdateCheckList(dto,ct);
 

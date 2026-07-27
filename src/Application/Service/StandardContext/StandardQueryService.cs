@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.StandardContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.StandardContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -7,7 +8,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardContext
 {
-    public class StandardQueryService:IScopedDependency
+    public class StandardQueryService:IStandardQueryService,IScopedDependency
     {
         private readonly IStandardRepository _standardRepository;
         public StandardQueryService(IStandardRepository standardRepository) 
