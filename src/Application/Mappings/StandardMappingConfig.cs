@@ -37,7 +37,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             // ========== 领域模型 => API响应 DTO (StandardResponseDto) ==========
             config.NewConfig<Standard, StandardResponseDto>()
                 // 假设 DTO 的主键是 string 类型，提取 Value
-                .Map(dest => dest.idstandard, src => src.Id.Value)
+                .Map(dest => dest.StandardId, src => src.Id.Value)
 
                 // 名称和编码等直接按名称自动映射（如果字段名完全一致，这几行其实可以省略，
                 // Mapster 默认按同名映射，但显式写出来可读性更好，便于后续维护）

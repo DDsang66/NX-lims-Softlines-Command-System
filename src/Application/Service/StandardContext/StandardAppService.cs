@@ -29,7 +29,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
         {
             var standardId = new StandardId(dto.StandardId);
 
-            var standardFamilyCode = new StandardFamilyId(dto.StandardFamilyCode);
+            var standardFamilyCode = string.IsNullOrEmpty(dto.StandardFamilyCode)
+                ? null
+                : new StandardFamilyId(dto.StandardFamilyCode);
 
             var standard = Standard.Create(standardId, dto.StandardCode, standardFamilyCode,dto.StandardNameEn,dto.StandardNameCn,Status.Draft);
             
@@ -67,7 +69,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
 
             var standard = await _standardRepository.GetByIdAsync(standardId, ct);
 
-            var standardFamilyCode = new StandardFamilyId(dto.StandardFamilyCode);
+            var standardFamilyCode = string.IsNullOrEmpty(dto.StandardFamilyCode)
+                ? null
+                : new StandardFamilyId(dto.StandardFamilyCode);
 
             standard.Update(dto.StandardCode,standardFamilyCode, dto.StandardNameEn,dto.StandardNameCn);
 

@@ -40,7 +40,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
-        [HttpDelete("remove{standardId}")]
+        [HttpDelete("remove/{standardId}")]
         public async Task<Result> RemoveStandard(string standardId, CancellationToken ct)
         {
             var result = await _standardAppService.RemoveStandardAsync(standardId, ct);
@@ -48,7 +48,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
-        [HttpGet("get{standardId}")]
+        [HttpGet("get/{standardId}")]
         public async Task<Result<StandardResponseDto>> GetStandard(string standardId, CancellationToken ct) 
         {
             var result = await _standardQueryService.GetStandardAsync(standardId, ct);
@@ -64,7 +64,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
-        [HttpPut("active")]
+        [HttpPut("active/{standardId}")]
         public async Task<Result> ActiveStandard(string standardId, CancellationToken ct) 
         {
             var result = await _standardAppService.ActiveStandardAsync(standardId, ct);
@@ -72,15 +72,15 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
-        [HttpPut("deactive")]
-        public async Task<Result> DeactiveStandard(string standardId, CancellationToken ct) 
+        [HttpPut("deprecate/{standardId}")]
+        public async Task<Result> DeprecateStandard(string standardId, CancellationToken ct)
         {
             var result = await _standardAppService.DeprecatedStandardAsync(standardId, ct);
 
             return result;
         }
 
-        [HttpPost("draft")]
+        [HttpPost("draft/{standardId}")]
         public async Task<Result> DraftStandard(string standardId, CancellationToken ct) 
         {
             var result = await _standardAppService.DraftStandardAsync(standardId, ct);
