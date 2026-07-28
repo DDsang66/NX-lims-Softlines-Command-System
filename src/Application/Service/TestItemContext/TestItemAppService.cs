@@ -1,5 +1,7 @@
-﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TestItemContext;
-using NX_lims_Softlines_Command_System.src.Application.Interface;
+﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TestItemContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.TestItemContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract;
@@ -25,8 +27,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemConte
         /// 新建测试项目
         /// </summary>
         /// <returns></returns>
-        public async Task<Result> AddTestItemAsync() 
+        public async Task<Result> AddTestItemAsync(AddTestItemDto dto,CancellationToken ct) 
         {
+            var testItem = dto.Adapt<TestItem>();
+
+            await _testItemRepository.AddAsync(testItem,ct);
+
+            await _unitOfWork.SaveChangesAsync();
+
             return Result.Ok();
         }
 
@@ -50,7 +58,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemConte
                         foreach (var kv in p.StandardDefaults)
                         {
                             // 尝试将 key 解析为 StandardType 枚举（忽略大小写）
-                         if (Enum.TryParse<StandardType>(kv.Key, true, out var st))
+                            if (Enum.TryParse<StandardType>(kv.Key, true, out var st))
                             {
                                 def = def.WithStandardDefault(st, kv.Value);     
                             }          
@@ -68,17 +76,5 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemConte
             return Result.Ok();
         }
 
-        /// <summary>
-        /// 根据id获取TestItem
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        public async Task<Result> GetTestItemByIdAsync(string id,CancellationToken ct) 
-        {
-            var testItem = await _testItemRepository.GetByIdAsync(new TestItemId(id), ct);
-
-            return Result.Ok();
-        }
     }
 }

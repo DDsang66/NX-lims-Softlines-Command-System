@@ -40,6 +40,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         Task<StandardFamily> GetByIdAsync(StandardFamilyId id, CancellationToken ct);
 
         /// <summary>
+        /// 查询所有标准族
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IEnumerable<StandardFamily?>> GetAllStandardFamilyAsync(CancellationToken ct);
+
+        /// <summary>
         /// 通过标准Id获取标准族
         /// </summary>
         /// <param name="id"></param>

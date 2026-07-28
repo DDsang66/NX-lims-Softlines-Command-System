@@ -94,8 +94,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Id = id,
                 CheckListId = checkListId ?? throw new ArgumentNullException(nameof(checkListId)),
                 TestPoints = testPoints,
-                CreatedAt = DateTime.UtcNow,
-                Status = ConditionPoolStatus.Draft
+                CreatedAt = createdAt,
+                Status = status
             };
 
             foreach (var kv in initial)

@@ -33,27 +33,27 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 公式名称
         /// </summary>
-        public string Name { get; private set; }  // "BallastDerivation"
+        public string Name { get; private set; } = string.Empty;  // "BallastDerivation"
 
         /// <summary>
         /// 生成参数名
         /// </summary>
-        public string ParamName { get; private set; }  // 生成的参数名 "Ballast"
+        public string ParamName { get; private set; } = string.Empty;  // 生成的参数名 "Ballast"
 
         /// <summary>
         /// 条件字段
         /// </summary>
-        public List<string> ConditionFields { get; private set; }  // ["FiberDominantType", "BuyerSpecified"]等具体语义的字段名(不可再切割)
+        public List<string> ConditionFields { get; private set; } = new(); // ["FiberDominantType", "BuyerSpecified"]等具体语义的字段名(不可再切割)
       
         /// <summary>
         /// 公式模板
         /// </summary>
-        public string ExpressionTemplate { get; private set; }  // "FiberDominantType + BuyerSpecified ->Ballst" 范式样本
-        
+        public string ExpressionTemplate { get; private set; } = string.Empty; // "FiberDominantType + BuyerSpecified ->Ballst" 范式样本
+
         /// <summary>
         /// 描述
         /// </summary>
-        public string Description { get; private set; }
+        public string Description { get; private set; } = string.Empty;
 
         /// <summary>
         /// 版本号
@@ -82,8 +82,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             IEnumerable<ParamStructureId?> paramStructureIds,
             IEnumerable<string> conditionFields,
             string expressionTemplate,
-            string? description = null
-            )
+            string? description = null)
         {
             if (id == null)
                 throw new ArgumentNullException(nameof(id));

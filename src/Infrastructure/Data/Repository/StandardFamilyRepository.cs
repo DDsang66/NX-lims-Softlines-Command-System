@@ -113,6 +113,48 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 查询所有标准族
+        /// </summary>
+        /// <param name="standaraId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<StandardFamily?>> GetAllStandardFamilyAsync(CancellationToken ct) 
+        {
+            var results = await _dbContext.BasicStandardFamilies
+                .Select(sf => new
+                {
+                    Family = sf,
+                    StandardIds = _dbContext.BasicStandards
+                        .Where(s => s.StandardFamilyCodeId == sf.IdStandardFamily)
+                        .Select(s => s.IdStandard)
+                        .ToList(),
+                    FormulaIds = _dbContext.FormulaStandardfamilies
+                        .Where(f => f.IdStandardFamily == sf.IdStandardFamily)
+                        .Select(f => f.FormulaId)
+                        .ToList(),
+                    StructureIds = _dbContext.ParamsturctureStandardfamilies
+                        .Where(p => p.IdStandardFamily == sf.IdStandardFamily)
+                        .Select(p => p.ParamStructureId)
+                        .ToList()
+                })
+                .ToListAsync(ct);
+
+            var standardFamilies = results.Select(result => StandardFamily.Reconstitute(
+                new StandardFamilyId(result.Family.IdStandardFamily),
+                result.Family.StandardFamilyCode,
+                result.StandardIds.Select(id => new StandardId(id)).ToList(),
+                result.FormulaIds.Select(id => new FormulaId(id)).ToList(),
+                result.StructureIds.Select(id => new ParamStructureId(id)).ToList(),
+                result.Family.Version,
+                result.Family.EffectiveDate
+            )).ToList();
+
+            return standardFamilies;
+        }
+
+
+
+        /// <summary>
         /// 根据标准id查询标准族
         /// </summary>
         /// <param name="standaraId"></param>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.StandardContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.StandardContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
@@ -13,7 +14,7 @@ using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardContext
 {
-    public class StandardFamilyAppService : IScopedDependency
+    public class StandardFamilyAppService : IStandardFamilyAppService,IScopedDependency
     {
         private readonly IStandardFamilyRepository _standardFamilyRepository;
         private readonly IStandardRepository _standardRepository;
@@ -99,7 +100,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
         /// </summary>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> AddStandardToFamilyAsync(StandardFamilyUpdateDto dto, CancellationToken ct)
+        public async Task<Result> AddStandardToFamilyAsync(AddStandardToFamilyDto dto, CancellationToken ct)
         {
             var standardFamilyId = new StandardFamilyId(dto.StandardFamilyId);
 
@@ -143,7 +144,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
         /// </summary>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> AddFormulaToFamilyAsync(StandardFamilyUpdateDto dto, CancellationToken ct)
+        public async Task<Result> AddFormulaToFamilyAsync(AddFormulaToFamilyDto dto, CancellationToken ct)
         {
             var standardFamilyId = new StandardFamilyId(dto.StandardFamilyId);
 

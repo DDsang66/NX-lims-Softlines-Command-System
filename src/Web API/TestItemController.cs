@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TestItemContext;
-using NX_lims_Softlines_Command_System.src.Application.Interface;
+using NX_lims_Softlines_Command_System.src.Application.Interface.TestItemContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API

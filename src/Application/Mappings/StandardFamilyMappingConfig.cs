@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.StandardContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
@@ -20,6 +21,26 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.Version, src => src.Version)
                 .Map(dest => dest.EffectiveDate, src => src.EffectiveDate);
 
+            // 领域模型->DTO (聚合根 -> StandaradFamilyResponseDto)
+            config.NewConfig<StandardFamily, StandaradFamilyResponseDto>()
+                .Map(dest => dest.Id, src => src.Id.Value)
+                .Map(dest => dest.StandardFamilyCode, src => src.StandardFamilyCode)
+                .Map(dest => dest.StandardIds, src => src.StandardIds
+                != null ? src.StandardIds
+                .Select(s => s == null ? null : s.Value).ToList()
+                : new List<string?>())
+                 .Map(dest => dest.FormulaIds, src => src.FormulaIds 
+                 != null ? src.FormulaIds
+                 .Select(f => f == null ? null : f.Value).ToList() 
+                 : new List<string?>())
+                .Map(dest => dest.ParamStructureIds, src => src.ParamStructureIds
+                != null ? src.ParamStructureIds
+                .Select(p => p == null ? null : p.Value)
+                .ToList() : new List<string?>())
+                .Map(dest => dest.Version, src => src.Version)
+                .Map(dest => dest.EffectiveDate, src => src.EffectiveDate);
+
+
             //数据库模型->领域模型
             //config.NewConfig<BasicStandardFamily, StandardFamily>()
             //    .ConstructUsing((BasicStandardFamily src, global::Mapster.ITypeAdapterContext ctx) => StandardFamily.Reconstitute(
@@ -33,5 +54,5 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             //        src.EffectiveDate
             //    ));
         }
-     }
+    }
 }

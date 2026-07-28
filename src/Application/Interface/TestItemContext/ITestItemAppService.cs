@@ -2,7 +2,7 @@
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
-namespace NX_lims_Softlines_Command_System.src.Application.Interface
+namespace NX_lims_Softlines_Command_System.src.Application.Interface.TestItemContext
 {
     public interface ITestItemAppService:IScopedDependency
     {
@@ -10,7 +10,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// 创建测试项目
         /// </summary>
         /// <returns></returns>
-        Task<Result> AddTestItemAsync();
+        Task<Result> AddTestItemAsync(AddTestItemDto dto,CancellationToken ct);
 
         /// <summary>
         /// 更新测试项目
@@ -19,13 +19,5 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Result> UpdateTestItemAsync(UpdateTestItemDto dto, CancellationToken ct);
-
-        /// <summary>
-        /// 获取测试项目列表
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<Result> GetTestItemByIdAsync(string id, CancellationToken ct);
     }
 }
