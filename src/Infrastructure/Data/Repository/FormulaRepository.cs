@@ -121,6 +121,58 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 获取所有公式（包含关联的 StandardFamily 和 ParamStructure）
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<Formula>> GetAllAsync(CancellationToken ct)
+        {
+            // 1. 查询基础信息
+            var formulaPos = await _context.BasicFormulas
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            // 2. 查询所有关联关系
+            var allAssociations = await _context.FormulaStandardfamilies
+                .ToListAsync(ct);
+
+            // 3. 分组处理
+            var result = new List<Formula>();
+            foreach (var formulaPo in formulaPos)
+            {
+                var formulaId = formulaPo.FormulaId;
+
+                // 获取当前公式的关联
+                var standardFamilyIds = allAssociations
+                    .Where(ff => ff.FormulaId == formulaId)
+                    .Select(ff => ff.IdStandardFamily)
+                    .ToList();
+
+                var paramStructureIds = await _context.BasicParamStructures
+                    .Where(pf => pf.FormulaId == formulaId)
+                    .Select(pf => pf.ParamStructureId)
+                    .ToListAsync(ct);
+
+                // 重建聚合根
+                result.Add(Formula.Reconstitute(
+                    new FormulaId(formulaId),
+                    formulaPo.Name,
+                    formulaPo.ParamName,
+                    JsonSerializer.Deserialize<List<string>>(formulaPo.ConditionFields!) ?? new List<string>(),
+                    standardFamilyIds.Select(id => new StandardFamilyId(id)).ToList(),
+                    paramStructureIds.Select(id => new ParamStructureId(id)).ToList(),
+                    formulaPo.ExpressionTemplate!,
+                    formulaPo.Version ?? 0,
+                    formulaPo.IsActive,
+                    formulaPo.EffectiveDate ?? DateTime.UtcNow,
+                    formulaPo.Description
+                ));
+            }
+
+            return result;
+        }
+
+        /// <summary>
         /// 通过参数名获取公式
         /// </summary>
         public async Task<IEnumerable<Formula>> GetByParamName(string paramName, CancellationToken ct)

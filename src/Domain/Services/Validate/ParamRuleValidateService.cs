@@ -64,8 +64,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
 
             if (rule.StructureId != null)
             {
-                var containsStructure = formula.ParamSturctureIds != null &&
-                    formula.ParamSturctureIds.Any(ps => ps != null && ps.Equals(rule.StructureId));
+                var containsStructure = formula.ParamStructureIds != null &&
+                    formula.ParamStructureIds.Any(ps => ps != null && ps.Equals(rule.StructureId));
                 if (!containsStructure)
                     return Result.Fail("ParamRule's ParamStructureId is not included in Formula");
             }

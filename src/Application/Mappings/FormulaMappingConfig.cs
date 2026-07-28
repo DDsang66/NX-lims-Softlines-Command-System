@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
@@ -37,6 +38,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             //        src.EffectiveDate,
             //        src.Description
             //    ));
+
+            //聚合根=>dto
+            config.NewConfig<Formula, FormulaResponseDto>()
+            .Map(dest => dest.Id, src => src.Id.Value)
+            .Map(dest => dest.ParamStrurctureIds, src => src.ParamStructureIds.Select(ps => ps.Value).ToList())
+            .Map(dest => dest.StandardFamilyIds, src => src.StandardFamilyIds.Select(sf => sf.Value).ToList())
+            .Map(dest => dest.Name, src => src.Name)
+            .Map(dest => dest.ParamName, src => src.ParamName)
+            .Map(dest => dest.ConditionFields, src => src.ConditionFields)
+            .Map(dest => dest.ExpressionTemplate, src => src.ExpressionTemplate)
+            .Map(dest => dest.Description, src => src.Description)
+            .Map(dest => dest.Version, src => src.Version)
+            .Map(dest => dest.EffectiveDate, src => src.EffectiveDate)
+            .Map(dest => dest.IsActive, src => src.IsActive);
         }
      }
 }

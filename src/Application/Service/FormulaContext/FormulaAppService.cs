@@ -1,5 +1,5 @@
 ﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFormulaContext;
-using NX_lims_Softlines_Command_System.src.Application.Interface;
+using NX_lims_Softlines_Command_System.src.Application.Interface.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
@@ -10,7 +10,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using System.Drawing.Printing;
 
-namespace NX_lims_Softlines_Command_System.src.Application.Service
+namespace NX_lims_Softlines_Command_System.src.Application.Service.FormulaContext
 {
     public class FormulaAppService: IFormulaAppService,IScopedDependency
     {

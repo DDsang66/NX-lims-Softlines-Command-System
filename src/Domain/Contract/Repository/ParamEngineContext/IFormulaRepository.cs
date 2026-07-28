@@ -21,6 +21,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         Task<IEnumerable<Formula>> GetByIdsAsync(IEnumerable<FormulaId> ids,CancellationToken ct);
 
         /// <summary>
+        /// 获取所有公式
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IEnumerable<Formula>> GetAllAsync(CancellationToken ct);
+
+        /// <summary>
         /// 通过参数名获取公式
         /// </summary>
         /// <param name="paramName"></param>

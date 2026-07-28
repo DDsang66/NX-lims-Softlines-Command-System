@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 {
     public sealed class Formula : AggregateRoot<FormulaId,string>
     {
-        private readonly List<ParamStructureId?> _paramSturctureIds = new();
+        private readonly List<ParamStructureId?> _paramStructureIds = new();
 
         private readonly List<StandardFamilyId?> _standardFamilyIds = new();
         /// <summary>
@@ -23,7 +23,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 参数结构 Id
         /// </summary>
-        public IReadOnlyCollection<ParamStructureId?> ParamSturctureIds => _paramSturctureIds.AsReadOnly();
+        public IReadOnlyCollection<ParamStructureId?> ParamStructureIds => _paramStructureIds.AsReadOnly();
 
         /// <summary>
         /// 标准族 Id
@@ -129,7 +129,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             {
                 foreach (var paramStructureId in paramStructureIds.Where(psid => psid != null))
                 {
-                    f._paramSturctureIds.Add(paramStructureId);
+                    f._paramStructureIds.Add(paramStructureId);
                 }
             }
 
@@ -190,7 +190,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             {
                 foreach (var paramStructureId in paramStructureIds.Where(psid => psid != null))
                 {
-                    f._paramSturctureIds.Add(paramStructureId);
+                    f._paramStructureIds.Add(paramStructureId);
                 }
             }
 
@@ -337,9 +337,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public void AddParamStructure(ParamStructureId paramStructureId)
         {
             if (paramStructureId == null) throw new ArgumentNullException(nameof(paramStructureId));
-            if (!_paramSturctureIds.Contains(paramStructureId))
+            if (!_paramStructureIds.Contains(paramStructureId))
             {
-                _paramSturctureIds.Add(paramStructureId);
+                _paramStructureIds.Add(paramStructureId);
             }
         }
 
@@ -349,7 +349,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public void RemoveParamStructure(ParamStructureId paramStructureId)
         {
             if (paramStructureId == null) throw new ArgumentNullException(nameof(paramStructureId));
-            _paramSturctureIds.Remove(paramStructureId);
+            _paramStructureIds.Remove(paramStructureId);
         }
 
     }
