@@ -54,7 +54,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
                 StandardFamilyCode = familyCode,
                 StandardCodeNameEn = nameEn,
                 StandardCodeNameChn = nameChn,
-                Status = Status.Draft,
+                Status = status,
             };
 
             //standard.AddDomainEvent(new StandardCreatedEvent(id, standardCode));
