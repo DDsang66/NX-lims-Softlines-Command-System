@@ -3,7 +3,7 @@
     /// <summary>
     /// 更新参数规则请求DTO
     /// </summary>
-    public class UpdateParamRuleRequest
+    public class UpdateParamRuleJsonRequest
     {
         /// <summary>
         /// 规则ID（不可更新）

@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
@@ -61,13 +62,35 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 获取所有参数规则
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<ParamRule>> GetAllRulesAsync(CancellationToken ct) 
+        {
+            var paramRulePos = await _context.Set<BasicParamRule>()
+                .ToListAsync(ct);
+
+            return paramRulePos.Adapt<List<ParamRule>>();
+        }
+
+        /// <summary>
         /// 根据公式 id 获取参数规则集
         /// </summary>
         /// <param name="formulaId"></param>
         /// <returns></returns>
-        public async Task<IEnumerable<ParamRule>> GetByFormulaIdAsync(FormulaId formulaId)
+        public async Task<IEnumerable<ParamRule>> GetByFormulaIdAsync(FormulaId formulaId, CancellationToken ct)
         {
-            return null;
+            // 提取实际的主键值。因为 ParamRuleId 是自定义结构，需要取出它的 Value
+            // 尽早 ToList()，避免 IEnumerable 延迟执行带来的多次枚举问题
+
+            // 3. 一次性从数据库批量查询，EF Core 会自动翻译为 WHERE Value IN (@p0, @p1...)
+            var paramRulePos = await _context.Set<BasicParamRule>()
+                .Where(po => po.FormulaId.Contains(formulaId)) // 注意：这里假设 BasicParamRule 的主键属性名叫 Value
+                .ToListAsync(ct);
+
+            // 4. 批量映射 (Mapster/AutoMapper 等)
+            return paramRulePos.Adapt<List<ParamRule>>();
         }
 
         /// <summary>

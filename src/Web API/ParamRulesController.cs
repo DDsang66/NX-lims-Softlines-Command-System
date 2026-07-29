@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
-using NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppService;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API
 {
@@ -19,31 +19,67 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         }
 
         [HttpPost("add-json")]
-        public async Task<IActionResult> CreateParamRuleJson([FromBody] CreateParamRuleRequest request, CancellationToken ct)
+        public async Task<Result> CreateParamRuleJson([FromBody] CreateParamRuleRequest request, CancellationToken ct)
         {
             var result = await _applicationService.AddParamRuleFromJsonAsync(request, ct);
-            return Ok(result);
+
+            return result;
         }
 
         [HttpPost("add-naturaltext")]
-        public async Task<IActionResult> CreateParamRuleText([FromBody] NaturalLanguageRuleRequest request, CancellationToken ct)
+        public async Task<Result> CreateParamRuleText([FromBody] NaturalLanguageRuleRequest request, CancellationToken ct)
         {
             var result = await _applicationService.AddParamRuleFromNaturalTextAsync(request, ct);
-            return Ok(result);
+
+            return result;
         }
 
-        [HttpPut("update")]
-        public async Task<IActionResult> UpdateParamRule([FromBody] UpdateParamRuleRequest request, CancellationToken ct)
+        [HttpPut("update-json")]
+        public async Task<Result> UpdateParamRuleWithJson([FromBody] UpdateParamRuleJsonRequest request, CancellationToken ct)
         {
-            var result = await _applicationService.UpdateParamRuleAsync(request, ct);
-            return Ok(result);
+            var result = await _applicationService.UpdateParamRuleWithJsonAsync(request, ct);
+
+            return result;
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetParamRule(string id,CancellationToken ct)
+        [HttpPut("update-naturaltext")]
+        public async Task<Result> UpdateParamRuleWithText([FromBody] UpdateParamRuleTextRequest request, CancellationToken ct)
+        {
+            var result = await _applicationService.UpdateParamRuleWithNaturalTextAsync(request, ct);
+
+            return result;
+        }
+
+        [HttpPut("active/{ruleId}")]
+        public async Task<Result> ActivateParamRule(string ruleId, CancellationToken ct)
+        {
+            var result = await _applicationService.ActiveParamRuleAsync(ruleId, ct);
+
+            return result;
+        }
+
+        [HttpGet("get/{id}")]
+        public async Task<Result<ParamRuleResponseDto>> GetParamRule(string id, CancellationToken ct)
         {
             var result = await _queryService.GetByIdAsync(id, ct);
-            return Ok(result);
+
+            return result;
+        }
+
+        [HttpGet("getall")]
+        public async Task<Result<List<ParamRuleResponseDto>>> GetAllParamRules(CancellationToken ct)
+        {
+            var result = await _queryService.GetAllRulesAsync(ct);
+
+            return result;
+        }
+
+        [HttpGet("getfrom-formulaId/{formulaId}")]
+        public async Task<Result<List<ParamRuleResponseDto>>> GetAllParamRulesWithFormulaId(string formulaId, CancellationToken ct)
+        {
+            var result = await _queryService.GetRulesByFormulaIdAsync(formulaId, ct);
+
+            return result;
         }
     }
 }

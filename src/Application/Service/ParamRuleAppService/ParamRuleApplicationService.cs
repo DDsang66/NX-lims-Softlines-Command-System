@@ -4,10 +4,12 @@ using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
@@ -22,11 +24,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         private readonly IParamRuleRepository _pararmRuleRepository;
 
         /// <summary>
-        /// 规则激活校验服务
-        /// </summary>
-        private readonly RuleActiveValidateService _ruleActiveValidateService;
-
-        /// <summary>
         /// 规则自然语言翻译服务
         /// </summary>
         private readonly IRuleTranslationService _ruleTranslationService;
@@ -36,6 +33,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// </summary>
         private readonly IFormulaRepository _formulaRepository;
 
+        private readonly IParamRuleValidateService _paramRuleValidateService;
+
+        private readonly IParamStructureRepository _paramStructureRepository;
+
         /// <summary>
         /// 工作单元
         /// </summary>
@@ -43,13 +44,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
         public ParamRuleApplicationService(
             IParamRuleRepository pararmRuleRepository,
-            RuleActiveValidateService ruleActiveValidateService,
+            IParamRuleValidateService paramRuleValidateService,
             IRuleTranslationService ruleTranslationService,
             IFormulaRepository formulaRepository,
+            IParamStructureRepository paramStructureRepository,
             IUnitOfWork unitOfWork)
         {
             _pararmRuleRepository = pararmRuleRepository;
-            _ruleActiveValidateService = ruleActiveValidateService;
+            _paramRuleValidateService = paramRuleValidateService;
+            _paramStructureRepository = paramStructureRepository;
             _ruleTranslationService = ruleTranslationService;
             _formulaRepository = formulaRepository;
             _unitOfWork = unitOfWork;
@@ -121,7 +124,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <param name="request"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<Result> UpdateParamRuleAsync(UpdateParamRuleRequest request,CancellationToken ct)
+        public async Task<Result> UpdateParamRuleWithJsonAsync(UpdateParamRuleJsonRequest request,CancellationToken ct)
         {
             // 1. 获取现有规则
             var existingRule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(request.Id),ct);
@@ -131,18 +134,43 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
             var changedRequest = request.Adapt<CreateParamRuleRequest>();
 
-            // 2. 使用Director进行转换
-            //var pattern = _ruleTranslationService.TranslateFromDto(request, ct);
+            var pattern = _ruleTranslationService.PatternTranslateFromDto(changedRequest, ct);
 
             // 3. 更新规则
-            //existingRule.ChangePriority(request.Priority);
-
-            //existingRule.Pattern = pattern; // 注意：这里通过聚合根方法去更新
-
-            // 领域规则校验
+            existingRule.Update(pattern, changedRequest.ParamResult, changedRequest.Priority, changedRequest.StopOnMatch);
 
             // 4. 持久化
             await _pararmRuleRepository.UpdateAsync(existingRule,ct);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            // 5. 返回
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 更新参数规则
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<Result> UpdateParamRuleWithNaturalTextAsync(UpdateParamRuleTextRequest request, CancellationToken ct)
+        {
+            // 1. 获取现有规则
+            var existingRule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(request.Id), ct);
+
+            if (existingRule == null)
+                throw new Exception($"Param rule with id {request.Id} not found");
+
+            var formula = await _formulaRepository.GetByIdAsync(existingRule.FormulaId!, ct);
+
+            var (pattern, result) = _ruleTranslationService.ParseFromNaturalLanguageText(request.Text, formula, ct);
+
+            // 3. 更新规则
+            existingRule.Update(pattern, result, request.Priority, request.StopOnMatch);
+
+            // 4. 持久化
+            await _pararmRuleRepository.UpdateAsync(existingRule, ct);
 
             await _unitOfWork.SaveChangesAsync();
 
@@ -162,11 +190,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
             var rule = await _pararmRuleRepository.GetByIdAsync(ruleId, ct);
 
-            var isOk = await _ruleActiveValidateService.ValidateRuleActivationAsync(ruleId, ct);
+            if (rule.FormulaId == null)
+                return Result.Fail("未查询到所属公式");
+            if (rule.StructureId == null)
+                return Result.Fail("未查询到所属参数结构");
+
+            var formula = await _formulaRepository.GetByIdAsync(rule.FormulaId, ct);
+
+            var paramStructure = await _paramStructureRepository.GetByIdAsync(rule.StructureId, ct);
+
+           var isOk = _paramRuleValidateService.Validate(rule,formula,paramStructure);
 
             if (!isOk.IsSuccess) 
             {
-                //调用规则激活校验集合进行验证后激活
                 rule.Active();
             }
 

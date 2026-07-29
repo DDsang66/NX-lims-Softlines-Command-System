@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// </summary>
         /// <param name="formulaId"></param>
         /// <returns></returns>
-       Task<IEnumerable<ParamRule>> GetByFormulaIdAsync(FormulaId formulaId);
+       Task<IEnumerable<ParamRule>> GetByFormulaIdAsync(FormulaId formulaId,CancellationToken ct);
 
         /// <summary>
         /// 根据id查询规则
@@ -21,6 +21,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<ParamRule> GetByIdAsync(ParamRuleId id,CancellationToken ct);
+
+        /// <summary>
+        /// 查询所有参数规则
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IEnumerable<ParamRule>> GetAllRulesAsync(CancellationToken ct);
 
         /// <summary>
         /// 查询规则集

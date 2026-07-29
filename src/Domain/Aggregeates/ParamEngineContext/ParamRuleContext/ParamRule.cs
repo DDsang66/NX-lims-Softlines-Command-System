@@ -1,4 +1,6 @@
-﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.Extensions.FileSystemGlobbing.Internal;
+using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.Enums;
@@ -129,6 +131,56 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 IsActive = isActive,
                 Pattern = pattern
             };
+        }
+
+        /// <summary>
+        /// 可变字段更新
+        /// </summary>
+        /// <param name="Pattern"></param>
+        /// <param name="Result"></param>
+        /// <param name="Priority"></param>
+        /// <param name="StopOnMatch"></param>
+        public void Update(
+            ConditionPattern pattern, 
+            ParamValue result , 
+            int priority, 
+            bool stopOnMatch) 
+        {
+            // 1. 基础参数校验（与 Create 和 ChangePriority 保持一致）
+            if (pattern == null)
+                throw new ArgumentNullException(nameof(pattern), "条件匹配模式不能为空");
+
+            if (priority < 1)
+                throw new ArgumentOutOfRangeException(nameof(priority), "优先级不能小于1");
+
+            if (result == null)
+                throw new ArgumentNullException(nameof(result), "规则结果不能为空");
+
+            // 2. 如果当前规则处于激活状态，更新核心属性后必须确保仍然满足激活条件
+            if (IsActive)
+            {
+                // 条件模式不能为空（至少有一种匹配规则）
+                if (!pattern.EqualMatches.Any()
+                    && !pattern.ComparisonMatches.Any()
+                    && !pattern.InMatches.Any()
+                    && !pattern.CompositeMatches.Any())
+                {
+                    throw new InvalidOperationException("更新失败：激活状态下的规则，条件模式不能为空");
+                }
+
+                // 必须有有效的结果值
+                if (result.Value == null)
+                {
+                    throw new InvalidOperationException("更新失败：激活状态下的规则，结果值不能为空");
+                }
+            }
+
+            // 3. 状态赋值
+            this.Pattern = pattern;
+            this.Result = result;
+            this.Priority = priority;
+            this.StopOnMatch = stopOnMatch;
+            this.IsActive = false;
         }
 
 

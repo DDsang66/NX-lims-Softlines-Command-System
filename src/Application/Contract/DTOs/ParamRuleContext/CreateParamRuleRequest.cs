@@ -36,6 +36,7 @@
         /// 优先级
         /// </summary>
         public int Priority { get; set; }
+
         public List<EqualMatchDto> EqualMatches { get; set; } = new();
         public List<ComparisonMatchDto> ComparisonMatches { get; set; } = new();
         public List<InMatchDto> InMatches { get; set; } = new();
