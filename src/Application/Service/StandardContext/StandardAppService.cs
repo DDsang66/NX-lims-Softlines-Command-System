@@ -33,7 +33,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
                 ? null
                 : new StandardFamilyId(dto.StandardFamilyCode);
 
-            var standard = Standard.Create(standardId, dto.StandardCode, standardFamilyCode,dto.StandardNameEn,dto.StandardNameCn,Status.Draft);
+            // 将前端传入的状态字符串转为枚举，解析失败时默认使用 Draft（防止非法输入导致异常）
+            var status = Enum.TryParse<Status>(dto.Status, out var parsed) ? parsed : Status.Draft;
+            // 调用聚合根工厂方法创建 Standard 实体，传入解析后的状态值
+            var standard = Standard.Create(standardId, dto.StandardCode, standardFamilyCode,dto.StandardNameEn,dto.StandardNameCn,status);
             
             await _standardRepository.AddAsync(standard, ct);
 
@@ -74,6 +77,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardConte
                 : new StandardFamilyId(dto.StandardFamilyCode);
 
             standard.Update(dto.StandardCode,standardFamilyCode, dto.StandardNameEn,dto.StandardNameCn);
+
+            // 处理状态变更
+            if (!string.IsNullOrEmpty(dto.Status) && Enum.TryParse<Status>(dto.Status, out var newStatus) && newStatus != standard.Status)
+            {
+                switch (newStatus)
+                {
+                    case Status.Active: standard.Activate(); break;
+                    case Status.Draft: standard.Draft(); break;
+                    case Status.Deprecated: standard.Deprecated(); break;
+                    case Status.Superseded: standard.Superseded(); break;
+                    case Status.Pending: standard.Pending(); break;
+                }
+            }
 
             await _standardRepository.UpdateAsync(standard, ct);
 

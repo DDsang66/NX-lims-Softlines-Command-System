@@ -26,5 +26,10 @@
         /// 标准族代码
         /// </summary>
         public string StandardFamilyCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 状态：Draft, Active, Deprecated, Superseded, Pending
+        /// </summary>
+        public string Status { get; set; } = string.Empty;
     }
 }
