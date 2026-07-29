@@ -306,25 +306,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         ? current.BicomponentSubFibers[0].GSMTrail2
                         : (decimal)current.GSMTrail2;
 
-                    if (group.OriginalGSMTrail1 > 0)
-                    {
-                        // 有 originalGSM：行 GSM = 溶解后剩余，自身 = 上一步残 − 当前
-                        decimal prevGsm1 = (i == 0) ? startGsm1 : (decimal)groupUnits[i - 1].GSMTrail1;
-                        ownGsm1 = prevGsm1 - curGsm1;
-                        decimal prevGsm2 = (i == 0) ? startGsm2 : (decimal)groupUnits[i - 1].GSMTrail2;
-                        ownGsm2 = prevGsm2 - curGsm2;
-                    }
-                    else
-                    {
-                        // 无 originalGSM：行 GSM = 溶解前重量，自身 = 当前 − 下一
-                        decimal nextGsm1 = !isLast ? (decimal)groupUnits[i + 1].GSMTrail1 : 0m;
-                        ownGsm1 = curGsm1 - nextGsm1;
-                        decimal nextGsm2 = !isLast ? (decimal)groupUnits[i + 1].GSMTrail2 : 0m;
-                        ownGsm2 = curGsm2 - nextGsm2;
-                    }
+                    // own = 当前行 - 下一行（差值 = 被溶解掉的量）
+                    // 最后一行 own = 当前行自身
+                    decimal nextGsm1 = !isLast ? (decimal)groupUnits[i + 1].GSMTrail1 : 0m;
+                    ownGsm1 = curGsm1 - nextGsm1;
+                    decimal nextGsm2 = !isLast ? (decimal)groupUnits[i + 1].GSMTrail2 : 0m;
+                    ownGsm2 = curGsm2 - nextGsm2;
 
-                    var rateTrail1 = SafeDivide(ownGsm1, totalGSMTrail1);
-                    var rateTrail2 = SafeDivide(ownGsm2, totalGSMTrail2);
+                    // rate = (own / firstRowGsm) * (startGsm / total) * 100
+                    var firstRowGsm1 = (decimal)groupUnits[0].GSMTrail1;
+                    var firstRowGsm2 = (decimal)groupUnits[0].GSMTrail2;
+                    var rateTrail1 = totalGSMTrail1 == 0 || firstRowGsm1 == 0
+                        ? 0m : ownGsm1 / firstRowGsm1 * (startGsm1 / totalGSMTrail1) * 100m;
+                    var rateTrail2 = totalGSMTrail2 == 0 || firstRowGsm2 == 0
+                        ? 0m : ownGsm2 / firstRowGsm2 * (startGsm2 / totalGSMTrail2) * 100m;
 
                     units.Add(new MultiFiberRowUnit
                     {
@@ -401,8 +396,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     // 计算分子
                     var numerator = (1m + mr / 100m) * row.Correct / 100m * row.Avg;
 
-                    // 计算Rate并保留两位小数
-                    var rate = Math.Round(numerator / denominator * 100m, 2, MidpointRounding.AwayFromZero);
+                    // 计算Rate（不取整，保留全精度，最终格式化时统一取整）
+                    var rate = numerator / denominator * 100m;
 
                     return row with { MoistureRegain = mr, Rate = rate };
 
@@ -665,8 +660,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             return string.Join("/",
                 _components
                     .OfType<SingleFiberComponent>()
-                    .Select(c => c.FiberName)
-                    .Distinct());
+                    .Select(c => c.FiberName));
         }
 
         /// <summary>
@@ -710,8 +704,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private const string ISO1833_12 = "ISO1833-12:2020";
         private const string ISO1833_18 = "ISO1833-18:2020";
         private const string ISO1833_22 = "ISO1833-22:2020";
-        private const string ISO1833_24 = "ISO1833-24:2010";
-
+        private const string ISO1833_20 = "ISO1833-20:2020";
         // GB/T 2910.x 子标准常量（对应 fdb B 列）
         private const string GB2910_1 = "GB/T 2910.1–2009";
         private const string GB2910_2 = "GB/T 2910.2–2009";
@@ -719,19 +712,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private const string GB2910_4 = "GB/T 2910.4–2022";
         private const string GB2910_6 = "GB/T 2910.6–2009";
         private const string GB2910_7 = "GB/T 2910.7–2009";
+        private const string GB2910_11 = "GB/T 2910.11–2024";
         private const string GB2910_12 = "GB/T 2910.12–2023";
         private const string GB2910_18 = "GB/T 2910.18–2009";
         private const string GB2910_22 = "GB/T 2910.22–2009";
         private const string GB2910_24 = "GB/T 2910.24–2009";
-        private const string GB2910_ELASTANE = "GB/T 2910.";
-        private const string GB29862 = "GB/T 29862-2013";
         private const string FZ01026 = "FZ/T 01026–2017";
 
         private static readonly HashSet<string> DIN1833_D5x = new(StringComparer.OrdinalIgnoreCase)
         {
             "ISO1833-1:2020", "ISO1833-2:2020", "ISO1833-3:2020", "ISO1833-4:2023",
             "ISO1833-6:2018", "ISO1833-7:2017", "ISO1833-11:2017", "ISO1833-12:2020",
-            "ISO1833-18:2020", "ISO1833-22:2020", "ISO1833-24:2010"
+            "ISO1833-18:2020", "ISO1833-22:2020", "ISO1833-20:2020"
         };
 
         /// <summary>Excel L4+L6: 根据标准体系和成分对自动拼接方法标准链</summary>
@@ -781,9 +773,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             {
                 parts.Add(standard);
 
-                // T128: 燃烧法 → GB/T 29862
-                parts.Add(GB29862);
-
                 // T129: 有拆分列且无 elastane → GB/T 2910.1
                 var hasElastane = fibers.Any(f =>
                     f.Equals("elastane", StringComparison.OrdinalIgnoreCase)
@@ -806,10 +795,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     parts.Add(GB2910_2);
                 else if (fibers.Count > 3)
                     parts.Add(FZ01026);
-
-                // T132: elastane → GB/T 2910.
-                if (hasElastane)
-                    parts.Add(GB2910_ELASTANE);
 
                 // cellulosic
                 if (fibers.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
@@ -838,6 +823,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             if (IsAnimal(f))
                 return ISO1833_4;
 
+            // polyester + elastane（涤氨，任意顺序）→ -20（DMAc 法）
+            if ((f == "polyester" && IsElastane(s)) || (IsElastane(f) && s == "polyester"))
+                return ISO1833_20;
+
             // elastane + any → -12（DMF 法）
             if (IsElastane(f))
                 return ISO1833_12;
@@ -861,10 +850,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // cellulosic + linen/ramie → -22
             if (IsRayonType(f) && s == "linen")
                 return ISO1833_22;
-
-            // polyester + any → -24
-            if (f == "polyester")
-                return ISO1833_24;
 
             // acetate alone → -3
             if (f == "acetate")
@@ -899,6 +884,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // rayon系 + cotton → GB/T 2910.6
             if (IsRayonType(f) && s == "cotton")
                 return GB2910_6;
+
+            // cellulosic/cotton/acetate/linen/ramie + polyester → GB/T 2910.11
+            if ((IsCellulosicOrCotton(f) || f == "acetate" || f == "linen" || f == "ramie") && s == "polyester")
+                return GB2910_11;
 
             // rayon系 + linen/ramie → GB/T 2910.22
             if (IsRayonType(f) && (s == "linen" || s == "ramie"))
@@ -1039,7 +1028,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         // Shaker 触发纤维（首成分为这些时需化学溶解）
         private static readonly HashSet<string> ShakerFirstFibers = new(StringComparer.OrdinalIgnoreCase)
         {
-            "nylon", "polyamide", "wool", "silk"
+            "nylon", "polyamide", "wool"
         };
 
         // P130 规则：Polyester 前不允许的纤维
@@ -1102,18 +1091,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         {
             if (fibers.Count < 2) return string.Empty;
 
-            // 第一成分为 nylon/polyamide/wool/silk 且有 ≥2 成分 → Shaker
+            // 首成分为 nylon/polyamide/wool 且有 ≥2 成分 → Shaker
             if (ShakerFirstFibers.Contains(fibers[0]))
-            {
                 return SHAKER;
-            }
-
-            // 有拆分列（等效 Excel P129=1 → T150>0）→ Shaker
-            var hasSplitting = Components.OfType<SplittingFiberComponent>().Any();
-            if (hasSplitting)
-            {
-                return SHAKER;
-            }
 
             return string.Empty;
         }

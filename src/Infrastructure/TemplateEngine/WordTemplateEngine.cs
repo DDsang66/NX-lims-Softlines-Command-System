@@ -27,27 +27,27 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// </summary>
         /// <param name="filePath">Word文档路径</param>
         /// <param name="bookmarkValues">书签名-值字典</param>
-        public void ReplaceText(string filePath, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks = null)
+        public void ReplaceText(string filePath, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks = null, HashSet<string>? removeWhenEmpty = null)
         {
             if (bookmarkValues == null || !bookmarkValues.Any()) return;
 
             using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true))
             {
                 // 正文部件
-                ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues, redBookmarks);
+                ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues, redBookmarks, removeWhenEmpty);
                 doc.MainDocumentPart.Document!.Save();
 
                 // 页眉
                 foreach (var headerPart in doc.MainDocumentPart!.HeaderParts)
                 {
-                    ReplaceBookmarksInPart(headerPart, bookmarkValues, redBookmarks);
+                    ReplaceBookmarksInPart(headerPart, bookmarkValues, redBookmarks, removeWhenEmpty);
                     headerPart.Header?.Save();
                 }
 
                 // 页脚
                 foreach (var footerPart in doc.MainDocumentPart.FooterParts)
                 {
-                    ReplaceBookmarksInPart(footerPart, bookmarkValues, redBookmarks);
+                    ReplaceBookmarksInPart(footerPart, bookmarkValues, redBookmarks, removeWhenEmpty);
                     footerPart.Footer?.Save();
                 }
             }
@@ -57,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// 在指定部件中替换书签
         /// 优先在原有 Run/Text 上就地替换以保留样式；若不存在则寻找局部最近的 RunProperties 并克隆；最后才插入无样式 Run。
         /// </summary>
-        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks)
+        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks, HashSet<string>? removeWhenEmpty)
         {
             var bookmarks = part.RootElement!.Descendants<BookmarkStart>()
                 .Where(b => bookmarkValues.ContainsKey(b.Name!))
@@ -70,6 +70,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                     .FirstOrDefault(be => be.Id?.Value == bookmark.Id?.Value);
 
                 if (bookmarkEnd == null) continue;
+
+                // 若书签在 removeWhenEmpty 中且替换值为空，删除书签前的文本
+                if (removeWhenEmpty != null && removeWhenEmpty.Contains(bookmark.Name!)
+                    && string.IsNullOrEmpty(bookmarkValues[bookmark.Name]))
+                {
+                    RemoveTextBeforeBookmark(bookmark);
+                }
 
                 // 获取书签之间的所有元素（同一父级序列）
                 var contentElements = GetContentBetweenBookmarks(part, bookmark, bookmarkEnd);
@@ -286,6 +293,35 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             );
 
             start.InsertAfterSelf(newRun);
+        }
+
+        /// <summary>
+        /// 删除书签前（同一父元素内）的文本 — 用于 removeWhenEmpty
+        /// </summary>
+        private void RemoveTextBeforeBookmark(BookmarkStart bookmark)
+        {
+            var parent = bookmark.Parent;
+            if (parent == null) return;
+
+            // 收集 BookmarkStart 之前的所有 Text 元素
+            var elementsBefore = parent.ChildElements
+                .TakeWhile(e => e != bookmark)
+                .OfType<Run>()
+                .SelectMany(r => r.Elements<Text>())
+                .ToList();
+
+            foreach (var text in elementsBefore)
+                text.Remove();
+
+            // 也删除 BookmarkStart 之前独立的 Run（里面可能只有 Text，已被上面清空）
+            var runsBefore = parent.ChildElements
+                .TakeWhile(e => e != bookmark)
+                .OfType<Run>()
+                .Where(r => !r.Elements<Text>().Any())
+                .ToList();
+
+            foreach (var run in runsBefore)
+                run.Remove();
         }
 
         /// <summary>

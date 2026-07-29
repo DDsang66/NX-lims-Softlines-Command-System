@@ -11,11 +11,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 拍平为模板可直接使用的 Dictionary<string, string>
         /// 数组/嵌套结构留空，后续单独处理
         /// </summary>
-        public (Dictionary<string, string> Values, HashSet<string> RedBookmarks) Adapt(AnalysisResult analysisResult)
+        public (Dictionary<string, string> Values, HashSet<string> RedBookmarks, HashSet<string> RemoveWhenEmpty) Adapt(AnalysisResult analysisResult)
         {
             var flatData = new Dictionary<string, string>();
             var Data = new Dictionary<string, string>();
             var redBookmarks = new HashSet<string>();
+            var removeWhenEmpty = new HashSet<string>();
 
             // 基础字段（直接映射）
             flatData["ReportNumber"] = analysisResult.ReportNumber;
@@ -27,7 +28,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 标签/备注字段（直接映射）
             // 选空时清空 Recommend 单元格，选 Yes 时不填保持原样
             if (string.IsNullOrWhiteSpace(analysisResult.RecommendedLabelString))
+            {
                 flatData["Recommend"] = "";
+                removeWhenEmpty.Add("Recommend");
+            }
 
             flatData["ResultRemark"] = analysisResult.ResultRemark;
             flatData["LabelRemark"] = analysisResult.LabelRemark;
@@ -105,7 +109,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var values = Data.ToDictionary(
                 kv => kv.Key,
                 kv => kv.Value?.ToString() ?? string.Empty);
-            return (values, redBookmarks);
+            return (values, redBookmarks, removeWhenEmpty);
         }
 
         /// <summary>
@@ -123,12 +127,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 switch (item)
                 {
                     case SingleCalculatedFiberItem single:
-                        flatData["Qualitative"] = single.Qualitative;
-                        flatData["Reagent"] = single.Reagent;
-                        flatData["Sample"] = "-";  // Single 组件 Sample 书签固定为 "-"
-                        // 单组分用无后缀书签（模板兼容）
-                        flatData["GSMTrail1"] = single.GSMTrail1.ToString("F4");
-                        flatData["Rate"] = single.Rate.ToString("F2")+"%";
+                        var idx = itemIndex;
+                        flatData[$"Qualitative_{idx}"] = single.Qualitative;
+                        flatData[$"Reagent_{idx}"] = single.Reagent;
+                        flatData[$"Sample_{idx}"] = "-";
+                        flatData[$"GSMTrail1_{idx}"] = single.GSMTrail1.ToString("F4");
+                        flatData[$"Rate_{idx}"] = single.Rate.ToString("F2")+"%";
                         itemIndex++;
                         break;
 

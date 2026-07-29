@@ -149,9 +149,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                     Path.Combine("DocxModel", "SaveDocx"),
                     targetFileName);
 
-                var (values, redBookmarks) = _wordTemplateAdapter.Adapt(ingredientsAnalysis.Result);
+                var (values, redBookmarks, removeWhenEmpty) = _wordTemplateAdapter.Adapt(ingredientsAnalysis.Result);
 
-                _wordTemplateEngine.ReplaceText(targetPath, values, redBookmarks);
+                _wordTemplateEngine.ReplaceText(targetPath, values, redBookmarks, removeWhenEmpty);
 
                 // 显微镜图片插入 — 展开多组分所有纤维名
                 var fiberNames = ingredientsAnalysis.Components
