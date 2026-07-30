@@ -176,7 +176,7 @@ namespace NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard
             //    return Result.Fail($"Found {invalidRules.Count} invalid parameter rules");
 
             //// 6. 激活标准
-            //Status = Status.Active;
+            Status = Status.Active;
 
             //IsDisabled = 0;
 

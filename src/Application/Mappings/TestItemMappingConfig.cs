@@ -28,7 +28,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
 
             config.NewConfig<TestItem, BasicItem>()
                 .Map(dest => dest.IdItem, src => src.Id.Value)
-                .Map(dest => dest.ItemNameEn, src => src.NameEN)
+                .Map(dest => dest.ItemNameEn, src => src.NameEn)
                 .Map(dest => dest.ItemNameChn, src => src.NameChn)
                 .Map(dest => dest.Description, src => src.Description)
                 .Map(dest => dest.Status, src => (byte)src.Status)

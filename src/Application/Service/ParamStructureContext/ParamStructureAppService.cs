@@ -1,10 +1,12 @@
 ﻿using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
@@ -13,11 +15,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
     public class ParamStructureAppService: IParamStructureAppService,IScopedDependency
     {
         private readonly IParamStructureRepository _paramStructureRepository;
+        private readonly IParamStructureValidateService _paramStructureValidateService;
+        private readonly IFormulaRepository _formulaRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public ParamStructureAppService(IParamStructureRepository paramStructureRepository, IUnitOfWork unitOfWork)
+        public ParamStructureAppService(
+            IParamStructureRepository paramStructureRepository,
+            IParamStructureValidateService paramStructureValidateService,
+            IFormulaRepository formulaRepository,
+            IUnitOfWork unitOfWork)
         {
             _paramStructureRepository = paramStructureRepository;
+            _paramStructureValidateService = paramStructureValidateService;
+            _formulaRepository = formulaRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -95,12 +105,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
         {
             var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
 
+            var formula = await _formulaRepository.GetByIdAsync(new FormulaId(paramStructure.FormulaId), ct);
+
             if (paramStructure == null)
             {
                 return Result.Fail("参数结构不存在");
             }
+            
+            var isOk = _paramStructureValidateService.Validate(formula, paramStructure).IsSuccess;
 
-            //注入领域服务验证
+            if (!isOk) 
+            {
+                return Result.Fail("参数结构校验失败");
+            }
 
             paramStructure.Active();
 

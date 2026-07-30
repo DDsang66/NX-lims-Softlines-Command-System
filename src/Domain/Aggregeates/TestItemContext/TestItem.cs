@@ -1,7 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.Enums;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
@@ -18,7 +15,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
         ///<summary>
         /// 英文名称
         ///</summary>
-        public string NameEN { get; private set; } = string.Empty;
+        public string NameEn { get; private set; } = string.Empty;
 
         /// <summary>
         /// 中文名称
@@ -64,7 +61,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
         /// <exception cref="ArgumentNullException"></exception>
         public static TestItem Create(
             TestItemId id,
-            string nameEN, 
+            string nameEn, 
             string nameChn, 
             string description,
             bool isFeasible,
@@ -74,8 +71,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
             //validate
             if (id == null) 
                 throw new ArgumentNullException(nameof(id));
-            if (string.IsNullOrEmpty(nameEN))
-                throw new ArgumentNullException("NameEN cannot be null or empty.", nameof(nameEN));
+            if (string.IsNullOrEmpty(nameEn))
+                throw new ArgumentNullException("NameEN cannot be null or empty.", nameof(nameEn));
             if (string.IsNullOrEmpty(nameChn))
                 throw new ArgumentNullException("NameChn cannot be null or empty.", nameof(nameChn));
             if (string.IsNullOrEmpty(description))
@@ -84,7 +81,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
             var testItem = new TestItem
             {
                 Id = id,
-                NameEN = nameEN,
+                NameEn = nameEn,
                 NameChn = nameChn,
                 Description = description,
                 IsFeasible = isFeasible,
@@ -108,7 +105,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
         /// <returns></returns>
         public static TestItem Reconstitute(
             TestItemId id,
-            string nameEN,
+            string nameEn,
             string nameChn,
             string description,
             bool isFeasible,
@@ -119,7 +116,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
             var testItem = new TestItem
             {
                 Id = id,
-                NameEN = nameEN,
+                NameEn = nameEn,
                 NameChn = nameChn,
                 Description = description,
                 IsFeasible = isFeasible,
@@ -162,7 +159,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContex
             {
                 if (string.IsNullOrWhiteSpace(nameEN))
                     throw new ArgumentException("NameEN cannot be empty.", nameof(nameEN));
-                NameEN = nameEN.Trim();
+                NameEn = nameEN.Trim();
             }
 
             if (nameChn != null)

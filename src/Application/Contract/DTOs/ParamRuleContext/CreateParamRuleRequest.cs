@@ -79,5 +79,6 @@
         public string Logic { get; set; } = string.Empty;
         public List<string> FieldNames { get; set; } = new();
         public List<ComparisonMatchDto> SubConditions { get; set; } = new();
+        public List<CompositeConditionDto> Children { get; set; } = new();
     }
 }

@@ -58,5 +58,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             
             return testItem;
         }
+
+        /// <summary>
+        /// 查询所有测试项目
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<TestItem>> GetAllTestItemsAsync(CancellationToken ct) 
+        {
+            var itemPos = await _dbContext.BasicItems
+                .AsNoTracking()
+                .ToListAsync(ct);
+
+            var items = itemPos.Adapt<List<TestItem>>();
+
+            return items;
+        }
+
     }
 }

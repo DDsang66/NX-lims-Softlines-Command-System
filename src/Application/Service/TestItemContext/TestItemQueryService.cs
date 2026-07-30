@@ -1,4 +1,6 @@
-﻿using NX_lims_Softlines_Command_System.src.Application.Interface.TestItemContext;
+﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TestItemContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.TestItemContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -19,11 +21,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemConte
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> GetTestItemByIdAsync(string id, CancellationToken ct)
+        public async Task<Result<TestItemResponseDto>> GetTestItemByIdAsync(string id, CancellationToken ct)
         {
             var testItem = await _testItemRepository.GetByIdAsync(new TestItemId(id), ct);
 
-            return Result.Ok();
+            var testItemDto = testItem.Adapt<TestItemResponseDto>();
+
+            return Result<TestItemResponseDto>.Ok(testItemDto);
         }
 
         /// <summary>
@@ -32,11 +36,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemConte
         /// <param name="id"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> GetTestItemsAsync(string id, CancellationToken ct)
+        public async Task<Result<List<TestItemResponseDto>>> GetTestItemsAsync(CancellationToken ct)
         {
-            var testItem = await _testItemRepository.GetByIdAsync(new TestItemId(id), ct);
+            var items = await  _testItemRepository.GetAllTestItemsAsync(ct);
 
-            return Result.Ok();
+            var itemDtos = items.Adapt<List<TestItemResponseDto>>();
+
+            return Result<List<TestItemResponseDto>>.Ok(itemDtos);
         }
     }
 }

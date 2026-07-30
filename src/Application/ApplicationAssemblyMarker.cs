@@ -1,4 +1,4 @@
-﻿namespace NX_lims_Softlines_Command_System.Application
+﻿namespace NX_lims_Softlines_Command_System.src.Application
 {
     /// <summary>
     /// Application 层程序集标记类

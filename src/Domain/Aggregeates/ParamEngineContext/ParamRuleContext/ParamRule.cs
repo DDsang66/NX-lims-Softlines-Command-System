@@ -302,8 +302,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                     if (composite.Logic == LogicalOperator.Or && r) return true;
                 }
             }
-            
-            // 3. 合并结果，支持 Not 对整体取反
+
+            // 3. Children（递归评估子复合节点）
+            if (composite.Children != null)
+            {
+                foreach (var child in composite.Children)
+                {
+                    var childResult = EvaluateComposite(child, pool, accessor, comparer);
+                    if (composite.Logic == LogicalOperator.And && !childResult) return false;
+                    if (composite.Logic == LogicalOperator.Or && childResult) return true;
+                    results.Add(childResult);
+                }
+            }
+
+            // 4. 合并结果，支持 Not 对整体取反
             bool combined;
             if (!results.Any()) combined = false;
             else combined = composite.Logic switch
@@ -314,7 +326,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 _ => results.All(x => x)
             };
 
-            if (composite.Logic == LogicalOperator.Not) combined = !combined;
+            //if (composite.Logic == LogicalOperator.Not) combined = !combined;
 
             return combined;
         }

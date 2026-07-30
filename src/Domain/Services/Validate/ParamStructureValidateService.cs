@@ -2,12 +2,13 @@
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
 {
-    public class ParamStructureValidateService: IScopedDependency
+    public class ParamStructureValidateService: IScopedDependency, IParamStructureValidateService
     {
         /// <summary>
         /// 原子校验：Formula 与 ParamStructure 语义关联与成员关系校验

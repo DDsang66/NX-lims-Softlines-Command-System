@@ -28,5 +28,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract
         /// <param name="ct"></param>
         /// <returns>聚合根</returns>
         Task<TestItem> GetByIdAsync(TestItemId aggregateRootId, CancellationToken ct);
+
+        /// <summary>
+        /// 查询聚合根
+        /// </summary>
+        /// <param name="aggregateRootId"></param>
+        /// <param name="ct"></param>
+        /// <returns>聚合根</returns>
+        Task<IEnumerable<TestItem>> GetAllTestItemsAsync(CancellationToken ct);
     }
 }
