@@ -50,11 +50,23 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
+        /// <summary>
+        /// 激活规则
+        /// </summary>
         [HttpPut("active/{ruleId}")]
         public async Task<Result> ActivateParamRule(string ruleId, CancellationToken ct)
         {
             var result = await _applicationService.ActiveParamRuleAsync(ruleId, ct);
+            return result;
+        }
 
+        /// <summary>
+        /// 禁用规则
+        /// </summary>
+        [HttpPut("deactive/{ruleId}")]
+        public async Task<Result> DeactiveParamRule(string ruleId, CancellationToken ct)
+        {
+            var result = await _applicationService.DeactiveParamRuleAsync(ruleId, ct);
             return result;
         }
 

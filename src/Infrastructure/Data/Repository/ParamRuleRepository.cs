@@ -116,9 +116,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             await _context.AddAsync(rulePo, ct);
         }
 
-        public async Task UpdateAsync(ParamRule rule, CancellationToken ct) 
+        /// <summary>
+        /// 更新规则
+        /// </summary>
+        public async Task UpdateAsync(ParamRule rule, CancellationToken ct)
         {
-            await Task.CompletedTask;
+            var po = await _context.FindAsync<BasicParamRule>(rule.Id.Value, ct);
+            if (po != null) rule.Adapt(po);
         }
+
     }
 }

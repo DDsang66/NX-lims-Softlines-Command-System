@@ -201,7 +201,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
            var isOk = _paramRuleValidateService.Validate(rule,formula,paramStructure);
 
-            if (!isOk.IsSuccess) 
+            if (isOk.IsSuccess)
             {
                 rule.Active();
             }
@@ -210,6 +210,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
             await _unitOfWork.SaveChangesAsync();
 
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 禁用规则
+        /// </summary>
+        public async Task<Result> DeactiveParamRuleAsync(string id, CancellationToken ct)
+        {
+            var ruleId = new ParamRuleId(id);
+            var rule = await _pararmRuleRepository.GetByIdAsync(ruleId, ct);
+            rule.Deactive();
+            await _pararmRuleRepository.UpdateAsync(rule, ct);
+            await _unitOfWork.SaveChangesAsync();
             return Result.Ok();
         }
     }

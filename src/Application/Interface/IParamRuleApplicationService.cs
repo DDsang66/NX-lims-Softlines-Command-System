@@ -45,5 +45,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Result> ActiveParamRuleAsync(string id, CancellationToken ct);
+
+        /// <summary>
+        /// 禁用规则
+        /// </summary>
+        Task<Result> DeactiveParamRuleAsync(string id, CancellationToken ct);
     }
 }
