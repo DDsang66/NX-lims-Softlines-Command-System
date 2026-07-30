@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
@@ -51,6 +52,33 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                         PropertyNameCaseInsensitive = true
                     })
                 ));
+
+            // ========== 领域模型 => 响应 DTO（Pattern 嵌套 → DTO 顶层）==========
+            config.NewConfig<ParamRule, ParamRuleResponseDto>()
+                .Map(dest => dest.Id, src => src.Id.Value)
+                .Map(dest => dest.FormulaId, src => src.FormulaId == null ? null : src.FormulaId.Value)
+                .Map(dest => dest.ParamStructureId, src => src.StructureId == null ? null : src.StructureId.Value)
+                .Map(dest => dest.ParamName, src => src.ParamName)
+                .Map(dest => dest.Priority, src => src.Priority)
+                .Map(dest => dest.IsActive, src => src.IsActive)
+                .Map(dest => dest.ResultValue, src => src.Result.Value)
+                .Map(dest => dest.ResultNotes, src => src.Result.Notes)
+                .Map(dest => dest.EqualMatches, src => src.Pattern == null ? null! :
+                    src.Pattern.EqualMatches.Select(kv => new EqualMatchDto { Field = kv.Key, Value = kv.Value! }).ToList())
+                .Map(dest => dest.ComparisonMatches, src => src.Pattern == null ? null! :
+                    src.Pattern.ComparisonMatches.Select(c => new ComparisonMatchDto
+                    { FieldPath = c.FieldPath, Operator = c.Operator.ToString(), ExpectedValue = c.ExpectedValue! }).ToList())
+                .Map(dest => dest.InMatches, src => src.Pattern == null ? null! :
+                    src.Pattern.InMatches.Select(kv => new InMatchDto { Field = kv.Key, Values = kv.Value!.Select(v => v!).ToList() }).ToList())
+                .Map(dest => dest.CompositeMatches, src => src.Pattern == null ? null! :
+                    src.Pattern.CompositeMatches.Select(c => new CompositeConditionDto
+                    {
+                        Logic = c.Logic.ToString(),
+                        FieldNames = c.FieldNames!,
+                        SubConditions = c.SubConditions == null ? null! :
+                            c.SubConditions.Select(sc => new ComparisonMatchDto
+                            { FieldPath = sc.FieldPath, Operator = sc.Operator.ToString(), ExpectedValue = sc.ExpectedValue! }).ToList()!
+                    }).ToList());
 
         }
      }

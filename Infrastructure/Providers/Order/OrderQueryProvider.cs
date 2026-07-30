@@ -52,7 +52,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Order
 
                     case "express":
                         string express = param.Value?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(express) && express != "All")
+                        if (!string.IsNullOrEmpty(express) && !string.Equals(express, "All", StringComparison.OrdinalIgnoreCase))
                         {
                             query = query.Where(o => o.Express!.Contains(express));
                         }
@@ -60,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Order
 
                     case "group":
                         string testGroup = param.Value?.ToString() ?? "";
-                        if (!string.IsNullOrEmpty(testGroup) && testGroup != "All")
+                        if (!string.IsNullOrEmpty(testGroup) && !string.Equals(testGroup, "All", StringComparison.OrdinalIgnoreCase))
                         {
                             query = query.Where(o => o.TestGroup!.Contains(testGroup));
                         }
@@ -126,8 +126,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.Order
             var timeType = queryParams.ContainsKey("timeType") ? queryParams["timeType"]?.ToString() : null;
             var timeRange = queryParams.ContainsKey("timeRange") ? queryParams["timeRange"] : null;
 
-            // 如果任一参数为null，直接返回原始查询
-            if (string.IsNullOrEmpty(timeOpt) || string.IsNullOrEmpty(timeType) || timeRange == null)
+            // 如果任一参数为null/空/默认值，直接返回原始查询（不过滤时间）
+            if (string.IsNullOrEmpty(timeOpt) || timeOpt == "default"
+                || string.IsNullOrEmpty(timeType)
+                || timeRange == null
+                || (timeRange is string s && string.IsNullOrEmpty(s)))
             {
                 return query;
             }
