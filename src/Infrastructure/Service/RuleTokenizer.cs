@@ -13,14 +13,20 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
     {
         /// <summary>
         /// 原子化正则：每个匹配项是不可再分的基础单元
+        /// 1. 字符串字面量
+        /// 2. 数值
+        /// 3. 单位
+        /// 4. 多字符运算符
+        /// 5. 单字符运算符（包含波浪号 ~ 和点 .）
+        /// 6. 标识符（允许点号用于路径如 A.B）
         /// </summary>
         private static readonly Regex TokenPattern = new Regex(
-            @"(?:""[^""]*"")" +           // 1. 字符串字面量
-            @"|(\d+\.?\d*)" +             // 2. 数值
-            @"|(℃|%|min|g|m|s)" +        // 3. 单位
-            @"|(→|->|=>|>=|<=|==|!=)" +    // 4. 多字符运算符
-            @"|([+\-*/<>=,;():])" +       // 5. 单字符运算符
-            @"|(\w+)",                    // 6. 标识符
+            @"(?:""[^""]*"")" +               // 1. 字符串字面量
+            @"|(\d+\.?\d*)" +                // 2. 数值
+            @"|(℃|°F|%|min|g|m|s)" +        // 3. 单位（扩展 °F）
+            @"|(→|->|=>|>=|<=|==|!=)" +     // 4. 多字符运算符
+            @"|([+\-*/<>=,;():~\{\}])" +     // 5. 单字符运算符（添加 ~ 和 { }）
+            @"|([\w\.]+)",                  // 6. 标识符（允许点号）
             RegexOptions.Compiled);
 
         public IReadOnlyList<Token> Split(string text)
@@ -49,8 +55,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
         /// <summary>
         /// 根据值确定类型
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
         private static TokenType DetermineTokenType(string value)
         {
             if (value.StartsWith("\"") && value.EndsWith("\""))
@@ -59,17 +63,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
             if (decimal.TryParse(value, out _))
                 return TokenType.Number;
 
-            //后续从单位符号库查询，禁止使用硬编码
-            if (value is "℃" or "°F" or "%" or "min" or "g" or "m" or "s")    
+            // 单位判断（可后续扩展到配置）
+            if (value is "℃" or "°F" or "%" or "min" or "g" or "m" or "s")
                 return TokenType.Unit;
 
             return value switch
             {
                 "AND" or "OR" or "NOT" => TokenType.LogicalOperator,
-                "→" or "->" or "=>" or "to" or "~" or "→" => TokenType.RangeOperator,
+                "→" or "->" or "=>" or "to" or "~" => TokenType.RangeOperator,
                 ">=" or "<=" or "==" or "!=" or ">" or "<" or "=" => TokenType.ComparisonOperator,
                 "+" or "-" or "*" or "/" => TokenType.ArithmeticOperator,
-                "(" or ")" => TokenType.Parenthesis,
+                "(" or ")" or "{" or "}" => TokenType.Parenthesis, // <-- 支持大括号
                 "," or ";" or ":" => TokenType.Separator,
                 ":=" => TokenType.Assignment,
                 _ => TokenType.Identifier

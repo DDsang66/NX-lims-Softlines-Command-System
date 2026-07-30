@@ -100,7 +100,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             var parsedRule = _parser.Parse(tokens, formula);
 
             // JSON 反序列化为 ConditionPattern
-            var pattern = parsedRule.ConditionPatternJson.Deserialize<ConditionPattern>();
+            // JSON 反序列化为 ConditionPattern（做空检查并使用合适的选项）
+            var json = parsedRule.ConditionPatternJson;
+            if (json == null)
+                throw new InvalidOperationException("解析失败：ConditionPatternJson 为 null。请检查 Parser 的输出。");
+
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            // 允许把枚举的字符串名反序列化为枚举值（例如 "GreaterThanOrEqual" -> ComparisonOperator.GreaterThanOrEqual）
+            options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+
+            var pattern = json.Deserialize<ConditionPattern>(options)
+                          ?? throw new InvalidOperationException("反序列化失败：无法将 ConditionPatternJson 转换为 ConditionPattern。");
 
             var paramValue = new ParamValue(parsedRule.ResultValue);
 

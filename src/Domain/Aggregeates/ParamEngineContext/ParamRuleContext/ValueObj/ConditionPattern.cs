@@ -88,8 +88,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             return set;
         }
 
-
-
         /* =====================* 示例概述（场景）===========================================
         •	Pattern（示意）：
         •	EqualMatches:

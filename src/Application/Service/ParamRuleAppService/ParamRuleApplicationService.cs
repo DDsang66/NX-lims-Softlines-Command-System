@@ -102,7 +102,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
             // 3. 创建聚合根
             var rule = ParamRule.Create(
-                new ParamRuleId(request.FormulaId),
+                new ParamRuleId(request.Id),
                 new FormulaId(request.FormulaId),
                 new ParamStructureId(request.ParamStructureId),
                 request.ParamName,

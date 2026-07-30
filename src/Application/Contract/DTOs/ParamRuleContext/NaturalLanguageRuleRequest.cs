@@ -3,6 +3,11 @@
     public record NaturalLanguageRuleRequest
     {
         /// <summary>
+        /// 规则 ID
+        /// </summary>
+        public string Id { get; set; } = string.Empty;
+
+        /// <summary>
         /// 规则文本
         /// </summary>
         public string Text { get; set; } = string.Empty;
@@ -26,5 +31,10 @@
         /// 优先级数
         /// </summary>
         public int Priority { get; set; } = 1;
+
+        /// <summary>
+        /// 命中停止
+        /// </summary>
+        public bool StopOnMatch { get; set; }
     }
 }

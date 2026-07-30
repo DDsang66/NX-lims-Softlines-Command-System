@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
@@ -44,9 +45,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 条件字段
         /// </summary>
         public List<string> ConditionFields { get; private set; } = new(); // ["FiberDominantType", "BuyerSpecified"]等具体语义的字段名(不可再切割)
-      
+
         /// <summary>
         /// 公式模板
+        /// 模板格式（建议，必须严格遵守）：
+        /// SlotName{field1,field2,...} + SlotName2{f3,f4} -> Result
+        /// 例如：Equal{MachineType,Temperature,WashingProcess} + Comparer{FiberContent.Polyester,Weight} -> Result
         /// </summary>
         public string ExpressionTemplate { get; private set; } = string.Empty; // "FiberDominantType + BuyerSpecified ->Ballst" 范式样本
 
@@ -279,24 +283,112 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
 
         /// <summary>
-        /// 校验表达式模板语法
+        /// 校验表达式模板语法（支持两种左侧语法）：
+        /// 1) 槽位语法：SlotName{field1,field2}+Slot2{...} -> Result
+        ///    - 严格解析每个槽并验证 ConditionFields 是否全部出现在槽定义中
+        /// 2) 旧式兼容语法：直接在模板中包含字段标识符（原有行为）
+        /// 
+        /// 语义/约束：
+        /// - 仅允许一个推导符（->, =>, →, ~ 或 独立单词 "to"）
+        /// - 若采用槽位语法，必须保证每个槽内部字段非空且由逗号分隔
+        /// - 若模板为旧式语法，则保持原有对 ConditionFields 出现性的验证
         /// </summary>
         public void ValidateExpression()
         {
             if (string.IsNullOrWhiteSpace(ExpressionTemplate))
                 throw new InvalidOperationException("ExpressionTemplate is required");
 
-            var derivationOperators = new[] { "→", "->", "=>", "to", "~" };
-            var hasDerivation = derivationOperators.Any(op =>
-                op.Equals("to", StringComparison.OrdinalIgnoreCase)
-                    ? ExpressionTemplate.IndexOf("to", StringComparison.OrdinalIgnoreCase) >= 0
-                    : ExpressionTemplate.Contains(op));
+            // 寻找推导符（支持符号和单词 "to"）
+            var derivationOperators = new[] { "→", "->", "=>", "~", "to" };
+            var found = new List<(string op, int index, int length)>();
 
-            if (!hasDerivation)
-                throw new InvalidOperationException("ExpressionTemplate must contain a derivation operator like '->','=>','to','~' or '→'.");
-
-            if (ConditionFields != null)
+            foreach (var op in derivationOperators)
             {
+                if (string.Equals(op, "to", StringComparison.OrdinalIgnoreCase))
+                {
+                    foreach (Match m in Regex.Matches(ExpressionTemplate, @"\bto\b", RegexOptions.IgnoreCase))
+                    {
+                        found.Add((op, m.Index, m.Length));
+                    }
+                }
+                else
+                {
+                    var idx = ExpressionTemplate.IndexOf(op, StringComparison.Ordinal);
+                    if (idx >= 0) found.Add((op, idx, op.Length));
+                }
+            }
+
+            if (found.Count == 0)
+                throw new InvalidOperationException("ExpressionTemplate must contain a derivation operator like '->','=>','to','~' or '→'.");
+            if (found.Count > 1)
+                throw new InvalidOperationException("ExpressionTemplate must contain only one derivation operator.");
+
+            var opFound = found.OrderBy(f => f.index).First();
+            var left = ExpressionTemplate.Substring(0, opFound.index).Trim();
+            var right = ExpressionTemplate.Substring(opFound.index + opFound.length).Trim();
+
+            if (string.IsNullOrWhiteSpace(left))
+                throw new InvalidOperationException("ExpressionTemplate left side is empty.");
+            if (string.IsNullOrWhiteSpace(right))
+                throw new InvalidOperationException("ExpressionTemplate right side (result) is empty.");
+
+            // 如果使用槽位语法（识别到大括号），解析槽位
+            if (left.Contains("{") && left.Contains("}"))
+            {
+                var slotFields = new Dictionary<SlotType, HashSet<string>>();
+
+                var parts = left.Split('+');
+                foreach (var rawPart in parts)
+                {
+                    var part = rawPart.Trim();
+                    if (string.IsNullOrWhiteSpace(part))
+                        throw new InvalidOperationException("Empty slot definition detected in ExpressionTemplate.");
+
+                    var open = part.IndexOf('{');
+                    var close = part.LastIndexOf('}');
+                    if (open <= 0 || close <= open)
+                        throw new InvalidOperationException($"Invalid slot format: '{part}'. Expected SlotName{{field1,field2}}.");
+
+                    var slotName = part.Substring(0, open).Trim();
+
+                    // 用枚举校验槽名（忽略大小写），并给出可选项提示
+                    if (!Enum.TryParse<SlotType>(slotName, ignoreCase: true, out var slotType))
+                    {
+                        var allowed = string.Join(", ", Enum.GetNames(typeof(SlotType)));
+                        throw new InvalidOperationException($"Invalid slot name '{slotName}' in template. Expected one of: {allowed}.");
+                    }
+
+                    var inner = part.Substring(open + 1, close - open - 1);
+                    var fields = inner.Split(',')
+                                      .Select(f => f.Trim())
+                                      .Where(f => !string.IsNullOrWhiteSpace(f))
+                                      .ToList();
+                    if (!fields.Any())
+                        throw new InvalidOperationException($"Slot '{slotName}' must contain at least one field.");
+
+                    if (!slotFields.TryGetValue(slotType, out var set))
+                    {
+                        set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        slotFields[slotType] = set;
+                    }
+
+                    foreach (var f in fields)
+                    {
+                        set.Add(f); // HashSet 自动去重（忽略大小写）
+                    }
+                }
+
+                // 验证所有 ConditionFields 都出现在任意槽定义中（按忽略大小写）
+                var allSlotFields = slotFields.Values.SelectMany(s => s).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var missing = ConditionFields
+                    .Where(cf => !allSlotFields.Contains(cf ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+                    .ToList();
+                if (missing.Any())
+                    throw new InvalidOperationException($"Some condition fields are not present in the slot definitions: {string.Join(", ", missing)}");
+            }
+            else
+            {
+                // 兼容旧式模板：检查每个 ConditionField 是否以完整标识符出现在模板中
                 foreach (var field in ConditionFields.Where(f => !string.IsNullOrWhiteSpace(f)))
                 {
                     var escaped = Regex.Escape(field.Trim());
@@ -308,7 +400,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 }
             }
         }
-
 
         /// <summary>
         /// 添加关联的标准族
