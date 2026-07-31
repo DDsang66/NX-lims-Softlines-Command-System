@@ -74,6 +74,9 @@ public class OrderLineOutput
     /// <summary>出实验室时间</summary>
     public DateTimeOffset? LabOut { get; set; }
 
+    /// <summary>RFID 电子标签码</summary>
+    public string? RfidCode { get; set; }
+
     /// <summary>状态：EntryComplete / ReviewComplete / InLab / TestDone / ReportOut</summary>
     public string? Status { get; set; }
 }
@@ -136,6 +139,9 @@ public class OrderSummary
 
     /// <summary>测试项目数量</summary>
     public int ItemCount { get; set; }
+
+    /// <summary>RFID 电子标签码</summary>
+    public string? RfidCode { get; set; }
 
     /// <summary>行备注</summary>
     public string? Remark { get; set; }

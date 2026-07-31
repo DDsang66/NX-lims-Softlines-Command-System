@@ -382,6 +382,10 @@ public partial class LabDbContextSec : DbContext
                 .IsUnicode(false)
                 .HasColumnName("order_entry_person");
             entity.Property(e => e.OrderInTime).HasColumnName("order_in_time");
+            entity.Property(e => e.RfidCode)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("rfid_code");
             entity.Property(e => e.Remark)
                 .HasColumnType("text")
                 .HasColumnName("remark");

@@ -63,6 +63,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 row.TestSampleNum = line.SampleCount;
                 row.TestItemNum = line.ItemCount;
                 row.Remark = line.Remark;
+                row.RfidCode = line.RfidCode;
                 row.DelayType = line.Delay.Type;
                 row.DelayReason = line.Delay.Reason;
                 row.IsDelete = line.IsDeleted ? "Y" : "N";
@@ -137,6 +138,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 TestSampleNum = line.SampleCount,
                 TestItemNum = line.ItemCount,
                 Remark = line.Remark,
+                RfidCode = line.RfidCode,
                 DelayType = line.Delay.Type,
                 DelayReason = line.Delay.Reason,
                 IsDelete = line.IsDeleted ? "Y" : "N",
@@ -170,6 +172,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 SampleCount = row.TestSampleNum ?? 0,
                 ItemCount = row.TestItemNum ?? 0,
                 Remark = row.Remark,
+                RfidCode = row.RfidCode,
                 Delay = DelayInfo.Create(row.DelayType, row.DelayReason),
                 IsDeleted = row.IsDelete == "Y"
             };

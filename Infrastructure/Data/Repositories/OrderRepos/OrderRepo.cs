@@ -41,6 +41,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                     o.OrderEntryPerson,
                     o.CustomerService,
                     o.OrderInTime,
+                    o.RfidCode,
                     o.Express,
                     o.TestGroup,
                     o.Remark,
@@ -76,6 +77,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                         DelayReason = x.DelayReason,
                         LabIn = x.OrderInTime?.ToUniversalTime(),
                         DueDate = x.ReportDueDate?.ToUniversalTime(),
+                        RfidCode = x.RfidCode,
                         Status = x.Status
                     }).OrderBy(x =>
                         x.TestGroup switch
@@ -160,6 +162,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                                 LabIn = d.Schedule.OrderInTime ?? DateTimeOffset.Now,
                                 DueDate = d.Schedule.ReportDueDate,
                                 LabOut = d.Schedule.LabOutTime,
+                                RfidCode = d.Info.RfidCode,
                                 Status = d.Info.Status switch
                                 {
                                     1 => "Entry Complete",
@@ -234,6 +237,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.Orde
                         DelayType = d.Info.DelayType ?? string.Empty,
                         DelayReason = d.Info.DelayReason ?? string.Empty,
                         Remark = d.Info.Remark ?? string.Empty,
+                        RfidCode = d.Info.RfidCode,
                         Status = d.Info.Status switch
                         {
                             1 => "Entry Complete",

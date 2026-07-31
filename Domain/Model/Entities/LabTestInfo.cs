@@ -27,6 +27,8 @@ public partial class LabTestInfo
 
     public int? TestItemNum { get; set; }
 
+    public string? RfidCode { get; set; }
+
     public string? Remark { get; set; }
 
     public string? Express { get; set; }
