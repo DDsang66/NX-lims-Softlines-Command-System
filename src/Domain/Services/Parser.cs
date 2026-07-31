@@ -7,8 +7,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Interface;
 using System.Globalization;
-using System.Text.Json;
-using System.Text.Json.Nodes;
+
 using System.Text.RegularExpressions;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
@@ -361,14 +360,45 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         {
             var groups = new List<List<Token>>();
             var current = new List<Token>();
+            int bracketDepth = 0; // 方括号深度
+            int braceDepth = 0;   // 大括号深度（保险）
 
             foreach (var t in slotTokens)
             {
-                // 逗号分隔符（TokenType.Separator 或 literal ','）
+                // 跟踪方括号深度
+                if (t.Type == TokenType.Parenthesis && t.Value == "[")
+                {
+                    bracketDepth++;
+                    current.Add(t);
+                    continue;
+                }
+                else if (t.Type == TokenType.Parenthesis && t.Value == "]")
+                {
+                    if (bracketDepth > 0) bracketDepth--;
+                    current.Add(t);
+                    continue;
+                }
+
+                // 跟踪大括号深度（处理嵌套对象）
+                if (t.Type == TokenType.Parenthesis && t.Value == "{")
+                {
+                    braceDepth++;
+                    current.Add(t);
+                    continue;
+                }
+                else if (t.Type == TokenType.Parenthesis && t.Value == "}")
+                {
+                    if (braceDepth > 0) braceDepth--;
+                    current.Add(t);
+                    continue;
+                }
+
+                // 只有不在任何括号内部的逗号才是分隔符
                 var isComma = (t.Type == TokenType.Separator && t.Value == ",") ||
                               (t.Type == TokenType.ArithmeticOperator && t.Value == ",") ||
                               (t.Type == TokenType.Unknown && t.Value == ",");
-                if (isComma)
+
+                if (isComma && bracketDepth == 0 && braceDepth == 0) // ✅ 关键修复
                 {
                     groups.Add(current);
                     current = new List<Token>();

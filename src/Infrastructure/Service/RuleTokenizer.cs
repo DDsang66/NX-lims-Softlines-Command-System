@@ -25,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
             @"|(\d+\.?\d*)" +                // 2. 数值
             @"|(℃|°F|%|min|g|m|s)" +        // 3. 单位（扩展 °F）
             @"|(→|->|=>|>=|<=|==|!=)" +     // 4. 多字符运算符
-            @"|([+\-*/<>=,;():~\{\}])" +     // 5. 单字符运算符（添加 ~ 和 { }）
+            @"|([+\-*/<>=,;():~{}\[\]])" +  // 5. 单字符运算符（添加 ~ { } [ ]）
             @"|([\w\.]+)",                  // 6. 标识符（允许点号）
             RegexOptions.Compiled);
 
@@ -73,7 +73,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
                 "→" or "->" or "=>" or "to" or "~" => TokenType.RangeOperator,
                 ">=" or "<=" or "==" or "!=" or ">" or "<" or "=" => TokenType.ComparisonOperator,
                 "+" or "-" or "*" or "/" => TokenType.ArithmeticOperator,
-                "(" or ")" or "{" or "}" => TokenType.Parenthesis, // <-- 支持大括号
+                "(" or ")" or "{" or "}" or "[" or "]" => TokenType.Parenthesis, // <-- 支持大括号
                 "," or ";" or ":" => TokenType.Separator,
                 ":=" => TokenType.Assignment,
                 _ => TokenType.Identifier

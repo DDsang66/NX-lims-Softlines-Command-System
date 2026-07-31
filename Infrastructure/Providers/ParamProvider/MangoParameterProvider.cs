@@ -75,27 +75,42 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
         public async Task<string?> CreateParameters([FromBody] RequiredInfoDto infoDto, string ItemName)
         {
+            // 1. 参数校验
+            if (string.IsNullOrEmpty(infoDto.menuName))
+            {
+                return null;
+            }
 
-            // 1. 计算最大值
-            string? largestVarName = await _helper.MaxCompositionType(infoDto.fiberComposition!)!;
-            string menuName = infoDto.menuName!;
-            if (menuName == null) { return null; }
+            // 2. 计算最大值
+            string? largestVarName = await _helper.MaxCompositionType(infoDto.fiberComposition!);
+            string menuName = infoDto.menuName;
 
-            var ElasticLoad = string.Empty;
-            var rate = _helper.CompositionRate(infoDto.fiberComposition, "Elastane") + _helper.CompositionRate(infoDto.fiberComposition, "Spandex");
-            if ((infoDto.menuName!).Contains("Woven")) return ElasticLoad = "30";
-            if (rate.HasValue && rate < 5) return ElasticLoad = "15";
-            if (rate.HasValue && 5 <= rate && rate < 11) return ElasticLoad = "20";
-            if (rate.HasValue && rate >= 11) return ElasticLoad = "25";
+            // 3. 计算 ElasticLoad（只赋值，不提前返回）
+            string? elasticLoad = null;
+            if (ItemName == "Extension and Recovery")
+            {
+                var rate = _helper.CompositionRate(infoDto.fiberComposition, "Elastane") + _helper.CompositionRate(infoDto.fiberComposition, "Spandex");
 
-            // 2. 根据 Menu/Item 组合查表
-            return GetParameter(menuName, ItemName, largestVarName, ElasticLoad);//返回一个string类型的Parameter
+                if (menuName.Contains("Woven"))
+                {
+                    elasticLoad = "30";
+                }
+                else if (rate.HasValue)
+                {
+                    if (rate < 5) elasticLoad = "15";
+                    else if (rate < 11) elasticLoad = "20";
+                    else elasticLoad = "25";
+                }
+            }
+
+            // 4. 根据 Menu/Item 组合查表
+            return GetParameter(menuName, ItemName, largestVarName, elasticLoad);
         }
 
-        // ---------- 2. 映射表 ----------
-        private static readonly Dictionary<(string Menu, string Item, string? Lv,string? elasticLoad), string?> _map = new()
+        // ---------- 映射表保持不变 ----------
+        private static readonly Dictionary<(string Menu, string Item, string? Lv, string? elasticLoad), string?> _map = new()
         {
-            [("Knit(Mango)", "Pilling Resistance", "Vegetable",null)] = "Cycle: 14400 revs",
+            [("Knit(Mango)", "Pilling Resistance", "Vegetable", null)] = "Cycle: 14400 revs",
             [("Knit(Mango)", "Pilling Resistance", "Man-made", null)] = "Cycle: 10800 revs",
             [("Knit(Mango)", "Pilling Resistance", "Synthetic", null)] = "Cycle: 10800 revs",
             [("Knit(Mango)", "Pilling Resistance", "Animal", null)] = "Cycle: 7200 revs",
@@ -115,15 +130,24 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
         private static string? GetParameter(string menu, string item, string? lv, string? elasticLoad)
         {
-            // 1) 先精确匹配 (Menu, Item, Lv)
-            if (_map.TryGetValue((menu, item, lv, elasticLoad), out var exact)) return exact;
+            // 1) 精确匹配 (Menu, Item, Lv, ElasticLoad)
+            if (_map.TryGetValue((menu, item, lv, elasticLoad), out var exact))
+                return exact;
 
-            // 2) 再匹配 (Menu, Item, any)
-            if (_map.TryGetValue((menu, item, null,null), out var fallback)) return fallback;
+            // 2) 忽略 Lv，保留 ElasticLoad 匹配 (针对 Extension and Recovery 等依赖 elasticLoad 的项目)
+            if (lv != null && _map.TryGetValue((menu, item, null, elasticLoad), out var ignoreLv))
+                return ignoreLv;
 
-            return null!;
+            // 3) 忽略 ElasticLoad，保留 Lv 匹配 (针对可能只依赖 lv 的项目)
+            if (elasticLoad != null && _map.TryGetValue((menu, item, lv, null), out var ignoreElastic))
+                return ignoreElastic;
+
+            // 4) 兜底匹配：仅匹配 (Menu, Item)
+            if (_map.TryGetValue((menu, item, null, null), out var fallback))
+                return fallback;
+
+            return null;
         }
-
 
 
         private string? DryProcedureHelper(string sampleDesc, string? dryProcedure)
