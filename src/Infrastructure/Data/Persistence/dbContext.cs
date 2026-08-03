@@ -19,6 +19,8 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<BasicItem> BasicItems { get; set; }
 
+    public virtual DbSet<BasicMenuItem> BasicMenuItems { get; set; }
+
     public virtual DbSet<BasicParam> BasicParams { get; set; }
 
     public virtual DbSet<BasicParamRule> BasicParamRules { get; set; }
@@ -43,12 +45,11 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; }
 
+    public virtual DbSet<PhysicalWeightRecord> PhysicalWeightRecords { get; set; }
+
     public virtual DbSet<ProcessedEvent> ProcessedEvents { get; set; }
 
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
-
-    /// <summary>物理称重记录表</summary>
-    public virtual DbSet<PhysicalWeightRecord> PhysicalWeightRecords { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -80,45 +81,29 @@ public partial class dbContext : DbContext
 
         modelBuilder.Entity<BasicBuyerMenu>(entity =>
         {
-            entity.HasKey(e => e.IdMenu);
+            entity.HasKey(e => e.MenuId);
 
             entity.ToTable("basic_buyer_menu");
 
-            entity.Property(e => e.IdMenu)
+            entity.Property(e => e.MenuId)
                 .HasMaxLength(25)
                 .IsUnicode(false)
-                .HasColumnName("id_menu");
+                .HasColumnName("menu_id");
             entity.Property(e => e.BuyerCode)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("buyer_code");
-            entity.Property(e => e.DisplayGroup)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("display_group");
-            entity.Property(e => e.IndexItem)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("index_item");
-            entity.Property(e => e.IndexStandardCode)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("index_standard_code");
             entity.Property(e => e.MenuName)
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("menu_name");
-            entity.Property(e => e.ModifiedName)
-                .HasMaxLength(100)
-                .IsUnicode(false)
-                .HasColumnName("modified_name");
-            entity.Property(e => e.Requirement)
-                .IsUnicode(false)
-                .HasColumnName("requirement");
-            entity.Property(e => e.TestGroup)
-                .HasMaxLength(10)
-                .IsUnicode(false)
-                .HasColumnName("test_group");
+            entity.Property(e => e.Remark)
+                .HasColumnType("text")
+                .HasColumnName("remark");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.UploadTime)
+                .HasColumnType("datetime")
+                .HasColumnName("upload_time");
         });
 
         modelBuilder.Entity<BasicFormula>(entity =>
@@ -183,6 +168,42 @@ public partial class dbContext : DbContext
                 .HasColumnName("param_require_denfinition");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.TestGroup).HasColumnName("test_group");
+        });
+
+        modelBuilder.Entity<BasicMenuItem>(entity =>
+        {
+            entity.ToTable("basic_menu_item");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.BuyerModifiedGroup)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("buyer_modified_group");
+            entity.Property(e => e.BuyerModifiedTestItem)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("buyer_modified_test_item");
+            entity.Property(e => e.BuyerModifiedTestMethod)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("buyer_modified_test_method");
+            entity.Property(e => e.MenuId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("menu_id");
+            entity.Property(e => e.Requirement)
+                .HasColumnType("text")
+                .HasColumnName("requirement");
+            entity.Property(e => e.StandardId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("standard_id");
+            entity.Property(e => e.TestItemId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("test_item_id");
         });
 
         modelBuilder.Entity<BasicParam>(entity =>
@@ -338,7 +359,6 @@ public partial class dbContext : DbContext
                 .HasColumnName("created_time");
             entity.Property(e => e.OrderId)
                 .HasMaxLength(50)
-                .IsUnicode(false)
                 .HasColumnName("order_id");
             entity.Property(e => e.Remark)
                 .HasMaxLength(250)
@@ -528,6 +548,46 @@ public partial class dbContext : DbContext
                 .HasConstraintName("FK_paramsturcture_standardfamily_basic_param_structure");
         });
 
+        modelBuilder.Entity<PhysicalWeightRecord>(entity =>
+        {
+            entity.ToTable("physical_weight_record");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.Area)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("area");
+            entity.Property(e => e.CreatedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EnvHumidity)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("env_humidity");
+            entity.Property(e => e.EnvTemperature)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("env_temperature");
+            entity.Property(e => e.GPerSqm)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("g_per_sqm");
+            entity.Property(e => e.OzPerSqyd)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("oz_per_sqyd");
+            entity.Property(e => e.RecordIndex).HasColumnName("record_index");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(50)
+                .HasColumnName("report_number");
+            entity.Property(e => e.TestPoint)
+                .HasMaxLength(50)
+                .HasColumnName("test_point");
+            entity.Property(e => e.TestTime)
+                .HasColumnType("datetime")
+                .HasColumnName("test_time");
+            entity.Property(e => e.Weight)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("weight");
+        });
+
         modelBuilder.Entity<ProcessedEvent>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__processe__3214EC07B0EC46CB");
@@ -564,27 +624,6 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("sample_code");
-        });
-
-        // ---- 物理称重记录表 physical_weight_record ----
-        modelBuilder.Entity<PhysicalWeightRecord>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.ToTable("physical_weight_record");
-
-            entity.Property(e => e.Id).ValueGeneratedNever().HasColumnName("id");
-            entity.Property(e => e.RecordIndex).HasColumnName("record_index");
-            entity.Property(e => e.SampleId).HasMaxLength(50).IsUnicode(false).HasColumnName("sample_id");
-            entity.Property(e => e.TestPoint).HasMaxLength(50).IsUnicode(false).HasColumnName("test_point");
-            entity.Property(e => e.Weight).HasColumnType("decimal(10,4)").HasColumnName("weight");
-            entity.Property(e => e.Area).HasColumnType("decimal(10,4)").HasColumnName("area");
-            entity.Property(e => e.GPerSqm).HasColumnType("decimal(10,4)").HasColumnName("g_per_sqm");
-            entity.Property(e => e.OzPerSqyd).HasColumnType("decimal(10,4)").HasColumnName("oz_per_sqyd");
-            entity.Property(e => e.EnvTemperature).HasColumnType("decimal(5,2)").HasColumnName("env_temperature");
-            entity.Property(e => e.EnvHumidity).HasColumnType("decimal(5,2)").HasColumnName("env_humidity");
-            entity.Property(e => e.TestTime).HasColumnType("datetime").HasColumnName("test_time");
-            entity.Property(e => e.ReportNumber).HasMaxLength(50).IsUnicode(false).HasColumnName("report_number");
-            entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasColumnName("created_at");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -22,7 +22,7 @@ public class PhysicalWeightRecordService : IScopedDependency
         var entities = req.Records.Select(dto => new PhysicalWeightRecord
         {
             Id = Guid.NewGuid(),
-            RecordIndex = dto.RecordIndex, SampleId = dto.SampleId,
+            RecordIndex = dto.RecordIndex,
             TestPoint = dto.TestPoint, Weight = dto.Weight, Area = dto.Area,
             GPerSqm = dto.GPerSqm, OzPerSqyd = dto.OzPerSqyd,
             EnvTemperature = dto.EnvTemperature, EnvHumidity = dto.EnvHumidity,

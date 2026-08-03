@@ -326,10 +326,28 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
                         for (int j = 0; j < fieldNames.Count; j++)
                         {
                             var raw = JoinAndNormalizeTokenGroup(tokenGroups[j]);
-                            var values = raw.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
-                                            .Select(v => TryParseLiteral(v.Trim()))
-                                            .ToList<object?>();
-                            ins.Add((fieldNames[j], values));
+
+                            // 检查是否是数组格式（以 [ 开头，以 ] 结尾）
+                            if (raw.TrimStart().StartsWith("[") && raw.TrimEnd().EndsWith("]"))
+                            {
+                                // 提取方括号内的内容
+                                var innerContent = raw.Trim();
+                                innerContent = innerContent.Substring(1, innerContent.Length - 2); // 去掉 [ 和 ]
+
+                                // 按逗号分割并解析每个元素
+                                var values = innerContent.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                                        .Select(v => TryParseLiteral(v.Trim()))
+                                                        .ToList<object?>();
+                                ins.Add((fieldNames[j], values));
+                            }
+                            else
+                            {
+                                // 兼容旧格式：直接按逗号分割
+                                var values = raw.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                                                .Select(v => TryParseLiteral(v.Trim()))
+                                                .ToList<object?>();
+                                ins.Add((fieldNames[j], values));
+                            }
                         }
                         break;
 

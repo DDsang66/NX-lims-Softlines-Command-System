@@ -216,6 +216,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {new[] { "Tights" },"DStoWashing&DC-BBPSC"},
                 {new[] { "Socks" },"DStoWashing&DC-BBPSC"},
                 {new[] { "Caps" },"DStoWashing&DC-BBPSC"},
+                {new[] { "Gloves" },"DStoWashing&DC-Gloves"},
                 {new[] { "Fabric and Home Textile" },"DStoWashing-F"},
             },
         };
