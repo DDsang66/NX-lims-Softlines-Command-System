@@ -47,6 +47,9 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
 
+    /// <summary>物理称重记录表</summary>
+    public virtual DbSet<PhysicalWeightRecord> PhysicalWeightRecords { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<BasicBuyer>(entity =>
@@ -561,6 +564,27 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("sample_code");
+        });
+
+        // ---- 物理称重记录表 physical_weight_record ----
+        modelBuilder.Entity<PhysicalWeightRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.ToTable("physical_weight_record");
+
+            entity.Property(e => e.Id).ValueGeneratedNever().HasColumnName("id");
+            entity.Property(e => e.RecordIndex).HasColumnName("record_index");
+            entity.Property(e => e.SampleId).HasMaxLength(50).IsUnicode(false).HasColumnName("sample_id");
+            entity.Property(e => e.TestPoint).HasMaxLength(50).IsUnicode(false).HasColumnName("test_point");
+            entity.Property(e => e.Weight).HasColumnType("decimal(10,4)").HasColumnName("weight");
+            entity.Property(e => e.Area).HasColumnType("decimal(10,4)").HasColumnName("area");
+            entity.Property(e => e.GPerSqm).HasColumnType("decimal(10,4)").HasColumnName("g_per_sqm");
+            entity.Property(e => e.OzPerSqyd).HasColumnType("decimal(10,4)").HasColumnName("oz_per_sqyd");
+            entity.Property(e => e.EnvTemperature).HasColumnType("decimal(5,2)").HasColumnName("env_temperature");
+            entity.Property(e => e.EnvHumidity).HasColumnType("decimal(5,2)").HasColumnName("env_humidity");
+            entity.Property(e => e.TestTime).HasColumnType("datetime").HasColumnName("test_time");
+            entity.Property(e => e.ReportNumber).HasMaxLength(50).IsUnicode(false).HasColumnName("report_number");
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime").HasColumnName("created_at");
         });
 
         OnModelCreatingPartial(modelBuilder);

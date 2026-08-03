@@ -59,6 +59,20 @@ namespace NX_lims_Softlines_Command_System.Interfaces.Controllers
             var fileSize = memoryStream.Length;
             // 返回文件流
             // 注册回调，在响应完成后删除文件
+
+            // 接收数据后自动将对应 ReportNumber 的单据状态更新为 ReviewComplete（2），
+            // 标记该报告号下的实验数据已接收完毕，后续可直接进入实验室流程
+            var lab = _db.LabTestInfos.FirstOrDefault(l => l.ReportNumber == dto.ReportNumber);
+
+            if(lab !=null)
+            {
+                lab.Status = 2;
+                _db.LabTestInfos.Update(lab);
+                _db.SaveChanges();
+            }
+
+
+
             Response.RegisterForDispose(new DeleteFileOnDispose(zipPath));
             var filename = $"DataSheet_{dto.ReportNumber}.zip";   // 不要加号
             return File(memoryStream, "application/zip", filename);
