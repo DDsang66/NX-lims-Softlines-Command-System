@@ -128,13 +128,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
             var id = new MenuId(menuId);
 
             var menu = await _menuRepository.GetByIdAsync(id, ct);
+
             if (menu == null)
                 return Result.Fail($"未找到套餐: {menuId}");
 
-            // 软删除
             /*menu.delete();*/ // 需要在 Menu 中添加 Delete 方法
 
             await _menuRepository.UpdateAsync(menu, ct);
+
             await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Ok();

@@ -4,7 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.PhysicalWe
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
-namespace NX_lims_Softlines_Command_System.src.Application.Service;
+namespace NX_lims_Softlines_Command_System.src.Application.Curd;
 
 /// <summary>物理称重记录应用服务</summary>
 public class PhysicalWeightRecordService : IScopedDependency

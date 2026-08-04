@@ -99,6 +99,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     (Status)po.Status,
                     new BuyerId(po.BuyerCode)
                 ));
+
+            // Menu -> MenuResponseDto（新增）
+            config.NewConfig<Menu, MenuResponseDto>()
+                .Map(dest => dest.MenuId, src => src.Id)
+                .Map(dest => dest.MenuName, src => src.MenuName)
+                .Map(dest => dest.MenuItems, src => src.MenuItems) // 自动映射 MenuItem -> MenuItemDto
+                .Map(dest => dest.Remark, src => src.Remark)
+                .Map(dest => dest.UpLoadTime, src => src.UpLoadTime)
+                .Map(dest => dest.Status, src => src.Status.ToString());
         }
     }
 }

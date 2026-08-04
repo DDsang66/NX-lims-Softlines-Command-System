@@ -134,7 +134,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
         }
 
         /// <summary>
-        /// 移除菜单项
+        /// 测试项目
         /// </summary>
         public void RemoveMenuItem(Guid itemId)
         {

@@ -109,7 +109,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     po.MenuId = menuId.Value;
                 }
 
-                await _dbContext.BasicMenuItems.AddRangeAsync(itemsToAdd.Adapt<BasicMenuItem>());
+                await _dbContext.BasicMenuItems.AddRangeAsync(itemsToAddPo);
             }
 
             // 5. 计算需要更新的项（在两者中都存在）
