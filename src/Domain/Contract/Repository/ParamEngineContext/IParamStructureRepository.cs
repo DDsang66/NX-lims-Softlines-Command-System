@@ -16,6 +16,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         Task<ParamStructure> GetByIdAsync(ParamStructureId id, CancellationToken ct);
 
         /// <summary>
+        /// 查询所有结构
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<List<ParamStructure>> GetAllAsync(CancellationToken ct);
+
+        /// <summary>
         /// 根据标准族查询结构
         /// </summary>
         /// <param name="standardFamilyId"></param>

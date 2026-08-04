@@ -133,6 +133,4 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamSt
         /// <summary>
         public object? Max { get; set; } = null;
     }
-
-
 }

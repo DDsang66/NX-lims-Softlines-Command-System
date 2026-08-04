@@ -201,7 +201,7 @@ public partial class dbContext : DbContext
                 .HasColumnType("text")
                 .HasColumnName("requirement");
             entity.Property(e => e.StandardId)
-                .HasMaxLength(25)
+                .HasMaxLength(500)
                 .IsUnicode(false)
                 .HasColumnName("standard_id");
             entity.Property(e => e.TestItemId)
@@ -394,7 +394,7 @@ public partial class dbContext : DbContext
                 .HasColumnType("text")
                 .HasColumnName("samples");
             entity.Property(e => e.StandardId)
-                .HasMaxLength(25)
+                .HasMaxLength(500)
                 .IsUnicode(false)
                 .HasColumnName("standard_id");
             entity.Property(e => e.Status).HasColumnName("status");

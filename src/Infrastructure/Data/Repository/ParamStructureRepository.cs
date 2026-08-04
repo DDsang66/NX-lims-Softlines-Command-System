@@ -136,6 +136,58 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 获取所有参数结构
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<List<ParamStructure>> GetAllAsync(CancellationToken ct) 
+        {
+            // 获取所有主表实体的 ID
+            var paramStructurePos = await _dbContext.BasicParamStructures.ToListAsync(ct);
+            if (!paramStructurePos.Any())
+            {
+                return new List<ParamStructure>();
+            }
+
+            var ids = paramStructurePos.Select(p => p.ParamStructureId).ToList();
+            var paramStructureIds = ids.Select(id => new ParamStructureId(id)).ToList();
+
+            // 批量获取关联表数据
+            var standardFamilyMapping = await GetStandardFamilyMappingAsync(ids, ct);
+            var ruleMapping = await GetRuleMappingAsync(ids, ct);
+
+            // 内存中组装聚合根
+            var result = new List<ParamStructure>(paramStructurePos.Count);
+            foreach (var po in paramStructurePos)
+            {
+                var id = new ParamStructureId(po.ParamStructureId);
+                var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
+                var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
+
+                var paramStructure = ParamStructure.Reconstitute(
+                    id,
+                    standardFamilyIds,
+                    ruleIds,
+                    new FormulaId(po.FormulaId),
+                    po.ParamName,
+                    JsonSerializer.Deserialize<ParamSchema>(po.Schema!,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    })!,
+                    (Status)po.Status,
+                    po.EffectiveDate);
+
+                result.Add(paramStructure);
+            }
+
+            return result;
+        }
+
+
+
+
+        /// <summary>
         /// 根据参数名称查询结构
         /// </summary>
         /// <param name="paramName"></param>
@@ -143,7 +195,45 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task<IEnumerable<ParamStructure>> GetByParamName(string paramName, CancellationToken ct)
         {
-            return null;
+            var paramStructurePos = await _dbContext.BasicParamStructures
+                .Where(p => p.ParamName == paramName)
+                .ToListAsync(ct);
+
+            if (!paramStructurePos.Any())
+            {
+                return Enumerable.Empty<ParamStructure>();
+            }
+
+            var ids = paramStructurePos.Select(p => p.ParamStructureId).ToList();
+            var paramStructureIds = ids.Select(id => new ParamStructureId(id)).ToList();
+
+            var standardFamilyMapping = await GetStandardFamilyMappingAsync(ids, ct);
+            var ruleMapping = await GetRuleMappingAsync(ids, ct);
+
+            var result = new List<ParamStructure>(paramStructurePos.Count);
+            foreach (var po in paramStructurePos)
+            {
+                var id = new ParamStructureId(po.ParamStructureId);
+                var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
+                var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
+
+                var paramStructure = ParamStructure.Reconstitute(
+                    id,
+                    standardFamilyIds,
+                    ruleIds,
+                    new FormulaId(po.FormulaId),
+                    po.ParamName,
+                    JsonSerializer.Deserialize<ParamSchema>(po.Schema!, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    })!,
+                    (Status)po.Status,
+                    po.EffectiveDate);
+
+                result.Add(paramStructure);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -170,6 +260,40 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         {
             await Task.CompletedTask;
         }
+
+        /// <summary>
+        /// 批量获取标准族映射字典
+        /// </summary>
+        private async Task<Dictionary<string, List<StandardFamilyId>>> GetStandardFamilyMappingAsync(List<string> idValues, CancellationToken ct)
+        {
+            return await _dbContext.ParamsturctureStandardfamilies
+                .Where(af => idValues.Contains(af.ParamStructureId))
+                .GroupBy(af => af.ParamStructureId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(af => new StandardFamilyId(af.IdStandardFamily)).ToList(),
+                    ct);
+        }
+
+        /// <summary>
+        /// 批量获取规则映射字典
+        /// </summary>
+        private async Task<Dictionary<string, List<ParamRuleId>>> GetRuleMappingAsync(List<string> idValues, CancellationToken ct)
+        {
+            return await _dbContext.BasicParamRules
+                .Where(ar => idValues.Contains(ar.ParamStructureId))
+                .GroupBy(ar => ar.ParamStructureId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(ar => new ParamRuleId(ar.RuleId)).ToList(),
+                    ct);
+        }
+
+
+
+
+
+
 
     }
 }
