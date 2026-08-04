@@ -134,12 +134,34 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 删除聚合根（连同其菜单项一起删除）
+        /// </summary>
+        /// <param name="aggregateRoot"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task DeleteAsync(Menu aggregateRoot, CancellationToken ct)
+        {
+            // 1. 先删关联菜单项（basic_menu_item）
+            var items = await _dbContext.BasicMenuItems
+                .Where(i => i.MenuId == aggregateRoot.Id.Value)
+                .ToListAsync(ct);
+            if (items.Any())
+                _dbContext.BasicMenuItems.RemoveRange(items);
+
+            // 2. 再删套餐本体（basic_buyer_menu）
+            var menuPo = await _dbContext.BasicBuyerMenus
+                .FirstOrDefaultAsync(m => m.MenuId == aggregateRoot.Id.Value, ct);
+            if (menuPo != null)
+                _dbContext.BasicBuyerMenus.Remove(menuPo);
+        }
+
+        /// <summary>
         /// 查询聚合根
         /// </summary>
         /// <param name="aggregateRootId"></param>
         /// <param name="ct"></param>
         /// <returns>聚合根</returns>
-        public async Task<Menu> GetByIdAsync(MenuId aggregateRootId, CancellationToken ct) 
+        public async Task<Menu> GetByIdAsync(MenuId aggregateRootId, CancellationToken ct)
         {
             // 1. 读取基本表
             var menuPo = await _dbContext.BasicBuyerMenus
@@ -182,6 +204,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 4. 重建聚合（Menu.Reconstitute）
             var menu = Menu.Reconstitute(
                 new MenuId(menuPo.MenuId),
+                menuPo.MenuName,
                 menuItems.AsReadOnly(),
                 menuPo.Remark,
                 menuPo.UploadTime,
@@ -243,6 +266,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
                 var menu = Menu.Reconstitute(
                     new MenuId(menuPo.MenuId),
+                    menuPo.MenuName,
                     menuItems.AsReadOnly(),
                     menuPo.Remark,
                     menuPo.UploadTime,
@@ -311,6 +335,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
                 var menu = Menu.Reconstitute(
                     new MenuId(menuPo.MenuId),
+                    menuPo.MenuName,
                     menuItems.AsReadOnly(),
                     menuPo.Remark,
                     menuPo.UploadTime,

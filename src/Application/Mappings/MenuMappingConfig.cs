@@ -68,7 +68,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.BuyerModifiedGroup, src => src.BuyerModifiedGroup)
                 .Map(dest => dest.Requirement, src => src.Requirement)
                 .Map(dest => dest.BuyerOwnName, src => src.BuyerOwnName)
-                .Ignore(dest => dest.Id) // 更新时保留原有 ID
+                // 新建（前端不传 Id → Guid.Empty）时生成新 Id；更新（前端传真实 Id）时保留
+                .Map(dest => dest.Id, src => src.Id == Guid.Empty ? Guid.NewGuid() : src.Id)
                 .AfterMapping((src, dest) =>
                 {
                     // 手动转换 StandardIds
@@ -96,6 +97,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             config.NewConfig<BasicBuyerMenu, Menu>()
                 .ConstructUsing(po => Menu.Reconstitute(
                     new MenuId(po.MenuId),
+                    po.MenuName,
                     Array.Empty<MenuItem>(), // MenuItems 由仓储在查询时一并加载并手动设置/合并
                     po.Remark,
                     po.UploadTime,

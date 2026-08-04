@@ -23,6 +23,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         Task UpdateAsync(Menu aggregateRoot, CancellationToken ct);
 
         /// <summary>
+        /// 删除聚合根（连同其菜单项一起删除）
+        /// </summary>
+        /// <param name="aggregateRoot"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task DeleteAsync(Menu aggregateRoot, CancellationToken ct);
+
+        /// <summary>
         /// 查询聚合根
         /// </summary>
         /// <param name="aggregateRootId"></param>

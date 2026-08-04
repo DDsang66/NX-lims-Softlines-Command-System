@@ -74,6 +74,14 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
+        [HttpDelete("delete/{menuId}/item/{itemId:guid}")]
+        public async Task<Result> DeleteMenuItem(string menuId, Guid itemId, CancellationToken ct)
+        {
+            var result = await _appService.DeleteMenuItemAsync(menuId, itemId, ct);
+
+            return result;
+        }
+
         [HttpDelete("delete/{menuId}")]
         public async Task<Result> DeleteMenu(string menuId,CancellationToken ct)
         {

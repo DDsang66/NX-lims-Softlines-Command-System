@@ -74,21 +74,26 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
         /// <returns></returns>
         public static Menu Reconstitute(
             MenuId id,
+            string menuName,
             IReadOnlyList<MenuItem> menuItems,
             string? remark,
             DateTime upLoadTime,
             Status status,
             BuyerId buyerId)
         {
-            return new Menu
+            var menu = new Menu
             {
                 Id = id,
+                MenuName = menuName,
                 MenuItems = menuItems,
                 Remark = remark,
                 UpLoadTime = upLoadTime,
                 Status = status,
                 BuyerId = buyerId
             };
+            // 同步内部可变列表，保证后续 AddMenuItem/RemoveMenuItem/UpdateMenuItem 基于完整 items 操作
+            menu._menuItems = menuItems?.ToList() ?? new List<MenuItem>();
+            return menu;
         }
 
 
@@ -103,8 +108,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
             if (Status == Status.Deprecated)
                 throw new InvalidOperationException($"套餐已{Status}，不能添加测试项目");
 
-            // 检查是否已存在相同项（根据业务规则决定）
-            if (_menuItems.Any(x => x.TestItemId == item.TestItemId))
+            // 检查是否已存在相同项（TestItemId 非空才比较；Standard 项目的 TestItemId 为 null，不参与去重）
+            if (item.TestItemId != null &&
+                _menuItems.Any(x => x.TestItemId == item.TestItemId))
                 throw new InvalidOperationException("该项目已存在于套餐中");
 
             _menuItems.Add(item);
@@ -124,9 +130,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
             if (itemList.Any(x => x == null))
                 throw new ArgumentException("套餐不能包含空值", nameof(items));
 
-            // 检查重复
-            var existingDishIds = _menuItems.Select(x => x.TestItemId).ToHashSet();
-            var duplicates = itemList.Where(x => existingDishIds.Contains(x.TestItemId)).ToList();
+            // 检查重复（只对非空 TestItemId 去重；Standard 项目 TestItemId 为 null 不参与）
+            var existingDishIds = _menuItems.Select(x => x.TestItemId).Where(id => id != null).ToHashSet();
+            var duplicates = itemList.Where(x => x.TestItemId != null && existingDishIds.Contains(x.TestItemId)).ToList();
             if (duplicates.Any())
                 throw new InvalidOperationException($"以下项目已存在于套餐中: {string.Join(", ", duplicates.Select(x => x.TestItemId))}");
 

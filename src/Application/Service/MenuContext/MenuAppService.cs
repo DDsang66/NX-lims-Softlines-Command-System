@@ -67,7 +67,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
             var menuItems = dto.MenuItems.Select(item =>item.Adapt<MenuItem>()).ToList();
 
             // 3. 批量添加
-            menu.AddMenuItems(menuItems);
+            try
+            {
+                menu.AddMenuItems(menuItems);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex.Message);
+            }
 
             // 4. 保存
             await _menuRepository.UpdateAsync(menu, ct);
@@ -90,7 +97,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
 
             var menuItem = dto.MenuItem.Adapt<MenuItem>();
 
-            menu.AddMenuItem(menuItem);
+            try
+            {
+                menu.AddMenuItem(menuItem);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex.Message);
+            }
 
             await _menuRepository.UpdateAsync(menu, ct);
 
@@ -105,14 +119,21 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
         public async Task<Result> UpdateMenuItemAsync(UpdateMenuItemDto dto, CancellationToken ct)
         {
             var menuId = new MenuId(dto.MenuId);
-            var menuItemId = Guid.NewGuid();
 
             var menu = await _menuRepository.GetByIdAsync(menuId, ct);
             if (menu == null)
                 return Result.Fail($"未找到套餐: {dto.MenuId}");
 
             var updatedItem = dto.MenuItem.Adapt<MenuItem>();
-            menu.UpdateMenuItem(updatedItem);
+
+            try
+            {
+                menu.UpdateMenuItem(updatedItem);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex.Message);
+            }
 
             await _menuRepository.UpdateAsync(menu, ct);
             await _unitOfWork.SaveChangesAsync(ct);
@@ -121,7 +142,33 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
         }
 
         /// <summary>
-        /// 删除套餐（软删除）
+        /// 删除单个菜单项
+        /// </summary>
+        public async Task<Result> DeleteMenuItemAsync(string menuId, Guid itemId, CancellationToken ct)
+        {
+            var id = new MenuId(menuId);
+
+            var menu = await _menuRepository.GetByIdAsync(id, ct);
+            if (menu == null)
+                return Result.Fail($"未找到套餐: {menuId}");
+
+            try
+            {
+                menu.RemoveMenuItem(itemId);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex.Message);
+            }
+
+            await _menuRepository.UpdateAsync(menu, ct);
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 删除套餐（连同其菜单项一起删除）
         /// </summary>
         public async Task<Result> DeleteMenuAsync(string menuId, CancellationToken ct)
         {
@@ -132,9 +179,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
             if (menu == null)
                 return Result.Fail($"未找到套餐: {menuId}");
 
-            /*menu.delete();*/ // 需要在 Menu 中添加 Delete 方法
-
-            await _menuRepository.UpdateAsync(menu, ct);
+            await _menuRepository.DeleteAsync(menu, ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
 

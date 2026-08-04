@@ -42,8 +42,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.MenuCon
         public string BuyerId { get; set; } = string.Empty;
     }
 
-    public record MenuItemDto 
+    public record MenuItemDto
     {
+        /// <summary>
+        /// 菜单项ID（Guid；新建可不传，更新/删除时必传）
+        /// </summary>
+        public Guid Id { get; set; }
+
         /// <summary>
         /// 测试项目ID
         /// </summary>

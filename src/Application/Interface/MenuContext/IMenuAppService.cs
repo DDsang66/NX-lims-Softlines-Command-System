@@ -42,6 +42,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface.MenuContext
         /// 删除单个菜单项
         /// </summary>
         /// <param name="menuId"></param>
+        /// <param name="itemId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Result> DeleteMenuItemAsync(string menuId, Guid itemId, CancellationToken ct);
+
+        /// <summary>
+        /// 删除整个套餐（连同其菜单项）
+        /// </summary>
+        /// <param name="menuId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Result> DeleteMenuAsync(string menuId, CancellationToken ct);
