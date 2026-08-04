@@ -63,23 +63,33 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
             if (menu == null)
                 return Result.Fail($"未找到套餐: {dto.MenuId}");
 
-            // 2. 转换DTO为领域实体
-            var menuItems = dto.MenuItems.Select(item =>item.Adapt<MenuItem>()).ToList();
-
-            // 3. 批量添加
+            // 2. 转换DTO为领域实体（Requirement 走 UpdateRequirement 校验）
+            List<MenuItem> menuItems;
             try
             {
-                menu.AddMenuItems(menuItems);
+                menuItems = dto.MenuItems.Select(item =>
+                {
+                    var mi = item.Adapt<MenuItem>();
+                    mi.UpdateRequirement(item.Requirement);
+                    return mi;
+                }).ToList();
             }
             catch (Exception ex)
             {
-                return Result.Fail(ex.Message);
+                return Result.Fail(ex.InnerException?.Message ?? ex.Message);
             }
 
-            // 4. 保存
-            await _menuRepository.UpdateAsync(menu, ct);
-
-            await _unitOfWork.SaveChangesAsync(ct);
+            // 3. 批量添加 + 保存
+            try
+            {
+                menu.AddMenuItems(menuItems);
+                await _menuRepository.UpdateAsync(menu, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail(ex.InnerException?.Message ?? ex.Message);
+            }
 
             return Result.Ok();
         }
@@ -99,16 +109,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
 
             try
             {
+                menuItem.UpdateRequirement(dto.MenuItem.Requirement);   // 走正则校验
                 menu.AddMenuItem(menuItem);
+                await _menuRepository.UpdateAsync(menu, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {
-                return Result.Fail(ex.Message);
+                return Result.Fail(ex.InnerException?.Message ?? ex.Message);
             }
-
-            await _menuRepository.UpdateAsync(menu, ct);
-
-            await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Ok();
         }
@@ -128,15 +137,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
 
             try
             {
+                updatedItem.UpdateRequirement(dto.MenuItem.Requirement);   // 走正则校验
                 menu.UpdateMenuItem(updatedItem);
+                await _menuRepository.UpdateAsync(menu, ct);
+                await _unitOfWork.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {
-                return Result.Fail(ex.Message);
+                // 拼接内层异常，便于定位 DbUpdateException 等真实根因
+                var msg = ex.InnerException?.Message ?? ex.Message;
+                return Result.Fail(msg);
             }
-
-            await _menuRepository.UpdateAsync(menu, ct);
-            await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Ok();
         }
@@ -158,7 +169,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
             }
             catch (Exception ex)
             {
-                return Result.Fail(ex.Message);
+                return Result.Fail(ex.InnerException?.Message ?? ex.Message);
             }
 
             await _menuRepository.UpdateAsync(menu, ct);
