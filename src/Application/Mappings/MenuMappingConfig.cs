@@ -39,6 +39,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.BuyerModifiedTextMethodId, src => src.BuyerModifiedTextMethodId)
                 .Map(dest => dest.BuyerModifiedGroup, src => src.BuyerModifiedGroup)
                 .Map(dest => dest.Requirement, src => src.Requirement)
+                .Map(dest => dest.BuyerOwnName, src => src.BuyerOwnName)
                 .AfterMapping((src, dest) =>
                 {
                     // 手动转换 StandardIds
@@ -66,6 +67,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.BuyerModifiedTextMethodId, src => src.BuyerModifiedTextMethodId)
                 .Map(dest => dest.BuyerModifiedGroup, src => src.BuyerModifiedGroup)
                 .Map(dest => dest.Requirement, src => src.Requirement)
+                .Map(dest => dest.BuyerOwnName, src => src.BuyerOwnName)
                 .Ignore(dest => dest.Id) // 更新时保留原有 ID
                 .AfterMapping((src, dest) =>
                 {
@@ -84,6 +86,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.StandardId, src => src.StandardIds != null && src.StandardIds.Any()
                     ? string.Join(",", src.StandardIds.Where(s => s != null).Select(s => s!.Value))
                     : null)
+                .Map(dest => dest.BuyerOwnName, src => src.BuyerOwnName)
                 .Map(dest => dest.BuyerModifiedTestItem, src => src.BuyerModifiedTestItemId)
                 .Map(dest => dest.BuyerModifiedTestMethod, src => src.BuyerModifiedTextMethodId)
                 .Map(dest => dest.Requirement, src => src.Requirement)

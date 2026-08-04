@@ -16,6 +16,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
         public TestItemId? TestItemId { get; set; }
 
         /// <summary>
+        /// 买家自定义测试项目名称
+        /// </summary>
+        public string BuyerOwnName { get; set; } = string.Empty;
+
+        /// <summary>
         /// 买家自定义测试项目ID
         /// </summary>
         public string? BuyerModifiedTestItemId { get; set; } = string.Empty;

@@ -11,6 +11,8 @@ public partial class BasicMenuItem
 
     public string? StandardId { get; set; }
 
+    public string? BuyerOwnName { get; set; }
+
     public string? BuyerModifiedTestItem { get; set; }
 
     public string? BuyerModifiedTestMethod { get; set; }

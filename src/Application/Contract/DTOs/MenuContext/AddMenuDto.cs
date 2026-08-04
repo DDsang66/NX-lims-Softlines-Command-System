@@ -50,6 +50,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.MenuCon
         public string? TestItemId { get; set; }
 
         /// <summary>
+        /// 买家自定义名称
+        /// </summary>
+        public string? BuyerOwnName { get; set; }
+
+        /// <summary>
         /// 买家自定义测试项目ID
         /// </summary>
         public string? BuyerModifiedTestItemId { get; set; } = string.Empty;

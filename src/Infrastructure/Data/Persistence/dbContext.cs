@@ -189,6 +189,10 @@ public partial class dbContext : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("buyer_modified_test_method");
+            entity.Property(e => e.BuyerOwnName)
+                .HasMaxLength(100)
+                .IsUnicode(false)
+                .HasColumnName("buyer_own_name");
             entity.Property(e => e.MenuId)
                 .HasMaxLength(25)
                 .IsUnicode(false)

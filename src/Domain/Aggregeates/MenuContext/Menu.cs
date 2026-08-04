@@ -49,7 +49,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
             string? remark,
             BuyerId buyerId)
         {
-            if (id == null) throw new ArgumentNullException(nameof(id));
+            if (id == null) 
+                throw new ArgumentNullException(nameof(id));
             if (string.IsNullOrWhiteSpace(menuName))
                 throw new ArgumentException("套餐名称不能为空", nameof(menuName));
             if (buyerId == null) throw new ArgumentNullException(nameof(buyerId));
