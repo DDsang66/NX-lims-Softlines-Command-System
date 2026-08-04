@@ -65,8 +65,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.FormulaContex
 
             var formula = await _formulaRepository.GetByIdAsync(formulaId, ct);
 
-            //更新
-            formula.Update();
+            formula.Update(dto.Name,dto.ParamName,dto.ConditionFields,dto.ExpressionTemplate,dto.Description);
 
             await _formulaRepository.UpdateAsync(formula, ct);
 
@@ -90,6 +89,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.FormulaContex
             //注入领域服务进行验证
 
             formula.Activate();
+
+            await _formulaRepository.UpdateAsync(formula, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Ok();
         }

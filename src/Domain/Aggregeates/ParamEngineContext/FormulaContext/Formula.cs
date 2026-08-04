@@ -202,9 +202,48 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         }
 
         /// <summary>
-        /// 更新公式
+        /// 更新公式的基础信息及表达式。如果公式处于激活状态，将重新进行语法校验。
         /// </summary>
-        public void Update() { }
+        public void Update(
+            string name,
+            string paramName,
+            IEnumerable<string> conditionFields,
+            string expressionTemplate,
+            string? description = null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name cannot be empty.", nameof(name));
+            if (string.IsNullOrWhiteSpace(paramName))
+                throw new ArgumentException("ParamName cannot be empty.", nameof(paramName));
+            if (conditionFields == null)
+                throw new ArgumentNullException(nameof(conditionFields));
+
+            // 规范化、去重并校验字段名
+            var fields = conditionFields
+                .Where(f => !string.IsNullOrWhiteSpace(f))
+                .Select(f => f!.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (fields.Count == 0)
+                throw new ArgumentException("At least one condition field is required.", nameof(conditionFields));
+
+            Name = name.Trim();
+            ParamName = paramName.Trim();
+            ConditionFields = fields;
+            ExpressionTemplate = expressionTemplate ?? string.Empty;
+            Description = description?.Trim() ?? string.Empty;
+
+            // 如果当前公式是激活状态，修改核心数据后必须重新校验不变式
+            if (IsActive)
+            {
+                ValidateExpression();
+            }
+
+            // 更新版本号和生效时间
+            Version++;
+            EffectiveDate = DateTime.UtcNow;
+        }
 
         /// <summary>
         /// 返回公式声明的原子条件字段名（供前置验证）

@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
@@ -60,6 +61,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             new Dictionary<string, ParamSet?>();
 
         /// <summary>
+        /// 买家限值
+        /// </summary>
+        public string Requirement { get; set; } = string.Empty;
+
+        /// <summary>
         /// 项目状态
         /// </summary>
         public CheckListStatus Status { get; set; } = CheckListStatus.Created;
@@ -93,7 +99,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             TestGroup testGroup,
             IReadOnlyDictionary<string, ParamSet?> testPointParams,
             List<string> samples,
-            CheckListStatus status)
+            CheckListStatus status,
+            string requirement)
         {
             return new CheckListItem
             {
@@ -106,7 +113,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
                 TestGroup = testGroup,
                 TestPointParams = testPointParams,
                 Samples = samples,
-                Status = status
+                Status = status,
+                Requirement = requirement
             };
         }
 

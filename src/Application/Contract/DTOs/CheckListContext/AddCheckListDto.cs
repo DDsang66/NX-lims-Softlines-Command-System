@@ -52,5 +52,10 @@
         /// 样品列表
         /// </summary>
         public List<string> Samples { get; set; } = new();
+
+        /// <summary>
+        /// 买家限值
+        /// </summary>
+        public string Requirement { get; set; } = string.Empty;
     }
 }

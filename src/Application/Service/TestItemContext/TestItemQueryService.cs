@@ -31,7 +31,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemConte
         }
 
         /// <summary>
-        /// 根据id获取TestItem
+        /// 获取TestItem列表
         /// </summary>
         /// <param name="id"></param>
         /// <param name="ct"></param>

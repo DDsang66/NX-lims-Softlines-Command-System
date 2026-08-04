@@ -164,7 +164,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     BuyerModifiedTestItemId = po.BuyerModifiedTestItem,
                     BuyerModifiedTextMethodId = po.BuyerModifiedTestMethod,
                     BuyerModifiedGroup = po.BuyerModifiedGroup,
-                    Requirement = po.Requirement,
                     // StandardIds 在 DB 中以逗号分隔存储（mapping 中也使用 Join），这里拆分恢复
                     StandardIds = string.IsNullOrWhiteSpace(po.StandardId)
                         ? Enumerable.Empty<StandardId?>()
@@ -173,7 +172,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                             .Cast<StandardId?>()
                             .ToList()
                 };
-
+                mi.ReconstituteRequirement(po.Requirement);
                 // 恢复 Id（PO.Id -> Domain Entity.Id）
                 mi.ReconstructId(po.Id);
 
@@ -230,7 +229,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         BuyerModifiedTestItemId = po.BuyerModifiedTestItem,
                         BuyerModifiedTextMethodId = po.BuyerModifiedTestMethod,
                         BuyerModifiedGroup = po.BuyerModifiedGroup,
-                        Requirement = po.Requirement,
                         StandardIds = string.IsNullOrWhiteSpace(po.StandardId)
                             ? Enumerable.Empty<StandardId?>()
                             : po.StandardId.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -238,6 +236,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                                 .Cast<StandardId?>()
                                 .ToList()
                     };
+                    mi.ReconstituteRequirement(po.Requirement);
                     mi.ReconstructId(po.Id);
                     menuItems.Add(mi);
                 }
@@ -298,7 +297,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         BuyerModifiedTestItemId = po.BuyerModifiedTestItem,
                         BuyerModifiedTextMethodId = po.BuyerModifiedTestMethod,
                         BuyerModifiedGroup = po.BuyerModifiedGroup,
-                        Requirement = po.Requirement,
                         StandardIds = string.IsNullOrWhiteSpace(po.StandardId)
                             ? Enumerable.Empty<StandardId?>()
                             : po.StandardId.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -306,6 +304,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                                 .Cast<StandardId?>()
                                 .ToList()
                     };
+                    mi.ReconstituteRequirement(po.Requirement);
                     mi.ReconstructId(po.Id);
                     menuItems.Add(mi);
                 }

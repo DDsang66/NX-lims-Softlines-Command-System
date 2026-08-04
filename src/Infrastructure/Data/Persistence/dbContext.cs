@@ -383,6 +383,9 @@ public partial class dbContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("buyer_modified_test_standard");
             entity.Property(e => e.CheckListId).HasColumnName("check_list_id");
+            entity.Property(e => e.Requirement)
+                .HasColumnType("text")
+                .HasColumnName("requirement");
             entity.Property(e => e.Samples)
                 .HasColumnType("text")
                 .HasColumnName("samples");

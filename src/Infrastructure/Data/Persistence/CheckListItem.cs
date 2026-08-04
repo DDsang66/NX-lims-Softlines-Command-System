@@ -15,6 +15,8 @@ public partial class CheckListItem
 
     public string? TestPointParams { get; set; }
 
+    public string? Requirement { get; set; }
+
     public string Samples { get; set; } = null!;
 
     public byte Status { get; set; }

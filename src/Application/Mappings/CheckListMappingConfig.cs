@@ -34,7 +34,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             config.NewConfig<CheckListItemDto, CheckListItem>()
                 .Map(dest => dest.TestItemId, src => new TestItemId(src.TestItemId))
                 .Map(dest => dest.StandardIds, src => src.StandardIds.Select(i => new StandardId(i)).ToList())
-                .Map(dest => dest.TestGroup, src => (TestGroup)src.TestGroup);
+                .Map(dest => dest.TestGroup, src => (TestGroup)src.TestGroup)
+                .Map(dest => dest.Requirement, src => src.Requirement);
 
             //entity=>数据库模型
             config.NewConfig<CheckList, src.Infrastructure.Data.Persistence.CheckList>()
@@ -64,6 +65,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                         ),
                         new JsonSerializerOptions { WriteIndented = true }
                     ),
+                    Requirement = src.Requirement,
                     Samples = string.Join(",", src.Samples),
                     Status = (byte)src.Status
                 });
@@ -89,9 +91,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .MapWith(src => CheckListItem.Reconstitute(
                     src.CheckListItemId,
                     new CheckListId(src.CheckListId),
-                    string.IsNullOrEmpty(src.TestItemId) 
-                    ? null 
-                    : new TestItemId(src.TestItemId),
+                    new TestItemId(src.TestItemId!),
                     string.IsNullOrEmpty(src.StandardId)
                         ? new List<StandardId>()
                         : src.StandardId
@@ -105,7 +105,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     string.IsNullOrEmpty(src.Samples)
                         ? new List<string>()
                         : src.Samples.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList(),
-                    (CheckListStatus)src.Status
+                    (CheckListStatus)src.Status,
+                    src.Requirement!
                 ));
         }
 
