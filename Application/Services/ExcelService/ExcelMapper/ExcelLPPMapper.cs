@@ -228,7 +228,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
         {
             return new string[]
             {
-                "A14","A20","A26"
+                "A8","A15","A22","A29"
             };
         }
         public static string[] MapTear()

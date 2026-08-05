@@ -530,15 +530,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             ["Quick Dry"] = (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso,CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
-                ["J1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
-                ["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
+                ["J1"] = (wp, dto, esDto, ws, reportNo) => reportNo
             },
             ["Air Permeability"] = (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso,CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
                 ["M1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
                 ["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
                 ["F5"] = (wp, dto, esDto, ws, reportNo) => "100",
-                ["E6"] = (wp, dto, esDto, ws, reportNo) => "20",
+                ["E6"] = (wp, dto, esDto, ws, reportNo) => "20"
             },
             ["Attachment Strength"] = (wp, dto, esDto, ws, reportNo) =>
             {
