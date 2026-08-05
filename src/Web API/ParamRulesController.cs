@@ -78,6 +78,14 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
+        [HttpGet("get-by-ids")]
+        public async Task<Result<List<ParamRuleResponseDto>>> GetParamRuleByIds([FromQuery] IEnumerable<string> ids, CancellationToken ct)
+        {
+            var result = await _queryService.GetByIdsAsync(ids, ct);
+
+            return result;
+        }
+
         [HttpGet("getall")]
         public async Task<Result<List<ParamRuleResponseDto>>> GetAllParamRules(CancellationToken ct)
         {

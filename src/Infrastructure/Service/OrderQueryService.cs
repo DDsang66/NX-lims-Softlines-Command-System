@@ -1,7 +1,7 @@
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.OrderContext;
 using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.OrderRepos;
-using NX_lims_Softlines_Command_System.src.Application.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Application.Interface.OrderContext;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
 {

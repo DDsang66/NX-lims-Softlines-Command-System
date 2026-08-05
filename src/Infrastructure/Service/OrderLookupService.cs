@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Domain.Model;
-using NX_lims_Softlines_Command_System.src.Application.Contract;
+using NX_lims_Softlines_Command_System.src.Application.Interface.OrderContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service

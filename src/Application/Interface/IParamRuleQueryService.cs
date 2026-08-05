@@ -26,6 +26,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         Task<Result<ParamRuleResponseDto>> GetByIdAsync(string id, CancellationToken ct);
 
         /// <summary>
+        /// 获取参数规则
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Result<List<ParamRuleResponseDto>>> GetByIdsAsync(IEnumerable<string> ids, CancellationToken ct);
+
+        /// <summary>
         /// 获取所有规则
         /// </summary>
         /// <param name="ct"></param>

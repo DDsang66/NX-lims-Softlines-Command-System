@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFormulaContext;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
@@ -73,6 +74,32 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
 
             return Result<ParamRuleResponseDto>.Ok(ruleDto);
         }
+
+        /// <summary>
+        /// 获取参数规则
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public async Task<Result<List<ParamRuleResponseDto>>> GetByIdsAsync(IEnumerable<string> ids, CancellationToken ct)
+        {
+            if (ids == null || !ids.Any())
+            {
+                return Result<List<ParamRuleResponseDto>>.Ok(new List<ParamRuleResponseDto>());
+            }
+            // 将字符串ID转换为FormulaId对象
+            var ruleIds = ids.Select(id => new ParamRuleId(id)).ToList();
+
+            var rules = await  _ruleRepo.GetByIdsAsync(ruleIds, ct);
+
+            if (rules == null)
+                throw new Exception($"Param rule with id {ids} not found");
+
+            var ruleDtoList = rules.Adapt<List<ParamRuleResponseDto>>();
+
+            return Result<List<ParamRuleResponseDto>>.Ok(ruleDtoList);
+        }
+
 
         /// <summary>
         /// 获取所有参数规则

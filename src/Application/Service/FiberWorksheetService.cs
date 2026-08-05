@@ -8,8 +8,10 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.Ingre
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.FiberContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
-using NX_lims_Softlines_Command_System.src.Application.Contract;
 using System.Text.Json;
+using NX_lims_Softlines_Command_System.src.Application.Interface.OrderContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.FiberTeamContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service
 {

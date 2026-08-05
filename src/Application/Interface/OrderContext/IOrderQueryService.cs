@@ -1,6 +1,6 @@
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.OrderContext;
 
-namespace NX_lims_Softlines_Command_System.src.Application.Contract
+namespace NX_lims_Softlines_Command_System.src.Application.Interface.OrderContext
 {
     /// <summary>
     /// 订单查询服务接口（CQRS 读模型，定义在 Application 层，实现在 Infrastructure 层）
