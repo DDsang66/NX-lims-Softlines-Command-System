@@ -66,7 +66,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 // StandardIds 不使用 Map，而是通过 AfterMapping 手动处理
                 .Map(dest => dest.BuyerModifiedTextMethodId, src => src.BuyerModifiedTextMethodId)
                 .Map(dest => dest.BuyerModifiedGroup, src => src.BuyerModifiedGroup)
-                .Map(dest => dest.Requirement, src => src.Requirement)
+                // Requirement 不走 Mapster（private set 不可靠），由 AppService 显式调用 UpdateRequirement 设置并校验
                 .Map(dest => dest.BuyerOwnName, src => src.BuyerOwnName)
                 // 新建（前端不传 Id → Guid.Empty）时生成新 Id；更新（前端传真实 Id）时保留
                 .Map(dest => dest.Id, src => src.Id == Guid.Empty ? Guid.NewGuid() : src.Id)
