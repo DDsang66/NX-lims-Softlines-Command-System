@@ -729,7 +729,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
                 map["M1"] = (wp, dto, esDto, ws, reportNo) => esDto.ReportNumber!;
-                var sample = ws.Cells["A3"].Value?.ToString();
+                var sample = ws.Cells["A7"].Value?.ToString();
 
                 var cellOrder = new List<string> { "A9", "A11", "A13", "A15", "A17", "A19", "A21", "A23", "A25" };
                 var reasonCellOrder = cellOrder.Select(c => "P" + c.Substring(1)).ToList();
