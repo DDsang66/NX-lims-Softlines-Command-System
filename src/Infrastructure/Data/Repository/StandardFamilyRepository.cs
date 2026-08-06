@@ -152,8 +152,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             return standardFamilies;
         }
 
-
-
         /// <summary>
         /// 根据标准id查询标准族
         /// </summary>
@@ -215,50 +213,68 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             var standardIdValues = standardIds.Select(id => id.Value).ToList();
 
-            // 一次性查询所有需要的数据
-            var query = from sf in _dbContext.BasicStandardFamilies
-                        join s in _dbContext.BasicStandards
-                            on sf.IdStandardFamily equals s.StandardFamilyCodeId
-                        join f in _dbContext.FormulaStandardfamilies
-                            on sf.IdStandardFamily equals f.IdStandardFamily into formulaGroup
-                        join p in _dbContext.ParamsturctureStandardfamilies
-                            on sf.IdStandardFamily equals p.IdStandardFamily into paramGroup
-                        where standardIdValues.Contains(s.IdStandard)
-                        select new
-                        {
-                            Family = sf,
-                            StandardId = s.IdStandard,
-                            FormulaIds = formulaGroup.Select(f => f.FormulaId).ToList(),
-                            StructureIds = paramGroup.Select(p => p.ParamStructureId).ToList()
-                        };
+            // 1. 查询相关的标准族ID（简单查询，可翻译）
+            var familyIds = await _dbContext.BasicStandards
+                .Where(s => standardIdValues.Contains(s.IdStandard))
+                .Select(s => s.StandardFamilyCodeId)
+                .Distinct()
+                .ToListAsync(ct);
 
-            var rawData = await query.ToListAsync(ct);
-
-            if (!rawData.Any())
+            if (!familyIds.Any())
                 return Enumerable.Empty<StandardFamily>();
 
-            // 按标准族分组
-            var groupedData = rawData
-                .GroupBy(x => x.Family.IdStandardFamily)
-                .Select(g => new
-                {
-                    Family = g.First().Family,
-                    StandardIds = g.Select(x => x.StandardId).Distinct().ToList(),
-                    FormulaIds = g.SelectMany(x => x.FormulaIds).Distinct().ToList(),
-                    StructureIds = g.SelectMany(x => x.StructureIds).Distinct().ToList()
-                })
-                .ToList();
+            // 2. 查询标准族主表
+            var families = await _dbContext.BasicStandardFamilies
+                .Where(f => familyIds.Contains(f.IdStandardFamily))
+                .ToListAsync(ct);
 
-            // 重构为领域对象
-            var standardFamilies = groupedData.Select(item => StandardFamily.Reconstitute(
-                new StandardFamilyId(item.Family.IdStandardFamily),
-                item.Family.StandardFamilyCode,
-                item.StandardIds.Select(id => new StandardId(id)).ToList(),
-                item.FormulaIds.Select(id => new FormulaId(id)).ToList(),
-                item.StructureIds.Select(id => new ParamStructureId(id)).ToList(),
-                item.Family.Version,
-                item.Family.EffectiveDate
-            )).ToList();
+            // 3. 批量查询关联的标准ID（简单查询）
+            var standardMappings = await _dbContext.BasicStandards
+                .Where(s => familyIds.Contains(s.StandardFamilyCodeId))
+                .GroupBy(s => s.StandardFamilyCodeId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(s => s.IdStandard).ToList(),
+                    ct);
+
+            // 4. 批量查询关联的公式ID（简单查询）
+            var formulaMappings = await _dbContext.FormulaStandardfamilies
+                .Where(f => familyIds.Contains(f.IdStandardFamily))
+                .GroupBy(f => f.IdStandardFamily)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(f => f.FormulaId).ToList(),
+                    ct);
+
+            // 5. 批量查询关联的结构ID（简单查询）
+            var structureMappings = await _dbContext.ParamsturctureStandardfamilies
+                .Where(p => familyIds.Contains(p.IdStandardFamily))
+                .GroupBy(p => p.IdStandardFamily)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(p => p.ParamStructureId).ToList(),
+                    ct);
+
+            // 6. 在内存中组装聚合根
+            var standardFamilies = families.Select(family =>
+            {
+                var standardIdsForFamily = standardMappings.GetValueOrDefault(family.IdStandardFamily, new List<string>())
+                    .Select(id => new StandardId(id)).ToList();
+                var formulaIdsForFamily = formulaMappings.GetValueOrDefault(family.IdStandardFamily, new List<string>())
+                    .Select(id => new FormulaId(id)).ToList();
+                var structureIdsForFamily = structureMappings.GetValueOrDefault(family.IdStandardFamily, new List<string>())
+                    .Select(id => new ParamStructureId(id)).ToList();
+
+                return StandardFamily.Reconstitute(
+                    new StandardFamilyId(family.IdStandardFamily),
+                    family.StandardFamilyCode,
+                    standardIdsForFamily,
+                    formulaIdsForFamily,
+                    structureIdsForFamily,
+                    family.Version,
+                    family.EffectiveDate
+                );
+            }).ToList();
 
             return standardFamilies;
         }
