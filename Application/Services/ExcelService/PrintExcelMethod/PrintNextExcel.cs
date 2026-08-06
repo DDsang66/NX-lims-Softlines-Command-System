@@ -667,7 +667,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BY28"] = (w, dto, reportNo) => w!.Temperature!,
                 ["BG29"] = (w, dto, reportNo) => w.Ballast!,
                 ["BI30"] = (w, dto, reportNo) => w!.DryProcedure!,
-                ["BP30"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!,
+                ["BP30"] = (w, dto, reportNo) => "/",
             },
             ["Foil Durability"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -676,7 +676,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BY25"] = (w, dto, reportNo) => w!.Temperature!,
                 ["BG26"] = (w, dto, reportNo) => w.Ballast!,
                 ["BE27"] = (w, dto, reportNo) => w!.DryProcedure!,
-                ["BL27"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!,
+                ["BL27"] = (w, dto, reportNo) =>  "/",
             },
             ["Appearance Assessment after Wash"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
             {
@@ -690,7 +690,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["BG43"] = (w, dto, reportNo) => w.Ballast!,
                 ["AR44"] = (w, dto, reportNo) => w!.Detergent!,
                 ["BH44"] = (w, dto, reportNo) => w!.DryProcedure!,
-                ["BO44"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.Iron!) ? "/" : w.IronMethod!,
+                ["BO44"] = (w, dto, reportNo) => "/",
                 ["AR46"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) ? "-" : w.SpecialCareInstruction!,
             },
             ["Appearance Assessment after Dry Clean"] = (w, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>

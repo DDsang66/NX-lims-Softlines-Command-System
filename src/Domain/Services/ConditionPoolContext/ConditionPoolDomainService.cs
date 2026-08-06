@@ -89,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.ConditionPoolCont
 
                         condition[requirement.FieldName] = new
                         {
-                            Type = requirement.FieldName.GetType(),
+                            Type = GetCSharpTypeName(requirement.FieldName?.GetType() ?? typeof(string)),
                             IsRequired = requirement.IsRequired || existing.IsRequired,
                             AllowedValues = mergedValues
                         };
@@ -274,5 +274,65 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.ConditionPoolCont
         /// <returns></returns>
         private static bool IsNumeric(object value) => value is sbyte or byte or short or ushort
             or int or uint or long or ulong or float or double or decimal;
+
+
+        /// <summary>
+        /// 获取类型的 C# 关键字名称
+        /// </summary>
+        /// <param name="type">要获取名称的类型</param>
+        /// <returns>类型的 C# 关键字名称（如 int, string, bool 等）</returns>
+        private string GetCSharpTypeName(Type type)
+        {
+            // 处理可空类型
+            var underlyingType = Nullable.GetUnderlyingType(type) ?? type;
+
+            // 使用 C# 类型关键字映射
+            var typeMap = new Dictionary<Type, string>
+            {      
+                { typeof(int), "int" },       
+                { typeof(uint), "uint" },     
+                { typeof(long), "long" },    
+                { typeof(ulong), "ulong" },   
+                { typeof(short), "short" },  
+                { typeof(ushort), "ushort" },       
+                { typeof(byte), "byte" },      
+                { typeof(sbyte), "sbyte" },       
+                { typeof(bool), "bool" },     
+                { typeof(string), "string" },
+                { typeof(decimal), "decimal" },
+                { typeof(double), "double" },      
+                { typeof(float), "float" },      
+                { typeof(char), "char" },  
+                { typeof(object), "object" },  
+                { typeof(DateTime), "datetime" },
+                { typeof(DateTimeOffset), "datetimeoffset" },
+                { typeof(TimeSpan), "timespan" },              
+                { typeof(Guid), "guid" }
+            };
+
+            // 如果是集合或数组，递归处理元素类型
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                var itemType = type.GetGenericArguments()[0];
+                return $"{GetCSharpTypeName(itemType)}[]";
+            }
+
+            if (type.IsArray)
+            {
+                var itemType = type.GetElementType();
+                return $"{GetCSharpTypeName(itemType)}[]";
+            }
+
+            // 检查映射
+            if (typeMap.TryGetValue(underlyingType, out var typeName))
+                return typeName;
+
+            // 枚举类型
+            if (underlyingType.IsEnum)
+                return "enum";
+
+            // 自定义类型返回名称（小写）
+            return underlyingType.Name.ToLowerInvariant();
+        }
     }
 }
