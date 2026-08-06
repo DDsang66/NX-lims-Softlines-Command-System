@@ -26,7 +26,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         [HttpPost("add")]
         public async Task<Result> AddCheckLIst([FromBody] AddCheckListDto dto,CancellationToken ct)
         {
-            var result = await _checkListAppService.AddCheckList(dto,ct);
+            var result = await _checkListAppService.AddCheckList(dto, ct);
 
             return Result.Ok();
         }

@@ -200,5 +200,69 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             );
         }
 
+        /// <summary>
+        /// 根据多个标准ID批量查询标准族（优化版）
+        /// </summary>
+        /// <param name="standardIds">标准ID列表</param>
+        /// <param name="ct">取消令牌</param>
+        /// <returns>标准族列表（去重）</returns>
+        public async Task<IEnumerable<StandardFamily>> GetByStandardIdsAsync(
+            List<StandardId> standardIds,
+            CancellationToken ct)
+        {
+            if (standardIds == null || !standardIds.Any())
+                return Enumerable.Empty<StandardFamily>();
+
+            var standardIdValues = standardIds.Select(id => id.Value).ToList();
+
+            // 一次性查询所有需要的数据
+            var query = from sf in _dbContext.BasicStandardFamilies
+                        join s in _dbContext.BasicStandards
+                            on sf.IdStandardFamily equals s.StandardFamilyCodeId
+                        join f in _dbContext.FormulaStandardfamilies
+                            on sf.IdStandardFamily equals f.IdStandardFamily into formulaGroup
+                        join p in _dbContext.ParamsturctureStandardfamilies
+                            on sf.IdStandardFamily equals p.IdStandardFamily into paramGroup
+                        where standardIdValues.Contains(s.IdStandard)
+                        select new
+                        {
+                            Family = sf,
+                            StandardId = s.IdStandard,
+                            FormulaIds = formulaGroup.Select(f => f.FormulaId).ToList(),
+                            StructureIds = paramGroup.Select(p => p.ParamStructureId).ToList()
+                        };
+
+            var rawData = await query.ToListAsync(ct);
+
+            if (!rawData.Any())
+                return Enumerable.Empty<StandardFamily>();
+
+            // 按标准族分组
+            var groupedData = rawData
+                .GroupBy(x => x.Family.IdStandardFamily)
+                .Select(g => new
+                {
+                    Family = g.First().Family,
+                    StandardIds = g.Select(x => x.StandardId).Distinct().ToList(),
+                    FormulaIds = g.SelectMany(x => x.FormulaIds).Distinct().ToList(),
+                    StructureIds = g.SelectMany(x => x.StructureIds).Distinct().ToList()
+                })
+                .ToList();
+
+            // 重构为领域对象
+            var standardFamilies = groupedData.Select(item => StandardFamily.Reconstitute(
+                new StandardFamilyId(item.Family.IdStandardFamily),
+                item.Family.StandardFamilyCode,
+                item.StandardIds.Select(id => new StandardId(id)).ToList(),
+                item.FormulaIds.Select(id => new FormulaId(id)).ToList(),
+                item.StructureIds.Select(id => new ParamStructureId(id)).ToList(),
+                item.Family.Version,
+                item.Family.EffectiveDate
+            )).ToList();
+
+            return standardFamilies;
+        }
+
+
     }
 }

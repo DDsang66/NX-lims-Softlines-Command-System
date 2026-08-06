@@ -37,52 +37,93 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         /// <summary>
         /// 协调构造Condition字典
         /// </summary>
+        /// <param name="checklistid"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result<IDictionary<string, object?>>> GenerateRequiredConditionsAsync(CheckListId checklistid,CancellationToken ct)
+        public async Task<Result<IDictionary<string, object?>>> GenerateRequiredConditionsAsync(
+            CheckListId checklistid,
+            CancellationToken ct)
         {
-            //获取已经生成的Checklist
+            // 1. 获取Checklist
             var checklist = await _checkListRepository.GetByIdAsync(checklistid, ct);
+            if (checklist == null)
+                return Result<IDictionary<string, object?>>.Fail("Checklist不存在");
 
-            var standardIds = new List<StandardId>();
+            // 2. 收集所有StandardId（使用LINQ简化）
+            var standardIds = checklist.Items
+                .SelectMany(item => item.StandardIds)
+                .Distinct()
+                .ToList();
 
-            //循环查询checklist中的所有项目-标准
-            foreach (var item in checklist.Items)
-            {
-                foreach (var standardId in item.StandardIds)
-                {
-                    standardIds.Add(standardId);
-                }
-            }
+            if (!standardIds.Any())
+                return Result<IDictionary<string, object?>>.Ok(new Dictionary<string, object?>());
 
-            var standardFamilyIds = new List<StandardFamilyId>();
+            // 3. 批量获取StandardFamily
+            var standardFamilies = await _standardFamilyRepository
+                .GetByStandardIdsAsync(standardIds, ct); // 新增批量查询方法
 
-            //获取所有标准对应的标准族
-            foreach (var standardId in standardIds) 
-            {
-                var standardFamily = await _standardFamilyRepository.GetByStandardIdAsync(standardId, ct);
-              
-                if (standardFamily != null)
-                {
-                    standardFamilyIds.Add(standardFamily.Id);
-                }
-            }
+            var standardFamilyIds = standardFamilies
+                .Select(f => f.Id)
+                .Distinct()
+                .ToList();
 
-            //获取标准族对应的结构
-            var paramStructures = new List<ParamStructure>();
+            if (!standardFamilyIds.Any())
+                return Result<IDictionary<string, object?>>.Ok(new Dictionary<string, object?>());
 
-            foreach (var standardFamilyId in standardFamilyIds)
-            {
-                var paramStructure = await _paramStructureRepository.GetByFamilyIdAsync(standardFamilyId, ct);
-                if (paramStructure != null) 
-                {
-                    paramStructures.AddRange(paramStructure);
-                }
-            }
+            // 4. 批量获取ParamStructure
+            var paramStructures = await _paramStructureRepository
+                .GetByFamilyIdsAsync(standardFamilyIds, ct); // 新增批量查询方法
 
-           var condition = _conditionPoolDomainService.GenerateRequiredConditions(paramStructures);
+            // 5. 生成条件
+            var condition = _conditionPoolDomainService.GenerateRequiredConditions(paramStructures);
 
             return Result<IDictionary<string, object?>>.Ok(condition);
         }
+
+        //public async Task<Result<IDictionary<string, object?>>> GenerateRequiredConditionsAsync(CheckListId checklistid, CancellationToken ct)
+        //{
+        //    //获取已经生成的Checklist
+        //    var checklist = await _checkListRepository.GetByIdAsync(checklistid, ct);
+
+        //    var standardIds = new List<StandardId>();
+
+        //    //循环查询checklist中的所有项目-标准
+        //    foreach (var item in checklist.Items)
+        //    {
+        //        foreach (var standardId in item.StandardIds)
+        //        {
+        //            standardIds.Add(standardId);
+        //        }
+        //    }
+
+        //    var standardFamilyIds = new List<StandardFamilyId>();
+
+        //    //获取所有标准对应的标准族
+        //    foreach (var standardId in standardIds)
+        //    {
+        //        var standardFamily = await _standardFamilyRepository.GetByStandardIdAsync(standardId, ct);
+
+        //        if (standardFamily != null)
+        //        {
+        //            standardFamilyIds.Add(standardFamily.Id);
+        //        }
+        //    }
+
+        //    //获取标准族对应的结构
+        //    var paramStructures = new List<ParamStructure>();
+
+        //    foreach (var standardFamilyId in standardFamilyIds)
+        //    {
+        //        var paramStructure = await _paramStructureRepository.GetByFamilyIdAsync(standardFamilyId, ct);
+        //        if (paramStructure != null)
+        //        {
+        //            paramStructures.AddRange(paramStructure);
+        //        }
+        //    }
+
+        //    var condition = _conditionPoolDomainService.GenerateRequiredConditions(paramStructures);
+
+        //    return Result<IDictionary<string, object?>>.Ok(condition);
+        //}
     }
 }

@@ -291,7 +291,88 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
 
 
+        /// <summary>
+        /// 根据多个标准族ID批量查询参数结构（优化版）
+        /// </summary>
+        /// <param name="standardFamilyIds">标准族ID列表</param>
+        /// <param name="ct">取消令牌</param>
+        /// <returns>参数结构列表（去重）</returns>
+        public async Task<IEnumerable<ParamStructure>> GetByFamilyIdsAsync(
+            List<StandardFamilyId> standardFamilyIds,
+            CancellationToken ct)
+        {
+            if (standardFamilyIds == null || !standardFamilyIds.Any())
+                return Enumerable.Empty<ParamStructure>();
 
+            var familyIdValues = standardFamilyIds.Select(id => id.Value).ToList();
+
+            // 使用 JOIN 一次性查询所有数据
+            var query = from ps in _dbContext.BasicParamStructures
+                        join af in _dbContext.ParamsturctureStandardfamilies
+                            on ps.ParamStructureId equals af.ParamStructureId
+                        where familyIdValues.Contains(af.IdStandardFamily)
+                        select new
+                        {
+                            ParamStructure = ps,
+                            StandardFamilyId = af.IdStandardFamily
+                        };
+
+            var rawData = await query.ToListAsync(ct);
+
+            if (!rawData.Any())
+                return Enumerable.Empty<ParamStructure>();
+
+            // 获取所有 ParamStructure ID
+            var paramStructureIds = rawData
+                .Select(x => x.ParamStructure.ParamStructureId)
+                .Distinct()
+                .ToList();
+
+            // 批量查询规则（单独查询，因为规则表可能较大）
+            var ruleMapping = await _dbContext.BasicParamRules
+                .Where(ar => paramStructureIds.Contains(ar.ParamStructureId))
+                .GroupBy(ar => ar.ParamStructureId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(ar => new ParamRuleId(ar.RuleId)).ToList(),
+                    ct);
+
+            // 按 ParamStructureId 分组
+            var groupedData = rawData
+                .GroupBy(x => x.ParamStructure.ParamStructureId)
+                .Select(g => new
+                {
+                    ParamStructure = g.First().ParamStructure,
+                    StandardFamilyIds = g
+                        .Select(x => new StandardFamilyId(x.StandardFamilyId))
+                        .Distinct()
+                        .ToList(),
+                    RuleIds = ruleMapping.GetValueOrDefault(g.Key, new List<ParamRuleId>())
+                })
+                .ToList();
+
+            // 重建聚合根
+            var paramStructures = groupedData.Select(item =>
+            {
+                var id = new ParamStructureId(item.ParamStructure.ParamStructureId);
+
+                return ParamStructure.Reconstitute(
+                    id,
+                    item.StandardFamilyIds,
+                    item.RuleIds,
+                    new FormulaId(item.ParamStructure.FormulaId),
+                    item.ParamStructure.ParamName,
+                    JsonSerializer.Deserialize<ParamSchema>(item.ParamStructure.Schema!,
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        })!,
+                    (Status)item.ParamStructure.Status,
+                    item.ParamStructure.EffectiveDate);
+            });
+
+            return paramStructures;
+        }
 
 
 

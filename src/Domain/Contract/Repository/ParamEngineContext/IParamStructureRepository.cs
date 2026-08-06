@@ -31,6 +31,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(StandardFamilyId standardFamilyId,CancellationToken ct);
 
         /// <summary>
+        /// 根据标准族查询结构
+        /// </summary>
+        /// <param name="standardFamilyIds"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IEnumerable<ParamStructure>> GetByFamilyIdsAsync(
+            List<StandardFamilyId> standardFamilyIds,
+            CancellationToken ct);
+
+        /// <summary>
         /// 根据参数名称查询结构
         /// </summary>
         /// <param name="paramName"></param>

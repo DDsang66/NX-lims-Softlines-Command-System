@@ -10,6 +10,6 @@
         /// <summary>
         /// 关联的订单ID
         /// </summary>
-        public Guid? OrderId { get; set; } = Guid.Empty;
+        public string? OrderId { get; set; } = string.Empty;
     }
 }

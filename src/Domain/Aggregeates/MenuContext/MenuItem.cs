@@ -95,9 +95,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
         /// (?:=|!=|>=|<=|>|<|contains|equals)\s* : 匹配运算符（支持 =, !=, >=, <=, >, <, contains, equals）
         /// \"[^"]*\"\s*$ : 匹配结尾，双引号包裹的值（值可以为空字符串）
         /// </summary>
+        /// <summary>
+        /// 校验限值格式的正则表达式。
+        /// 支持：
+        /// 1. 单条件: "字段名" 运算符 "值"
+        /// 2. 范围条件: "值1" < "字段名" < "值2" 或 "值1" <= "字段名" <= "值2"
+        /// 3. 混合条件: "值1" < "字段名" <= "值2"
+        /// </summary>
         private static readonly Regex RequirementRegex = new Regex(
-            @"^\s*""[^""]+""\s*(?:=|!=|>=|<=|>|<|contains|equals)\s*""[^""]*""\s*$",
+            @"^\s*(?:" +
+            // 单条件: "字段名" 运算符 "值"
+            @"""[^""]+""\s*(?:=|!=|>=|<=|>|<|contains|equals)\s*""[^""]*""|" +
+            // 范围条件: "值1" 运算符 "字段名" 运算符 "值2"
+            @"""[^""]*""\s*(?:<|<=)\s*""[^""]+""\s*(?:<|<=)\s*""[^""]*""|" +
+            // 支持值中包含特殊字符（如 %）
+            @"""[^""]*""\s*(?:<|<=)\s*""[^""]+""\s*(?:<|<=)\s*""[^""]*""" +
+            @")\s*$",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
     }
 }
