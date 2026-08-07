@@ -85,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
                 DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : p.WashingProcedure!.Contains("6") ? "60": p.WashingProcedure!.Contains("5") ? "50":"30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,
@@ -103,7 +103,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
                 DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("4") ? "40" : p.WashingProcedure!.Contains("6") ? "60" : p.WashingProcedure!.Contains("5") ? "50" : "30",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
                 Detergent = GetDetergent(p.SampleDescription!, p.Detergent),
                 SpecialCareInstruction = p.Sci ?? null,

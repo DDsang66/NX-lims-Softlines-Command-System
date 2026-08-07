@@ -258,7 +258,28 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task UpdateAsync(ParamStructure paramStructure, CancellationToken ct) 
         {
-            await Task.CompletedTask;
+            var id = paramStructure.Id.Value;
+
+            // 1. 查询现有的主表实体
+            var existingPo = await _dbContext.BasicParamStructures.FindAsync(id, ct);
+            if (existingPo == null)
+            {
+                throw new Exception("未找到对应的参数结构，无法更新");
+            }
+
+            // 2. 更新主表字段
+            existingPo.ParamName = paramStructure.ParamName;
+            existingPo.FormulaId = paramStructure.FormulaId.Value;
+            existingPo.Schema = JsonSerializer.Serialize(paramStructure.Schema, new JsonSerializerOptions { WriteIndented = false });
+            existingPo.Status = (byte)paramStructure.Status;
+            existingPo.EffectiveDate = paramStructure.EffectiveDate;
+
+            // 3. 同步关联表数据 (StandardFamilies)
+            await SyncStandardFamiliesAsync(id, paramStructure.StandardFamilyIds, ct);
+
+            // 4. 同步关联表数据 (Rules)
+            await SyncRulesAsync(id, paramStructure.ApplicableRuleIds, ct);
+
         }
 
         /// <summary>
@@ -426,6 +447,64 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             });
 
             return paramStructures;
+        }
+
+
+
+        /// <summary>
+        /// 同步参数结构与标准族的关联关系
+        /// </summary>
+        private async Task SyncStandardFamiliesAsync(string paramStructureId, IEnumerable<StandardFamilyId> latestFamilyIds, CancellationToken ct)
+        {
+            // 获取当前数据库中存在的关联记录
+            var existingRelations = await _dbContext.ParamsturctureStandardfamilies
+                .Where(af => af.ParamStructureId == paramStructureId)
+                .ToListAsync(ct);
+
+            var latestIdValues = latestFamilyIds.Select(id => id.Value).ToList();
+
+            // 删除不再需要的关联
+            var toRemove = existingRelations.Where(er => !latestIdValues.Contains(er.IdStandardFamily)).ToList();
+            _dbContext.ParamsturctureStandardfamilies.RemoveRange(toRemove);
+
+            // 添加新增的关联
+            var existingIdValues = existingRelations.Select(er => er.IdStandardFamily).ToList();
+            foreach (var newId in latestIdValues.Except(existingIdValues))
+            {
+                await _dbContext.ParamsturctureStandardfamilies.AddAsync(new ParamsturctureStandardfamily
+                {
+                    ParamStructureId = paramStructureId,
+                    IdStandardFamily = newId
+                }, ct);
+            }
+        }
+
+        /// <summary>
+        /// 同步参数结构与规则的关联关系
+        /// </summary>
+        private async Task SyncRulesAsync(string paramStructureId, IEnumerable<ParamRuleId> latestRuleIds, CancellationToken ct)
+        {
+            // 获取当前数据库中存在的关联记录
+            var existingRelations = await _dbContext.BasicParamRules
+                .Where(ar => ar.ParamStructureId == paramStructureId)
+                .ToListAsync(ct);
+
+            var latestIdValues = latestRuleIds.Select(id => id.Value).ToList();
+
+            // 删除不再需要的关联
+            var toRemove = existingRelations.Where(er => !latestIdValues.Contains(er.RuleId)).ToList();
+            _dbContext.BasicParamRules.RemoveRange(toRemove);
+
+            // 添加新增的关联
+            var existingIdValues = existingRelations.Select(er => er.RuleId).ToList();
+            foreach (var newId in latestIdValues.Except(existingIdValues))
+            {
+                await _dbContext.BasicParamRules.AddAsync(new BasicParamRule
+                {
+                    ParamStructureId = paramStructureId,
+                    RuleId = newId
+                }, ct);
+            }
         }
     }
 }
