@@ -108,6 +108,35 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     (CheckListStatus)src.Status,
                     src.Requirement!
                 ));
+
+            config.NewConfig<ParamSet, ParamSetDto>()
+                     .MapWith(src => new ParamSetDto
+                     {
+                         Values = src.Values.ToDictionary(
+                             kvp => kvp.Key,
+                             kvp => ConvertToElement(kvp.Value),
+                             StringComparer.OrdinalIgnoreCase
+                         )
+                     });
+        }
+
+
+        /// <summary>
+        /// 辅助方法：将 object? 转换为 JsonElement
+        /// </summary>
+        private static JsonElement ConvertToElement(object? value)
+        {
+            if (value == null)
+            {
+                return JsonSerializer.SerializeToElement<object>(null);
+            }
+
+            if (value is JsonElement element)
+            {
+                return element;
+            }
+
+            return JsonSerializer.SerializeToElement(value);
         }
 
         /// <summary>

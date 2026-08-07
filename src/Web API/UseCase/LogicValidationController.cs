@@ -27,11 +27,11 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// </summary>
         /// <returns></returns>
         [HttpPut("test")]
-        public async Task<Result> TestLogic(TestLogicSubmitDto dto,CancellationToken ct)
+        public async Task<Result<ParamSetDto>> TestLogic(TestLogicSubmitDto dto,CancellationToken ct)
         {
             var result = await _logicTestUseCaseService.TestLogicAsync(dto, ct);
 
-            return Result.Ok();
+            return result;
         }
 
         /// <summary>

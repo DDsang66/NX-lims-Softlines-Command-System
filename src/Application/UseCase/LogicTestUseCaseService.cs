@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.UseCase;
 using NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerateService;
@@ -67,7 +68,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> TestLogicAsync(TestLogicSubmitDto dto, CancellationToken ct) 
+        public async Task<Result<ParamSetDto>> TestLogicAsync(TestLogicSubmitDto dto, CancellationToken ct) 
         {
             var conditionPoolId = new ConditionPoolId(dto.ConditionPoolId);
 
@@ -86,9 +87,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
                 }
             }
 
-            Console.WriteLine($"TestLogicAsync: Generated ParamSet:{paramSet}");
+            var dtoResult = paramSet.Adapt<ParamSetDto>();
 
-            return Result.Ok();
+            return Result<ParamSetDto>.Ok(dtoResult);
         }
 
     }
