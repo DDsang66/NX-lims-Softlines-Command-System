@@ -1,4 +1,6 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
@@ -29,6 +31,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<IEnumerable<ParamStructure>> GetByFamilyIdAsync(StandardFamilyId standardFamilyId,CancellationToken ct);
+
+        /// <summary>
+        /// 根据公式Id查询结构
+        /// </summary>
+        /// <param name="standardFamilyIds"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IEnumerable<ParamStructure>> GetByFormulaIdsAsync(
+            List<FormulaId> formulaIds,
+            CancellationToken ct);
 
         /// <summary>
         /// 根据标准族查询结构

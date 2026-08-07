@@ -289,6 +289,60 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     ct);
         }
 
+        /// <summary>
+        /// 根据多个公式ID批量查询参数结构（实现）
+        /// </summary>
+        /// <param name="formulaIds">公式ID 列表</param>
+        /// <param name="ct">取消令牌</param>
+        /// <returns>参数结构列表（去重）</returns>
+        public async Task<IEnumerable<ParamStructure>> GetByFormulaIdsAsync(
+            List<FormulaId> formulaIds,
+            CancellationToken ct)
+        {
+            if (formulaIds == null || !formulaIds.Any())
+                return Enumerable.Empty<ParamStructure>();
+
+            var formulaIdValues = formulaIds.Select(f => f.Value).ToList();
+
+            // 1. 直接查询 BasicParamStructures 中 FormulaId 匹配的记录
+            var paramStructurePos = await _dbContext.BasicParamStructures
+                .AsNoTracking()
+                .Where(ps => formulaIdValues.Contains(ps.FormulaId))
+                .ToListAsync(ct);
+
+            if (!paramStructurePos.Any())
+                return Enumerable.Empty<ParamStructure>();
+
+            var paramStructureIds = paramStructurePos.Select(ps => ps.ParamStructureId).ToList();
+
+            // 2. 批量获取关联映射
+            var standardFamilyMapping = await GetStandardFamilyMappingAsync(paramStructureIds, ct);
+            var ruleMapping = await GetRuleMappingAsync(paramStructureIds, ct);
+
+            // 3. 重建聚合并返回
+            var result = paramStructurePos.Select(po =>
+            {
+                var id = new ParamStructureId(po.ParamStructureId);
+                var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
+                var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
+
+                return ParamStructure.Reconstitute(
+                    id,
+                    standardFamilyIds,
+                    ruleIds,
+                    new FormulaId(po.FormulaId),
+                    po.ParamName,
+                    JsonSerializer.Deserialize<ParamSchema>(po.Schema!,
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        })!,
+                    (Status)po.Status,
+                    po.EffectiveDate);
+            });
+
+            return result;
+        }
 
 
         /// <summary>
@@ -373,8 +427,5 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             return paramStructures;
         }
-
-
-
     }
 }
