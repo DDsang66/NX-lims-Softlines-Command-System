@@ -90,7 +90,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                     // 清空已有 text 元素，用 InsertTextWithLineBreaks 写入（支持 \n 换行）
                     foreach (var t in existingRunWithText.Elements<Text>().ToList())
                         t.Remove();
-                    InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], existingRunWithText);
+                    TextRunHelper.InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], existingRunWithText);
 
                     // 标红：检查是否在 redBookmarks 中
                     if (redBookmarks != null && redBookmarks.Contains(bookmark.Name))
@@ -115,7 +115,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 {
                     var newRun = new Run(nearestRunProps.CloneNode(true) as RunProperties);
                     InsertRunAfterBookmark(bookmark, newRun);
-                    InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
+                    TextRunHelper.InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
                     if (redBookmarks != null && redBookmarks.Contains(bookmark.Name))
                         ApplyRedColor(newRun);
                 }
@@ -124,7 +124,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                     // 兜底：插入无样式的 Run（将使用 Word 的默认样式）
                     var newRun = new Run();
                     InsertRunAfterBookmark(bookmark, newRun);
-                    InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
+                    TextRunHelper.InsertTextWithLineBreaks(bookmarkValues[bookmark.Name], newRun);
                     if (redBookmarks != null && redBookmarks.Contains(bookmark.Name))
                         ApplyRedColor(newRun);
                 }
@@ -142,30 +142,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 color.Val = "FF0000";
             else
                 run.RunProperties.Append(new Color { Val = "FF0000" });
-        }
-
-        /// <summary>
-        /// 处理含 \n 的文本：拆分为多段，Run 间插入 &lt;w:br/&gt; 实现 Word 换行
-        /// </summary>
-        private static void InsertTextWithLineBreaks(string text, Run firstRun)
-        {
-            var lines = text.Split('\n');
-            firstRun.Append(new Text(lines[0]) { Space = SpaceProcessingModeValues.Preserve });
-
-            if (lines.Length <= 1) return;
-
-            OpenXmlElement insertAfter = firstRun;
-            for (int i = 1; i < lines.Length; i++)
-            {
-                var brRun = new Run(new Break());
-                var textRun = new Run(
-                    firstRun.RunProperties?.CloneNode(true) as RunProperties,
-                    new Text(lines[i]) { Space = SpaceProcessingModeValues.Preserve });
-
-                insertAfter = insertAfter.InsertAfterSelf(brRun);
-                brRun.InsertAfterSelf(textRun);
-                insertAfter = textRun;
-            }
         }
 
         /// <summary>
@@ -372,95 +348,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             string imageId, string imageName,
             long widthEmu = 5486400, long heightEmu = 3657600)
         {
-        }
-
-        /// <summary>
-        /// 对特定表格插入新行
-        /// </summary>
-        public void AddRowToTable(Table table)
-        {
-            if (table == null) return;
-
-            var lastRow = table.Elements<TableRow>().LastOrDefault();
-            if (lastRow == null) return;
-
-            var newRow = (TableRow)lastRow.CloneNode(true);
-
-            table.Append(newRow);
-
-            foreach (var cell in newRow.Elements<TableCell>())
-            {
-                ClearCellContent(cell);
-            }
-        }
-
-        /// <summary>
-        /// 清空单元格内容（保留段落结构）
-        /// </summary>
-        private void ClearCellContent(TableCell cell)
-        {
-            var paragraphs = cell.Elements<Paragraph>().ToList();
-
-            foreach (var para in paragraphs)
-            {
-                var runs = para.Elements<Run>().ToList();
-                foreach (var run in runs)
-                {
-                    run.Remove();
-                }
-
-                if (!para.HasChildren)
-                {
-                    para.Append(new Run(new Text("")));
-                }
-            }
-        }
-
-        /// <summary>
-        /// 定位表格（支持书签、内容匹配、索引等多种策略）
-        /// </summary>
-        public Table? LocateTable(WordprocessingDocument doc, string identifier)
-        {
-            var table = GetTableByBookmark(doc, identifier);
-            if (table != null) return table;
-
-            table = GetTableByContent(doc, identifier);
-            if (table != null) return table;
-
-            if (int.TryParse(identifier, out int index))
-            {
-                table = GetTableByIndex(doc, index);
-                if (table != null) return table;
-            }
-
-            return null;
-        }
-
-        private Table? GetTableByIndex(WordprocessingDocument doc, int index)
-        {
-            var tables = doc.MainDocumentPart.Document.Body.Elements<Table>().ToList();
-
-            if (index < 0 || index >= tables.Count)
-                return null;
-
-            return tables[index];
-        }
-
-        private Table? GetTableByBookmark(WordprocessingDocument doc, string bookmarkName)
-        {
-            var bookmark = doc.MainDocumentPart.Document.Body
-                .Descendants<BookmarkStart>()
-                .FirstOrDefault(b => b.Name == bookmarkName);
-
-            if (bookmark == null) return null;
-
-            return bookmark.Ancestors<Table>().FirstOrDefault();
-        }
-
-        private Table? GetTableByContent(WordprocessingDocument doc, string searchText)
-        {
-            return doc.MainDocumentPart.Document.Body.Elements<Table>()
-                .FirstOrDefault(t => t.InnerText.Contains(searchText));
         }
 
         /// <summary>

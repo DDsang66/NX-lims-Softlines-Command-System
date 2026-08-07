@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
-using NX_lims_Softlines_Command_System.src.Application.Curd;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.PhysicalWeightContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.PhysicalWeightContext;
+using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Web_API;
 
@@ -9,26 +10,27 @@ namespace NX_lims_Softlines_Command_System.src.Web_API;
 [Route("api/[Controller]")]
 public class PhysicalWeightController : ControllerBase
 {
-    private readonly PhysicalWeightRecordService _svc;
-    public PhysicalWeightController(PhysicalWeightRecordService svc) { _svc = svc; }
+    private readonly IPhysicalWeightRecordService _svc;
+
+    public PhysicalWeightController(IPhysicalWeightRecordService svc) { _svc = svc; }
 
     /// <summary>批量保存称重记录</summary>
     [HttpPost]
-    public async Task<IActionResult> Save([FromBody] PhysicalWeightSaveRequestDto r, CancellationToken ct)
-        => Ok(await _svc.SaveRecordsAsync(r, ct));
+    public Task<Result<List<PhysicalWeightOutputDto>>> Save([FromBody] PhysicalWeightSaveRequestDto r, CancellationToken ct)
+        => _svc.SaveRecordsAsync(r, ct);
 
     /// <summary>按报告号查询记录列表</summary>
     [HttpGet]
-    public async Task<IActionResult> Query([FromQuery] string reportNumber)
-        => Ok(await _svc.GetRecordsAsync(reportNumber));
+    public Task<Result<List<PhysicalWeightOutputDto>>> Query([FromQuery] string reportNumber, CancellationToken ct)
+        => _svc.GetRecordsAsync(reportNumber, ct);
 
     /// <summary>删除单条记录</summary>
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delete(Guid id)
-        => Ok(await _svc.DeleteAsync(id));
+    public Task<Result> Delete(Guid id, CancellationToken ct)
+        => _svc.DeleteAsync(id, ct);
 
     /// <summary>批量删除记录</summary>
     [HttpDelete("batch")]
-    public async Task<IActionResult> DeleteBatch([FromBody] PhysicalWeightBatchDeleteDto dto)
-        => Ok(await _svc.DeleteBatchAsync(dto));
+    public Task<Result<int>> DeleteBatch([FromBody] PhysicalWeightBatchDeleteDto dto, CancellationToken ct)
+        => _svc.DeleteBatchAsync(dto, ct);
 }

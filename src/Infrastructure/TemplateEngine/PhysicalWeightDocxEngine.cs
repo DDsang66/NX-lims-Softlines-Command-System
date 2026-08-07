@@ -1,0 +1,269 @@
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.PhysicalWeightContext;
+using NX_lims_Softlines_Command_System.src.Application.Interface.PhysicalWeightContext;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+
+namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
+{
+    /// <summary>
+    /// 物理克重 docx 填充引擎 — 按坐标填格 PHY_Weight.docx, 与成分模板(IWordTemplateEngine)完全隔离。
+    /// </summary>
+    public class PhysicalWeightDocxEngine : IPhysicalWeightDocxEngine, IScopedDependency
+    {
+        /// <summary>
+        /// 填充物理克重报告: 表0(报告号/方法/汇总网格) + 表1(数据行)。OpenXml 操作留在本层。
+        /// </summary>
+        public void FillReport(string filePath, PhysicalWeightReportFillModel model)
+        {
+            using var doc = WordprocessingDocument.Open(filePath, true);
+            var (t0, t1) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
+
+            SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowReportNumber)!, PhysicalWeightDocxLayout.ValueColumn, model.ReportNumber);
+            SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowTestMethod)!,   PhysicalWeightDocxLayout.ValueColumn, model.TestMethod ?? "");
+
+            // 表0 汇总网格: 按测试类型填两列(其余列留空); 超预留行克隆
+            var (col1, col2) = PhysicalWeightDocxLayout.SummaryColumnsOf(model.TestType);
+            int summaryRow = PhysicalWeightDocxLayout.SummaryDataStartRow;
+            foreach (var s in model.SummaryRows)
+            {
+                var sr = Row(t0, summaryRow);
+                if (sr == null)
+                {
+                    AddRowToTable(t0);
+                    sr = Row(t0, summaryRow);
+                }
+                if (sr == null) break;
+
+                SetCellText(sr, PhysicalWeightDocxLayout.SummarySampleColumn, s.Point);
+                SetCellText(sr, col1, s.Value1.ToString("F2"));
+                SetCellText(sr, col2, s.Value2.ToString("F2"));
+                summaryRow++;
+            }
+
+            // 表1 表头: Specimen 单位同行; Average 单位在单元格内换行到下一行
+            var headerRow = Row(t1, PhysicalWeightDocxLayout.DataHeaderRow);
+            if (headerRow != null)
+            {
+                SetCellText(headerRow, PhysicalWeightDocxLayout.DataSpecimenCell, $"Specimen ({model.DataUnit})");
+                SetCellText(headerRow, PhysicalWeightDocxLayout.DataAverageCell,  $"Average\n({model.DataUnit})");
+            }
+
+            int dataRow = PhysicalWeightDocxLayout.DataStartRow;
+            foreach (var row in model.Rows)
+            {
+                var r = Row(t1, dataRow);
+                if (r == null)                          // 超过模板预留行 → 克隆最后一数据行
+                {
+                    AddRowToTable(t1);
+                    r = Row(t1, dataRow);
+                }
+                if (r == null) break;
+
+                SetCellText(r, PhysicalWeightDocxLayout.SampleColumn, row.Point);
+                for (int c = 0; c < PhysicalWeightDocxLayout.ValueCount; c++)
+                    SetCellText(r, PhysicalWeightDocxLayout.ValueStartColumn + c,
+                        c < row.Values.Count ? row.Values[c].ToString("F2") : "");
+                SetCellText(r, PhysicalWeightDocxLayout.AverageColumn, row.Average?.ToString("F2") ?? "");
+                dataRow++;
+            }
+
+            doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 校验 PHY_Weight.docx 模板结构并返回已定位的两张表。模板布局一变(增删行/列/表头文字),
+        /// 这里立即抛异常, 避免坐标错位静默生成错误报告。
+        /// </summary>
+        private (Table Summary, Table Data) ValidateTemplate(WordprocessingDocument doc)
+        {
+            var t0 = LocateTable(doc, PhysicalWeightDocxLayout.SummaryTableMarker)
+                ?? throw new InvalidOperationException("PHY_Weight 模板缺少摘要表(Test Report Number)");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryRowReportNumber) == null)
+                throw new InvalidOperationException("PHY_Weight 模板摘要表行数不足(缺 R0 报告号行)");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryRowTestMethod) == null)
+                throw new InvalidOperationException("PHY_Weight 模板摘要表行数不足(缺 R5 测试方法行)");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryHeaderRow) == null)
+                throw new InvalidOperationException("PHY_Weight 模板摘要表行数不足(缺 R7 表头行)");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryHeaderRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SummaryCellCount)
+                throw new InvalidOperationException("PHY_Weight 模板摘要表头格数不足(应含 g/m²、g/m、g/piece 等 8 列)");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow) == null)
+                throw new InvalidOperationException("PHY_Weight 模板摘要表没有汇总数据行");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SummaryCellCount)
+                throw new InvalidOperationException("PHY_Weight 模板摘要表汇总数据行格数不足");
+
+            var t1 = LocateTable(doc, PhysicalWeightDocxLayout.DataTableMarker)
+                ?? throw new InvalidOperationException("PHY_Weight 模板缺少数据表(Specimen)");
+            if (Row(t1, PhysicalWeightDocxLayout.HeaderRow1)?.InnerText.Contains("Sample") != true)
+                throw new InvalidOperationException("PHY_Weight 模板数据表头异常(缺 Sample 列)");
+            if (Row(t1, PhysicalWeightDocxLayout.HeaderRow1)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.HeaderCellCount)
+                throw new InvalidOperationException("PHY_Weight 模板数据表头格数不足(缺 Specimen/Average)");
+            if (Row(t1, PhysicalWeightDocxLayout.HeaderRow2)?.InnerText.Contains("#1") != true)
+                throw new InvalidOperationException("PHY_Weight 模板数据表头异常(缺 #1~#5)");
+            if (Row(t1, PhysicalWeightDocxLayout.DataStartRow) == null)
+                throw new InvalidOperationException("PHY_Weight 模板数据表没有数据行");
+            if (Row(t1, PhysicalWeightDocxLayout.DataStartRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.RowCellCount)
+                throw new InvalidOperationException("PHY_Weight 模板数据行格数不足");
+
+            return (t0, t1);
+        }
+
+        /// <summary>PHY_Weight.docx 模板坐标 — 模板布局一变, 只改这里</summary>
+        private static class PhysicalWeightDocxLayout
+        {
+            // 定位文本 (LocateTable 按 InnerText.Contains 匹配)
+            public const string SummaryTableMarker = "Test Report Number";  // 表0: 摘要表
+            public const string DataTableMarker = "Specimen";               // 表1: 数据表
+
+            // 表0 (摘要表) 坐标
+            public const int SummaryRowReportNumber = 0;  // R0 报告号
+            public const int SummaryRowTestMethod = 5;    // R5 测试方法
+            public const int SummaryHeaderRow = 7;        // R7 表头 (8格: Sample|g/m²|oz/yd²|g/m|oz/yd|g/linear meter|g/piece|lb/dozen)
+            public const int SummaryDataStartRow = 8;     // R8 汇总网格起始行
+            public const int SummarySampleColumn = 0;     // Sample 列
+            public const int SummaryCellCount = 8;        // 汇总网格数据行应有格数
+            public const int ValueColumn = 1;             // 报告号/方法值所在列
+
+            // 表1 (数据表)
+            public const int HeaderRow1 = 1;              // Sample | Specimen | Average
+            public const int HeaderRow2 = 2;              // #1 ~ #5
+            public const int DataHeaderRow = 1;           // 表头行(写单位)
+            public const int DataSpecimenCell = 1;        // Specimen 单元格
+            public const int DataAverageCell = 2;         // Average 单元格
+            public const int DataStartRow = 3;            // 数据区起始行
+            public const int SampleColumn = 0;            // Sample 列 (测点)
+            public const int ValueStartColumn = 1;        // 第一个值列
+            public const int ValueCount = 5;              // 每行 5 个值
+            public const int AverageColumn = 6;           // 平均列
+            public const int RowCellCount = 7;            // 数据行应有格数
+            public const int HeaderCellCount = 3;         // 表头行应有格数(Sample|Specimen|Average)
+
+            /// <summary>表0 汇总网格双列(0-based): 面积→(1,2), 长度→(3,4), 条重→(6,7)</summary>
+            public static (int, int) SummaryColumnsOf(string testType) => testType switch
+            {
+                "length" => (3, 4),
+                "piece" => (6, 7),
+                _ => (1, 2)
+            };
+        }
+
+        private static TableRow? Row(Table? t, int i) => t?.Elements<TableRow>().ElementAtOrDefault(i);
+
+        /// <summary>
+        /// 按坐标写单元格文本(0-based), 保留原样式。空文本清空该格。
+        /// </summary>
+        private void SetCellText(TableRow row, int cellIndex, string text)
+        {
+            var cell = row.Elements<TableCell>().ElementAtOrDefault(cellIndex);
+            if (cell == null) return;
+
+            // 保留第一个段落, 删除多余段落
+            var paragraphs = cell.Elements<Paragraph>().ToList();
+            for (int i = 1; i < paragraphs.Count; i++) paragraphs[i].Remove();
+            var para = paragraphs.FirstOrDefault();
+            if (para == null) { para = new Paragraph(); cell.Append(para); }
+
+            // 取样式源: 先同段落带 RunProperties 的 run, 再退到单元格内
+            var refRun = para.Elements<Run>().FirstOrDefault(r => r.RunProperties != null)
+                         ?? cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null);
+            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
+
+            foreach (var run in para.Elements<Run>().ToList()) run.Remove();
+            if (string.IsNullOrEmpty(text)) return;
+
+            var newRun = new Run(rp ?? new RunProperties());
+            para.Append(newRun);
+            TextRunHelper.InsertTextWithLineBreaks(text, newRun);
+        }
+
+        /// <summary>
+        /// 对特定表格插入新行
+        /// </summary>
+        private void AddRowToTable(Table table)
+        {
+            if (table == null) return;
+
+            var lastRow = table.Elements<TableRow>().LastOrDefault();
+            if (lastRow == null) return;
+
+            var newRow = (TableRow)lastRow.CloneNode(true);
+
+            table.Append(newRow);
+
+            foreach (var cell in newRow.Elements<TableCell>())
+            {
+                ClearCellContent(cell);
+            }
+        }
+
+        /// <summary>
+        /// 清空单元格内容（保留段落结构）
+        /// </summary>
+        private void ClearCellContent(TableCell cell)
+        {
+            var paragraphs = cell.Elements<Paragraph>().ToList();
+
+            foreach (var para in paragraphs)
+            {
+                var runs = para.Elements<Run>().ToList();
+                foreach (var run in runs)
+                {
+                    run.Remove();
+                }
+
+                if (!para.HasChildren)
+                {
+                    para.Append(new Run(new Text("")));
+                }
+            }
+        }
+
+        /// <summary>
+        /// 定位表格（支持书签、内容匹配、索引等多种策略）
+        /// </summary>
+        private Table? LocateTable(WordprocessingDocument doc, string identifier)
+        {
+            var table = GetTableByBookmark(doc, identifier);
+            if (table != null) return table;
+
+            table = GetTableByContent(doc, identifier);
+            if (table != null) return table;
+
+            if (int.TryParse(identifier, out int index))
+            {
+                table = GetTableByIndex(doc, index);
+                if (table != null) return table;
+            }
+
+            return null;
+        }
+
+        private Table? GetTableByIndex(WordprocessingDocument doc, int index)
+        {
+            var tables = doc.MainDocumentPart.Document.Body.Elements<Table>().ToList();
+
+            if (index < 0 || index >= tables.Count)
+                return null;
+
+            return tables[index];
+        }
+
+        private Table? GetTableByBookmark(WordprocessingDocument doc, string bookmarkName)
+        {
+            var bookmark = doc.MainDocumentPart.Document.Body
+                .Descendants<BookmarkStart>()
+                .FirstOrDefault(b => b.Name == bookmarkName);
+
+            if (bookmark == null) return null;
+
+            return bookmark.Ancestors<Table>().FirstOrDefault();
+        }
+
+        private Table? GetTableByContent(WordprocessingDocument doc, string searchText)
+        {
+            return doc.MainDocumentPart.Document.Body.Elements<Table>()
+                .FirstOrDefault(t => t.InnerText.Contains(searchText));
+        }
+    }
+}
