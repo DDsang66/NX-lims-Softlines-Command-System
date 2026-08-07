@@ -186,6 +186,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     BuyerModifiedTestItemId = po.BuyerModifiedTestItem,
                     BuyerModifiedTextMethodId = po.BuyerModifiedTestMethod,
                     BuyerModifiedGroup = po.BuyerModifiedGroup,
+                    BuyerOwnName = po.BuyerOwnName!,
                     // StandardIds 在 DB 中以逗号分隔存储（mapping 中也使用 Join），这里拆分恢复
                     StandardIds = string.IsNullOrWhiteSpace(po.StandardId)
                         ? Enumerable.Empty<StandardId?>()
@@ -252,6 +253,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         BuyerModifiedTestItemId = po.BuyerModifiedTestItem,
                         BuyerModifiedTextMethodId = po.BuyerModifiedTestMethod,
                         BuyerModifiedGroup = po.BuyerModifiedGroup,
+                        BuyerOwnName = po.BuyerOwnName!,
                         StandardIds = string.IsNullOrWhiteSpace(po.StandardId)
                             ? Enumerable.Empty<StandardId?>()
                             : po.StandardId.Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -321,6 +323,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         BuyerModifiedTestItemId = po.BuyerModifiedTestItem,
                         BuyerModifiedTextMethodId = po.BuyerModifiedTestMethod,
                         BuyerModifiedGroup = po.BuyerModifiedGroup,
+                        BuyerOwnName = po.BuyerOwnName!,
                         StandardIds = string.IsNullOrWhiteSpace(po.StandardId)
                             ? Enumerable.Empty<StandardId?>()
                             : po.StandardId.Split(',', StringSplitOptions.RemoveEmptyEntries)
