@@ -18,6 +18,12 @@ public class PhysicalWeightReportFillModel
     /// <summary>表1 表头单位文字: "g/m²" | "g/m" | "g/piece"(写入 Specimen/Average 表头)</summary>
     public string DataUnit { get; set; } = "g/m²";
 
+    /// <summary>环境温度 ℃(写入页脚温度格)</summary>
+    public decimal? EnvironmentTemperature { get; set; }
+
+    /// <summary>环境湿度 %RH(写入页脚湿度格)</summary>
+    public decimal? EnvironmentHumidity { get; set; }
+
     /// <summary>表0 汇总网格行(每测点一行 + 末尾"平均"行, Sample=测点, Value1/Value2=两种单位的均值)</summary>
     public List<PhysicalWeightSummaryRowModel> SummaryRows { get; set; } = new();
 

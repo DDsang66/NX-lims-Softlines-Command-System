@@ -37,8 +37,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 if (sr == null) break;
 
                 SetCellText(sr, PhysicalWeightDocxLayout.SummarySampleColumn, s.Point);
-                SetCellText(sr, col1, s.Value1.ToString("F2"));
-                SetCellText(sr, col2, s.Value2.ToString("F2"));
+                SetCellText(sr, col1, s.Value1.ToString("F4"));
+                SetCellText(sr, col2, s.Value2.ToString("F4"));
                 summaryRow++;
             }
 
@@ -64,12 +64,43 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 SetCellText(r, PhysicalWeightDocxLayout.SampleColumn, row.Point);
                 for (int c = 0; c < PhysicalWeightDocxLayout.ValueCount; c++)
                     SetCellText(r, PhysicalWeightDocxLayout.ValueStartColumn + c,
-                        c < row.Values.Count ? row.Values[c].ToString("F2") : "");
-                SetCellText(r, PhysicalWeightDocxLayout.AverageColumn, row.Average?.ToString("F2") ?? "");
+                        c < row.Values.Count ? row.Values[c].ToString("F4") : "");
+                SetCellText(r, PhysicalWeightDocxLayout.AverageColumn, row.Average?.ToString("F4") ?? "");
                 dataRow++;
             }
 
+            FillFooter(doc, model);
+
             doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 填写页脚温湿度格子(footer2: R1 第 3 格温度 °C、第 4 格湿度 %RH)。
+        /// 按 "%RH" 标记定位 footer, 模板结构不符立即抛异常。
+        /// </summary>
+        private void FillFooter(WordprocessingDocument doc, PhysicalWeightReportFillModel model)
+        {
+            var footer = doc.MainDocumentPart?.FooterParts
+                .FirstOrDefault(fp => fp.Footer?.InnerText.Contains("%RH") == true)
+                ?? throw new InvalidOperationException("PHY_Weight 模板缺少页脚温湿度表(含 %RH 标记)");
+            var footerEl = footer.Footer
+                ?? throw new InvalidOperationException("PHY_Weight 模板页脚温湿度部件缺失");
+
+            var table = footerEl.Elements<Table>().FirstOrDefault()
+                ?? throw new InvalidOperationException("PHY_Weight 模板页脚温湿度表缺失表格");
+
+            var row = table.Elements<TableRow>().ElementAtOrDefault(1)
+                ?? throw new InvalidOperationException("PHY_Weight 模板页脚温湿度表缺 R1(温湿度)行");
+            var cells = row.Elements<TableCell>().ToList();
+            if (cells.Count < 4)
+                throw new InvalidOperationException("PHY_Weight 模板页脚温湿度表 R1 格数不足(应含温度/湿度格)");
+
+            if (model.EnvironmentTemperature.HasValue)
+                SetFooterValue(cells[2], model.EnvironmentTemperature.Value.ToString("F1"), "°C");
+            if (model.EnvironmentHumidity.HasValue)
+                SetFooterValue(cells[3], model.EnvironmentHumidity.Value.ToString("F1"), "%RH");
+
+            footerEl.Save();
         }
 
         /// <summary>
@@ -154,9 +185,19 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// 按坐标写单元格文本(0-based), 保留原样式。空文本清空该格。
         /// </summary>
         private void SetCellText(TableRow row, int cellIndex, string text)
+            => SetCellText(row.Elements<TableCell>().ElementAtOrDefault(cellIndex), text);
+
+        /// <summary>
+        /// 写单元格文本, 保留原样式。空文本清空该格。
+        /// </summary>
+        private void SetCellText(TableCell? cell, string text)
         {
-            var cell = row.Elements<TableCell>().ElementAtOrDefault(cellIndex);
             if (cell == null) return;
+
+            // 取样式源: 单元格内任意带 RunProperties 的 run。必须先取——删除多余段落后
+            // 后续段落里的 run 会一起被删, 那时再 fallback 就取不到样式了(如页脚湿度格两段落、首段无 run)。
+            var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null);
+            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
 
             // 保留第一个段落, 删除多余段落
             var paragraphs = cell.Elements<Paragraph>().ToList();
@@ -164,17 +205,45 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             var para = paragraphs.FirstOrDefault();
             if (para == null) { para = new Paragraph(); cell.Append(para); }
 
-            // 取样式源: 先同段落带 RunProperties 的 run, 再退到单元格内
-            var refRun = para.Elements<Run>().FirstOrDefault(r => r.RunProperties != null)
-                         ?? cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null);
-            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
-
             foreach (var run in para.Elements<Run>().ToList()) run.Remove();
             if (string.IsNullOrEmpty(text)) return;
 
             var newRun = new Run(rp ?? new RunProperties());
             para.Append(newRun);
             TextRunHelper.InsertTextWithLineBreaks(text, newRun);
+        }
+
+        /// <summary>
+        /// 填页脚温湿度格子: 数值部分加下划线(保留"写在横线上"的视觉), 后缀(°C/%RH)无下划线。
+        /// 保留单元格原样式(字号/字体等不变), 空值场景不调用此方法, 模板下划线字符原样保留。
+        /// </summary>
+        private void SetFooterValue(TableCell? cell, string value, string suffix)
+        {
+            if (cell == null) return;
+
+            // 取样式源: 单元格内任意带 RunProperties 的 run。必须先取——删除多余段落后
+            // 后续段落里的 run 会一起被删, 那时再 fallback 就取不到样式了(如页脚湿度格两段落、首段无 run)。
+            var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null);
+            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
+
+            // 保留第一个段落, 删除多余段落
+            var paragraphs = cell.Elements<Paragraph>().ToList();
+            for (int i = 1; i < paragraphs.Count; i++) paragraphs[i].Remove();
+            var para = paragraphs.FirstOrDefault();
+            if (para == null) { para = new Paragraph(); cell.Append(para); }
+
+            foreach (var run in para.Elements<Run>().ToList()) run.Remove();
+
+            // 数值 run: 复制原样式 + 加下划线 (各自克隆, 避免同一 rp 插入多处报 "part of a tree")
+            var valRun = new Run((rp ?? new RunProperties()).CloneNode(true) as RunProperties ?? new RunProperties());
+            valRun.RunProperties!.Underline = new Underline { Val = UnderlineValues.Single };
+            valRun.Append(new Text(value));
+            para.Append(valRun);
+
+            // 后缀 run: 原样式, 无下划线
+            var sfxRun = new Run((rp ?? new RunProperties()).CloneNode(true) as RunProperties ?? new RunProperties());
+            sfxRun.Append(new Text(suffix));
+            para.Append(sfxRun);
         }
 
         /// <summary>
