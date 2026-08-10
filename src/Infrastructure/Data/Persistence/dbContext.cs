@@ -45,11 +45,13 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; }
 
-    public virtual DbSet<PhysicalWeightRecordPo> PhysicalWeightRecords { get; set; }
+    public virtual DbSet<PhysicalWeightRecord> PhysicalWeightRecords { get; set; }
 
     public virtual DbSet<ProcessedEvent> ProcessedEvents { get; set; }
 
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
+
+    public virtual DbSet<Template> Templates { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -555,9 +557,11 @@ public partial class dbContext : DbContext
                 .HasConstraintName("FK_paramsturcture_standardfamily_basic_param_structure");
         });
 
-        modelBuilder.Entity<PhysicalWeightRecordPo>(entity =>
+        modelBuilder.Entity<PhysicalWeightRecord>(entity =>
         {
             entity.ToTable("physical_weight_record");
+
+            entity.HasIndex(e => e.ReportNumber, "IX_physical_weight_record_report_number");
 
             entity.Property(e => e.Id)
                 .ValueGeneratedNever()
@@ -574,31 +578,28 @@ public partial class dbContext : DbContext
             entity.Property(e => e.EnvTemperature)
                 .HasColumnType("decimal(5, 2)")
                 .HasColumnName("env_temperature");
-            entity.Property(e => e.Gsm)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("g_per_sqm");
-            entity.Property(e => e.Oz)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("oz_per_sqyd");
-            entity.Property(e => e.TestType)
-                .HasMaxLength(20)
-                .HasColumnName("test_type");
-            entity.Property(e => e.LengthCm)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("length_cm");
-            entity.Property(e => e.PieceCount).HasColumnName("piece_count");
             entity.Property(e => e.GPerM)
                 .HasColumnType("decimal(10, 4)")
                 .HasColumnName("g_per_m");
-            entity.Property(e => e.OzPerYd)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("oz_per_yd");
             entity.Property(e => e.GPerPiece)
                 .HasColumnType("decimal(10, 4)")
                 .HasColumnName("g_per_piece");
+            entity.Property(e => e.GPerSqm)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("g_per_sqm");
             entity.Property(e => e.LbPerDozen)
                 .HasColumnType("decimal(10, 4)")
                 .HasColumnName("lb_per_dozen");
+            entity.Property(e => e.LengthCm)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("length_cm");
+            entity.Property(e => e.OzPerSqyd)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("oz_per_sqyd");
+            entity.Property(e => e.OzPerYd)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("oz_per_yd");
+            entity.Property(e => e.PieceCount).HasColumnName("piece_count");
             entity.Property(e => e.RecordIndex).HasColumnName("record_index");
             entity.Property(e => e.ReportNumber)
                 .HasMaxLength(50)
@@ -612,10 +613,12 @@ public partial class dbContext : DbContext
             entity.Property(e => e.TestTime)
                 .HasColumnType("datetime")
                 .HasColumnName("test_time");
+            entity.Property(e => e.TestType)
+                .HasMaxLength(20)
+                .HasColumnName("test_type");
             entity.Property(e => e.Weight)
                 .HasColumnType("decimal(10, 4)")
                 .HasColumnName("weight");
-            entity.HasIndex(e => e.ReportNumber, "IX_physical_weight_record_report_number");
         });
 
         modelBuilder.Entity<ProcessedEvent>(entity =>
@@ -654,6 +657,37 @@ public partial class dbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("sample_code");
+        });
+
+        modelBuilder.Entity<Template>(entity =>
+        {
+            entity.ToTable("template", tb => tb.HasComment("模板聚合根表"));
+
+            entity.Property(e => e.TemplateId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasComment("模板唯一标识")
+                .HasColumnName("template_id");
+            entity.Property(e => e.Site)
+                .HasComment("地区站点枚举 (例如: 0=NB)")
+                .HasColumnName("site");
+            entity.Property(e => e.Status)
+                .HasComment("当前datasheet状态枚举 (例如: 0=Draft, 1=Published)")
+                .HasColumnName("status");
+            entity.Property(e => e.TemplateName)
+                .HasMaxLength(255)
+                .HasComment("模板名称")
+                .HasColumnName("template_name");
+            entity.Property(e => e.TemplateUrl)
+                .HasMaxLength(1024)
+                .HasComment("模板的URL地址")
+                .HasColumnName("template_url");
+            entity.Property(e => e.UpdateAt)
+                .HasComment("变更时间")
+                .HasColumnName("update_at");
+            entity.Property(e => e.Version)
+                .HasComment("当前模板版本")
+                .HasColumnName("version");
         });
 
         OnModelCreatingPartial(modelBuilder);
