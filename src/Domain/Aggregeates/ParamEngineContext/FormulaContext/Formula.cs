@@ -1,4 +1,5 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Share.Interface;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
@@ -6,6 +7,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
@@ -16,6 +18,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         private readonly List<ParamStructureId?> _paramStructureIds = new();
 
         private readonly List<StandardFamilyId?> _standardFamilyIds = new();
+
+        private readonly List<BuyerId?> _buyerIds = new();
         /// <summary>
         /// 公式ID
         /// </summary>
@@ -30,6 +34,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 标准族 Id
         /// </summary>
         public IReadOnlyCollection<StandardFamilyId?> StandardFamilyIds => _standardFamilyIds.AsReadOnly();
+
+        /// <summary>
+        /// 买家关联 Id
+        /// </summary>
+        public IReadOnlyCollection<BuyerId?> BuyerIds => _buyerIds.AsReadOnly();
 
         /// <summary>
         /// 公式名称
@@ -73,6 +82,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 公式是否启用
         /// </summary>
         public bool IsActive { get; private set; }
+
+        /// <summary>
+        /// 公式所属的引擎层级（默认 Standard 层）
+        /// </summary>
+        public EngineLayer EngineLayer { get; private set; } = EngineLayer.Standard;
 
         /// <summary>
         /// 创建 Formula 聚合根的实例（工厂方法，仅在内存中创建并保证不变式）

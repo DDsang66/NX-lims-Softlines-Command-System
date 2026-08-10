@@ -69,12 +69,12 @@
                      │       BuyerOverrideCoordinator（协调器，应用层）     │
                      └──────────────────────────────────────────────────┘
           ┌──────────────────────────┐        ┌──────────────────────────┐
-          │   买家层（同构复用）🚧     │        │   标准层（已实现）✅        │
-          │  BuyerParamStructure     │        │  ParamStructure          │
-          │  BuyerFormula            │        │  Formula                 │
-          │  BuyerParamRule          │        │  ParamRule               │
-          │  ConditionPool(买家字段)   │  同套   │  ConditionPool(标准字段)   │
-          │  引擎/校验/补偿/DSL        │───────▶│  引擎/校验/补偿/DSL         │
+          │   买家层（同构复用）🚧                           │        │   标准层（已实现）✅                              │
+          │  BuyerParamStructure                              │        │  ParamStructure                                        │
+          │  BuyerFormula                                          │        │  Formula                                                    │
+          │  BuyerParamRule                                     │        │  ParamRule                                               │
+          │  ConditionPool(买家字段)                         │ 同套│  ConditionPool(标准字段)                          │
+          │  引擎/校验/补偿/DSL                                 │──▶│  引擎/校验/补偿/DSL                                 │
           └──────────────────────────┘        └──────────────────────────┘
                            └── 并集：buyerSet.Merge(standardSet, Ignore) 买家优先 ──┘
 ```

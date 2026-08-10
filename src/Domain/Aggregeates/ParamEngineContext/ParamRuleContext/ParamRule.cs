@@ -11,6 +11,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -62,6 +63,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 是否激活
         /// </summary>
         public bool IsActive { get; private set; }
+
+        /// <summary>
+        /// 规则所属引擎层级
+        /// </summary>
+        public EngineLayer EngineLayer { get; private set; }
 
         // 私有构造函数
         //private ParamRule() { }

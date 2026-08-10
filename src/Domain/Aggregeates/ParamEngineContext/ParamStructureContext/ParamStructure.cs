@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.Application.DTO;
 using NX_lims_Softlines_Command_System.Domain.Share.Interface;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
@@ -19,8 +20,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         //public ParamStructureId Id { get; private set; }
 
+        ///<summary>
+        /// 适用标准族id集合
+        ///<summary>
         private readonly List<StandardFamilyId?> _standardFamilyIds = new();
+
+        /// <summary>
+        /// 挂载的规则
+        /// </summary>
         private readonly List<ParamRuleId> _ruleIds  = new();
+
+        /// <summary>
+        /// 适用买家id集合
+        /// </summary>
+        private readonly List<BuyerId?> _buyerIds = new();
 
         /// <summary>
         /// 适用标准族
@@ -31,6 +44,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 适用规则
         /// </summary>
         public IReadOnlyCollection<ParamRuleId> ApplicableRuleIds => _ruleIds.AsReadOnly();
+
+        /// <summary>
+        /// 买家关联 Id
+        /// </summary>
+        public IReadOnlyCollection<BuyerId?> BuyerIds => _buyerIds.AsReadOnly();
 
         /// <summary>
         /// 适用公式
@@ -51,7 +69,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 状态
         /// </summary>
         public Status Status { get; private set; } = Status.Draft;
-        
+
+        /// <summary>
+        /// 公式所属的引擎层级（默认 Standard 层）
+        /// </summary>
+        public EngineLayer EngineLayer { get; private set; } = EngineLayer.Standard;
+
         /// <summary>
         /// 生效日期
         /// </summary>

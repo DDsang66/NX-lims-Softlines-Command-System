@@ -1,10 +1,64 @@
-ï»¿# NX-lims æ£€æµ‹å®éªŒå®¤ç®¡ç†ç³»ç»Ÿ
+# NX-lims Softlines Command System
 
-## é¡¹ç›®ç®€ä»‹
-åŸºäºé¢†åŸŸé©±åŠ¨è®¾è®¡ï¼ˆDDDï¼‰çš„å®éªŒå®¤ä¿¡æ¯ç®¡ç†ç³»ç»Ÿ
+## ÏîÄ¿¼ò½é
 
-## æŠ€æœ¯æ ˆ
-- .NET 8.0
-- Entity Framework Core
-- SQL Server
-- Mapster
+NX-lims Softlines Command System ÊÇÒ»¸öÓÃÓÚ¹ÜÀíºÍÖ´ĞĞÈíĞÔÃæÁÏ²âÊÔµÄÏµÍ³¡£Ö¼ÔÚÌáÉı²âÊÔĞ§ÂÊÓë×¼È·ĞÔ¡£
+
+## ¼¼ÊõÕ»
+
+- ºó¶Ë£º.NET 8
+- Êı¾İ¿â£ºSQL Server / SQLite
+- ¹æ³ÌÒıÇæ£º[Drools](https://www.drools.org/)
+
+## ¿ìËÙ¿ªÊ¼
+
+1. ¿ËÂ¡²Ö¿â
+
+   ```bash
+   git clone https://github.com/DDsang66/NX-lims-Softlines-Command-System.git
+   cd "NX-lims Softlines Command System"
+   ```
+
+2. »·¾³ÒªÇó
+
+   - .NET 8 SDK
+   - SQL Server£¨»òÊ¹ÓÃ¿ª·¢Ê±µÄ±¾µØÈİÆ÷/SQLite Ìæ´ú£©
+   - ÍÆ¼öÊ¹ÓÃ VS2022 »ò JetBrains Rider
+
+3. ÅäÖÃÊı¾İ¿âÁ¬½Ó
+
+   - ÔÚ `src/Infrastructure` »òÓ¦ÓÃµÄ `appsettings.Development.json` ÖĞÅäÖÃ `ConnectionStrings:Default` Ö¸ÏòÄãµÄ SQL Server ÊµÀı¡£
+
+4. ÔËĞĞÇ¨ÒÆÓë³õÊ¼»¯
+
+   ```bash
+   cd src/Infrastructure
+   dotnet ef database update --project ./ --startup-project ../..  # ¸ù¾İÊµ¼ÊÏîÄ¿½á¹¹µ÷Õû
+   ```
+
+5. Æô¶¯·şÎñ
+
+   ```bash
+   cd src
+   dotnet run --project YourHostProject.csproj
+   ```
+
+## ²âÊÔ
+
+- µ¥Ôª²âÊÔ£ºÔÚ `tests/` »ò `src` ÏÂµÄ test ÏîÄ¿ÖĞÖ´ĞĞ `dotnet test`¡£
+- ¼¯³É²âÊÔ£º½¨ÒéÊ¹ÓÃ SQLite InMemory »ò Testcontainers À´½üËÆÕæÊµ DB ³¡¾°¡£
+
+## ¿ª·¢Ô¼¶¨
+
+- ÁìÓòÇı¶¯Éè¼Æ£¨DDD£©Ïà¹ØÔ¼¶¨Ïê¼û£º`doc/guides/ddd-conventions.md`¡£
+- ´úÂëÖØ½¨/¹æÔòÒıÇæÖ¸µ¼¼û£º`doc/guides/Code Rebuild Guidance.doc`¡£
+
+## ¹±Ï×ÓëÖ§³Ö
+
+- Ìá½»Ç°ÇëÈ·±£Í¨¹ı `dotnet format` ¼°µ¥Ôª²âÊÔ¡£
+- ĞÂ¹¦ÄÜ·ÖÖ§ÃüÃû£º`feature/<ÃèÊö>`£¬bug ĞŞ¸´£º`fix/<ÃèÊö>`¡£
+- ÈçĞè°ïÖúÇëÔÚ²Ö¿â Issues ´´½¨ÎÊÌâ²¢ÌùÉÏ×îĞ¡¿É¸´ÏÖ²½Öè¼°ÈÕÖ¾Êä³ö¡£
+
+## License
+
+±¾ÏîÄ¿×ñÑ­ MIT Ğí¿ÉÖ¤¡£ÓĞ¹ØÏêÏ¸ĞÅÏ¢£¬Çë²ÎÔÄ [LICENSE](LICENSE) ÎÄ¼ş¡£
