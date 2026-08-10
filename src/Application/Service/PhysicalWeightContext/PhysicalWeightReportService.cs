@@ -84,6 +84,8 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             TestMethod = dto.TestMethod,
             TestType = dto.TestType,
             DataUnit = DataUnitOf(dto.TestType),
+            EnvironmentTemperature = dto.EnvironmentTemperature,
+            EnvironmentHumidity = dto.EnvironmentHumidity,
             SummaryRows = summaryRows,
             Rows = rows
         };

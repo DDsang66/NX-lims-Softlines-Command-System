@@ -12,6 +12,12 @@ public class PhysicalWeightReportRequestDto
     /// <summary>测试方法(可选, 填模板 Test Method)</summary>
     public string? TestMethod { get; set; }
 
+    /// <summary>环境温度 ℃(写入页脚温度格)</summary>
+    public decimal? EnvironmentTemperature { get; set; }
+
+    /// <summary>环境湿度 %RH(写入页脚湿度格)</summary>
+    public decimal? EnvironmentHumidity { get; set; }
+
     /// <summary>测量记录列表(每次测量一条)</summary>
     public List<PhysicalWeightReportRecordDto> Records { get; set; } = new();
 }
