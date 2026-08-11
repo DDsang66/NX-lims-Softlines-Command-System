@@ -96,15 +96,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         {
             // 1. 获取公式
             var formula = await _formulaRepository.GetByIdAsync(new FormulaId(request.FormulaId),ct);
+            if (formula == null) return Result.Fail($"Formula {request.FormulaId} 不存在");
 
             // 2. 使用Director进行转换
             var (pattern, result) = _ruleTranslationService.ParseFromNaturalLanguageText(request.Text, formula, ct);
 
-            // 3. 创建聚合根
+            // 3. 创建聚合根（ParamStructureId 可为空，与 ParamRule.Create 的可空设计一致）
             var rule = ParamRule.Create(
                 new ParamRuleId(request.Id),
                 new FormulaId(request.FormulaId),
-                new ParamStructureId(request.ParamStructureId),
+                string.IsNullOrWhiteSpace(request.ParamStructureId) ? null : new ParamStructureId(request.ParamStructureId),
                 request.ParamName,
                 request.Priority,
                 pattern: pattern,
