@@ -59,11 +59,28 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
                 throw new ArgumentException("目标保存地址不能为空", nameof(targetPath));
             }
 
-            // 2. 校验并处理文件名
-            targetPath = ValidateAndNormalizeFileName(fileStream, targetPath);
-            // 2. 获取目录路径并确保目录存在
-            // GetDirectoryName 会提取路径中的文件夹部分，例如 "C:\files\doc.xlsx" -> "C:\files"
-            string directoryPath = Path.GetDirectoryName(targetPath);
+            // ? 处理完整 URL，提取相对路径
+            string relativePath = targetPath;
+            if (targetPath.StartsWith("http://") || targetPath.StartsWith("https://"))
+            {
+                var uri = new Uri(targetPath);
+                relativePath = uri.PathAndQuery.TrimStart('/');
+            }
+
+            // 移除可能存在的 wwwroot 前缀
+            if (relativePath.StartsWith("wwwroot/", StringComparison.OrdinalIgnoreCase))
+            {
+                relativePath = relativePath.Substring("wwwroot/".Length);
+            }
+
+            // 组合完整物理路径
+            string fullPath = Path.Combine(_env.WebRootPath, relativePath);
+
+            // 校验并处理文件名
+            fullPath = ValidateAndNormalizeFileName(fileStream, fullPath);
+
+            // 获取目录路径并确保目录存在
+            string directoryPath = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
             {
                 Directory.CreateDirectory(directoryPath);
@@ -71,23 +88,21 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
 
             try
             {
-                using (var fileStreamToWrite = new FileStream(targetPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                using (var fileStreamToWrite = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
                 {
-                    // 重置流的位置（如果是 MemoryStream 或可定位的流，防止从头读取时丢数据）
                     if (fileStream.CanSeek)
                     {
                         fileStream.Position = 0;
                     }
 
-                    // 异步拷贝流
                     await fileStream.CopyToAsync(fileStreamToWrite);
                     await fileStreamToWrite.FlushAsync();
                 }
 
-                _logger.LogInformation("文件成功保存到 {TargetPath}", targetPath);
+                _logger.LogInformation("文件成功保存到 {FullPath}", fullPath);
 
-                // 4. 返回传入的 URL
-                return fileUrl;
+                // 返回可访问的 URL（相对路径）
+                return $"/{relativePath}";
             }
             catch (Exception ex)
             {

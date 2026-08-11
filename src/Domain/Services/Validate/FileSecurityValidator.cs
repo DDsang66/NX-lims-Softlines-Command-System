@@ -6,18 +6,24 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
 {
     public class FileSecurityValidator : IFileSecurityValidator,IScopedDependency
     {
-        // 允许的扩展名白名单
+        // 允许的扩展名白名单（添加 Word 文件）
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
-            ".xlsx", ".xls", ".xlsm" // 根据业务需求添加   
-        };
+            ".xlsx", ".xls", ".xlsm",  // Excel 文件
+            ".docx", ".doc"            // ✅ 新增：Word 文件
+         };
 
-        // 已知安全文件头的 Magic Bytes (例如 xlsx 的头是 PK，即 50 4B 03 04)
+        // 已知安全文件头的 Magic Bytes
         private static readonly Dictionary<string, byte[]> FileSignatures = new()
         {
+    // Excel 文件 
             { ".xlsx", new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // ZIP/XLSX 格式头
-            { ".xls", new byte[] { 0xD0, 0xCF, 0x11, 0xE0 } }  // OLE2 格式头
-         };
+            { ".xls", new byte[] { 0xD0, 0xCF, 0x11, 0xE0 } },   // OLE2 格式头
+    
+    // ✅ 新增：Word 文件           
+            { ".docx", new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // DOCX 也是 ZIP 格式，头与 XLSX 相同 
+            { ".doc", new byte[] { 0xD0, 0xCF, 0x11, 0xE0 } }    // DOC 是 OLE2 格式，头与 XLS 相同
+        };
 
         public async Task<FileValidationResult> ValidateAsync(Stream fileStream, string claimedExtension)
         {

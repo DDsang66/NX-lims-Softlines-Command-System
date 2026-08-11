@@ -46,7 +46,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
 
             using (var stream = dto.TemplateFile.OpenReadStream())
             {
-                var validationResult = await _fileSecurityValidator.ValidateAsync(stream, dto.FileType);
+                // ✅ 从文件名提取扩展名
+                var fileExtension = Path.GetExtension(dto.TemplateFile.FileName);
+
+                var validationResult = await _fileSecurityValidator.ValidateAsync(stream, fileExtension);
 
                 if (!validationResult.IsValid)
                     return Result.Fail("Template is Unsafe");
@@ -63,10 +66,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
             }
 
             // 将 dto.FileType (string) 解析为 TemplateFileType 枚举
-            if (!Enum.TryParse<TemplateFileType>(dto.FileType, true, out var fileType))
-            {
-                return Result.Fail($"无效的 FileType: {dto.FileType}");
-            }
+            var fileType = MapFileExtensionToType(dto.FileType);
 
             var template = Template.Create(templateId, dto.TemplateName, site, fileType, host,dto.Category);
 
@@ -79,6 +79,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
             await _unitOfWork.SaveChangesAsync(ct);
 
             return Result.Ok();
+        }
+
+        // 将文件扩展名映射到 TemplateFileType 枚举
+        private TemplateFileType MapFileExtensionToType(string fileExtension)
+        {
+            return fileExtension?.ToLower() switch
+            {
+                ".docx" or ".doc" => TemplateFileType.Docx,
+                ".xlsx" or ".xls" or ".xlsm" => TemplateFileType.Excel,
+                _ => throw new ArgumentException($"Unsupported file type: {fileExtension}")
+            };
         }
     }
 }

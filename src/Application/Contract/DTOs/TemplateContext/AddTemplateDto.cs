@@ -30,7 +30,7 @@
         /// <summary>
         /// 备注
         /// </summary>
-        public string Remark { get; set; } = string.Empty;
+        public string? Remark { get; set; } = string.Empty;
 
         /// <summary>
         /// 模板文件
