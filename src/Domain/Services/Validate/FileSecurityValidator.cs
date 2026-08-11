@@ -1,9 +1,10 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Contract.Service;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services.Validate
 {
-    public class FileSecurityValidator : IFileSecurityValidator
+    public class FileSecurityValidator : IFileSecurityValidator,IScopedDependency
     {
         // 允许的扩展名白名单
         private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)

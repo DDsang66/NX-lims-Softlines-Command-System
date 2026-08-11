@@ -28,6 +28,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         /// </summary>
         public Status Status { get; private set; } = Status.Draft;
 
+        // Template 聚合根内部新增属性
+        /// <summary>
+        /// 模板文件类型
+        /// </summary>
+        public TemplateFileType FileType { get; private set; } = TemplateFileType.Docx;
+
+        /// <summary>
+        /// 业务子分类文件夹名称 (如 Common_FLAM, Common_PHY, 买家特定名称等)
+        /// </summary>
+        public string BusinessCategory { get; private set; } = string.Empty;
+
         /// <summary>
         /// 当前模板版本
         /// </summary>
@@ -47,11 +58,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         public static Template Create(
             TemplateId id,
             string templateName,
-            Site site)
+            Site site,
+            TemplateFileType fileType,
+            string host,
+            string businessCategory)
         {
             // 1. 参数校验
             if (string.IsNullOrWhiteSpace(templateName))
                 throw new ArgumentException("模板名称不能为空", nameof(templateName));
+
+            if (string.IsNullOrWhiteSpace(businessCategory))
+                throw new ArgumentException("业务分类不能为空", nameof(businessCategory));
+
 
             // 2. 创建实体并赋予初始状态
             var template = new Template
@@ -61,10 +79,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
                 Site = site,
                 Status = Status.Draft, // 新创建的模板默认为草稿状态
                 Version = 1,
+                FileType = fileType,
+                BusinessCategory = businessCategory,
                 UpdateAt = DateTime.Now
             };
 
-            template.TemplateUrl = template.GenerateTemplateUrl();
+            template.TemplateUrl = template.GenerateTemplateUrl(host);
 
             // 3. 发布领域事件 (假设你的 AggregateRoot 提供了 AddDomainEvent 方法)
             // template.AddDomainEvent(new TemplateCreatedEvent(id, templateName));
@@ -175,16 +195,31 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         /// 根据业务规则自动生成模板 URL
         /// </summary>
         /// <returns>生成的 URL 字符串</returns>
-        private string GenerateTemplateUrl()
+        private string GenerateTemplateUrl(string host)
         {
             // 这里的生成规则需要根据你的实际业务需求定制
             // 示例规则: /templates/{Site}/{TemplateName}_{当前时间戳}.html
+            // 1. 获取后端运行的 IP 和端口 (注意：纯领域模型不建议直接依赖 HttpContext，这里作为领域规则演示)
+            // 实际生产中，IP端口和wwwroot前缀建议作为配置传入 Create 方法，或在应用层拼接前缀
+             // TODO: 替换为实际动态获取的 Host 地址
 
-            string siteName = Site.ToString(); // 假设 Site 枚举重写了 ToString 或直接使用名称
-            string safeName = TemplateName.Replace(" ", "_"); // 简单处理空格
+            // 2. wwwroot 虚拟路径前缀
+            string webRoot = "wwwroot";
+
+            // 3. 根据 Word/Excel 选择 DocxModel 或 ExcelModel
+            string modelFolder = FileType == TemplateFileType.Docx ? "DocxModel" : "ExcelModel";
+
+            // 4. 业务分类文件夹 (如 Common_FLAM, Common_PHY 等，由外部传入)
+            string categoryFolder = BusinessCategory;
+
+            // 5. 处理文件名：替换空格，拼接版本号和时间戳
+            string safeName = TemplateName.Replace(" ", "_");
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string extension = FileType == TemplateFileType.Docx ? ".docx" : ".xlsx";
+            string fileName = $"{safeName}_v{Version}_{timestamp}{extension}";
 
-            return $"/templates/{siteName}/{safeName}_{timestamp}.html";
+            // 6. 组合路径 (使用 / 保证 URL 的兼容性)
+            return $"{host}/{webRoot}/{modelFolder}/{categoryFolder}/{fileName}";
         }
     }
 }

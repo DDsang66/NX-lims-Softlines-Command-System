@@ -668,6 +668,13 @@ public partial class dbContext : DbContext
                 .IsUnicode(false)
                 .HasComment("模板唯一标识")
                 .HasColumnName("template_id");
+            entity.Property(e => e.BusinessCategory)
+                .HasMaxLength(128)
+                .HasComment("业务子分类文件夹名称 (如 Common_FLAM, Common_PHY 等)")
+                .HasColumnName("business_category");
+            entity.Property(e => e.FileType)
+                .HasComment("模板文件类型枚举 (0=Docx, 1=Excel)")
+                .HasColumnName("file_type");
             entity.Property(e => e.Site)
                 .HasComment("地区站点枚举 (例如: 0=NB)")
                 .HasColumnName("site");

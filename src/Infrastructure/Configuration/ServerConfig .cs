@@ -14,6 +14,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Configuration
             _httpContextAccessor = httpContextAccessor;
         }
 
+        /// <summary>
+        /// 获取基础ip地址
+        /// </summary>
+        /// <returns></returns>
         public string GetBaseUrl()
         {
             var context = _httpContextAccessor.HttpContext;
@@ -44,6 +48,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Configuration
 
         }
 
+        /// <summary>
+        /// 判断是否是本地ip地址
+        /// </summary>
+        /// <param name="host"></param>
+        /// <returns></returns>
         private bool IsLocalIpAddress(string host)
         {
             try
@@ -61,6 +70,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Configuration
             return false;
         }
 
+        /// <summary>
+        /// 获取ip网关地址
+        /// </summary>
+        /// <returns></returns>
         private string GetLocalIPAddress()
         {
             // 这是之前的逻辑

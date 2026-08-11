@@ -1,6 +1,7 @@
 ﻿using NX_lims_Softlines_Command_System.Domain.Aggregeates.Standard;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
 {

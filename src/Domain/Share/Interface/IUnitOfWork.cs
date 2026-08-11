@@ -1,4 +1,4 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories
+﻿namespace NX_lims_Softlines_Command_System.src.Domain.Share.Interface
 {
     public interface IUnitOfWork : IDisposable
     {

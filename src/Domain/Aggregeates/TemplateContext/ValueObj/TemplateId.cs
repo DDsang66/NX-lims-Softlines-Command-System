@@ -5,7 +5,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
     public class TemplateId : AggregateRootId<string>
     {
         public TemplateId(string value)
-    : base(value)
+            : base(value)
         {
             if (string.IsNullOrWhiteSpace(value))
                 throw new ArgumentException("TemplateId (value) cannot be empty", nameof(value));

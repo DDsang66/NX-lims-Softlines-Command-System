@@ -3,6 +3,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.Value
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
 {

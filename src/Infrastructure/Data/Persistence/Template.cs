@@ -42,4 +42,14 @@ public partial class Template
     /// 变更时间
     /// </summary>
     public DateTime UpdateAt { get; set; }
+
+    /// <summary>
+    /// 模板文件类型枚举 (0=Docx, 1=Excel)
+    /// </summary>
+    public byte FileType { get; set; }
+
+    /// <summary>
+    /// 业务子分类文件夹名称 (如 Common_FLAM, Common_PHY 等)
+    /// </summary>
+    public string BusinessCategory { get; set; } = null!;
 }

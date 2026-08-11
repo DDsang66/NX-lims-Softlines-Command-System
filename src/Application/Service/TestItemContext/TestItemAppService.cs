@@ -5,10 +5,10 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemContext
 {

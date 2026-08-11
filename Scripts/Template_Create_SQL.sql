@@ -1,5 +1,5 @@
 -- 如果表已存在则先删除 (可选，请根据实际情况谨慎操作)
--- DROP TABLE IF EXISTS dbo.template;
+ DROP TABLE IF EXISTS dbo.template;
 
 CREATE TABLE dbo.template
 (
@@ -27,6 +27,13 @@ CREATE TABLE dbo.template
     -- 变更时间，对应 C# DateTime (默认 DateTime.Now)
     -- DATETIME2 是 SQL Server 推荐的高精度时间类型
     update_at        DATETIME2      NOT NULL,
+
+    -- 新增：模板文件类型，对应 C# TemplateFileType 枚举 (默认 Docx)
+    -- 使用 TINYINT 存储枚举值
+    file_type        TINYINT        NOT NULL, -- 0: Docx, 1: Excel (请根据实际枚举整数值调整)
+
+    -- 新增：业务子分类文件夹名称，对应 C# string (如 Common_FLAM, Common_PHY 等)
+    business_category NVARCHAR(128) NOT NULL,
 
     -- 主键约束
     CONSTRAINT PK_template PRIMARY KEY (template_id)
@@ -79,3 +86,15 @@ EXEC sp_addextendedproperty
     @level0type = N'SCHEMA', @level0name = N'dbo', 
     @level1type = N'TABLE', @level1name = N'template', 
     @level2type = N'COLUMN', @level2name = N'update_at';
+
+EXEC sp_addextendedproperty 
+    @name = N'MS_Description', @value = N'模板文件类型枚举 (0=Docx, 1=Excel)', 
+    @level0type = N'SCHEMA', @level0name = N'dbo', 
+    @level1type = N'TABLE', @level1name = N'template', 
+    @level2type = N'COLUMN', @level2name = N'file_type';
+
+EXEC sp_addextendedproperty 
+    @name = N'MS_Description', @value = N'业务子分类文件夹名称 (如 Common_FLAM, Common_PHY 等)', 
+    @level0type = N'SCHEMA', @level0name = N'dbo', 
+    @level1type = N'TABLE', @level1name = N'template', 
+    @level2type = N'COLUMN', @level2name = N'business_category';

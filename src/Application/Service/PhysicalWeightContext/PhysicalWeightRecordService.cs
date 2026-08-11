@@ -2,10 +2,10 @@ using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.PhysicalWeightContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface.PhysicalWeightContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.PhysicalWeightContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.PhysicalWeightContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.PhysicalWeightContext;
 

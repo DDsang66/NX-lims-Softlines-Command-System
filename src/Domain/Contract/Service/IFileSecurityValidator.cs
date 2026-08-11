@@ -1,8 +1,9 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
+using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service
 {
-    public interface IFileSecurityValidator
+    public interface IFileSecurityValidator: IScopedDependency
     {
         /// <summary>
         /// 验证上传文件的安全性

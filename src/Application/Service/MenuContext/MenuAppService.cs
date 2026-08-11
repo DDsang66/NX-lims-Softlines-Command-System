@@ -7,11 +7,11 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Repositories;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 using System.Collections.Generic;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.MenuContext
