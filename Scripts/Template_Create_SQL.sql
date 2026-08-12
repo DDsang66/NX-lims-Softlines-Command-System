@@ -4,7 +4,7 @@
 CREATE TABLE dbo.template
 (
     -- 主键，varchar(25)，非空
-    template_id      VARCHAR(25)    NOT NULL,
+    template_id      VARCHAR(75)    NOT NULL,
 
     -- 模板名称，对应 C# string (默认 string.Empty)
     template_name    NVARCHAR(255)  NOT NULL,

@@ -664,7 +664,7 @@ public partial class dbContext : DbContext
             entity.ToTable("template", tb => tb.HasComment("模板聚合根表"));
 
             entity.Property(e => e.TemplateId)
-                .HasMaxLength(25)
+                .HasMaxLength(75)
                 .IsUnicode(false)
                 .HasComment("模板唯一标识")
                 .HasColumnName("template_id");

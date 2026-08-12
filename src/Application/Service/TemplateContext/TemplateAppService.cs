@@ -4,10 +4,12 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service;
+using NX_lims_Softlines_Command_System.src.Domain.Services;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+using System.Reflection.Emit;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateContext
 {
@@ -18,19 +20,22 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
         private readonly IServerConfig _serverConfig;
         private readonly IFileSecurityValidator _fileSecurityValidator;
         private readonly IFileStorageService _fileStorageService;
+        private readonly ITemplateIdGenerator _templateIdGenerator;
 
         public TemplateAppService(
             ITemplateRepository templateRepository,
             IUnitOfWork unitOfWork,
             IServerConfig serverConfig,
             IFileSecurityValidator fileSecurityValidator,
-            IFileStorageService fileStorageService)
+            IFileStorageService fileStorageService,
+            ITemplateIdGenerator templateIdGenerator)
         {
             _templateRepository = templateRepository;
             _unitOfWork = unitOfWork;
             _serverConfig = serverConfig;
             _fileSecurityValidator = fileSecurityValidator;
             _fileStorageService = fileStorageService;
+            _templateIdGenerator = templateIdGenerator;
         }
 
         /// <summary>
@@ -57,7 +62,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
 
             var host = _serverConfig.GetBaseUrl();
 
-            var templateId = new TemplateId(Guid.NewGuid().ToString());
+            var templateId = _templateIdGenerator.Generate(dto.TestType, dto.TemplateName);
 
             // 将 dto.Site (string) 解析为 Site 枚举
             if (!Enum.TryParse<Site>(dto.Site, true, out var site))
