@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TemplateContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
+using NX_lims_Softlines_Command_System.src.Application.Interface.TemplateContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;

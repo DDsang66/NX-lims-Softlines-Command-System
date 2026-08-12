@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TemplateContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using Template = NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.Template;  
@@ -44,6 +45,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Ignore(dest => dest.FileType)
                 .Ignore(dest => dest.BusinessCategory);
 
+            config.NewConfig<Template, TemplateResponseDto>()
+               // 主键映射：聚合根的 Id -> DTO 的 TemplateId
+               .Map(dest => dest.TemplateId, src => src.Id.Value)
+               .Map(dest => dest.BusinessCategory, src => src.BusinessCategory)
+               // 枚举映射：转换为字符串
+               .Map(dest => dest.Site, src => src.Site.ToString())
+               .Map(dest => dest.Status, src => src.Status.ToString())
+               .Map(dest => dest.FileType, src => src.FileType.ToString());
 
         }
     }

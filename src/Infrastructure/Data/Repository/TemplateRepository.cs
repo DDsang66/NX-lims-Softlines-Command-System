@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using Template = NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.Template;
 
@@ -54,6 +55,32 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task<Template> GetByIdAsync(TemplateId aggregateRootId, CancellationToken ct) 
         {
             return null;
+        }
+
+        /// <summary>
+        /// 查询所有聚合根
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<List<Template>> GetAllAsync(CancellationToken ct)
+        {
+            // 1. 从数据库表（PO）中查询所有数据
+            var templatePOs = await _context.Set<src.Infrastructure.Data.Persistence.Template>()
+                .AsNoTracking() // 查询时不跟踪变更，提升性能
+                .ToListAsync(ct);
+
+            // 2. 将 PO 列表映射为聚合根列表
+            var templates = templatePOs.Select(po => Template.Rebuild(
+                id: new TemplateId(po.TemplateId),
+                templateName: po.TemplateName,
+                templateUrl: po.TemplateUrl,
+                site: (Site)po.Site,
+                status: (Status)po.Status,
+                version: po.Version,
+                updateAt: po.UpdateAt
+            )).ToList();
+
+            return templates;
         }
     }
 }

@@ -29,5 +29,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         /// <param name="ct"></param>
         /// <returns>聚合根</returns>
         Task<Template> GetByIdAsync(TemplateId aggregateRootId, CancellationToken ct);
+
+        /// <summary>
+        /// 查询所有聚合根
+        /// </summary>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<List<Template>> GetAllAsync(CancellationToken ct);
     }
 }
