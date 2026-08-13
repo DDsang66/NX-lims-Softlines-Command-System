@@ -96,7 +96,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                         ? new List<StandardId>()
                         : src.StandardId
                             .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(s => new StandardId(s))
+                            .Select(s => new StandardId(s.Trim()))
                             .ToList(),
                     src.BuyerModifiedTestItem ?? string.Empty,
                     src.BuyerModifiedTestStandard ?? string.Empty,

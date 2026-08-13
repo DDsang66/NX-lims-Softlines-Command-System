@@ -9,11 +9,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 {
     /// <summary>
     /// 物理克重 docx 填充引擎 — 按坐标填格 PHY_Weight.docx, 与成分模板(IWordTemplateEngine)完全隔离。
+    ///
+    /// 设计总览(为什么"按坐标填格"):
+    ///   - docx 没有像素坐标, 它是 XML 的树状结构: Document → Table → TableRow → TableCell → Paragraph → Run。
+    ///     所以"定位"= 在表格数组里取"第几行的第几个单元格", 而非像画布那样给 x/y。
+    ///   - 所有行列坐标集中在嵌套类 PhysicalWeightDocxLayout(本文底部), 是"照着 PHY_Weight.docx
+    ///     模板的真实布局人工数出来"的常量。模板增删行列/表头文字时, 只需改那一处。
+    ///   - 坐标错位会静默生成错误报告, 所以配套 ValidateTemplate 做结构校验: 模板结构一旦与
+    ///     坐标假设不符, 立即抛异常, 宁可失败也不产出"看起来正常实则错位"的文档。
+    ///   - 与成分模板(IWordTemplateEngine)完全隔离: 本引擎专管物理克重 PHY_Weight.docx 一种模板。
     /// </summary>
     public class PhysicalWeightDocxEngine : IPhysicalWeightDocxEngine, IScopedDependency
     {
         /// <summary>
-        /// 填充物理克重报告: 表0(报告号/方法/汇总网格) + 表1(数据行)。OpenXml 操作留在本层。
+        /// 填充物理克重报告 — 流程地图:
+        ///   1. 打开文件, 定位两张表并做结构校验(结构不符 → 抛异常, 不静默空白);
+        ///   2. 表0 摘要表: 填报告号/测试方法, 按测试类型填汇总网格(测点 + 两种单位均值);
+        ///   3. 表1 数据表: 表头写单位, 逐行填数据(超预留行 → 克隆行扩容);
+        ///   4. 页脚: 填温湿度(带下划线, 模拟"写在横线上");
+        ///   5. 保存。OpenXml 操作全部留在本层, 上层只管拼 PhysicalWeightReportFillModel。
         /// </summary>
         public void FillReport(string filePath, PhysicalWeightReportFillModel model)
         {
@@ -104,8 +118,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         }
 
         /// <summary>
-        /// 校验 PHY_Weight.docx 模板结构并返回已定位的两张表。模板布局一变(增删行/列/表头文字),
-        /// 这里立即抛异常, 避免坐标错位静默生成错误报告。
+        /// 校验 PHY_Weight.docx 模板结构并返回已定位的两张表。
+        ///
+        /// 为什么宁可抛异常也不静默: 本引擎的填格依赖 PhysicalWeightDocxLayout 里人工数的坐标。
+        /// 模板只要被人改过(增删一行/一列/改表头文字), 坐标就可能整体错位——那种情况下继续填,
+        /// 会产出"报告号填到数据行、数值错列"这种表面上能打开、实则全错的 docx, 最难以发现。
+        /// 所以这里把 FillReport 会用到的所有锚点(行存在性、列数、标记文字)逐项断言,
+        /// 任何一项不符立即抛异常, 让生成失败暴露在调用处, 而不是把错位文档发出去。
         /// </summary>
         private (Table Summary, Table Data) ValidateTemplate(WordprocessingDocument doc)
         {
@@ -189,6 +208,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 
         /// <summary>
         /// 写单元格文本, 保留原样式。空文本清空该格。
+        ///
+        /// 流程: ①先抓取原样式(RunProperties) → ②删除多余段落只留首段 → ③删光该段所有 run → ④按新文本重建 run。
+        /// 为什么要"先抓样式再删内容": 新 run 的样式(字号/字体/加粗)必须从旧 run 复制;
+        /// 而旧 run 在步骤③会被删掉, 所以顺序反了就再也取不到样式源, 填进去的字会变成默认格式。
         /// </summary>
         private void SetCellText(TableCell? cell, string text)
         {
@@ -216,6 +239,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// <summary>
         /// 填页脚温湿度格子: 数值部分加下划线(保留"写在横线上"的视觉), 后缀(°C/%RH)无下划线。
         /// 保留单元格原样式(字号/字体等不变), 空值场景不调用此方法, 模板下划线字符原样保留。
+        ///
+        /// 为什么拆成两个 run: 一个 run 只能有一个下划线属性, 而我们要"数值有下划线、单位无",
+        /// 所以数值和单位各建一个 run, 各带自己的 RunProperties(都克隆自原样式, 单位那个去掉下划线)。
+        /// 两个 run 必须各自 CloneNode 样式——若共用同一个 rp 对象插到多处, OpenXml 会报 "part of a tree"。
         /// </summary>
         private void SetFooterValue(TableCell? cell, string value, string suffix)
         {
@@ -247,7 +274,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         }
 
         /// <summary>
-        /// 对特定表格插入新行
+        /// 对特定表格插入新行 — 数据超过模板预留行数时扩容。
+        ///
+        /// 做法: 克隆"最后一行"(连同样式: 边框/底纹/字体/合并格)追加到表尾, 再清空内容。
+        /// 为什么用克隆而不是新建空白行: 新行会丢失模板的边框和字号, 报告里出现"没框的行"很难看;
+        /// 克隆保留了完整样式, 只需把文本清掉即可当数据行复用。
+        /// 注意: 克隆源是 LastOrDefault(), 若模板最后一行的结构和标准数据行不同(如带合计行),
+        /// 克隆出来的行样式会不标准——模板设计时应保证"最后一个预留数据行"落在末行, 或此处改为克隆指定行。
         /// </summary>
         private void AddRowToTable(Table table)
         {
@@ -289,7 +322,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         }
 
         /// <summary>
-        /// 定位表格（支持书签、内容匹配、索引等多种策略）
+        /// 定位表格（支持书签、内容匹配、索引等多种策略）。
+        ///
+        /// 策略优先级: 书签 > 表格内文字 > 表格序号。
+        ///   - 书签: 模板里显式加了书签标记时最稳(文字改动不影响);
+        ///   - 内容: 按表格里是否包含某段文字找(如 "Test Report Number")——本引擎默认用这个,
+        ///     模板里表头文字变了就定位不到, 会返回 null 再被 ValidateTemplate 抛异常兜住;
+        ///   - 索引: 按文档第几张表(0-based), 最脆弱, 模板增删表就错位, 仅作兜底。
         /// </summary>
         private Table? LocateTable(WordprocessingDocument doc, string identifier)
         {

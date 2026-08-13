@@ -248,6 +248,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var paramStructurePo = paramStructure.Adapt<BasicParamStructure>();
 
             await _dbContext.AddAsync(paramStructurePo, ct);
+
+            // 2. 同步标准族关联(与 UpdateAsync 一致,幂等)
+            await SyncStandardFamiliesAsync(paramStructurePo.ParamStructureId, paramStructure.StandardFamilyIds, ct);
+
+            // 3. 同步规则关联(同型 bug,一并修)
+            await SyncRulesAsync(paramStructurePo.ParamStructureId, paramStructure.ApplicableRuleIds, ct);
         }
 
         /// <summary>
