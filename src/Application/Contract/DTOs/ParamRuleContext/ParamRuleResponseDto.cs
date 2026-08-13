@@ -69,6 +69,11 @@
         /// 结果备注
         /// </summary>
         public string? ResultNotes { get; set; }
+
+        /// <summary>
+        /// 命中后是否停止匹配
+        /// </summary>
+        public bool StopOnMatch { get; set; }
     }
 }
 

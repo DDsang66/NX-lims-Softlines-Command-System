@@ -138,7 +138,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             var pattern = _ruleTranslationService.PatternTranslateFromDto(changedRequest, ct);
 
             // 3. 更新规则
-            existingRule.Update(pattern, changedRequest.ParamResult, changedRequest.Priority, changedRequest.StopOnMatch);
+            // 注意：result 必须直接用请求里的 ResultValue，不能用 changedRequest.ParamResult——
+            // UpdateParamRuleJsonRequest.ResultValue 与 CreateParamRuleRequest.ParamResult 字段名不同，
+            // Mapster 默认按名称映射会把它变成 null，导致编辑保存时结果值丢失
+            // StopOnMatch 同理：UpdateParamRuleJsonRequest 缺该字段时 Adapt 恒为 false，需直接用 request
+            existingRule.Update(pattern, new ParamValue(request.ResultValue), request.Priority, request.StopOnMatch);
 
             // 4. 持久化
             await _pararmRuleRepository.UpdateAsync(existingRule,ct);

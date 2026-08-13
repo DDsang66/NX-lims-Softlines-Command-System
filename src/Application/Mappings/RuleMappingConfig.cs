@@ -63,6 +63,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.IsActive, src => src.IsActive)
                 .Map(dest => dest.ResultValue, src => src.Result.Value)
                 .Map(dest => dest.ResultNotes, src => src.Result.Notes)
+                .Map(dest => dest.StopOnMatch, src => src.StopOnMatch)
                 .Map(dest => dest.EqualMatches, src => src.Pattern == null ? null! :
                     src.Pattern.EqualMatches.Select(kv => new EqualMatchDto { Field = kv.Key, Value = kv.Value! }).ToList())
                 .Map(dest => dest.ComparisonMatches, src => src.Pattern == null ? null! :
