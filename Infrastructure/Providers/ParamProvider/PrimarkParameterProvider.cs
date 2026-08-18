@@ -186,7 +186,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure.Contains("M") ? "Permanent Press"
                 : "",
                 //Cycle，程度暂时用Bleach字段代替
-                DryCleanProcedure = DryConditionHelper(p.DryProcedure!),
+                DryCleanProcedure = DryConditionHelper(p.DryProcedure!,sampleDesc),
                 //DryCondition，暂时用干洗字段代替
                 AfterWash = "20",
                 SpecialCareInstruction = p.Sci ?? null,
@@ -695,7 +695,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             part_1 =
             WashingProcedure!.Contains("N") ? "(1)"
             : WashingProcedure.Contains("G") ? "(2)"
-            : WashingProcedure.Contains("P") ? "(3)"
+            : WashingProcedure.Contains("M") ? "(3)"
             : "";
             part_2 =
                 WashingProcedure!.Contains("3") ? "II"
@@ -706,16 +706,29 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             return program;
         }
 
-        private string? DryConditionHelper(string DryProcedure)
+        private string? DryConditionHelper(string DryProcedure, List<SampleInfoDescription> sampleDesc)
         {
             if (DryProcedure == null) return null;
             string program = "";
-            program =
-                DryProcedure!.Contains("Low") ? "A(ii)"
-                : DryProcedure.Contains("Line Dry") ? "B"
-                : DryProcedure.Contains("Flat Dry") ? "D"
-                : "A(i)";
-            return program;
+            if (DryProcedure.Contains("Line Dry")) 
+                return program = "B";
+
+            else if (DryProcedure.Contains("Flat Dry")) 
+                return program = "D";
+
+            else if (DryProcedure.Contains("Low"))
+                return program = "A(ii)";
+
+
+            if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Woven")) 
+            {
+                return program = "B";
+            }
+            else if (FetchSamplePropertyValue(sampleDesc, "Structure").Contains("Knit")) 
+            {
+                return program = "D";
+            }
+            else return program = "A(i)";
         }
 
         private string? HotPressingHelper(string? IronMethod, string MenuName)

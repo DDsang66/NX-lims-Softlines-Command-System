@@ -33,6 +33,16 @@
         public IEnumerable<string>? ParamStructureIds { get; set; }
 
         /// <summary>
+        /// 买家ID集合
+        /// </summary>
+        public IEnumerable<string>? BuyerIds { get; set; }
+
+        /// <summary>
+        /// 所属引擎层
+        /// </summary>
+        public string EngineLayer { get; set; } = string.Empty;
+
+        /// <summary>
         /// 表达式模板（如：${field1} + ${field2}）
         /// </summary>
         public string ExpressionTemplate { get; set; } = string.Empty;

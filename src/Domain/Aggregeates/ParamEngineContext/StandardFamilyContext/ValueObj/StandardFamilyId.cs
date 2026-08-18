@@ -10,7 +10,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             :base(value) 
         {
             if (string.IsNullOrWhiteSpace(value)) 
-                throw new ArgumentNullException("ParamStructureId is required", nameof(value));
+                throw new ArgumentNullException("StandardFamilyId is required", nameof(value));
         }
     }
 }

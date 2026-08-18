@@ -1,0 +1,13 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+
+public partial class ParamsturctureBuyer
+{
+    public int Id { get; set; }
+
+    public string ParamStructureId { get; set; } = null!;
+
+    public string BuyerId { get; set; } = null!;
+}

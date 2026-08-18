@@ -1,5 +1,6 @@
 ﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFormulaContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface.FormulaContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
@@ -7,6 +8,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 using System.Drawing.Printing;
 
@@ -42,8 +44,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.FormulaContex
                 dto.ParamStructureIds?
                 .Select(id => new ParamStructureId(id)) 
                 ?? new List<ParamStructureId?>(),
+                   dto.BuyerIds?
+                .Select(id => new BuyerId(id))
+                ?? new List<BuyerId?>(),
                 dto.ConditionFields,
                 dto.ExpressionTemplate,
+                Enum.TryParse<EngineLayer>(dto.EngineLayer, out var layer) ? layer : EngineLayer.Standard,
                 dto.Description);
 
             await _formulaRepository.AddAsync(formula, ct);

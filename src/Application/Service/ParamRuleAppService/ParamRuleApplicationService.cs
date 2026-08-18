@@ -11,6 +11,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngin
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 
@@ -65,7 +66,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <returns></returns>
         public async Task<Result> AddParamRuleFromJsonAsync(CreateParamRuleRequest request,CancellationToken ct)
         {
-            // 1. 使用Director进行转换
+            // 1. 使用Directo
+            // r进行转换
             var pattern = _ruleTranslationService.PatternTranslateFromDto(request,ct);
 
             // 2. 创建聚合根
@@ -75,8 +77,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 new ParamStructureId(request.ParamStructureId),
                 request.ParamName,
                 request.Priority,
+                Enum.TryParse<EngineLayer>(request.EngineLayer, out var layer) ? layer : EngineLayer.Standard,
                 pattern,
                 new ParamValue(request.ParamResult)
+               
             );
 
             await _pararmRuleRepository.AddAsync(rule,ct);
@@ -108,9 +112,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
                 string.IsNullOrWhiteSpace(request.ParamStructureId) ? null : new ParamStructureId(request.ParamStructureId),
                 request.ParamName,
                 request.Priority,
+                Enum.TryParse<EngineLayer>(request.EngineLayer, out var layer) ? layer : EngineLayer.Standard,
                 pattern: pattern,
                 result: result
-            );
+                );
 
             await  _pararmRuleRepository.AddAsync(rule, ct);
 

@@ -90,6 +90,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             string paramName,
             ParamSchema schema,
             IEnumerable<ParamRuleId?> ruleIds,
+            IEnumerable<BuyerId?> buyerIds,
+            EngineLayer engineLayer,
             DateTime? effectiveDate = null)
         {
             if (id == null)
@@ -108,6 +110,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 FormulaId = formulaId,
                 Schema = schema,
                 Status = Status.Draft,
+                EngineLayer = engineLayer,
                 EffectiveDate = effectiveDate ?? DateTime.UtcNow
             };
 
@@ -125,6 +128,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 foreach (var ruleId in ruleIds.Where(f => f != null)) 
                 {
                     ps._ruleIds.Add(ruleId);
+                }
+            }
+
+            if (buyerIds != null) 
+            {
+                foreach (var buyerId in buyerIds.Where(f => f != null)) 
+                { 
+                    ps._buyerIds.Add(buyerId);
                 }
             }
 
@@ -146,10 +157,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             ParamStructureId id,
             IEnumerable<StandardFamilyId?> standardFamilyIds, // 3. 修改为集合
             IEnumerable<ParamRuleId>? ruleIds,
+            IEnumerable<BuyerId?> buyerIds,
             FormulaId? formulaId,               // 4. 修改为集合
             string paramName,
             ParamSchema schema,
             Status status,
+            EngineLayer engineLayer,
             DateTime effectiveDate
             )
         {
@@ -160,6 +173,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 FormulaId = formulaId,
                 Status = status,
                 Schema = schema,
+                EngineLayer = engineLayer,
                 EffectiveDate = effectiveDate
             };
 
@@ -177,6 +191,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 foreach (var ruleId in ruleIds.Where(f => f != null))
                 {
                     ps._ruleIds.Add(ruleId);
+                }
+            }
+
+            if (buyerIds != null)
+            {
+                foreach (var buyerId in buyerIds.Where(f => f != null)) 
+                {
+                    ps._buyerIds.Add(buyerId);
                 }
             }
 

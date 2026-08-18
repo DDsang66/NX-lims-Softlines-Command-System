@@ -98,8 +98,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             string paramName,
             IEnumerable<StandardFamilyId?> standardFamilyIds,
             IEnumerable<ParamStructureId?> paramStructureIds,
-            IEnumerable<string> conditionFields,
-            string expressionTemplate,
+            IEnumerable<BuyerId?>? buyerIds = null,
+            IEnumerable<string>? conditionFields = null,
+            string expressionTemplate = "",
+            EngineLayer engineLayer = EngineLayer.Standard,
             string? description = null)
         {
             if (id == null)
@@ -109,7 +111,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             if (string.IsNullOrWhiteSpace(paramName))
                 throw new ArgumentException("ParamName required", nameof(paramName));
             if (conditionFields == null)
-                throw new ArgumentNullException(nameof(conditionFields));
+                conditionFields = Array.Empty<string>();
 
             // 规范化、去重并校验字段名
             var fields = conditionFields
@@ -131,6 +133,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Description = description?.Trim(),
                 IsActive = false,
                 Version = 1,
+                EngineLayer = engineLayer,
                 EffectiveDate = DateTime.UtcNow,
             };
 
@@ -148,6 +151,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 foreach (var paramStructureId in paramStructureIds.Where(psid => psid != null))
                 {
                     f._paramStructureIds.Add(paramStructureId);
+                }
+            }
+
+            if (buyerIds != null)
+            {
+                foreach (var buyerId in buyerIds.Where(bid => bid != null))
+                {
+                    f._buyerIds.Add(buyerId);
                 }
             }
 
@@ -176,10 +187,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
            IEnumerable<string> conditionFields,
            IEnumerable<StandardFamilyId?> standardFamilyIds,
            IEnumerable<ParamStructureId?> paramStructureIds,
-           string expressionTemplate,
-           int version,
-           bool isActive,
-           DateTime effectiveDate,
+           IEnumerable<BuyerId?>? buyerIds = null,
+           string expressionTemplate = "",
+           int version = 0,
+           bool isActive = false,
+           DateTime? effectiveDate = null,
+           EngineLayer engineLayer = EngineLayer.Standard,
            string? description = null)
         {
             var f = new Formula
@@ -192,7 +205,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Description = description,
                 Version = version,
                 IsActive = isActive,
-                EffectiveDate = effectiveDate
+                EngineLayer = engineLayer,
+                EffectiveDate = effectiveDate ?? DateTime.UtcNow
             };
 
             // 5. 重建 StandardFamilyIds 集合
@@ -209,6 +223,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 foreach (var paramStructureId in paramStructureIds.Where(psid => psid != null))
                 {
                     f._paramStructureIds.Add(paramStructureId);
+                }
+            }
+
+            if (buyerIds != null)
+            {
+                foreach (var buyerId in buyerIds.Where(psid => psid != null))
+                {
+                    f._buyerIds.Add(buyerId);
                 }
             }
 
@@ -287,6 +309,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             // 3. 必须有条件字段
             if (ConditionFields == null || ConditionFields.Count == 0)
                 throw new InvalidOperationException("At least one condition field is required for activation");
+
+            //4. 必须属于某个层级
+            if (EngineLayer == null)
+                throw new InvalidOperationException("Formula must be assigned to an EngineLayer before activation");
 
             // 4. 校验表达式模板语法
             ValidateExpression();
@@ -484,6 +510,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             if (!_paramStructureIds.Contains(paramStructureId))
             {
                 _paramStructureIds.Add(paramStructureId);
+            }
+        }
+
+        /// <summary>
+        /// 添加关联的买家
+        /// </summary>
+        /// <param name="buyerId"></param>
+        /// <exception cref="ArgumentNullException"></exception>
+        public void ContactToBuyer(BuyerId buyerId) 
+        {
+            if (buyerId == null) throw new ArgumentNullException(nameof(buyerId));
+            if (!_buyerIds.Contains(buyerId)) 
+            {
+                _buyerIds.Add(buyerId);
             }
         }
 

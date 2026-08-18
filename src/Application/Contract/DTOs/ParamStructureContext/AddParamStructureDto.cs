@@ -25,9 +25,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamSt
         public IEnumerable<string>? RuleIds { get; set; }
 
         /// <summary>
+        /// 买家id
+        /// </summary>
+        public IEnumerable<string>? BuyerIds { get; set; }
+
+        /// <summary>
         /// 参数名称
         /// </summary>
         public string ParamName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 所属层级
+        /// </summary>
+        public string EngineLayer { get; set; } = string.Empty;
 
         /// <summary>
         /// 生效时间

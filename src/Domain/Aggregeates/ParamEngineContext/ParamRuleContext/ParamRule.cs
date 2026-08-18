@@ -81,6 +81,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             ParamStructureId? structureId,
             string paramName,
             int priority,
+            EngineLayer engineLayer,
             ConditionPattern pattern,
             ParamValue? result = null,
             bool stopOnMatch = true,
@@ -107,7 +108,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Pattern = pattern,
                 Result = result ?? new ParamValue(),
                 StopOnMatch = stopOnMatch,
-                IsActive = isActive
+                IsActive = isActive,
+                EngineLayer = engineLayer
             };
         }
 
@@ -123,7 +125,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             ParamValue result,
             bool stopOnMatch,
             bool isActive,
-            ConditionPattern pattern)
+            ConditionPattern pattern,
+            EngineLayer engineLayer)
         {
             return new ParamRule
             {
@@ -135,7 +138,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Result = result,
                 StopOnMatch = stopOnMatch,
                 IsActive = isActive,
-                Pattern = pattern
+                Pattern = pattern,
+                EngineLayer = engineLayer
             };
         }
 
@@ -409,6 +413,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             // 5. 必须有结果值
             if (Result == null || Result.Value == null)
                 throw new InvalidOperationException("规则必须包含结果值");
+
+            // 6.必须属于某个层级
+            if(EngineLayer == null)
+                throw new InvalidOperationException("规则必须属于某个层级");
 
             IsActive = true;
         }

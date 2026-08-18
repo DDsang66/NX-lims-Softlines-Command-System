@@ -17,6 +17,8 @@ public partial class BasicParamStructure
 
     public DateTime EffectiveDate { get; set; }
 
+    public byte? EngineLayer { get; set; }
+
     public string? FormulaId { get; set; }
 
     public virtual ICollection<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; } = new List<ParamsturctureStandardfamily>();

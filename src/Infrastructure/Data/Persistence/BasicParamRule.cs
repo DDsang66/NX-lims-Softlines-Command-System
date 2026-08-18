@@ -19,6 +19,8 @@ public partial class BasicParamRule
 
     public bool IsActive { get; set; }
 
+    public byte? EngineLayer { get; set; }
+
     public string? ParamStructureId { get; set; }
 
     public string? FormulaId { get; set; }

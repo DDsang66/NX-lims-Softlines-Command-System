@@ -23,7 +23,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
 
             // 领域模型->DTO (聚合根 -> StandaradFamilyResponseDto)
             config.NewConfig<StandardFamily, StandaradFamilyResponseDto>()
-                .Map(dest => dest.Id, src => src.Id.Value)
+                .Map(dest => dest.StandardFamilyId, src => src.Id.Value)
                 .Map(dest => dest.StandardFamilyCode, src => src.StandardFamilyCode)
                 .Map(dest => dest.StandardIds, src => src.StandardIds
                 != null ? src.StandardIds

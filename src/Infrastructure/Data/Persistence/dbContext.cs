@@ -39,9 +39,13 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<ConditionPool> ConditionPools { get; set; }
 
+    public virtual DbSet<FormulaBuyer> FormulaBuyers { get; set; }
+
     public virtual DbSet<FormulaStandardfamily> FormulaStandardfamilies { get; set; }
 
     public virtual DbSet<OutboxEntry> OutboxEntries { get; set; }
+
+    public virtual DbSet<ParamsturctureBuyer> ParamsturctureBuyers { get; set; }
 
     public virtual DbSet<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; }
 
@@ -127,6 +131,7 @@ public partial class dbContext : DbContext
             entity.Property(e => e.EffectiveDate)
                 .HasColumnType("datetime")
                 .HasColumnName("effective_date");
+            entity.Property(e => e.EngineLayer).HasColumnName("engine_layer");
             entity.Property(e => e.ExpressionTemplate)
                 .HasColumnType("text")
                 .HasColumnName("expression_template");
@@ -257,6 +262,7 @@ public partial class dbContext : DbContext
                 .HasMaxLength(255)
                 .IsUnicode(false)
                 .HasColumnName("default_value");
+            entity.Property(e => e.EngineLayer).HasColumnName("engine_layer");
             entity.Property(e => e.FormulaId)
                 .HasMaxLength(25)
                 .IsUnicode(false)
@@ -290,6 +296,7 @@ public partial class dbContext : DbContext
             entity.Property(e => e.EffectiveDate)
                 .HasColumnType("datetime")
                 .HasColumnName("effective_date");
+            entity.Property(e => e.EngineLayer).HasColumnName("engine_layer");
             entity.Property(e => e.FormulaId)
                 .HasMaxLength(25)
                 .IsUnicode(false)
@@ -473,6 +480,21 @@ public partial class dbContext : DbContext
                 .HasColumnName("test_points");
         });
 
+        modelBuilder.Entity<FormulaBuyer>(entity =>
+        {
+            entity.ToTable("formula_buyer");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BuyerId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("buyer_id");
+            entity.Property(e => e.FormulaId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("formula_id");
+        });
+
         modelBuilder.Entity<FormulaStandardfamily>(entity =>
         {
             entity.ToTable("formula_standardfamily");
@@ -530,6 +552,21 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Published).HasColumnName("published");
             entity.Property(e => e.PublishedAt).HasColumnName("published_at");
             entity.Property(e => e.RetryCount).HasColumnName("retry_count");
+        });
+
+        modelBuilder.Entity<ParamsturctureBuyer>(entity =>
+        {
+            entity.ToTable("paramsturcture_buyer");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.BuyerId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("buyer_id");
+            entity.Property(e => e.ParamStructureId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("param_structure_id");
         });
 
         modelBuilder.Entity<ParamsturctureStandardfamily>(entity =>

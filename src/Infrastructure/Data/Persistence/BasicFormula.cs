@@ -23,5 +23,7 @@ public partial class BasicFormula
 
     public bool IsActive { get; set; }
 
+    public byte? EngineLayer { get; set; }
+
     public virtual ICollection<FormulaStandardfamily> FormulaStandardfamilies { get; set; } = new List<FormulaStandardfamily>();
 }

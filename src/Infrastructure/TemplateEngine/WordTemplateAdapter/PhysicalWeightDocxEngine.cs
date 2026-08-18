@@ -5,7 +5,7 @@ using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.PhysicalWei
 using NX_lims_Softlines_Command_System.src.Application.Interface.PhysicalWeightContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
-namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
+namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter
 {
     /// <summary>
     /// 物理克重 docx 填充引擎 — 按坐标填格 PHY_Weight.docx, 与成分模板(IWordTemplateEngine)完全隔离。

@@ -121,8 +121,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// </summary>
         public async Task UpdateAsync(ParamRule rule, CancellationToken ct)
         {
+            // 1. 根据主键查找被 EF Core 追踪的持久化对象
             var po = await _context.FindAsync<BasicParamRule>(rule.Id.Value, ct);
-            if (po != null) rule.Adapt(po);
+
+            // 2. 防御性校验：如果不存在，根据业务逻辑抛出异常
+            if (po == null)
+            {
+                throw new KeyNotFoundException($"未找到Id为 {rule.Id.Value} 的参数规则，无法更新。");
+            }
+
+            // 3. 将领域模型 rule 的属性映射更新到持久化对象 po 上
+            // Mapster 的 Adapt 方法会将源对象的属性值覆盖到目标对象上
+            rule.Adapt(po);
+
+            _context.Update(po);
+            // 因为 po 是通过 FindAsync 查出来的，已经被 EF Core 的变更追踪器追踪。
+            // 当我们修改了 po 的属性后，追踪器会自动将其状态标记为 Modified，
+            // 在调用 SaveChangesAsync 时会自动生成 UPDATE SQL 语句。
         }
 
     }

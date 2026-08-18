@@ -1,5 +1,6 @@
 ﻿using Mapster;
 using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
@@ -46,19 +47,27 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(br => new ParamRuleId(br.RuleId))
                 .ToListAsync(ct);
 
+            var buyerIds = await _dbContext.ParamsturctureBuyers
+                .Where(pb => pb.ParamStructureId == paramStructurePo.ParamStructureId)
+                .Select(pb => new BuyerId(pb.BuyerId))
+                .ToListAsync(ct);
+
             var paramStructure = ParamStructure.Reconstitute(
                 id,
                 standardFamilyIds,
                 ruleIds,
-                new FormulaId(paramStructurePo.FormulaId),
+                buyerIds,
+                paramStructurePo.FormulaId != null ? new FormulaId(paramStructurePo.FormulaId) : null,
                 paramStructurePo.ParamName,
-                JsonSerializer.Deserialize<ParamSchema>(paramStructurePo.Schema!, 
+                JsonSerializer.Deserialize<ParamSchema>(paramStructurePo.Schema!,
                 new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 })!,
                 (Status)paramStructurePo.Status,
-                paramStructurePo.EffectiveDate);
+                paramStructurePo.EngineLayer.HasValue ? (EngineLayer)paramStructurePo.EngineLayer.Value : EngineLayer.Standard,
+                paramStructurePo.EffectiveDate
+             );
 
 
             return paramStructure;
@@ -99,6 +108,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     g => g.Select(af => new StandardFamilyId(af.IdStandardFamily)).ToList(),
                     ct);
 
+            var buyerMapping = await _dbContext.ParamsturctureBuyers
+                .Where(pb => idValues.Contains(pb.ParamStructureId))
+                .GroupBy(pb => pb.ParamStructureId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(pb => new BuyerId(pb.BuyerId)).ToList(),
+                    ct);
+
             // 4. 批量查询关联的 RuleIds (根据你的实际表结构调整，假设有 ParamStructureRule 关系表)
             var ruleMapping = await _dbContext.BasicParamRules
                 .Where(ar => idValues.Contains(ar.ParamStructureId))
@@ -117,11 +134,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<StandardFamilyId>());
                 var ruleIds = ruleMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<ParamRuleId>());
 
+                var buyerIds = buyerMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<BuyerId>());
+
                 return ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
                     ruleIds,
-                    new FormulaId(paramStructurePo.FormulaId),
+                    buyerIds,
+                    paramStructurePo.FormulaId != null ? new FormulaId(paramStructurePo.FormulaId) : null,
                     paramStructurePo.ParamName,
                     JsonSerializer.Deserialize<ParamSchema>(paramStructurePo.Schema!,
                         new JsonSerializerOptions
@@ -129,7 +149,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                             PropertyNameCaseInsensitive = true
                         })!,
                     (Status)paramStructurePo.Status,
-                    paramStructurePo.EffectiveDate);
+                    paramStructurePo.EngineLayer.HasValue ? (EngineLayer)paramStructurePo.EngineLayer.Value : EngineLayer.Standard,
+                    paramStructurePo.EffectiveDate
+                    );
             });
 
             return paramStructures;
@@ -155,6 +177,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 批量获取关联表数据
             var standardFamilyMapping = await GetStandardFamilyMappingAsync(ids, ct);
             var ruleMapping = await GetRuleMappingAsync(ids, ct);
+            var buyerMapping = await GetBuyerMappingAsync(ids, ct);
 
             // 内存中组装聚合根
             var result = new List<ParamStructure>(paramStructurePos.Count);
@@ -164,11 +187,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
                 var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
 
+                var buyerIds = buyerMapping.GetValueOrDefault(po.ParamStructureId, new List<BuyerId>());
+                var engineLayer = po.EngineLayer.HasValue ? (EngineLayer)po.EngineLayer.Value : EngineLayer.Standard;
                 var paramStructure = ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
                     ruleIds,
-                    new FormulaId(po.FormulaId),
+                    buyerIds,
+                    po.FormulaId != null ? new FormulaId(po.FormulaId) : null,
                     po.ParamName,
                     JsonSerializer.Deserialize<ParamSchema>(po.Schema!,
                     new JsonSerializerOptions
@@ -176,7 +202,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         PropertyNameCaseInsensitive = true
                     })!,
                     (Status)po.Status,
-                    po.EffectiveDate);
+                    engineLayer,
+                    po.EffectiveDate
+                    );
 
                 result.Add(paramStructure);
             }
@@ -209,6 +237,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             var standardFamilyMapping = await GetStandardFamilyMappingAsync(ids, ct);
             var ruleMapping = await GetRuleMappingAsync(ids, ct);
+            var buyerMapping = await GetBuyerMappingAsync(ids, ct);
 
             var result = new List<ParamStructure>(paramStructurePos.Count);
             foreach (var po in paramStructurePos)
@@ -216,18 +245,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 var id = new ParamStructureId(po.ParamStructureId);
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
                 var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
+                var buyerIds = buyerMapping.GetValueOrDefault(po.ParamStructureId, new List<BuyerId>());
+                var engineLayer = po.EngineLayer.HasValue ? (EngineLayer)po.EngineLayer.Value : EngineLayer.Standard;
 
                 var paramStructure = ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
                     ruleIds,
-                    new FormulaId(po.FormulaId),
+                    buyerIds,
+                    po.FormulaId != null ? new FormulaId(po.FormulaId) : null,
                     po.ParamName,
                     JsonSerializer.Deserialize<ParamSchema>(po.Schema!, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
                     })!,
                     (Status)po.Status,
+                    engineLayer,
                     po.EffectiveDate);
 
                 result.Add(paramStructure);
@@ -317,6 +350,20 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 批量获取买家映射字典
+        /// </summary>
+        private async Task<Dictionary<string, List<BuyerId>>> GetBuyerMappingAsync(List<string> idValues, CancellationToken ct)
+        {
+            return await _dbContext.ParamsturctureBuyers
+                .Where(pb => idValues.Contains(pb.ParamStructureId))
+                .GroupBy(pb => pb.ParamStructureId)
+                .ToDictionaryAsync(
+                    g => g.Key,
+                    g => g.Select(pb => new BuyerId(pb.BuyerId)).ToList(),
+                    ct);
+        }
+
+        /// <summary>
         /// 根据多个公式ID批量查询参数结构（实现）
         /// </summary>
         /// <param name="formulaIds">公式ID 列表</param>
@@ -345,6 +392,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 2. 批量获取关联映射
             var standardFamilyMapping = await GetStandardFamilyMappingAsync(paramStructureIds, ct);
             var ruleMapping = await GetRuleMappingAsync(paramStructureIds, ct);
+            var buyerMapping = await GetBuyerMappingAsync(paramStructureIds, ct);
 
             // 3. 重建聚合并返回
             var result = paramStructurePos.Select(po =>
@@ -352,12 +400,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 var id = new ParamStructureId(po.ParamStructureId);
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
                 var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
+                var buyers = buyerMapping.GetValueOrDefault(po.ParamStructureId, new List<BuyerId>());
+                var engineLayer = po.EngineLayer.HasValue ? (EngineLayer)po.EngineLayer.Value : EngineLayer.Standard;
 
                 return ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
                     ruleIds,
-                    new FormulaId(po.FormulaId),
+                    buyers,
+                    po.FormulaId != null ? new FormulaId(po.FormulaId) : null,
                     po.ParamName,
                     JsonSerializer.Deserialize<ParamSchema>(po.Schema!,
                         new JsonSerializerOptions
@@ -365,6 +416,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                             PropertyNameCaseInsensitive = true
                         })!,
                     (Status)po.Status,
+                    engineLayer,
                     po.EffectiveDate);
             });
 
@@ -418,6 +470,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     g => g.Select(ar => new ParamRuleId(ar.RuleId)).ToList(),
                     ct);
 
+            // 批量查询买家映射
+            var buyerMapping = await GetBuyerMappingAsync(paramStructureIds, ct);
+
             // 按 ParamStructureId 分组
             var groupedData = rawData
                 .GroupBy(x => x.ParamStructure.ParamStructureId)
@@ -436,12 +491,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var paramStructures = groupedData.Select(item =>
             {
                 var id = new ParamStructureId(item.ParamStructure.ParamStructureId);
+                var buyers = buyerMapping.GetValueOrDefault(item.ParamStructure.ParamStructureId, new List<BuyerId>());
+                var engineLayer = item.ParamStructure.EngineLayer.HasValue ? (EngineLayer)item.ParamStructure.EngineLayer.Value : EngineLayer.Standard;
 
                 return ParamStructure.Reconstitute(
                     id,
                     item.StandardFamilyIds,
                     item.RuleIds,
-                    new FormulaId(item.ParamStructure.FormulaId),
+                    buyers,
+                    item.ParamStructure.FormulaId != null ? new FormulaId(item.ParamStructure.FormulaId) : null,
                     item.ParamStructure.ParamName,
                     JsonSerializer.Deserialize<ParamSchema>(item.ParamStructure.Schema!,
                         new JsonSerializerOptions
@@ -449,6 +507,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                             PropertyNameCaseInsensitive = true
                         })!,
                     (Status)item.ParamStructure.Status,
+                    engineLayer,
                     item.ParamStructure.EffectiveDate);
             });
 

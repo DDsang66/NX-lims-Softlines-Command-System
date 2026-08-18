@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using System.Text.Json;
 
@@ -50,7 +51,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     : JsonSerializer.Deserialize<ConditionPattern>(src.ConditionPattern, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true
-                    })
+                    }),
+                    (EngineLayer)src.EngineLayer
                 ));
 
             // ========== 领域模型 => 响应 DTO（Pattern 嵌套 → DTO 顶层）==========
@@ -82,5 +84,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     }).ToList());
 
         }
+        
      }
 }

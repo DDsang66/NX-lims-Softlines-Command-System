@@ -28,6 +28,11 @@
         public string ParamResult { get; set; } = string.Empty;
 
         /// <summary>
+        /// 所属层级
+        /// </summary>
+        public string EngineLayer { get; set; } = string.Empty;
+
+        /// <summary>
         /// 命中停止
         /// </summary>
         public bool StopOnMatch { get; set; }

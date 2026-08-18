@@ -883,7 +883,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             [("Spirality")] = new Dictionary<string[], string>
             {
-                {new[] { "Fabric" }, "Spirality-G" },
+                {new[] { "Fabric" }, "Spirality-F" },
                 {new[] { "Garment" }, "Spirality-G" },
             },
             [("Dimensional Stability")] = new Dictionary<string[], string>
@@ -1269,7 +1269,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {
                     var map = new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>();
                     map["P1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
-                    if (GetDescValue(sample, "State", esDto)!.Contains("Fabric")) map["A3"] = (wp, np, row, esDto, sample) => "BS EN ISO 16322-3:2021,Procedure B"!;
+                    if (GetDescValue(sample, "State", esDto)!.Contains("Fabric")) map["A3"] = (wp, np, row, esDto, sample) => "BS EN ISO 16322-2:2021,Method A, Option 1"!;
                     else if (GetDescValue(sample, "State", esDto)!.Contains("Garment")) map["A3"] = (wp, np, row, esDto, sample) => "BS EN ISO 16322-3:2021,Procedure B"!;
                     return map;
                 },

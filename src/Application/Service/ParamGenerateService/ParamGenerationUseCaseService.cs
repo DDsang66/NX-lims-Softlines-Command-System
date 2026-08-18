@@ -1,16 +1,23 @@
 ﻿using NX_lims_Softlines_Command_System.src.Application.Interface;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository;
 using System.Runtime.CompilerServices;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerateService
@@ -18,11 +25,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
     public class ParamGenerationUseCaseService :IParamGenerationUseCaseService, IScopedDependency
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ITestItemRepository _testItemRepository;
         private readonly IParamStructureRepository _structureRepo;
         private readonly IFormulaRepository _formulaRepo;
         private readonly IParamRuleRepository _ruleRepo;
         private readonly IStandardFamilyRepository _familyRepo;
         private readonly IConditionPoolRepository _conditionPoolRepo;
+        private readonly IParamEngineScheduler _paramEngineScheduler;
         private readonly ParamGenerationCoordinator _coordinator;
 
         public ParamGenerationUseCaseService(
@@ -32,6 +41,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             IParamRuleRepository ruleRepo,
             IStandardFamilyRepository familyRepo,
             IConditionPoolRepository conditionPoolRepo,
+            ITestItemRepository testItemRepository,
+            IParamEngineScheduler paramEngineScheduler,
             ParamGenerationCoordinator coordinator)
         {
             _unitOfWork = unitOfWork;
@@ -39,7 +50,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             _formulaRepo = formulaRepo;
             _ruleRepo = ruleRepo;
             _familyRepo = familyRepo;
+            _testItemRepository = testItemRepository;
             _conditionPoolRepo = conditionPoolRepo;
+            _paramEngineScheduler = paramEngineScheduler;
             _coordinator = coordinator;
         }
 
@@ -58,29 +71,93 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         {
             var paramSet = new ParamSet();
 
+            var testItem = await _testItemRepository.GetByIdAsync(checkListItem.TestItemId!, ct);
+            if (testItem == null) return Result<ParamSet>.Fail("TestItem not found");
+
+            // testItem 给出需要的参数集合（用所有定义的 ParamName）
+            var requiredParamNames = testItem.ParamRequireDefinitions
+                .Select(p => p.ParamName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // 从 pool 中尝试读取 buyer 标识与散客标志（前端已包含这些信息的假设）
+            string? buyerCode = null;
+            bool isIndividualTraveler = false;
+            if (pool.HasCondition("BuyerCode"))
+            {
+                try { buyerCode = pool.GetConditionValue<string>("BuyerCode"); } catch { buyerCode = null; }
+            }
+            if (pool.HasCondition("BuyerIsIndividualTraveler"))
+            {
+                try { isIndividualTraveler = pool.GetConditionValue<bool>("BuyerIsIndividualTraveler"); } catch { isIndividualTraveler = false; }
+            }
+
+            // 遍历每个标准，先执行与买家相关的 formula/structure，再用标准层补齐缺项
             foreach (var standardId in checkListItem.StandardIds)
             {
-                // 找到该标准下的所有 ParamStructure
+                // 找到该标准下的标准族
                 var family = await _familyRepo.GetByStandardIdAsync(standardId, ct);
-
                 if (family == null) 
                     throw new Exception("未找到标准所属的 Family");
 
+                // 收集该 family 下的结构与公式（由调度器统一收集规则/公式/结构）
+                var schedule = await _paramEngineScheduler.CollectForTestItemAsync(testItem.Id, new[] { standardId }, ct);
+
                 var structures = await _structureRepo.GetByFamilyIdAsync(family.Id, ct);
 
-                foreach (var structure in structures)
+                // 1) 买家层优先：如果存在 buyer 且不是散客，则先执行 buyer 关联的公式对应的结构
+                var buyerFormulaIds = new HashSet<FormulaId?>();
+                if (!string.IsNullOrWhiteSpace(buyerCode) && !isIndividualTraveler && schedule.Formulas != null)
                 {
-                    var result = await _coordinator.GenerateAsync(structure, pool, ct);
-                    if (result.IsSuccess)
+                    foreach (var f in schedule.Formulas)
                     {
-                        paramSet.Merge(result.Value!);
+                        if (f == null) continue;
+                        if (f.BuyerIds != null && f.BuyerIds.Any(b => b != null && string.Equals(b.Value, buyerCode, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            buyerFormulaIds.Add(f.Id);
+                        }
+                    }
+                }
+
+                // 执行结构中属于 buyerFormulaIds 的结构，优先写入 paramSet
+                if (buyerFormulaIds.Any())
+                {
+                    foreach (var structure in structures.Where(s => s.FormulaId != null && buyerFormulaIds.Contains(s.FormulaId)))
+                    {
+                        var r = await _coordinator.GenerateAsync(structure, pool, ct);
+                        if (r.IsSuccess)
+                        {
+                            paramSet.Merge(r.Value!);
+                        }
+                    }
+                }
+
+                // 2) 对比 testItem 的需求参数，若仍有缺失则用标准层结构补齐
+                var missingParams = requiredParamNames.Where(p => !paramSet.Contains(p)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                if (missingParams.Any())
+                {
+                    // 只对能生成缺失参数的结构执行标准层生成：按结构的 ParamName 与缺失集合匹配
+                    foreach (var structure in structures.Where(s => s.FormulaId == null || !buyerFormulaIds.Contains(s.FormulaId)))
+                    {
+                        if (!missingParams.Contains(structure.ParamName)) continue;
+
+                        var r = await _coordinator.GenerateAsync(structure, pool, ct);
+                        if (r.IsSuccess)
+                        {
+                            paramSet.Merge(r.Value!);
+                            // 更新缺失集合，若已补齐则可提前跳出
+                            missingParams = requiredParamNames.Where(p => !paramSet.Contains(p)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                            if (!missingParams.Any()) break;
+                        }
                     }
                 }
             }
 
+            // 最终补偿与校验：与 TestItem 定义对比并返回最终 ParamSet
             var finalParamSet = await _coordinator.FinalGenerateAsync(checkListItem.TestItemId!, paramSet, ct);
 
-            return Result<ParamSet>.Ok(finalParamSet.Value!);
+            return finalParamSet.IsSuccess 
+                ? Result<ParamSet>.Ok(finalParamSet.Value!) 
+                : Result<ParamSet>.Fail(finalParamSet.Error);
         }
 
         /// <summary>
@@ -100,6 +177,5 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
 
             return await _coordinator.GenerateAsync(structure, pool, ct);
         }
-
     }
 }

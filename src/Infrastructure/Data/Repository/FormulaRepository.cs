@@ -3,12 +3,14 @@ using DocumentFormat.OpenXml.Vml;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.Application.DTO;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using System.Text.Json;
 using Formula = NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.Formula;
@@ -48,6 +50,27 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .ToListAsync(ct);
 
             // 4. 使用 Reconstitute 方法重建聚合根
+            // 5. 查询关联的 Buyer（若有）
+            var buyerAssociations = await _context.FormulaBuyers
+                .AsNoTracking()
+                .Where(fb => fb.FormulaId == id.Value)
+                .Select(fb => fb.BuyerId)
+                .ToListAsync(ct);
+
+            var buyerIds = buyerAssociations.Select(b => new BuyerId(b)).ToList();
+
+            // 6. 映射 EngineLayer
+            var engineLayer = EngineLayer.Standard;
+            if (formulaPo.EngineLayer.HasValue)
+            {
+                try
+                {
+                    engineLayer = (EngineLayer)formulaPo.EngineLayer.Value;
+                }
+                catch { engineLayer = EngineLayer.Standard; }
+            }
+
+            // 7. 使用 Reconstitute 方法重建聚合根
             return Formula.Reconstitute(
                 id,
                 formulaPo.Name,
@@ -55,10 +78,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 JsonSerializer.Deserialize<List<string>>(formulaPo.ConditionFields!) ?? new List<string>(),
                 standardFamilyIds.Select(sId => new StandardFamilyId(sId)).ToList(),
                 paramStructureIds.Select(pId => new ParamStructureId(pId)).ToList(),
-                formulaPo.ExpressionTemplate!,
+                buyerIds,
+                formulaPo.ExpressionTemplate ?? string.Empty,
                 formulaPo.Version ?? 0,
                 formulaPo.IsActive,
                 formulaPo.EffectiveDate ?? DateTime.UtcNow,
+                engineLayer,
                 formulaPo.Description
             );
         }
@@ -89,6 +114,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Where(pf => idValues.Contains(pf.FormulaId))
                 .ToListAsync(ct);
 
+            // 批量查询所有 FormulaBuyer 关联
+            var allBuyerAssociations = await _context.FormulaBuyers
+                .AsNoTracking()
+                .Where(fb => idValues.Contains(fb.FormulaId))
+                .ToListAsync(ct);
+
             // 4. 分组处理并在内存中组装
             var result = new List<Formula>();
             foreach (var formulaPo in formulaPos)
@@ -105,6 +136,19 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     .Select(pf => pf.ParamStructureId)
                     .ToList();
 
+                // load buyers for this formula
+                var buyerIds = allBuyerAssociations
+                    .Where(b => b.FormulaId == formulaId)
+                    .Select(b => b.BuyerId)
+                    .ToList();
+
+                // map engine layer
+                var engineLayer = EngineLayer.Standard;
+                if (formulaPo.EngineLayer.HasValue)
+                {
+                    try { engineLayer = (EngineLayer)formulaPo.EngineLayer.Value; } catch { engineLayer = EngineLayer.Standard; }
+                }
+
                 result.Add(Formula.Reconstitute(
                     new FormulaId(formulaId),
                     formulaPo.Name,
@@ -112,10 +156,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     JsonSerializer.Deserialize<List<string>>(formulaPo.ConditionFields!) ?? new List<string>(),
                     standardFamilyIds.Select(sId => new StandardFamilyId(sId)).ToList(),
                     paramStructureIds.Select(pId => new ParamStructureId(pId)).ToList(),
-                    formulaPo.ExpressionTemplate!,
+                    buyerIds.Select(b => new BuyerId(b)).ToList(),
+                    formulaPo.ExpressionTemplate ?? string.Empty,
                     formulaPo.Version ?? 0,
                     formulaPo.IsActive,
                     formulaPo.EffectiveDate ?? DateTime.UtcNow,
+                    engineLayer,
                     formulaPo.Description
                 ));
             }
@@ -148,6 +194,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Where(pf => idValues.Contains(pf.FormulaId))
                 .ToListAsync(ct);
 
+            var allBuyerAssociations = await _context.FormulaBuyers
+                .AsNoTracking()
+                .Where(fb => idValues.Contains(fb.FormulaId))
+                .ToListAsync(ct);
+
             // 3. 分组处理
             var result = new List<Formula>();
             foreach (var formulaPo in formulaPos)
@@ -164,6 +215,21 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     .Select(pf => pf.ParamStructureId)
                     .ToList();
 
+                // load buyers for this formula
+                var buyers = allBuyerAssociations
+                    .Where(b => b.FormulaId == formulaId)
+                    .Select(b => b.BuyerId)
+                    .ToList();
+
+                var buyerIds = buyers.Select(b => new BuyerId(b)).ToList();
+
+                // map engine layer
+                var engineLayer = EngineLayer.Standard;
+                if (formulaPo.EngineLayer.HasValue)
+                {
+                    try { engineLayer = (EngineLayer)formulaPo.EngineLayer.Value; } catch { engineLayer = EngineLayer.Standard; }
+                }
+
                 result.Add(Formula.Reconstitute(
                     new FormulaId(formulaId),
                     formulaPo.Name,
@@ -171,10 +237,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     JsonSerializer.Deserialize<List<string>>(formulaPo.ConditionFields!) ?? new List<string>(),
                     standardFamilyIds.Select(sId => new StandardFamilyId(sId)).ToList(),
                     paramStructureIds.Select(pId => new ParamStructureId(pId)).ToList(),
-                    formulaPo.ExpressionTemplate!,
+                    buyerIds,
+                    formulaPo.ExpressionTemplate ?? string.Empty,
                     formulaPo.Version ?? 0,
                     formulaPo.IsActive,
                     formulaPo.EffectiveDate ?? DateTime.UtcNow,
+                    engineLayer,
                     formulaPo.Description
                 ));
             }
@@ -204,6 +272,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Where(pf => idValues.Contains(pf.FormulaId))
                 .ToListAsync(ct);
 
+            var allBuyerAssociations = await _context.FormulaBuyers
+                .AsNoTracking()
+                .Where(fb => idValues.Contains(fb.FormulaId))
+                .ToListAsync(ct); 
+
             var result = new List<Formula>();
             foreach (var formulaPo in formulaPos)
             {
@@ -219,6 +292,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     .Select(pf => pf.ParamStructureId)
                     .ToList();
 
+                var buyerIds = allBuyerAssociations
+                    .Where(b => b.FormulaId == formulaId)
+                    .Select(b => b.BuyerId)
+                    .ToList();
+
                 result.Add(Formula.Reconstitute(
                     new FormulaId(formulaId),
                     formulaPo.Name,
@@ -226,10 +304,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     JsonSerializer.Deserialize<List<string>>(formulaPo.ConditionFields!) ?? new List<string>(),
                     standardFamilyIds.Select(sId => new StandardFamilyId(sId)).ToList(),
                     paramStructureIds.Select(pId => new ParamStructureId(pId)).ToList(),
+                    buyerIds.Select(b => new BuyerId(b)).ToList(),
                     formulaPo.ExpressionTemplate!,
                     formulaPo.Version ?? 0,
                     formulaPo.IsActive,
                     formulaPo.EffectiveDate ?? DateTime.UtcNow,
+                    (EngineLayer)(formulaPo.EngineLayer ?? 0),
                     formulaPo.Description
                 ));
             }
@@ -244,6 +324,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         {
             // 1. 添加基础信息
             var formulaPo = formula.Adapt<BasicFormula>();
+            // serialize condition fields and map engine layer
+            formulaPo.ConditionFields = JsonSerializer.Serialize(formula.ConditionFields);
+            formulaPo.EngineLayer = (byte)formula.EngineLayer;
 
             await _context.AddAsync(formulaPo, ct);
 
@@ -262,6 +345,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         IdStandardFamily = familyId!.Value
                     }, ct);
                 }
+
+            // 添加买家关联
+            if (formula.BuyerIds != null)
+            {
+                foreach (var buyerId in formula.BuyerIds.Where(b => b != null))
+                {
+                    if (!await _context.FormulaBuyers.AnyAsync(fb => fb.FormulaId == formulaPo.FormulaId && fb.BuyerId == buyerId!.Value, ct))
+                    {
+                        await _context.AddAsync(new FormulaBuyer
+                        {
+                            FormulaId = formulaPo.FormulaId,
+                            BuyerId = buyerId!.Value
+                        }, ct);
+                    }
+                }
+            }
             }
 
             //foreach (var paramId in formula.ParamSturctureIds.Where(id => id != null))
@@ -320,6 +419,30 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             // 4. 处理 ParamStructure 关联 (如果有独立中间表，逻辑同上)
             // ... (根据实际表结构补充)
+
+            // 5. 处理买家关联（差集计算）
+            var targetBuyerIds = formula.BuyerIds?.Select(b => b!.Value).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
+            var currentBuyerAssociations = await _context.FormulaBuyers
+                .Where(fb => fb.FormulaId == existingPo.FormulaId)
+                .ToListAsync(ct);
+
+            var currentBuyerIds = currentBuyerAssociations.Select(b => b.BuyerId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // 添加新关联
+            foreach (var newBuyer in targetBuyerIds.Except(currentBuyerIds))
+            {
+                await _context.AddAsync(new FormulaBuyer
+                {
+                    FormulaId = existingPo.FormulaId,
+                    BuyerId = newBuyer
+                }, ct);
+            }
+
+            // 移除旧关联
+            var toRemoveBuyers = currentBuyerAssociations
+                .Where(b => !targetBuyerIds.Contains(b.BuyerId))
+                .ToList();
+            if (toRemoveBuyers.Any()) _context.FormulaBuyers.RemoveRange(toRemoveBuyers);
         }
 
         /// <summary>
@@ -365,6 +488,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     .Where(f => !targetFamilyIds.Contains(f.IdStandardFamily))
                     .ToList();
                 _context.FormulaStandardfamilies.RemoveRange(toRemoveFamilies);
+
+                // update buyers for this formula
+                var targetBuyerIds = formula.BuyerIds?.Select(b => b!.Value).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
+                var currentBuyerAssociations = await _context.FormulaBuyers
+                    .Where(fb => fb.FormulaId == po.FormulaId)
+                    .ToListAsync(ct);
+
+                var currentBuyerIds = currentBuyerAssociations.Select(b => b.BuyerId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                foreach (var newBuyer in targetBuyerIds.Except(currentBuyerIds))
+                {
+                    await _context.AddAsync(new FormulaBuyer
+                    {
+                        FormulaId = po.FormulaId,
+                        BuyerId = newBuyer
+                    }, ct);
+                }
+
+                var toRemoveBuyers = currentBuyerAssociations.Where(b => !targetBuyerIds.Contains(b.BuyerId)).ToList();
+                if (toRemoveBuyers.Any()) _context.FormulaBuyers.RemoveRange(toRemoveBuyers);
             }
         }
 
@@ -386,6 +528,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             {
                 _context.FormulaStandardfamilies.RemoveRange(formulaPo.FormulaStandardfamilies);
             }
+            // 删除买家关联
+            var buyers = await _context.FormulaBuyers.Where(fb => fb.FormulaId == formulaPo.FormulaId).ToListAsync(ct);
+            if (buyers.Any()) _context.FormulaBuyers.RemoveRange(buyers);
             // 3. 删除主记录
             _context.BasicFormulas.Remove(formulaPo);
         }

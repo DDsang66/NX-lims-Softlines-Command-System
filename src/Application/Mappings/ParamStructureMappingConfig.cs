@@ -1,10 +1,12 @@
 ﻿using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamStructureContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using System.Text.Json;
 
@@ -27,6 +29,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     src.RuleIds == null
                     ? new List<ParamRuleId>()
                     : src.RuleIds.Select(id => new ParamRuleId(id)).ToList(),
+                    src.BuyerIds == null
+                    ? new List<BuyerId>()
+                    : src.BuyerIds.Select(id => new BuyerId(id)).ToList(),
+                    ParseEngineLayer(src.EngineLayer),
                     src.EffectiveDate
                 ));
 
@@ -167,6 +173,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             var schemaDto = JsonSerializer.Deserialize<SchemaDto>(schemaJson, 
                 new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             return schemaDto.Adapt<ParamSchema>();
+        }
+
+        /// <summary>
+        /// 辅助方法：将字符串安全解析为 EngineLayer 枚举
+        /// </summary>
+        private static EngineLayer ParseEngineLayer(string engineLayerStr)
+        {
+            return Enum.TryParse<EngineLayer>(engineLayerStr, out var layer)
+                ? layer
+                : EngineLayer.Standard;
         }
     }
 }

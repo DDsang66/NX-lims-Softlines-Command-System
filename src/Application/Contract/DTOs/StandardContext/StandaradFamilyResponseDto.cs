@@ -9,7 +9,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.Standar
         /// <summary>
         /// 标准族id
         /// </summary>
-        public string Id { get;  set; }
+        public string StandardFamilyId { get;  set; }
 
         /// <summary>
         /// 标准族名称
