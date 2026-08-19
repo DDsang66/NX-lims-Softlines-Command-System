@@ -364,10 +364,12 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
         private static readonly Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>>> PhyExtraMap = new()
         {
-            ["Weight"] = (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
-            {
-                ["J1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
-                ["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
+            ["Weight"] = (wp, dto, esDto, ws, reportNo) => {
+                var map = new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>();
+                map["J1"] = (wp, dto, esDto, ws, reportNo) => reportNo;
+                map["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!;
+                map["S3"] = (wp, dto, esDto, ws, reportNo) => dto.Parameter!.Contains("Single")? "刻一个" : "-";
+                return map;
             },
             ["Pilling Resistance"] = (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {

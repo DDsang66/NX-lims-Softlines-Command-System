@@ -1,9 +1,11 @@
-﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+﻿using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.AbrasionResistance_FW_;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.AbrasionResistance_FW_.NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.AbrasionResistance_FW_;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Interface;
 using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter;
 
@@ -16,12 +18,118 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
     public class AbrasionResistanceReportService :IAbrasionResistanceReportService, IScopedDependency
     {
         private readonly IAbrasionResistanceDocxEngine _engine;
+        private readonly dbContext _constantRecordRepo;
         private readonly IFileStorageService _fileStorage;
 
-        public AbrasionResistanceReportService(IAbrasionResistanceDocxEngine engine, IFileStorageService fileStorage)
+        public AbrasionResistanceReportService(IAbrasionResistanceDocxEngine engine, dbContext constantRecordRepo, IFileStorageService fileStorage)
         {
             _engine = engine;
+            _constantRecordRepo = constantRecordRepo;
             _fileStorage = fileStorage;
+        }
+
+        /// <summary>
+        /// 更改磨耗常数
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <returns></returns>
+        public Result ChangeMvalueConstant(ConstantModificationDto dto) 
+        {
+            // 1. 基础校验
+            if (dto == null)
+                return Result.Fail("请求数据为空");
+            if (string.IsNullOrWhiteSpace(dto.Type))
+                return Result.Fail("常量类型不能为空");
+            if (dto.Type != "M1" && dto.Type != "M2")
+                return Result.Fail("常量类型必须为 M1 或 M2");
+            if (!dto.Value.HasValue)
+                return Result.Fail("常量值不能为空");
+            if (dto.Value.Value <= 0)
+                return Result.Fail("常量值必须大于0");
+
+            // 2. 创建新记录
+            var constantRecord = new AbrasionFwConstantRecord
+            {
+                Type = dto.Type,
+                Value = Convert.ToDouble(dto.Value.Value),
+                Modifier = string.IsNullOrWhiteSpace(dto.Modifier) ? "System" : dto.Modifier,
+                Reason = dto.Reason ?? string.Empty,
+                ModifiedAt = DateTime.Now
+            };
+
+            // 3. 保存到数据库
+            try
+            {
+                _constantRecordRepo.AbrasionFwConstantRecords.Add(constantRecord);
+                _constantRecordRepo.SaveChanges();
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail("修改常量失败: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// 获取最新的 M1 和 M2 常数值
+        /// </summary>
+        /// <returns></returns>
+        public Result<ConstantResponseDto> GetMvalueConstant() 
+        {
+
+            // 获取 M1 最新的记录（按 ModifiedAt 降序取第一条）
+            var m1Record = _constantRecordRepo.AbrasionFwConstantRecords
+                .Where(c => c.Type == "M1")
+                .OrderByDescending(c => c.ModifiedAt)
+                .FirstOrDefault();
+
+            // 获取 M2 最新的记录（按 ModifiedAt 降序取第一条）
+            var m2Record = _constantRecordRepo.AbrasionFwConstantRecords
+                .Where(c => c.Type == "M2")
+                .OrderByDescending(c => c.ModifiedAt)
+                .FirstOrDefault();
+
+            var response = new ConstantResponseDto
+            {
+                M1 = (decimal?)m1Record?.Value,
+                M2 = (decimal?)m2Record?.Value
+            };
+
+            return Result<ConstantResponseDto>.Ok(response);
+
+        }
+
+        /// <summary>
+        /// 获取常量修改历史记录
+        /// </summary>
+        public Result<List<ConstantModificationDto>> GetConstantHistory(string type)
+        {
+            if (string.IsNullOrWhiteSpace(type))
+                return Result<List<ConstantModificationDto>>.Fail("常量类型不能为空");
+            if (type != "M1" && type != "M2")
+                return Result<List<ConstantModificationDto>>.Fail("常量类型必须为 M1 或 M2");
+
+            try
+            {
+                var records = _constantRecordRepo.AbrasionFwConstantRecords
+                    .Where(c => c.Type == type)
+                    .OrderByDescending(c => c.ModifiedAt)
+                    .Select(c => new ConstantModificationDto
+                    {
+                        Type = c.Type,
+                        Value = (decimal)c.Value,
+                        Modifier = c.Modifier,
+                        Reason = c.Reason ?? string.Empty,
+                        ModifiedAt = c.ModifiedAt
+                    })
+                    .ToList();
+
+                return Result<List<ConstantModificationDto>>.Ok(records);
+            }
+            catch (Exception ex)
+            {
+                return Result<List<ConstantModificationDto>>.Fail("获取历史记录失败: " + ex.Message);
+            }
         }
 
         /// <summary>
@@ -45,7 +153,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                 t.Specimen,
                 t.M1,
                 t.M2,
-                Density = CalculateDensity(t.M1, t.M2)
+                Density = CalculateDensity(t.M1, t.M2, t.Density)
             }).ToList() ?? new();
 
             var testDensityA = testDensities.FirstOrDefault(t => t.Specimen == "A")?.Density;
@@ -58,7 +166,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                 r.Specimen,
                 r.M1,
                 r.M2,
-                Density = CalculateDensity(r.M1, r.M2)
+                Density = CalculateDensity(r.M1, r.M2,r.Density)
             }).ToList() ?? new();
 
             var refDensityA = refDensities.FirstOrDefault(r => r.Specimen == "A")?.Density;
@@ -82,11 +190,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                         dto.AbrasionDistance);
 
                     // 磨耗指数 - 使用新公式
-                    var arIndex = CalculateARIndex(
-                        s.BeforeWeight, s.AfterWeight,
-                        testDensityAvg,           // 试样密度均值 (g/cm³)
-                        dto.M1Constant,
-                        dto.M2Constant);
+
+                    decimal? arIndex = null;
+                    if (s.ARIndex.HasValue)
+                    {
+                        // 前端有传递值，直接使用
+                       arIndex = CalculateARIndex(
+                          s.BeforeWeight, s.AfterWeight,
+                          testDensityAvg,           // 试样密度均值 (g/cm³)
+                          dto.M1Constant,
+                          dto.M2Constant);
+                    }
 
                     return new SpecimenResult
                     {
@@ -104,6 +218,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                 })
                 .ToList();
 
+
+            var validARIndexes = specimenResults
+                .Where(s => s.ARIndex.HasValue)
+                .Select(s => s.ARIndex.Value)
+                .ToList();
+
+            var avgARIndex = validARIndexes.Count > 0 ? validARIndexes.Average() : (decimal?)null;
+
             // 5. 构建填充模型
             var model = new AbrasionResistanceReportFillModel
             {
@@ -115,6 +237,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                 SampleRef = dto.Sample,
                 SampleDescription = dto.Sample,
                 AbrasionDistance = dto.AbrasionDistance,
+                Remark  = dto.Remark,
                 Condition = dto.Condition,
                 TestAtmosphere = "23 ± 2°C / 50 ± 2% RH",
                 CleanMethod = dto.CleanMethod,
@@ -123,7 +246,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                 SampleResult = dto.Sample,
                 ResultDensity = testDensityAvg,
                 ResultVolLoss = specimenResults.Average(s => s.VolLoss),
-                ResultARIndex = specimenResults.Average(s => s.ARIndex),
+                ResultARIndex = avgARIndex,
                 Requirement = dto.Requirement,
                 Conclusion = GetConclusion(specimenResults, dto.Requirement),
 
@@ -223,7 +346,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                     dto.M2Constant,
                     specimenResults.FirstOrDefault(s => s.SpecimenNumber == 3)?.ARIndex),
                 // ==================== 底部 ====================
-                Remark = dto.Operator,
                 GeneratedAt = dto.GeneratedAt.ToString("yyyy-MM-dd HH:mm:ss")
             };
 
@@ -252,9 +374,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
         }
 
         /// <summary>密度计算: ρ = ρ_w × m1 / (m1 - m2)</summary>
-        private static decimal? CalculateDensity(decimal? m1, decimal? m2)
+        private static decimal? CalculateDensity(decimal? m1, decimal? m2, decimal? testDensity)
         {
-            if (!m1.HasValue || !m2.HasValue) return null;
+            if ((!m1.HasValue || !m2.HasValue) && !testDensity.HasValue) return null;
+            if (!m1.HasValue || !m2.HasValue) 
+            {
+                return testDensity.Value;
+            }
             if (m1.Value - m2.Value == 0) return null;
             const decimal waterDensity = 1m; // 23°C 水的密度 取1(g/cm³)
             return waterDensity * m1.Value / (m1.Value - m2.Value);
@@ -375,6 +501,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
             decimal? m2Const,
             decimal? result)
         {
+            if (!result.HasValue)
+                return "";
+
             if (!beforeWeight.HasValue || !afterWeight.HasValue || !testDensity.HasValue)
                 return "";
 
@@ -430,8 +559,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
             // 如果没有有效的试样数据，返回 N/A
             if (validResults.Count == 0) return "N/A";
 
-            // 所有有效试样的体积损失都必须 <= 要求值
-            var allPass = validResults.All(r => r.VolLoss.Value <= req);
+            // 所有有效试样的体积平均值小于req即可
+            var allPass = validResults.Average(r => r.VolLoss.Value) <= req;
 
             return allPass ? "PASS" : "FAIL";
         }

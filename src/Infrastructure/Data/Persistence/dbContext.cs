@@ -11,6 +11,8 @@ public partial class dbContext : DbContext
     {
     }
 
+    public virtual DbSet<AbrasionFwConstantRecord> AbrasionFwConstantRecords { get; set; }
+
     public virtual DbSet<BasicBuyer> BasicBuyers { get; set; }
 
     public virtual DbSet<BasicBuyerMenu> BasicBuyerMenus { get; set; }
@@ -59,6 +61,29 @@ public partial class dbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<AbrasionFwConstantRecord>(entity =>
+        {
+            entity.HasKey(e => e.ConstantRecordId);
+
+            entity.ToTable("abrasion_fw_constant_record");
+
+            entity.Property(e => e.ConstantRecordId).HasColumnName("constant_record_id");
+            entity.Property(e => e.ModifiedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("modified_at");
+            entity.Property(e => e.Modifier)
+                .HasMaxLength(50)
+                .IsUnicode(false)
+                .HasColumnName("modifier");
+            entity.Property(e => e.Reason)
+                .HasColumnType("text")
+                .HasColumnName("reason");
+            entity.Property(e => e.Type)
+                .HasMaxLength(5)
+                .HasColumnName("type");
+            entity.Property(e => e.Value).HasColumnName("value");
+        });
+
         modelBuilder.Entity<BasicBuyer>(entity =>
         {
             entity.HasKey(e => e.BuyerCode);

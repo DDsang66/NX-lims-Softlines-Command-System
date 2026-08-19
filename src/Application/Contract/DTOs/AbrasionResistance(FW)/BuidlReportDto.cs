@@ -39,6 +39,11 @@
             /// </summary>
             public string Requirement { get; set; } = string.Empty;
 
+            /// <summary>
+            /// 买家要求
+            /// </summary>
+            public string Remark { get; set; } = string.Empty;
+
             // ========== 新增字段 ==========
 
             /// <summary>
@@ -199,6 +204,15 @@
             /// 修改时间
             /// </summary>
             public DateTime ModifiedAt { get; set; } = DateTime.Now;
+        }
+
+        /// <summary>
+        /// M1/M2常量响应
+        /// </summary>
+        public record ConstantResponseDto
+        {  
+            public decimal? M1 { get; set; }
+            public decimal? M2 { get; set; }
         }
     }
 }

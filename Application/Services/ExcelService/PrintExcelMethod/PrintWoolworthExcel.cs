@@ -366,13 +366,13 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Saliva"] = (w, dto, reportNo) => new Dictionary<string, Func< WetParameterIso,CheckListDto,string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => "DIN 53160-1; DIN 53160-2",
+                ["A3"] = (w, dto, reportNo) => "DIN 53160-1:2010; DIN 53160-2:2010",
                 ["G3"] = (w, dto, reportNo) => "√"
             },
             ["CF to Sweat"] = (w, dto, reportNo) => new Dictionary<string, Func< WetParameterIso,CheckListDto,string, string>>
             {
                 ["D1"] = (w, dto, reportNo) => reportNo,
-                ["A3"] = (w, dto, reportNo) => "DIN 53160-1;DIN 53160-2",
+                ["A3"] = (w, dto, reportNo) => "DIN 53160-1:2010;DIN 53160-2:2010",
                 ["J3"] = (w, dto, reportNo) => "√"
             },
             ["CF to Sea Water"] = (w, dto, reportNo) => new Dictionary<string, Func< WetParameterIso,CheckListDto,string, string>>

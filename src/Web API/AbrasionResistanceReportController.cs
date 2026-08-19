@@ -42,4 +42,28 @@ public class AbrasionResistanceReportController : ControllerBase
             enableRangeProcessing: true
         );
     }
+
+    [HttpPost("change-Mvalue")]
+    public Result ChangeMvalueConstant(ConstantModificationDto dto) 
+    {
+        var result = _reportService.ChangeMvalueConstant(dto);
+
+        return result;
+    }
+
+    [HttpGet("Mvalue")]
+    public Result<ConstantResponseDto> GetMvalueConstant()
+    {
+        var result = _reportService.GetMvalueConstant();
+
+        return result;
+    }
+
+    [HttpGet("Mvalue/{type}-history")]
+    public Result<List<ConstantModificationDto>> GetConstantHistory(string type)
+    {
+        var result = _reportService.GetConstantHistory(type);
+
+        return result;
+    }
 }

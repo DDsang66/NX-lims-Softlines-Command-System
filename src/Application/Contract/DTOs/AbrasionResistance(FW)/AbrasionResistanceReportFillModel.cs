@@ -1,4 +1,6 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.AbrasionResistance_FW_
+﻿using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+
+namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.AbrasionResistance_FW_
 {
     /// <summary>
     /// 耐磨报告填充模型 — 对应 Word 模板中所有占位符
@@ -13,6 +15,7 @@
         public string SampleRef { get; set; } = string.Empty;
         public string SampleDescription { get; set; } = string.Empty;
         public string AbrasionDistance { get; set; } = string.Empty;
+        public string Remark { get; set; } = string.Empty;
 
         // ==================== 测试条件 ====================
         public string Condition { get; set; } = string.Empty;
@@ -90,7 +93,6 @@
 
 
         // ==================== 底部 ====================
-        public string Remark { get; set; } = string.Empty;
         public string GeneratedAt { get; set; } = string.Empty;
     }
 }

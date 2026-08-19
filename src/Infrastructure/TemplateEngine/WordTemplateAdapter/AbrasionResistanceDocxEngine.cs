@@ -76,6 +76,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 AbrasionResistanceDocxLayout.ResultValueCol, model.ResultARIndex?.ToString("F2") ?? "");
             // R18: Requirement 和 Conclusion 置空（不填）
 
+            SetCellText10(Row(resultTable, AbrasionResistanceDocxLayout.ResultRowRemark)!,
+                AbrasionResistanceDocxLayout.ResultRemarkValueCol, model.Remark ?? "");
             // ==================== 表3: 密度计算区 — 7.5pt 正常 ====================
             // R27: Specimen A
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowDensityA)!,
@@ -481,7 +483,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int HeaderRowSampleDescMinCols = 2; // R6 最少2列: [Sample Description:] | [值]
             public const int ResultRowMinCols = 5;          // 结果行最少5列: [Sample] | [Results] | [空] | [Requirement] | [Conclusion]
 
-
+            public const int ResultRowRemark = 20;          // R20: Remark 行
+            public const int ResultRemarkLabelCol = 0;      // 列0: "Remark:" 标签
+            public const int ResultRemarkValueCol = 1;      // 列1: 备注值
             // ==================== 表3: 计算过程坐标（内部相对行索引） ====================
             // 密度计算区
             public const int CalcRowDensityTitle = 2;           // "Density of test Sample:"
