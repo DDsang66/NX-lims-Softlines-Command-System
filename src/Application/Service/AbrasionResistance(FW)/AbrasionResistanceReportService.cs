@@ -158,7 +158,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
 
             var testDensityA = testDensities.FirstOrDefault(t => t.Specimen == "A")?.Density;
             var testDensityB = testDensities.FirstOrDefault(t => t.Specimen == "B")?.Density;
-            var testDensityAvg = Average(testDensityA, testDensityB);
+            var testDensityAvg = Average(testDensityA, testDensityB,2);
 
             // 3. 计算参照化合物密度 (Specimen A/B)
             var refDensities = dto.RefDensities?.Select(r => new
@@ -171,7 +171,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
 
             var refDensityA = refDensities.FirstOrDefault(r => r.Specimen == "A")?.Density;
             var refDensityB = refDensities.FirstOrDefault(r => r.Specimen == "B")?.Density;
-            var refDensityAvg = Average(refDensityA, refDensityB);
+            var refDensityAvg = Average(refDensityA, refDensityB, 2);
 
             // 4. 计算磨耗数据 (3个试样)
             var specimenResults = dto.AbrasionSpecimens
@@ -218,13 +218,21 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                 })
                 .ToList();
 
+            var validVolLosses = specimenResults.Where(s => s.VolLoss.HasValue).Select(s => s.VolLoss.Value).ToList();
+            decimal? avgVolLoss = null;
+            if (validVolLosses.Count > 0)
+            {
+                var avgVal = validVolLosses.Average();
+                avgVolLoss = Math.Round(avgVal, 1, MidpointRounding.AwayFromZero); // 体积损失均值保留1位
+            }
 
-            var validARIndexes = specimenResults
-                .Where(s => s.ARIndex.HasValue)
-                .Select(s => s.ARIndex.Value)
-                .ToList();
-
-            var avgARIndex = validARIndexes.Count > 0 ? validARIndexes.Average() : (decimal?)null;
+            var validARIndexes = specimenResults.Where(s => s.ARIndex.HasValue).Select(s => s.ARIndex.Value).ToList();
+            decimal? avgARIndex = null;
+            if (validARIndexes.Count > 0)
+            {
+                var avgVal = validARIndexes.Average();
+                avgARIndex = Math.Round(avgVal, 2, MidpointRounding.AwayFromZero); // 磨耗指数均值保留2位
+            }
 
             // 5. 构建填充模型
             var model = new AbrasionResistanceReportFillModel
@@ -245,7 +253,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
                 // ==================== 表头结果行 ====================
                 SampleResult = dto.Sample,
                 ResultDensity = testDensityAvg,
-                ResultVolLoss = specimenResults.Average(s => s.VolLoss),
+                ResultVolLoss = avgVolLoss,
                 ResultARIndex = avgARIndex,
                 Requirement = dto.Requirement,
                 Conclusion = GetConclusion(specimenResults, dto.Requirement),
@@ -376,14 +384,26 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
         /// <summary>密度计算: ρ = ρ_w × m1 / (m1 - m2)</summary>
         private static decimal? CalculateDensity(decimal? m1, decimal? m2, decimal? testDensity)
         {
-            if ((!m1.HasValue || !m2.HasValue) && !testDensity.HasValue) return null;
-            if (!m1.HasValue || !m2.HasValue) 
+            // 如果 m1 或 m2 为空，则直接返回 testDensity（如果 testDensity 也为空，自然返回 null）
+            if (!m1.HasValue || !m2.HasValue)
             {
-                return testDensity.Value;
+                return testDensity;
             }
-            if (m1.Value - m2.Value == 0) return null;
+
+            // 分母不能为0，且物理意义上 m1 必须大于 m2，否则密度无意义
+            if (m1.Value <= m2.Value)
+            {
+                return null;
+            }
+
             const decimal waterDensity = 1m; // 23°C 水的密度 取1(g/cm³)
-            return waterDensity * m1.Value / (m1.Value - m2.Value);
+
+            // 计算密度
+            decimal density = waterDensity * m1.Value / (m1.Value - m2.Value);
+
+            // 使用 MidpointRounding.AwayFromZero 确保四舍五入（例如 1.125 -> 1.13）
+            // 如果直接用 Math.Round(density, 2) 默认是 Banker's Rounding（四舍六入五成双），这里明确指定更符合常规预期
+            return density;
         }
 
         /// <summary>
@@ -410,8 +430,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
 
             var distanceFactor = GetAbrasionDistanceFactor(abrasionDistance);
 
+            // 提前计算分母，并防止分母为0的情况
+            var denominator = testDensity.Value * (m1Const.Value + m2Const.Value);
+            if (denominator == 0) return null;
+
             // 400mg = 0.4g
-            return 1000m * deltaMt * 400m / (testDensity.Value * (m1Const.Value + m2Const.Value)) * distanceFactor;
+            decimal volLoss  = 1000m * deltaMt * 400m / denominator * distanceFactor;
+            // 保留小数点后四位，采用四舍五入策略
+
+            return volLoss;
         }
 
         /// <summary>
@@ -536,12 +563,29 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
             return formula;
         }
 
-        private static decimal? Average(decimal? a, decimal? b)
+        /// <summary>
+        /// 计算两个值的均值，并按指定小数位四舍五入
+        /// </summary>
+        /// <param name="a">值A</param>
+        /// <param name="b">值B</param>
+        /// <param name="decimals">保留小数位数(传null则不约分)</param>
+        private static decimal? Average(decimal? a, decimal? b, int? decimals = null)
         {
             if (!a.HasValue && !b.HasValue) return null;
-            if (!a.HasValue) return b;
-            if (!b.HasValue) return a;
-            return (a.Value + b.Value) / 2m;
+            if (!a.HasValue) return Round(b, decimals);
+            if (!b.HasValue) return Round(a, decimals);
+
+            var avg = (a.Value + b.Value) / 2m;
+            return Round(avg, decimals);
+        }
+
+        /// <summary>
+        /// 对单个可空decimal约分（辅助方法）
+        /// </summary>
+        private static decimal? Round(decimal? value, int? decimals)
+        {
+            if (!value.HasValue || !decimals.HasValue) return value;
+            return Math.Round(value.Value, decimals.Value, MidpointRounding.AwayFromZero);
         }
 
         /// <summary>

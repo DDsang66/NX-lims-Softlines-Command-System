@@ -49,21 +49,21 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             // R13: CleanMethod — 10pt 正常
             SetCellText10(Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowCleanMethod)!,
-                AbrasionResistanceDocxLayout.HeaderCleanMethodCol, model.CleanMethod ?? "");
+                AbrasionResistanceDocxLayout.HeaderCleanMethodCol,"The Method of Cleaning: " + model.CleanMethod ?? "");
 
             // ==================== 表2: 测试结果 ====================
             // R16: Sample / Density — 10pt 正常
             SetCellText10(Row(resultTable, AbrasionResistanceDocxLayout.ResultRowDensity)!,
                 AbrasionResistanceDocxLayout.ResultSampleCol, model.SampleResult ?? "");
             SetCellText10(Row(resultTable, AbrasionResistanceDocxLayout.ResultRowDensity)!,
-                AbrasionResistanceDocxLayout.ResultValueCol, model.ResultDensity?.ToString("F4") ?? "");
+                AbrasionResistanceDocxLayout.ResultValueCol, model.ResultDensity?.ToString("F2") ?? "");
             // R16: Requirement 和 Conclusion 置空（不填）
 
             // R17: Sample / Volume Loss — 10pt 正常
             SetCellText10(Row(resultTable, AbrasionResistanceDocxLayout.ResultRowVolLoss)!,
                 AbrasionResistanceDocxLayout.ResultSampleCol, model.SampleResult ?? "");
             SetCellText10(Row(resultTable, AbrasionResistanceDocxLayout.ResultRowVolLoss)!,
-                AbrasionResistanceDocxLayout.ResultValueCol, model.ResultVolLoss?.ToString("F4") ?? "");
+                AbrasionResistanceDocxLayout.ResultValueCol, model.ResultVolLoss?.ToString("F1") ?? "");
             SetCellText10(Row(resultTable, AbrasionResistanceDocxLayout.ResultRowVolLoss)!,
                 AbrasionResistanceDocxLayout.ResultRequirementCol, "≤ " + model.Requirement ?? "");
             SetCellText10(Row(resultTable, AbrasionResistanceDocxLayout.ResultRowVolLoss)!,
@@ -93,7 +93,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             // R29: Ave
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowDensityAvg)!,
-                AbrasionResistanceDocxLayout.CalcDensityResultCol, model.ResultDensity?.ToString("F4") ?? "");
+                AbrasionResistanceDocxLayout.CalcDensityResultCol, model.ResultDensity?.ToString("F2") ?? "");
 
             // ==================== 表3: 体积损失区 — 7.5pt 正常 ====================
             // R31: Abrasion distance
@@ -104,23 +104,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowVolLoss1)!,
                 AbrasionResistanceDocxLayout.CalcVolLossFormulaCol, model.Specimen1_VolLoss_Formula ?? "");
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowVolLoss1)!,
-                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.Specimen1_VolLoss?.ToString("F4") ?? "");
+                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.Specimen1_VolLoss?.ToString("F3") ?? "");
 
             // R33: Specimen 2
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowVolLoss2)!,
                 AbrasionResistanceDocxLayout.CalcVolLossFormulaCol, model.Specimen2_VolLoss_Formula ?? "");
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowVolLoss2)!,
-                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.Specimen2_VolLoss?.ToString("F4") ?? "");
+                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.Specimen2_VolLoss?.ToString("F3") ?? "");
 
             // R34: Specimen 3
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowVolLoss3)!,
                 AbrasionResistanceDocxLayout.CalcVolLossFormulaCol, model.Specimen3_VolLoss_Formula ?? "");
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowVolLoss3)!,
-                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.Specimen3_VolLoss?.ToString("F4") ?? "");
+                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.Specimen3_VolLoss?.ToString("F3") ?? "");
 
             // R35: Ave
             SetCellText(Row(calculationTable, AbrasionResistanceDocxLayout.CalcRowVolLossAvg)!,
-                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.ResultVolLoss?.ToString("F4") ?? "");
+                AbrasionResistanceDocxLayout.CalcVolLossResultCol, model.ResultVolLoss?.ToString("F1") ?? "");
 
             // ==================== 表3: 参照化合物密度区 — 7.5pt 正常 ====================
             //// R38: Specimen A
