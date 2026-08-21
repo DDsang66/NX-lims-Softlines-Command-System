@@ -36,8 +36,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // R4: Date Out (列4) — 留空不填
 
             // R6: Sample Description — 10pt 正常
-            SetCellText10(Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowSampleDesc)!,
-                AbrasionResistanceDocxLayout.HeaderSampleDescCol, model.SampleResult ?? "");
+            SetCellText10(Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowSampleRef)!,
+                AbrasionResistanceDocxLayout.HeaderSampleRefCol, model.SampleRef ?? "");
 
             // R9: Condition — 10pt 正常
             SetCellText10(Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowCondition)!,
@@ -49,7 +49,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             // R13: CleanMethod — 10pt 正常
             SetCellText10(Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowCleanMethod)!,
-                AbrasionResistanceDocxLayout.HeaderCleanMethodCol,"The Method of Cleaning: " + model.CleanMethod ?? "");
+                AbrasionResistanceDocxLayout.HeaderCleanMethodCol, string.IsNullOrWhiteSpace(model.CleanMethod)? ("The Method of Cleaning: "+ model.CleanMethod) : "");
 
             // ==================== 表2: 测试结果 ====================
             // R16: Sample / Density — 10pt 正常
@@ -186,8 +186,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 throw new InvalidOperationException("耐磨模板报告头表缺少 Method 行(R0)");
             if (Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowReportNo) == null)
                 throw new InvalidOperationException("耐磨模板报告头表缺少 Report No 行(R2)");
-            if (Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowSampleDesc) == null)
-                throw new InvalidOperationException("耐磨模板报告头表缺少 Sample Description 行(R6)");
+            if (Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowSampleRef) == null)
+                throw new InvalidOperationException("耐磨模板报告头表缺少 Sample Ref 行(R4)");
             if (Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowCondition) == null)
                 throw new InvalidOperationException("耐磨模板报告头表缺少 Condition 行(R9)");
             if (Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowAtmosphere) == null)
@@ -199,9 +199,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 throw new InvalidOperationException($"耐磨模板报告头表 R2 格数不足(实际{r2Cells}列, 应含 Report No 和 Date In 共4列)");
 
             // 校验 R6 Sample Description 列数
-            var r6Cells = Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowSampleDesc)!.Elements<TableCell>().Count();
-            if (r6Cells < 2)
-                throw new InvalidOperationException($"耐磨模板报告头表 R6 格数不足(实际{r6Cells}列, 应至少2列)");
+            var r4Cells = Row(headerTable, AbrasionResistanceDocxLayout.HeaderRowSampleRef)!.Elements<TableCell>().Count();
+            if (r4Cells < 2)
+                throw new InvalidOperationException($"耐磨模板报告头表 R64 格数不足(实际{r4Cells}列, 应至少2列)");
 
             var resultTable = LocateTable(doc, AbrasionResistanceDocxLayout.ResultTableMarker)
                 ?? throw new InvalidOperationException("耐磨模板缺少结果表(Sample/Results)");
@@ -455,11 +455,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int HeaderCleanMethodCol = 1;     // 列2: 清洁方法值
 
             public const int HeaderRowSampleRef = 4;       // R4: Sample Ref 行
-            // 列2: Sample Ref — 留空不填
             // 列4: Date Out — 留空不填
-
-            public const int HeaderRowSampleDesc = 6;      // R6: Sample Description 行
-            public const int HeaderSampleDescCol = 1;      // 列2: 样品描述值
+            public const int HeaderSampleRefCol = 1;      // 列2: Ref值
 
             public const int HeaderRowCondition = 9;       // R9: Condition 行
             public const int HeaderConditionCol = 1;       // 列2: 条件值

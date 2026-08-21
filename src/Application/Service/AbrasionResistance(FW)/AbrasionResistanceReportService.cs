@@ -430,8 +430,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.AbrasionResis
 
             var distanceFactor = GetAbrasionDistanceFactor(abrasionDistance);
 
+            var roundedDensity = Math.Round(testDensity.Value, 2, MidpointRounding.AwayFromZero);
+
             // 提前计算分母，并防止分母为0的情况
-            var denominator = testDensity.Value * (m1Const.Value + m2Const.Value);
+            var denominator = roundedDensity * (m1Const.Value + m2Const.Value);
+
             if (denominator == 0) return null;
 
             // 400mg = 0.4g

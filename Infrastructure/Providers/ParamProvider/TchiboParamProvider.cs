@@ -124,9 +124,9 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                Temperature = p.IronMethod!.Contains("Cool") ? "110"
-                : p.IronMethod!.Contains("Warm") ? "150"
-                : p.IronMethod!.Contains("Hot") ? "200"
+                Temperature = p.IronMethod!.Contains("Cool") ? "120"
+                : p.IronMethod!.Contains("Warm") ? "160"
+                : p.IronMethod!.Contains("Hot") ? "210"
                 : "/",
                 Iron = Limitation("CF to Hot Pressing", p.SampleDescription!) == "L-5" ? "L-5" : null,
                 IronMethod = p.IronMethod ?? null,
