@@ -52,7 +52,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     {
                         PropertyNameCaseInsensitive = true
                     }),
-                    (EngineLayer)src.EngineLayer
+                    // EngineLayer 在库中为 byte?，历史数据可能为 NULL——空时回退到 Standard，避免强转抛 "Nullable object must have a value"
+                    (EngineLayer)(src.EngineLayer ?? (byte)EngineLayer.Standard)
                 ));
 
             // ========== 领域模型 => 响应 DTO（Pattern 嵌套 → DTO 顶层）==========
