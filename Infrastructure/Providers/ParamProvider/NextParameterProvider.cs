@@ -41,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure ="2A",
+                WashingProcedure = "6N",
                 DryProcedure = "Tumble Dry for 90 min",
                 Temperature = "60",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -57,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = "2A",
+                WashingProcedure = "6N",
                 DryProcedure = "Tumble Dry for 90 min",
                 Temperature = "60",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -73,7 +73,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -89,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = WashingProcedureTranslationHelper(p.WashingProcedure!),
+                WashingProcedure = p.WashingProcedure,
                 DryProcedure = p.DryProcedure,
                 Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -131,7 +131,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
-                WashingProcedure = "5A",
+                WashingProcedure = "4N",
                 DryProcedure = "Tumble Dry Height",
                 Temperature = "40",
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", p.FiberContent!) >= 51 ? "Type I (100% Cotton)"
@@ -351,24 +351,24 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             if (sampleDescription.Contains("Swimwear"))
             {
                 if (sampleDescription.Contains("Embellished")) washingProcedure = "SHW";
-                else washingProcedure = "5A";
+                else washingProcedure = "4N";
             }
             else if (sampleDescription.Contains("Knitwear"))
             {
                 if (WashingProcedure.Contains("H")) washingProcedure = "SHW";
-                else washingProcedure = "7A";
+                else washingProcedure = "4G";
             }
             else if (sampleDescription.Contains("Gloves") || sampleDescription.Contains("Cap"))
             {
                 if (WashingProcedure.Contains("H")) washingProcedure = "SHW";
-                else washingProcedure = "7A";
+                else washingProcedure = "4G";
             }
             else if (sampleDescription.Contains("Socks")) 
             {
                 if (maxComposition == "Cotton" || maxComposition == "Acrylic") washingProcedure = "4N";
                 else washingProcedure = "4G";
             }
-            else washingProcedure = "5A";
+            else washingProcedure = "4N";
 
             return washingProcedure;
         }

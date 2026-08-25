@@ -1353,7 +1353,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     ["A3"] = (wp, np, row, esDto, sample) => row.standards!,
                     ["C5"] = (wp, np, row, esDto, sample) => "9KPa",
                     ["A6"] = (wwp, np, row, esDto, sample) => np.ExtraParam!.Contains("@ 5000")
-                    ? "{<100g/m²：10000 rubs；101~199g/m²：15000 rubs；>2000g/m²：20000 rubs}"
+                    ? "{<100g/m²：10000 rubs；101~199g/m²：15000 rubs；>200g/m²：20000 rubs}"
                     : "{<200g/m²：10000 rubs；201~270g/m²：15000 rubs；271~390g/m²：18000 rubs；>390g/m²：20000 rubs}",
                     ["AA5"] = (wp, np, row, esDto, sample) => np.ExtraParam!.Contains("@ 5000") ? "@ 5000 revs" : "-"
                 },
