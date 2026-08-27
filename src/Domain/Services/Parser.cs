@@ -42,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         /// 步骤7：构建并返回解析结果
         /// ============================================================
         /// </summary>
-        public ParsedRule Parse(IReadOnlyList<Token> tokens, Formula formula)
+        public ParsedRule Parse(string rawText, IReadOnlyList<Token> tokens, Formula formula)
         {
             // ==================== 步骤1：校验推导符 ====================
             // 在 Token 列表中查找推导符（→）的索引位置
@@ -108,7 +108,24 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
 
             // ==================== 步骤7：构建结果 ====================
             // 将右侧 Token 拼接为结果值
-            var resultValue = string.Join("", rightTokens.Select(t => t.Value));
+            string resultValue;
+
+            var firstRightToken = rightTokens.FirstOrDefault();
+            var lastRightToken = rightTokens.LastOrDefault();
+
+            if (firstRightToken != null && lastRightToken != null)
+            {
+                // 【核心修复】：直接从原始文本中截取右侧结果
+                // 这样无论词法分析器怎么丢弃空格，都不会影响最终拼接的格式
+                int startIndex = firstRightToken.Position;
+                int endIndex = lastRightToken.Position + lastRightToken.Value.Length;
+
+                resultValue = rawText.Substring(startIndex, endIndex - startIndex).Trim();
+            }
+            else
+            {
+                resultValue = string.Empty; // 右侧无内容
+            }
 
             return new ParsedRule
             {

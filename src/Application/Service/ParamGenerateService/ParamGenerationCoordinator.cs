@@ -53,7 +53,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         }
 
         /// <summary>
-        /// 生成参数
+        /// 生成参数用例排列
         /// </summary>
         /// <param name="structure"></param>
         /// <param name="pool"></param>
@@ -83,6 +83,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             // 4. 引擎生成
             var generated = _engine.Generate(pool, rules);
 
+            //待做：检查当前参数对应的structure的中的字段，是否可以作为Pool中的条件存在，如果是
+            //则将当前的参数字段名作为key注入到pool中，value为当前参数的值，作为后续参数生成的条件之一
+
             // 5. 验证 + 补偿
             var main = structure.MainParamDefinition;
             var isValid = _paramValidateService.Validate(generated, structure);
@@ -95,6 +98,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
                 _compensation.CompensateParamWithStructure(generated, main.Name, null, main.DefaultValue);
 
             return Result<ParamSet>.Ok(generated);
+
+            //// === 核心改变：实现你的“待做”逻辑，但不修改 pool，而是构建新的条件池 ===
+            //var newConditions = new ConditionPool(); // 假设 ConditionPool 有无参构造或 Builder
+            //                                         // 伪代码：检查当前 structure 的字段，将生成的参数转为条件
+            //foreach (var param in generated)
+            //{
+            //    if (IsEligibleAsCondition(structure, param.Key)) // 你的业务判断逻辑
+            //    {
+            //        newConditions.AddCondition(param.Key, param.Value);
+            //    }
+            //}
+
+            //return Result<GenerateOutput>.Ok(new GenerateOutput(generated, newConditions));
+
         }
 
         /// <summary>
@@ -127,8 +144,5 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
 
             return Result<ParamSet>.Ok(param);
         }
-
-
-        //买家自定义层覆盖
     }
 }

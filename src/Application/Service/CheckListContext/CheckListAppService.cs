@@ -108,6 +108,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
             // 2. 获取与该检查项关联的所有条件池（假设已经分组完毕）
             var existingPools = await _conditionPoolRepository.GetByCheckListIdAsync(checkListId, ct);
 
+            //对existingPools中的FiberCondition进行预拓展，如果没有Fiber Condition的Key可以直接跳过
+
             // 3. 为每个测试项生成参数
             foreach (var item in checkListItems)
             {

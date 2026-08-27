@@ -514,6 +514,46 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             return paramStructures;
         }
 
+        /// <summary>
+        /// 删除参数结构
+        /// </summary>
+        /// <param name="id">参数结构ID</param>
+        /// <param name="ct">取消令牌</param>
+        /// <returns></returns>
+        public async Task RemoveAsync(ParamStructureId id, CancellationToken ct)
+        {
+            var idValue = id.Value;
+
+            // 1. 查询主实体是否存在
+            var existingPo = await _dbContext.BasicParamStructures.FindAsync(idValue, ct);
+            if (existingPo == null)
+            {
+                // 可以根据业务需求选择抛出异常或静默返回(幂等删除)
+                throw new Exception("未找到对应的参数结构，无法删除");
+            }
+
+            // 2. 删除关联的标准族记录
+            var standardFamilyRelations = await _dbContext.ParamsturctureStandardfamilies
+                .Where(af => af.ParamStructureId == idValue)
+                .ToListAsync(ct);
+            _dbContext.ParamsturctureStandardfamilies.RemoveRange(standardFamilyRelations);
+
+            // 3. 删除关联的规则记录
+            var ruleRelations = await _dbContext.BasicParamRules
+                .Where(ar => ar.ParamStructureId == idValue)
+                .ToListAsync(ct);
+            _dbContext.BasicParamRules.RemoveRange(ruleRelations);
+
+            // 4. 删除关联的买家记录
+            var buyerRelations = await _dbContext.ParamsturctureBuyers
+                .Where(pb => pb.ParamStructureId == idValue)
+                .ToListAsync(ct);
+            _dbContext.ParamsturctureBuyers.RemoveRange(buyerRelations);
+
+            // 5. 删除主表实体
+            _dbContext.BasicParamStructures.Remove(existingPo);
+
+        }
 
 
         /// <summary>

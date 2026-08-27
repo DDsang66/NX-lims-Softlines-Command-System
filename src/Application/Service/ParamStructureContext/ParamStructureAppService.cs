@@ -88,7 +88,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
                 return Result.Fail("参数结构不存在");
             }
 
-            //await _paramStructureRepository.RemoveAsync(paramStructure, ct);
+            await _paramStructureRepository.RemoveAsync(paramStructure.Id, ct);
 
             await  _unitOfWork.SaveChangesAsync();
 
@@ -112,11 +112,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
                 return Result.Fail("参数结构不存在");
             }
             
-            var isOk = _paramStructureValidateService.Validate(formula, paramStructure).IsSuccess;
+            var isOk = _paramStructureValidateService.Validate(formula, paramStructure);
 
-            if (!isOk) 
+            if (!isOk.IsSuccess) 
             {
-                return Result.Fail("参数结构校验失败");
+                return Result.Fail(isOk.Error);
             }
 
             paramStructure.Active();

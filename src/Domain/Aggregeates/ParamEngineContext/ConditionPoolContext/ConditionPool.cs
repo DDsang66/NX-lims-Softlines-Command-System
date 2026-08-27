@@ -206,6 +206,28 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public void ChangeToDraft() => Status = ConditionPoolStatus.Draft;
 
 
+        /// 将外部条件增量合并到当前池中
+        /// </summary>
+        /// <param name="newConditions">要合并的新条件字典</param>
+        /// <exception cref="InvalidOperationException">仅在 Draft 状态下允许合并</exception>
+        public void Merge(Dictionary<string, object?> newConditions)
+        {
+            if (Status != ConditionPoolStatus.Draft)
+                throw new InvalidOperationException("Can only merge conditions in Draft status");
+
+            if (newConditions == null || !newConditions.Any())
+                return; // 空集合直接返回
+
+            foreach (var (key, value) in newConditions)
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                    throw new ArgumentException("Condition key cannot be empty or whitespace", nameof(newConditions));
+
+                // 允许新增或覆盖已有条件
+                _conditions[key] = value;
+            }
+        }
+
         /// <summary>
         /// 将条件池状态改为已提交
         /// </summary>

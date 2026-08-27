@@ -56,8 +56,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             _coordinator = coordinator;
         }
 
+
+
+        //Note:未来升级到多线程平行生成时，需考虑 CheckListItem 的标准顺序与依赖关系，避免并发冲突。
+
         /// <summary>
         /// 为 CheckList 的某个 Item 生成参数
+        /// 串行工作流，买家层覆盖
+        /// 先执行与买家相关的 formula/structure，再用标准层补齐缺项
         /// </summary>
         /// <param name="checkListItemId"></param>
         /// <param name="pool"></param>
@@ -127,6 +133,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
                         if (r.IsSuccess)
                         {
                             paramSet.Merge(r.Value!);
+                            //   paramSet.Merge(r.Value.ParamSet);
+
+                            // 串行执行，前一个的结果立刻成为后一个的条件，天然有序，绝对安全
+                            //pool.Merge(r.Value.NewConditions);
                         }
                     }
                 }
@@ -144,6 +154,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
                         if (r.IsSuccess)
                         {
                             paramSet.Merge(r.Value!);
+
+                            //   paramSet.Merge(r.Value.ParamSet);
+
+                            // 串行执行，前一个的结果立刻成为后一个的条件，天然有序，绝对安全
+                            //pool.Merge(r.Value.NewConditions);
+
                             // 更新缺失集合，若已补齐则可提前跳出
                             missingParams = requiredParamNames.Where(p => !paramSet.Contains(p)).ToHashSet(StringComparer.OrdinalIgnoreCase);
                             if (!missingParams.Any()) break;

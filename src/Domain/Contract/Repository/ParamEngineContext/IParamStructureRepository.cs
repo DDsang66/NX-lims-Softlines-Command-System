@@ -76,5 +76,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="ct"></param>
         /// <returns></returns>
         Task UpdateAsync(ParamStructure paramStructure,CancellationToken ct);
+
+        /// <summary>
+        /// 删除参数结构
+        /// </summary>
+        /// <param name="paramStructure"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task RemoveAsync(ParamStructureId id, CancellationToken ct);
     }
 }

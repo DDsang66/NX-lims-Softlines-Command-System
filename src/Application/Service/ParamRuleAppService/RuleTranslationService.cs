@@ -97,7 +97,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             // 处理文本到领域对象的转换
             var tokens = _tokenizer.Tokenize(text);
 
-            var parsedRule = _parser.Parse(tokens, formula);
+            var parsedRule = _parser.Parse(text, tokens, formula);
 
             // JSON 反序列化为 ConditionPattern
             // JSON 反序列化为 ConditionPattern（做空检查并使用合适的选项）
