@@ -3,6 +3,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services.ConditionPoolContext
 {
@@ -81,9 +82,26 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.ConditionPoolCont
                     else
                     {
                         var existing = (dynamic)condition[requirement.FieldName];
-                        // 合并AllowedValues
-                        var mergedValues = existing.AllowedValues
-                            .Concat(requirement.AllowedValues)
+                        
+                        // 直接反序列化为 List<string>
+                        var existingValues = new List<string>();
+
+                        if (existing.AllowedValues != null)
+                        {
+                            var json = JsonSerializer.Serialize(existing.AllowedValues);
+                            existingValues = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+                        }
+
+                        var newValues = new List<string>();
+                        if (requirement.AllowedValues != null)
+                        {
+                            var json = JsonSerializer.Serialize(requirement.AllowedValues);
+                            newValues = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+                        }
+
+                        var mergedValues = existingValues
+                            .Concat(newValues)
+                            .Where(s => !string.IsNullOrWhiteSpace(s))
                             .Distinct()
                             .ToList();
 

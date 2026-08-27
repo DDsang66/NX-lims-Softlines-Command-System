@@ -21,6 +21,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFo
         public List<string?> StandardFamilyIds { get; set; } = new();
 
         /// <summary>
+        /// 买家Id
+        /// </summary>
+        public List<string?> BuyerCodes { get; set; } = new();
+
+        /// <summary>
         /// 公式名称
         /// </summary>
         public string Name { get; set; } = string.Empty;  // "BallastDerivation"
@@ -59,5 +64,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFo
         /// 公式是否启用
         /// </summary>
         public bool IsActive { get; set; }
+
+        /// <summary>
+        /// 所属引擎层
+        /// </summary>
+        public string EngineLayer { get; set; } = string.Empty;  // "ParamEngine"
     }
 }

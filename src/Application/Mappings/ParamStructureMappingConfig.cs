@@ -98,7 +98,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.ParamName, src => src.ParamName)
                 .Map(dest => dest.FormulaId, src => src.FormulaId.Value)
                 .Map(dest => dest.EffectiveDate, src => src.EffectiveDate)
-
+                .Map(dest => dest.EngineLayer, src => src.EngineLayer.ToString())
                 // 集合属性提取并转化为 List<Guid>
                 .Map(dest => dest.StandardFamilyIds,
                      src => src.StandardFamilyIds != null
@@ -108,7 +108,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                      src => src.ApplicableRuleIds != null
                             ? src.ApplicableRuleIds.Select(id => id.Value).ToList()
                             : new List<string>())
-
+                .Map(dest => dest.BuyerCodes,
+                     src => src.BuyerIds != null
+                            ? src.BuyerIds.Select(id => id.Value).ToList()
+                            : new List<string>())   
                 // 将 ParamSchema 值对象映射回 SchemaDto
                 .Map(dest => dest.ParamSchema, src => src.Schema.Adapt<SchemaDto>());
 

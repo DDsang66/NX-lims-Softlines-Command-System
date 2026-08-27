@@ -24,6 +24,11 @@
         public IEnumerable<string>? RuleIds { get; set; }
 
         /// <summary>
+        /// 买家d
+        /// </summary>
+        public IEnumerable<string>? BuyerCodes { get; set; }
+
+        /// <summary>
         /// 参数名称
         /// </summary>
         public string ParamName { get; set; } = string.Empty;
@@ -32,6 +37,11 @@
         /// 生效时间
         /// </summary>
         public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// 所属层级
+        /// </summary>
+        public string EngineLayer { get; set; } = string.Empty;
 
         /// <summary>
         /// 结构

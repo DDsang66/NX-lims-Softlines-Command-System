@@ -77,8 +77,9 @@
                 if (string.IsNullOrWhiteSpace(req.FieldName))
                     throw new ArgumentException("ConditionRequirement FieldName cannot be empty.");
 
-                if (req.FieldName == mainParamName)
-                    throw new ArgumentException($"Condition field '{req.FieldName}' cannot have the same name as the main param.");
+                //暂时可以由前端的值直接指定后端的param
+                //if (req.FieldName == mainParamName)
+                //    throw new ArgumentException($"Condition field '{req.FieldName}' cannot have the same name as the main param.");
             }
         }
 

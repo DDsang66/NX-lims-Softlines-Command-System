@@ -1,4 +1,6 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFormulaContext
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
+
+namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamFormulaContext
 {
     public record UpdateFormulaDto
     {
@@ -28,6 +30,11 @@
         public string StandardFamilyId { get; set; } = string.Empty;
 
         /// <summary>
+        /// 买家ID
+        /// </summary>
+        public string? BuyerId { get; set; } = string.Empty;
+
+        /// <summary>
         /// 表达式模板（如：${field1} + ${field2}）
         /// </summary>
         public string ExpressionTemplate { get; set; } = string.Empty;
@@ -36,5 +43,10 @@
         /// 描述
         /// </summary>
         public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 所属引擎层
+        /// </summary>
+        public string EngineLayerId { get; set; } = string.Empty;
     }
 }

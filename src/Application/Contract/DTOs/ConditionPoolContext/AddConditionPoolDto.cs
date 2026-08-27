@@ -11,5 +11,15 @@
         /// 关联的订单ID
         /// </summary>
         public string? OrderId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 买家id
+        /// </summary>
+        public string? BuyerCode { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 买家是否为散客
+        /// </summary>
+        public bool BuyerIsIndividualTraveler { get; set; } = false;
     }
 }

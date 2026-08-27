@@ -214,13 +214,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             if (isOk.IsSuccess)
             {
                 rule.Active();
+
+                await _pararmRuleRepository.UpdateAsync(rule, ct);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                return Result.Ok();
+            }
+            else 
+            {
+                return Result.Fail(isOk.Error);
             }
 
-            await _pararmRuleRepository.UpdateAsync(rule, ct);
-
-            await _unitOfWork.SaveChangesAsync();
-
-            return Result.Ok();
         }
 
         /// <summary>

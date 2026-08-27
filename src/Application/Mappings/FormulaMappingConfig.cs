@@ -23,6 +23,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.Description, src => src.Description)
                 .Map(dest => dest.Version, src => src.Version)
                 .Map(dest => dest.IsActive, src => src.IsActive)
+                .Map(dest => dest.EngineLayer, src => src.EngineLayer)
                 .Map(dest => dest.EffectiveDate, src => src.EffectiveDate);
 
             //转化为领域模型,用开放的领域方法重建
@@ -44,6 +45,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             .Map(dest => dest.Id, src => src.Id.Value)
             .Map(dest => dest.ParamStrurctureIds, src => src.ParamStructureIds.Select(ps => ps.Value).ToList())
             .Map(dest => dest.StandardFamilyIds, src => src.StandardFamilyIds.Select(sf => sf.Value).ToList())
+            .Map(dest => dest.BuyerCodes, src => src.BuyerIds.Select(bc => bc.Value).ToList())
             .Map(dest => dest.Name, src => src.Name)
             .Map(dest => dest.ParamName, src => src.ParamName)
             .Map(dest => dest.ConditionFields, src => src.ConditionFields)
@@ -51,6 +53,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             .Map(dest => dest.Description, src => src.Description)
             .Map(dest => dest.Version, src => src.Version)
             .Map(dest => dest.EffectiveDate, src => src.EffectiveDate)
+            .Map(dest => dest.EngineLayer, src => src.EngineLayer)
             .Map(dest => dest.IsActive, src => src.IsActive);
         }
      }

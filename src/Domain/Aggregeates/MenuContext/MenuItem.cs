@@ -105,11 +105,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.MenuContext
         private static readonly Regex RequirementRegex = new Regex(
             @"^\s*(?:" +
             // 单条件: "字段名" 运算符 "值"
-            @"""[^""]+""\s*(?:=|!=|>=|<=|>|<|contains|equals)\s*""[^""]*""|" +
+            @"(?<field>""[^""]+"")\s*(?<op>=|!=|>=|=>|≥|<=|=<|≤|>|<|contains|equals)\s*(?<value>""[^""]*"")|" +
             // 范围条件: "值1" 运算符 "字段名" 运算符 "值2"
-            @"""[^""]*""\s*(?:<|<=)\s*""[^""]+""\s*(?:<|<=)\s*""[^""]*""|" +
-            // 支持值中包含特殊字符（如 %）
-            @"""[^""]*""\s*(?:<|<=)\s*""[^""]+""\s*(?:<|<=)\s*""[^""]*""" +
+            // 左侧只允许 <, <=, =<, ≤ ；右侧同理，不允许出现 > 或 ≥
+            @"(?<value>""[^""]*"")\s*(?<leftOp><|<=|=<|≤)\s*(?<field>""[^""]+"")\s*(?<rightOp><|<=|=<|≤)\s*(?<value2>""[^""]*"")" +
             @")\s*$",
             RegexOptions.Compiled | RegexOptions.IgnoreCase);
     }
