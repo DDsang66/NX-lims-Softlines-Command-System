@@ -206,6 +206,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             {
                 var targetType = Type.GetType(typeName);
                 if (targetType == null) return value;
+
+                // object 属性经 System.Text.Json 反序列化后值为 JsonElement（JSON 字符串 "5" → JsonElement,String），
+                // 需先解包成真实值才能按 IConvertible 转换，否则 JSON 往返会把 "5" 当字符串、强转数值时抛异常被 catch 吞掉 → 存库仍是字符串
+                value = UnwrapJsonElement(value);
+                if (value == null) return null;
+
                 if (value.GetType() == targetType) return value;
 
                 // 处理布尔值特殊逻辑（放在前面）
@@ -219,6 +225,23 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             {
                 return value;
             }
+        }
+
+        /// <summary>
+        /// 将 JsonElement 解包为 CLR 值（字符串/数值/布尔），非 JsonElement 原样返回。
+        /// </summary>
+        private static object? UnwrapJsonElement(object? value)
+        {
+            if (value is not JsonElement je) return value;
+
+            return je.ValueKind switch
+            {
+                JsonValueKind.String => je.GetString() ?? string.Empty,
+                JsonValueKind.Number => je.GetDecimal(),
+                JsonValueKind.True or JsonValueKind.False => je.GetBoolean(),
+                JsonValueKind.Null => null,
+                _ => je.GetRawText()
+            };
         }
 
         private static object? SafeConvert(object value, Type targetType)
