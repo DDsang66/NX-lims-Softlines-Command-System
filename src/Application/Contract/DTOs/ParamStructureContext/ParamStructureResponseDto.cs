@@ -39,6 +39,11 @@
         public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
 
         /// <summary>
+        /// 状态
+        /// </summary>
+        public string Status { get; set; } = string.Empty;
+
+        /// <summary>
         /// 所属层级
         /// </summary>
         public string EngineLayer { get; set; } = string.Empty;

@@ -96,6 +96,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.FormulaId, src => src.FormulaId.Value)
                 .Map(dest => dest.EffectiveDate, src => src.EffectiveDate)
                 .Map(dest => dest.EngineLayer, src => src.EngineLayer.ToString())
+                .Map(dest => dest.Status, src => src.Status.ToString())
                 // 集合属性提取并转化为 List<Guid>
                 .Map(dest => dest.StandardFamilyIds,
                      src => src.StandardFamilyIds != null
@@ -196,39 +197,61 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             };
         }
 
-        /// <summary>
-        /// 将 object 值根据目标类型全名转换为强类型 object
-        /// </summary>
         private static object? ConvertToStrongType(object? value, string? typeName)
         {
             if (value == null) return null;
-            if (string.IsNullOrWhiteSpace(typeName)) return value; // 无类型声明，保持原样
+            if (string.IsNullOrWhiteSpace(typeName)) return value;
 
             try
             {
                 var targetType = Type.GetType(typeName);
-                if (targetType == null) return value; // 找不到 CLR 类型，保持原样
-
-                // 如果类型已经匹配，直接返回（避免不必要的转换）
+                if (targetType == null) return value;
                 if (value.GetType() == targetType) return value;
 
-                // 处理布尔值的特殊大小写（如果前端传过来的是字符串 "true"）
+                // 处理布尔值特殊逻辑（放在前面）
                 if (targetType == typeof(bool) && value is string strBool && bool.TryParse(strBool, out var boolVal))
                     return boolVal;
 
-                // 利用 Convert.ChangeType 进行基础类型转换
-                // 注意：如果 value 是 string，ChangeType 会自动解析为 targetType
-                // 如果 value 是其他类型（如前端反序列化出的 double），也会尝试转换
-                return Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
+                // ★ 核心改进：安全转换
+                return SafeConvert(value, targetType);
             }
             catch
             {
-                // 解析失败（例如字符串 "abc" 无法转为 int），降级返回原值
-                // 领域层的校验服务会负责处理这种不一致并抛出业务异常
                 return value;
             }
         }
 
+        private static object? SafeConvert(object value, Type targetType)
+        {
+            // 如果目标类型是 string，直接 ToString（不会抛异常）
+            if (targetType == typeof(string))
+                return value.ToString();
+
+            // 如果 value 实现了 IConvertible，走 ChangeType
+            if (value is IConvertible)
+                return Convert.ChangeType(value, targetType, CultureInfo.InvariantCulture);
+
+            // ★ 对于 JObject / JArray / 其他复杂类型，尝试 JSON 反序列化
+            try
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(value);
+                return System.Text.Json.JsonSerializer.Deserialize(json, targetType);
+            }
+            catch
+            {
+                // JSON 反序列化也失败，尝试 Newtonsoft.Json 作为备选
+                try
+                {
+                    var json = Newtonsoft.Json.JsonConvert.SerializeObject(value);
+                    return Newtonsoft.Json.JsonConvert.DeserializeObject(json, targetType);
+                }
+                catch
+                {
+                    // 实在转不了，返回原值
+                    return value;
+                }
+            }
+        }
         /// <summary>
         /// 将 object 列表根据目标类型全名转换为强类型 object 列表
         /// </summary>

@@ -132,7 +132,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
         /// <exception cref="Exception"></exception>
         public async Task<Result> UpdateParamRuleWithJsonAsync(UpdateParamRuleJsonRequest request,CancellationToken ct)
         {
-            // 1. 获取现有规则
+            // 1. 获取现有规则r
             var existingRule = await _pararmRuleRepository.GetByIdAsync(new ParamRuleId(request.Id),ct);
 
             if (existingRule == null)

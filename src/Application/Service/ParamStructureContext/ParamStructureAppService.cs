@@ -121,6 +121,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
 
             paramStructure.Active();
 
+            await _paramStructureRepository.UpdateAsync(paramStructure, ct);
+
+            await _unitOfWork.SaveChangesAsync();
+
             return Result.Ok();
         }
     }
