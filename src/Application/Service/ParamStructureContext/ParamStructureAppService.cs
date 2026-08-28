@@ -79,53 +79,104 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
         /// <param name="paramStructureId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> RemoveParamStructureAsync(string paramStructureId, CancellationToken ct) 
+        public async Task<Result> RemoveParamStructureAsync(string paramStructureId, CancellationToken ct)
         {
-            var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
+            try
+            {
+                var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
 
-            if (paramStructure == null)
+                if (paramStructure == null)
+                {
+                    return Result.Fail("参数结构不存在");
+                }
+
+                await _paramStructureRepository.RemoveAsync(paramStructure.Id, ct);
+
+                await  _unitOfWork.SaveChangesAsync();
+
+                return Result.Ok();
+            }
+            // GetByIdAsync/RemoveAsync 对不存在的记录抛异常而非返回 null——转换为业务失败，避免 500
+            catch (Exception ex) when (ex.Message is "未找到对应的参数结构" or "未找到对应的参数结构，无法删除")
             {
                 return Result.Fail("参数结构不存在");
             }
-
-            await _paramStructureRepository.RemoveAsync(paramStructure.Id, ct);
-
-            await  _unitOfWork.SaveChangesAsync();
-
-            return Result.Ok();
         }
 
         /// <summary>
-        /// 激活参数结构
+        /// 激活参数结构（校验所属公式通过后置 Active 并落库）
         /// </summary>
         /// <param name="paramStructureId"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> ActiveParamStructureAsync(string paramStructureId, CancellationToken ct) 
+        public async Task<Result> ActiveParamStructureAsync(string paramStructureId, CancellationToken ct)
         {
-            var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
+            try
+            {
+                var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
 
-            var formula = await _formulaRepository.GetByIdAsync(new FormulaId(paramStructure.FormulaId), ct);
+                if (paramStructure == null)
+                {
+                    return Result.Fail("参数结构不存在");
+                }
 
-            if (paramStructure == null)
+                if (paramStructure.FormulaId == null)
+                {
+                    return Result.Fail("参数结构未关联公式，无法激活");
+                }
+
+                var formula = await _formulaRepository.GetByIdAsync(new FormulaId(paramStructure.FormulaId), ct);
+
+                var isOk = _paramStructureValidateService.Validate(formula, paramStructure);
+
+                if (!isOk.IsSuccess)
+                {
+                    return Result.Fail(isOk.Error);
+                }
+
+                paramStructure.Active();
+
+                await _paramStructureRepository.UpdateAsync(paramStructure, ct);
+
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                return Result.Ok();
+            }
+            catch (Exception ex) when (ex.Message == "未找到对应的参数结构")
             {
                 return Result.Fail("参数结构不存在");
             }
-            
-            var isOk = _paramStructureValidateService.Validate(formula, paramStructure);
+        }
 
-            if (!isOk.IsSuccess) 
+        /// <summary>
+        /// 停用参数结构（回退为草稿状态并落库）
+        /// </summary>
+        /// <param name="paramStructureId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> DeactiveParamStructureAsync(string paramStructureId, CancellationToken ct)
+        {
+            try
             {
-                return Result.Fail(isOk.Error);
+                var paramStructure = await _paramStructureRepository.GetByIdAsync(new ParamStructureId(paramStructureId), ct);
+
+                if (paramStructure == null)
+                {
+                    return Result.Fail("参数结构不存在");
+                }
+
+                paramStructure.Deactive();
+
+                await _paramStructureRepository.UpdateAsync(paramStructure, ct);
+
+                await _unitOfWork.SaveChangesAsync(ct);
+
+                return Result.Ok();
             }
-
-            paramStructure.Active();
-
-            await _paramStructureRepository.UpdateAsync(paramStructure, ct);
-
-            await _unitOfWork.SaveChangesAsync();
-
-            return Result.Ok();
+            catch (Exception ex) when (ex.Message == "未找到对应的参数结构")
+            {
+                return Result.Fail("参数结构不存在");
+            }
         }
     }
 }

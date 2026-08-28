@@ -248,7 +248,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public void Active() => this.Status = Status.Active;
 
         /// <summary>
-        /// 将当前j结构回退为草稿状态，要求必须满足某些条件，
+        /// 将当前结构“停用”——回退为草稿状态（非激活）
+        /// </summary>
+        public void Deactive() => this.Status = Status.Draft;
+
+        /// <summary>
+        /// 将当前结构回退为草稿状态，要求必须满足某些条件，
         /// </summary>
         /// <returns></returns>
         public void Draft() => this.Status = Status.Draft;

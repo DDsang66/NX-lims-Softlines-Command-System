@@ -42,9 +42,17 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         }
 
         [HttpPut("active/{paramStructureId}")]
-        public async Task<Result> ActiveParamStructure(string paramStructureId, CancellationToken ct) 
+        public async Task<Result> ActiveParamStructure(string paramStructureId, CancellationToken ct)
         {
             var result = await _paramStructureAppService.ActiveParamStructureAsync(paramStructureId, ct);
+
+            return result;
+        }
+
+        [HttpPut("deactive/{paramStructureId}")]
+        public async Task<Result> DeactiveParamStructure(string paramStructureId, CancellationToken ct)
+        {
+            var result = await _paramStructureAppService.DeactiveParamStructureAsync(paramStructureId, ct);
 
             return result;
         }

@@ -39,7 +39,7 @@
         public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
 
         /// <summary>
-        /// 状态
+        /// 状态（Draft/Active/Deprecated/Superseded/Pending），前端据此显示激活/停用按钮
         /// </summary>
         public string Status { get; set; } = string.Empty;
 

@@ -37,5 +37,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface.ParamStruct
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Result> ActiveParamStructureAsync(string paramStructureId, CancellationToken ct);
+
+        /// <summary>
+        /// 停用
+        /// </summary>
+        /// <param name="paramStructureId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Result> DeactiveParamStructureAsync(string paramStructureId, CancellationToken ct);
     }
 }
