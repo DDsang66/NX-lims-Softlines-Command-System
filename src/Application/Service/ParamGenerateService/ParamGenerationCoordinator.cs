@@ -10,6 +10,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Services.Compensation;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
@@ -59,7 +60,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
         /// <param name="pool"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result<ParamSet>> GenerateAsync(
+        public async Task<Result<ParamGenerateOutput>> GenerateAsync(
             ParamStructure structure,
             ConditionPool pool,
             CancellationToken ct)
@@ -75,7 +76,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             var validation = await _conditionPoolValidateService.ValidateConditionPool(structure, formula, pool);
 
             if (validation.IsFailure)
-                return Result<ParamSet>.Fail(validation.Error);
+                return Result<ParamGenerateOutput>.Fail(validation.Error);
 
             // 3. 加载规则
             var rules = await _ruleRepo.GetByIdsAsync(structure.ApplicableRuleIds, ct);
@@ -97,21 +98,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             else
                 _compensation.CompensateParamWithStructure(generated, main.Name, null, main.DefaultValue);
 
-            return Result<ParamSet>.Ok(generated);
+            // === 核心改变：实现你的“待做”逻辑，但不修改 pool，而是构建新的条件池 ===
+            var newConditions = new Dictionary<string,object>();
+                                                     // 伪代码：检查当前 structure 的字段，将生成的参数转为条件
+            foreach (var param in generated.Values)
+            {
+                if (structure.IsEligibleAsCondition) // 你的业务判断逻辑
+                {
+                    newConditions.Add(param.Key, param.Value!);
+                }
+            }
 
-            //// === 核心改变：实现你的“待做”逻辑，但不修改 pool，而是构建新的条件池 ===
-            //var newConditions = new ConditionPool(); // 假设 ConditionPool 有无参构造或 Builder
-            //                                         // 伪代码：检查当前 structure 的字段，将生成的参数转为条件
-            //foreach (var param in generated)
-            //{
-            //    if (IsEligibleAsCondition(structure, param.Key)) // 你的业务判断逻辑
-            //    {
-            //        newConditions.AddCondition(param.Key, param.Value);
-            //    }
-            //}
+            var output = new ParamGenerateOutput(generated, newConditions);
 
-            //return Result<GenerateOutput>.Ok(new GenerateOutput(generated, newConditions));
-
+            return Result<ParamGenerateOutput>.Ok(output);
         }
 
         /// <summary>

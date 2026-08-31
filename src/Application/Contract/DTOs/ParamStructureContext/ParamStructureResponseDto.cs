@@ -49,6 +49,11 @@
         public string EngineLayer { get; set; } = string.Empty;
 
         /// <summary>
+        /// 是否可以作为条件使用
+        /// </summary>
+        public string IsEligibleAsCondition { get; set; } = bool.FalseString;
+
+        /// <summary>
         /// 结构
         /// </summary>
         public SchemaDto ParamSchema { get; set; } = new SchemaDto();

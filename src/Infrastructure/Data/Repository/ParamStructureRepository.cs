@@ -66,6 +66,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 })!,
                 (Status)paramStructurePo.Status,
                 paramStructurePo.EngineLayer.HasValue ? (EngineLayer)paramStructurePo.EngineLayer.Value : EngineLayer.Standard,
+                paramStructurePo.IsEligibleAsCondition,
                 paramStructurePo.EffectiveDate
              );
 
@@ -150,6 +151,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         })!,
                     (Status)paramStructurePo.Status,
                     paramStructurePo.EngineLayer.HasValue ? (EngineLayer)paramStructurePo.EngineLayer.Value : EngineLayer.Standard,
+                    paramStructurePo.IsEligibleAsCondition,
                     paramStructurePo.EffectiveDate
                     );
             });
@@ -203,6 +205,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     })!,
                     (Status)po.Status,
                     engineLayer,
+                    po.IsEligibleAsCondition,
                     po.EffectiveDate
                     );
 
@@ -261,6 +264,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     })!,
                     (Status)po.Status,
                     engineLayer,
+                    po.IsEligibleAsCondition,
                     po.EffectiveDate);
 
                 result.Add(paramStructure);
@@ -417,6 +421,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         })!,
                     (Status)po.Status,
                     engineLayer,
+                    po.IsEligibleAsCondition,
                     po.EffectiveDate);
             });
 
@@ -508,6 +513,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                         })!,
                     (Status)item.ParamStructure.Status,
                     engineLayer,
+                    item.ParamStructure.IsEligibleAsCondition,
                     item.ParamStructure.EffectiveDate);
             });
 

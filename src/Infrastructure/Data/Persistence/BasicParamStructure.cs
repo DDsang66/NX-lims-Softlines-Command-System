@@ -19,6 +19,8 @@ public partial class BasicParamStructure
 
     public byte? EngineLayer { get; set; }
 
+    public bool IsEligibleAsCondition { get; set; }
+
     public string? FormulaId { get; set; }
 
     public virtual ICollection<ParamsturctureStandardfamily> ParamsturctureStandardfamilies { get; set; } = new List<ParamsturctureStandardfamily>();

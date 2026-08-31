@@ -45,6 +45,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamSt
         public DateTime EffectiveDate { get; set; } = DateTime.UtcNow;
 
         /// <summary>
+        /// 是否可以作为条件使用
+        /// </summary>
+        public bool IsEligibleAsCondition { get; set; }
+
+        /// <summary>
         /// 结构
         /// </summary>
         public SchemaDto ParamSchema { get; set; } = new SchemaDto();

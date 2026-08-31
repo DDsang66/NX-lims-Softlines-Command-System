@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.V
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext;
@@ -110,6 +111,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
 
                 var structures = await _structureRepo.GetByFamilyIdAsync(family.Id, ct);
 
+                var sortedParamStructures = structures
+                    .OrderByDescending(ps => ps.IsEligibleAsCondition)
+                    .ToList();
+
                 // 1) 买家层优先：如果存在 buyer 且不是散客，则先执行 buyer 关联的公式对应的结构
                 var buyerFormulaIds = new HashSet<FormulaId?>();
                 if (!string.IsNullOrWhiteSpace(buyerCode) && !isIndividualTraveler && schedule.Formulas != null)
@@ -127,16 +132,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
                 // 执行结构中属于 buyerFormulaIds 的结构，优先写入 paramSet
                 if (buyerFormulaIds.Any())
                 {
-                    foreach (var structure in structures.Where(s => s.FormulaId != null && buyerFormulaIds.Contains(s.FormulaId)))
+                    foreach (var structure in sortedParamStructures.Where(s => s.FormulaId != null && buyerFormulaIds.Contains(s.FormulaId)))
                     {
                         var r = await _coordinator.GenerateAsync(structure, pool, ct);
                         if (r.IsSuccess)
                         {
-                            paramSet.Merge(r.Value!);
+                            paramSet.Merge(r.Value!.ParamSet!);
                             //   paramSet.Merge(r.Value.ParamSet);
 
                             // 串行执行，前一个的结果立刻成为后一个的条件，天然有序，绝对安全
-                            //pool.Merge(r.Value.NewConditions);
+                            pool.Merge(r.Value.NewCondition);
                         }
                     }
                 }
@@ -146,19 +151,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
                 if (missingParams.Any())
                 {
                     // 只对能生成缺失参数的结构执行标准层生成：按结构的 ParamName 与缺失集合匹配
-                    foreach (var structure in structures.Where(s => s.FormulaId == null || !buyerFormulaIds.Contains(s.FormulaId)))
+                    foreach (var structure in sortedParamStructures.Where(s => s.FormulaId == null || !buyerFormulaIds.Contains(s.FormulaId)))
                     {
                         if (!missingParams.Contains(structure.ParamName)) continue;
 
                         var r = await _coordinator.GenerateAsync(structure, pool, ct);
                         if (r.IsSuccess)
                         {
-                            paramSet.Merge(r.Value!);
+                            paramSet.Merge(r.Value!.ParamSet!);
 
                             //   paramSet.Merge(r.Value.ParamSet);
 
                             // 串行执行，前一个的结果立刻成为后一个的条件，天然有序，绝对安全
-                            //pool.Merge(r.Value.NewConditions);
+                            pool.Merge(r.Value.NewCondition);
 
                             // 更新缺失集合，若已补齐则可提前跳出
                             missingParams = requiredParamNames.Where(p => !paramSet.Contains(p)).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -191,7 +196,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
             var structure = await _structureRepo.GetByIdAsync(structureId, ct);
             if (structure == null) return Result<ParamSet>.Fail("ParamStructure not found");
 
-            return await _coordinator.GenerateAsync(structure, pool, ct);
+            var result = await _coordinator.GenerateAsync(structure, pool, ct);
+
+            return result.Value!.ParamSet;
         }
     }
 }

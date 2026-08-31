@@ -326,6 +326,7 @@ public partial class dbContext : DbContext
                 .HasMaxLength(25)
                 .IsUnicode(false)
                 .HasColumnName("formula_id");
+            entity.Property(e => e.IsEligibleAsCondition).HasColumnName("is_eligible_as_condition");
             entity.Property(e => e.ParamName)
                 .HasMaxLength(50)
                 .IsUnicode(false)

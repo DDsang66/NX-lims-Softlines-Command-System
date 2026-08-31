@@ -212,8 +212,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <exception cref="InvalidOperationException">仅在 Draft 状态下允许合并</exception>
         public void Merge(Dictionary<string, object?> newConditions)
         {
-            if (Status != ConditionPoolStatus.Draft)
-                throw new InvalidOperationException("Can only merge conditions in Draft status");
+            //if (Status != ConditionPoolStatus.Draft)
+            //    throw new InvalidOperationException("Can only merge conditions in Draft status");
 
             if (newConditions == null || !newConditions.Any())
                 return; // 空集合直接返回
@@ -221,7 +221,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             foreach (var (key, value) in newConditions)
             {
                 if (string.IsNullOrWhiteSpace(key))
-                    throw new ArgumentException("Condition key cannot be empty or whitespace", nameof(newConditions));
+                    return; // 空键名直接返回
 
                 // 允许新增或覆盖已有条件
                 _conditions[key] = value;

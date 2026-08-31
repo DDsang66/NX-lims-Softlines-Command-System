@@ -34,6 +34,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     ? new List<BuyerId>()
                     : src.BuyerIds.Select(id => new BuyerId(id)).ToList(),
                     ParseEngineLayer(src.EngineLayer),
+                    src.IsEligibleAsCondition,
                     src.EffectiveDate
                 ));
 
@@ -97,6 +98,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.EffectiveDate, src => src.EffectiveDate)
                 .Map(dest => dest.EngineLayer, src => src.EngineLayer.ToString())
                 .Map(dest => dest.Status, src => src.Status.ToString())
+                .Map(dest => dest.IsEligibleAsCondition,src => src.IsEligibleAsCondition)
                 // 集合属性提取并转化为 List<Guid>
                 .Map(dest => dest.StandardFamilyIds,
                      src => src.StandardFamilyIds != null

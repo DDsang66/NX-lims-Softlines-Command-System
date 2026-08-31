@@ -78,12 +78,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
 
             var paramSet = new ParamSet();
 
-            foreach (var paramStructure in paramStructures)
+            //对paramstructure进行排序，确保IsEligibleAsCondition为真的结构对应的参数先被计算
+            var sortedParamStructures = paramStructures
+                .OrderByDescending(ps => ps.IsEligibleAsCondition)
+                .ToList();
+
+            foreach (var paramStructure in sortedParamStructures)
             {
                 var result = await _coordinator.GenerateAsync(paramStructure, conditionPool, ct);
+
                 if (result.IsSuccess)
                 {
-                    paramSet.Merge(result.Value!);
+                    paramSet.Merge(result.Value!.ParamSet!);
+
+                    conditionPool.Merge(result.Value!.NewCondition);
                 }
             }
 

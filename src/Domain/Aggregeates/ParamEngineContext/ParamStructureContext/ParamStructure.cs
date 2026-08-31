@@ -66,6 +66,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public ParamSchema Schema { get; private set; }
 
         /// <summary>
+        /// 是否可以作为条件使用
+        /// </summary>
+        public bool IsEligibleAsCondition { get; private set; }
+
+        /// <summary>
         /// 状态
         /// </summary>
         public Status Status { get; private set; } = Status.Draft;
@@ -92,6 +97,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             IEnumerable<ParamRuleId?> ruleIds,
             IEnumerable<BuyerId?> buyerIds,
             EngineLayer engineLayer,
+            bool isEligibleAsCondition,
             DateTime? effectiveDate = null)
         {
             if (id == null)
@@ -111,6 +117,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Schema = schema,
                 Status = Status.Draft,
                 EngineLayer = engineLayer,
+                IsEligibleAsCondition = isEligibleAsCondition,
                 EffectiveDate = effectiveDate ?? DateTime.UtcNow
             };
 
@@ -163,6 +170,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             ParamSchema schema,
             Status status,
             EngineLayer engineLayer,
+            bool isEligibleAsCondition,
             DateTime effectiveDate
             )
         {
@@ -174,6 +182,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 Status = status,
                 Schema = schema,
                 EngineLayer = engineLayer,
+                IsEligibleAsCondition = isEligibleAsCondition,
                 EffectiveDate = effectiveDate
             };
 
