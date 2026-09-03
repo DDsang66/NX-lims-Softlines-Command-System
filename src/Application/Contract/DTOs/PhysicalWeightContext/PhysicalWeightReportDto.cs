@@ -40,8 +40,14 @@ public class PhysicalWeightReportRecordDto
     /// <summary>重量 g(可选)</summary>
     public decimal? Weight { get; set; }
 
-    /// <summary>面积 cm²(可选)</summary>
+    /// <summary>面积 cm²(可选, area 类型的 Measure 列 / gsm 换算)</summary>
     public decimal? Area { get; set; }
+
+    /// <summary>长×宽模式的前端尺寸文本, 如 "5×5"(可选, area 类型 Measure 列直填此文本)</summary>
+    public string? Dimension { get; set; }
+
+    /// <summary>试样长度 cm(可选, length 类型的 Measure 列 / g/m 换算)</summary>
+    public decimal? LengthCm { get; set; }
 
     /// <summary>长度克重 g/m(前端已算)</summary>
     public decimal GPerM { get; set; }

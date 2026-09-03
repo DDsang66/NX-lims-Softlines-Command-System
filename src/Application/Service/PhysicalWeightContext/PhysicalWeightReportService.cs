@@ -36,8 +36,9 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             return Result<DocxUrlResponseDto>.Fail("不支持的测试类型: " + dto.TestType);
 
         string fileName = $"{dto.ReportNumber}_{DateTime.Now:yyMMddHHmmss}_PHY_Weight.docx";
+        // 模板已移入 Common_PHY/ (与干燥速率等共用目录); 新模板表1 带 Measure 列
         string targetPath = _fileStorage.CopyTemplate(
-            Path.Combine("DocxModel", "PHY_Weight.docx"),
+            Path.Combine("DocxModel", "Common_PHY", "PHY_Weight.docx"),
             Path.Combine("DocxModel", "SaveDocx"),
             fileName);
 
@@ -58,22 +59,35 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             .Select(g => new
             {
                 Point = string.IsNullOrEmpty(g.Key) ? (g.First().SampleId ?? "-") : g.Key,
-                Values = g.Select(r => ToDataValue(r, dto.TestType)).ToList()
+                Records = g.ToList()
             })
             .ToList();
 
-        // 同测点每 5 个值一行: 超过 5 个拆到下一行 (新行仍标同一测点)
+        // 同测点每 5 条一行: 超过 5 条拆到下一行 (新行仍标同一测点)。
+        // Measure 列显示文本见下方循环(尺寸文本优先, 无则退回面积/长度数值)。
         var rows = new List<PhysicalWeightReportRowModel>();
         foreach (var g in groups)
         {
-            for (int offset = 0; offset < g.Values.Count; offset += 5)
+            for (int offset = 0; offset < g.Records.Count; offset += 5)
             {
-                var chunk = g.Values.Skip(offset).Take(5).ToList();
+                var chunk = g.Records.Skip(offset).Take(5).ToList();
+
+                // Measure 显示文本: 优先用前端尺寸文本(长×宽模式 "5×5"); 该行各条通常同尺寸, 取首个非空。
+                // 没有尺寸文本时退回数值: 面积直填→Area cm² / 长度→LengthCm cm(条重无 → 留空)。
+                string? measure = chunk.Select(r => r.Dimension).FirstOrDefault(d => !string.IsNullOrWhiteSpace(d));
+                if (measure == null)
+                {
+                    var src = chunk.FirstOrDefault(r => DefaultMeasureValue(r, dto.TestType).HasValue);
+                    var mv = src == null ? null : DefaultMeasureValue(src, dto.TestType);
+                    if (mv.HasValue) measure = mv.Value.ToString("F2");
+                }
+
                 rows.Add(new PhysicalWeightReportRowModel
                 {
                     Point = g.Point,
-                    Values = chunk,
-                    Average = chunk.Count > 0 ? chunk.Average() : null
+                    Measure = measure,
+                    Values = chunk.Select(r => ToDataValue(r, dto.TestType)).ToList(),
+                    Average = chunk.Count > 0 ? chunk.Average(r => ToDataValue(r, dto.TestType)) : null
                 });
             }
         }
@@ -129,6 +143,14 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
         TypeLength => r.OzPerYd,
         TypePiece => r.LbPerDozen,
         _ => 0
+    };
+
+    /// <summary>Measure 列退回数值源: 面积→Area cm², 长度→LengthCm cm, 条重→无(无 Dimension 文本时用)</summary>
+    private static decimal? DefaultMeasureValue(PhysicalWeightReportRecordDto r, string type) => type switch
+    {
+        TypeArea => r.Area,
+        TypeLength => r.LengthCm,
+        _ => null
     };
 
     /// <summary>表1 数据值 = 类型主单位(面积→g/m², 长度→g/m, 条重→g/piece)</summary>

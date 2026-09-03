@@ -35,10 +35,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var (t0, t1) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
 
             SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowReportNumber)!, PhysicalWeightDocxLayout.ValueColumn, model.ReportNumber);
-            SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowTestMethod)!,   PhysicalWeightDocxLayout.ValueColumn, model.TestMethod ?? "");
+            // 测试方法: 前端传了才覆盖模板该格, 传空(null/空白)则保留模板预填文字
+            // (新模板 R5 已预填 "ISO 3801 method 5: 1977 /ASTM D3776/D37..." 等标准名)
+            if (!string.IsNullOrWhiteSpace(model.TestMethod))
+                SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowTestMethod)!, PhysicalWeightDocxLayout.ValueColumn, model.TestMethod);
 
             // 表0 汇总网格: 按测试类型填两列(其余列留空); 超预留行克隆
             var (col1, col2) = PhysicalWeightDocxLayout.SummaryColumnsOf(model.TestType);
+            var (fmt1, fmt2) = SummaryFormatsOf(model.TestType);   // 面积克重: g/m² 整数, oz/yd² 一位小数
             int summaryRow = PhysicalWeightDocxLayout.SummaryDataStartRow;
             foreach (var s in model.SummaryRows)
             {
@@ -51,8 +55,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 if (sr == null) break;
 
                 SetCellText(sr, PhysicalWeightDocxLayout.SummarySampleColumn, s.Point);
-                SetCellText(sr, col1, s.Value1.ToString("F4"));
-                SetCellText(sr, col2, s.Value2.ToString("F4"));
+                SetCellText(sr, col1, s.Value1.ToString(fmt1));
+                SetCellText(sr, col2, s.Value2.ToString(fmt2));
                 summaryRow++;
             }
 
@@ -76,6 +80,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 if (r == null) break;
 
                 SetCellText(r, PhysicalWeightDocxLayout.SampleColumn, row.Point);
+                // Measure 列按显示文本直填: 长×宽模式→"5×5" / 面积直填→"100.00"(cm²) /
+                // 长度→"10.00"(cm) / 条重→空。服务层已拼好展示字符串, 引擎不再做数值格式化。
+                if (!string.IsNullOrEmpty(row.Measure))
+                    SetCellText(r, PhysicalWeightDocxLayout.MeasureColumn, row.Measure);
                 for (int c = 0; c < PhysicalWeightDocxLayout.ValueCount; c++)
                     SetCellText(r, PhysicalWeightDocxLayout.ValueStartColumn + c,
                         c < row.Values.Count ? row.Values[c].ToString("F4") : "");
@@ -87,6 +95,16 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             doc.MainDocumentPart?.Document?.Save();
         }
+
+        /// <summary>
+        /// 表0 汇总两列值的显示格式: 面积克重 g/m² 整数、oz/yd² 一位小数(报告惯例);
+        /// 长度/条重等其它类型暂保持 4 位小数。
+        /// </summary>
+        private static (string V1, string V2) SummaryFormatsOf(string testType) => testType switch
+        {
+            "area" => ("F0", "F1"),
+            _ => ("F4", "F4")
+        };
 
         /// <summary>
         /// 填写页脚温湿度格子(footer2: R1 第 3 格温度 °C、第 4 格湿度 %RH)。
@@ -176,18 +194,26 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int ValueColumn = 1;             // 报告号/方法值所在列
 
             // 表1 (数据表)
-            public const int HeaderRow1 = 1;              // Sample | Specimen | Average
-            public const int HeaderRow2 = 2;              // #1 ~ #5
+            // 新模板(2026-09改版)在 Sample 和 Specimen 之间插入了 Measure 列(表头文字 "Measure"):
+            //   R1 表头: Sample | Measure | Specimen(合并5格) | Average  —— 4个真实 tc
+            //   R2 表头:   空   |   空    |    #1 ~ #5    |  空   —— 8个独立 tc
+            //   R3+ 数据行: Sample | Measure | #1 | #2 | #3 | #4 | #5 | Average  —— 8个独立 tc
+            // Measure 列内容(显示文本, 由服务层拼好): 面积长×宽模式→"长×宽"(如 5×5),
+            // 面积直填→面积 cm² 数值, 长度→试样长度 cm 数值; 条重无 Measure 留空。
+            // 注意 R1(合并行)与 R2/R3(独立格)的 tc 个数不同, 列索引分开定义。
+            public const int HeaderRow1 = 1;              // 表头行1(合并): Sample|Measure|Specimen|Average
+            public const int HeaderRow2 = 2;              // 表头行2: #1 ~ #5
             public const int DataHeaderRow = 1;           // 表头行(写单位)
-            public const int DataSpecimenCell = 1;        // Specimen 单元格
-            public const int DataAverageCell = 2;         // Average 单元格
+            public const int DataSpecimenCell = 2;        // R1 表头 Specimen 单元格(第3个tc: Sample,Measure,Specimen,Average)
+            public const int DataAverageCell = 3;         // R1 表头 Average 单元格(第4个tc)
             public const int DataStartRow = 3;            // 数据区起始行
             public const int SampleColumn = 0;            // Sample 列 (测点)
-            public const int ValueStartColumn = 1;        // 第一个值列
+            public const int MeasureColumn = 1;           // Measure 列 (数据行 tc1: 显示文本, 见上方注释; 条重留空)
+            public const int ValueStartColumn = 2;        // 第一个值列(数据行 tc2: Sample,Measure,#1...#5,Average → 从2开始)
             public const int ValueCount = 5;              // 每行 5 个值
-            public const int AverageColumn = 6;           // 平均列
-            public const int RowCellCount = 7;            // 数据行应有格数
-            public const int HeaderCellCount = 3;         // 表头行应有格数(Sample|Specimen|Average)
+            public const int AverageColumn = 7;           // 平均列(数据行 tc7, 第8个tc)
+            public const int RowCellCount = 8;            // 数据行应有格数(Sample|Measure|#1~#5|Average)
+            public const int HeaderCellCount = 4;         // 表头行1应有格数(Sample|Measure|Specimen|Average)
 
             /// <summary>表0 汇总网格双列(0-based): 面积→(1,2), 长度→(3,4), 条重→(6,7)</summary>
             public static (int, int) SummaryColumnsOf(string testType) => testType switch

@@ -39,10 +39,17 @@ public class PhysicalWeightSummaryRowModel
     public decimal Value2 { get; set; }   // 第二种单位(如 oz/yd²)
 }
 
-/// <summary>模板数据行: [Sample, #1~#5, Average]</summary>
+/// <summary>模板数据行: [Sample, Measure, #1~#5, Average]</summary>
 public class PhysicalWeightReportRowModel
 {
     public string Point { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Measure 列显示文本(引擎直填, 不做格式化):
+    /// 面积长×宽模式→"5×5"; 面积直填→"100.00"(cm²); 长度→"10.00"(cm); 条重→null 留空。
+    /// </summary>
+    public string? Measure { get; set; }
+
     public List<decimal> Values { get; set; } = new();
     public decimal? Average { get; set; }
 }
