@@ -263,12 +263,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 填页脚温湿度格子: 数值部分加下划线(保留"写在横线上"的视觉), 后缀(°C/%RH)无下划线。
-        /// 保留单元格原样式(字号/字体等不变), 空值场景不调用此方法, 模板下划线字符原样保留。
+        /// 填页脚温湿度格子(与干燥速率引擎同款格式): 数值**居中**于整条横线并加下划线(写在横线上、
+        /// 数字带下划线让横线连贯), 数值两侧仍用 _ 补足到模板原长(补齐 _ 不带下划线防双线),
+        /// 后缀(°C/%RH)无下划线跟在行尾。保留单元格原样式(字号/字体等不变), 空值场景不调用此方法。
         ///
-        /// 为什么拆成两个 run: 一个 run 只能有一个下划线属性, 而我们要"数值有下划线、单位无",
-        /// 所以数值和单位各建一个 run, 各带自己的 RunProperties(都克隆自原样式, 单位那个去掉下划线)。
-        /// 两个 run 必须各自 CloneNode 样式——若共用同一个 rp 对象插到多处, OpenXml 会报 "part of a tree"。
+        /// 为什么拆多个 run: 一个 run 只能有一个下划线属性, 而我们要"数值有下划线、补齐 _/单位无"。
+        /// 每个 run 必须各自 CloneNode 样式——若共用同一个 rp 对象插到多处, OpenXml 会报 "part of a tree"。
         /// </summary>
         private void SetFooterValue(TableCell? cell, string value, string suffix)
         {
@@ -279,6 +279,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null);
             var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
 
+            // 原格横线长(_ 个数)必须先取: 下面整格清空后就没参照了; 模板横线长 = 填后横线目标总长
+            int blankCols = cell.InnerText.Count(ch => ch == '_');
+
+            // 值居中: 两侧 _ 大致对半分(左 floor 右 ceil), 数字段自带下划线让横线连贯
+            int pad = Math.Max(0, blankCols - value.Length);
+            int lead = pad / 2, trail = pad - lead;
+
             // 保留第一个段落, 删除多余段落
             var paragraphs = cell.Elements<Paragraph>().ToList();
             for (int i = 1; i < paragraphs.Count; i++) paragraphs[i].Remove();
@@ -287,16 +294,34 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             foreach (var run in para.Elements<Run>().ToList()) run.Remove();
 
-            // 数值 run: 复制原样式 + 加下划线 (各自克隆, 避免同一 rp 插入多处报 "part of a tree")
+            // 左侧补齐 _ (无下划线: 模板横线本就是 _ 字形, 再下划线会成双线)
+            if (lead > 0)
+                para.Append(BuildPadRun(rp, lead));
+
+            // 数值 run: 复制原样式 + 加下划线 (居中位置, 数字带下划线让横线不断)
             var valRun = new Run((rp ?? new RunProperties()).CloneNode(true) as RunProperties ?? new RunProperties());
             valRun.RunProperties!.Underline = new Underline { Val = UnderlineValues.Single };
             valRun.Append(new Text(value));
             para.Append(valRun);
 
+            // 右侧补齐 _
+            if (trail > 0)
+                para.Append(BuildPadRun(rp, trail));
+
             // 后缀 run: 原样式, 无下划线
             var sfxRun = new Run((rp ?? new RunProperties()).CloneNode(true) as RunProperties ?? new RunProperties());
             sfxRun.Append(new Text(suffix));
             para.Append(sfxRun);
+        }
+
+        /// <summary>造一条 _ 补齐 run(不带下划线, 模板横线本就是 _ 字形)。</summary>
+        private static Run BuildPadRun(RunProperties? rp, int count)
+        {
+            var padRp = (rp ?? new RunProperties()).CloneNode(true) as RunProperties ?? new RunProperties();
+            padRp.Underline?.Remove();
+            var padRun = new Run(padRp);
+            padRun.Append(new Text(new string('_', count)));
+            return padRun;
         }
 
         /// <summary>
