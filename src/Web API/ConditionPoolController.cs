@@ -27,7 +27,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         {
             var result = await  _conditionPoolAppService.AddConditionPoolAsync(dto, ct);
 
-            return result;
+            return result.IsSuccess? Result.Ok() : Result.Fail(result.Error);
         }
 
         /// <summary>

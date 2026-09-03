@@ -160,6 +160,37 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Tool
             return totalRate;
         }
 
+
+        /// <summary>
+        /// 排序后的成分顺序
+        /// </summary>
+        /// <param name="composition"></param>
+        /// <param name="Sample"></param>
+        /// <returns></returns>
+        public List<string> SortedComposition(List<FiberDto> composition)
+        {
+            if (composition == null || composition.Count == 0)
+                return new List<string>();
+
+            static string Normalize(string s)
+            {
+                s = s?.Trim() ?? string.Empty;
+                if (s.Length == 0) return s;
+                return char.ToUpperInvariant(s[0]) + s.Substring(1).ToLowerInvariant();
+            }
+
+            var sorted = composition
+                .Where(f => !string.IsNullOrWhiteSpace(f?.Composition))
+                .GroupBy(f => Normalize(f.Composition!))
+                .Select(g => new { Key = g.Key, TotalRate = g.Sum(f => f.Rate) })
+                .OrderByDescending(x => x.TotalRate)
+                .ThenBy(x => x.Key, StringComparer.InvariantCulture) // 可选：总和相同时稳定排序
+                .Select(x => x.Key)
+                .ToList();
+
+            return sorted;
+        }
+
         #endregion
 
 

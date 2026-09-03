@@ -41,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> AddConditionPoolAsync(AddConditionPoolDto dto, CancellationToken ct)
+        public async Task<Result<Guid>> AddConditionPoolAsync(AddConditionPoolDto dto, CancellationToken ct)
         {
             // Implementation for adding a condition pool
             var checklistId = new CheckListId(dto.CheckListId);
@@ -49,7 +49,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
             var condition =await  _paramRequireConditionGenerateService.GenerateRequiredConditionsAsync(checklistId, ct);
            
             if (condition.IsFailure||condition.Value == null)
-                return Result.Fail(condition.Error);
+                return Result<Guid>.Fail(condition.Error);
 
             var conditionPool = ConditionPool.Create(
                 checklistId,
@@ -59,7 +59,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
 
             await _unitOfWork.SaveChangesAsync(ct);
 
-            return Result.Ok();
+            return Result<Guid>.Ok(conditionPool.Id.Value);
         }
 
         /// <summary>
@@ -68,7 +68,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> UpdateConditionPoolAsync(UpdateConditionPoolDto dto, CancellationToken ct) 
+        public async Task<Result<Guid>> UpdateConditionPoolAsync(UpdateConditionPoolDto dto, CancellationToken ct) 
         {
             var conditionPoolId = new ConditionPoolId(dto.ConditionPoolId);
 
@@ -84,7 +84,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
 
             await _unitOfWork.SaveChangesAsync(ct);
 
-            return Result.Ok();
+            return Result<Guid>.Ok(conditionPool.Id.Value);
         }
 
         /// <summary>
@@ -159,13 +159,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
 
                 // 7. 提交事务
                 await _unitOfWork.SaveChangesAsync(ct);
+
+                return Result.Ok();
             }
             catch (Exception ex)
             {
                 return Result.Fail(ex.Message);
             }
-
-            return Result.Ok();
         }
     }
 }

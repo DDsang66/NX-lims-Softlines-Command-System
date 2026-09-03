@@ -13,7 +13,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<Result> AddConditionPoolAsync(AddConditionPoolDto dto, CancellationToken ct);
+        Task<Result<Guid>> AddConditionPoolAsync(AddConditionPoolDto dto, CancellationToken ct);
 
         /// <summary>
         /// 回收前端的输入，更新条件池
@@ -21,7 +21,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<Result> UpdateConditionPoolAsync(UpdateConditionPoolDto dto, CancellationToken ct);
+        Task<Result<Guid>> UpdateConditionPoolAsync(UpdateConditionPoolDto dto, CancellationToken ct);
 
         /// <summary>
         /// 分组条件池

@@ -111,6 +111,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
             },
+            ("CF to Saliva", _, _) => new WetParameterIso 
+            {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                Ballast = MultiFiber1(p.FiberContent!),
+                SpecialCareInstruction = MultiFiber2(p.FiberContent!)
+            },
             _ => new WetParameterIso
             {
                 ContactItem = p.ItemName,
@@ -154,6 +162,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                     if (infoDto.sampleDescription!.Contains("Woven")) { condition = "Woven"; }
                     else if (infoDto.sampleDescription!.Contains("Knit"))
                     {
+                        //单位是N/cm，实际负荷需要乘以宽度，一般按5cm
                         condition = "Knit";
                         if (content <= 5)
                         { condition1 = infoDto.sampleDescription.Contains("Stripe") ? "3" : infoDto.sampleDescription.Contains("Loop") ? "6" : null; }
@@ -196,14 +205,14 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             [("Abrasion Resistance", null, null)] = "Cycle 20000 revs; Color Change @ 5000 revs",
             [("Extension and Recovery", "N/A", null)] = "N/A",
             [("Extension and Recovery", "Woven", null)] = "Load: 30N",
-            [("Extension and Recovery", "Knit", "3")] = "Load: 3N",
-            [("Extension and Recovery", "Knit", "4")] = "Load: 4N",
-            [("Extension and Recovery", "Knit", "5")] = "Load: 5N",
-            [("Extension and Recovery", "Knit", "7")] = "Load: 7N",
-            [("Extension and Recovery", "Knit", "6")] = "Load: 6N",
-            [("Extension and Recovery", "Knit", "8")] = "Load: 8N",
-            [("Extension and Recovery", "Knit", "10")] = "Load: 10N",
-            [("Extension and Recovery", "Knit", "14")] = "Load: 14N",
+            [("Extension and Recovery", "Knit", "3")] = "Load: 15N",
+            [("Extension and Recovery", "Knit", "4")] = "Load: 20N",
+            [("Extension and Recovery", "Knit", "5")] = "Load: 25N",
+            [("Extension and Recovery", "Knit", "7")] = "Load: 35N",
+            [("Extension and Recovery", "Knit", "6")] = "Load: 30N",
+            [("Extension and Recovery", "Knit", "8")] = "Load: 40N",
+            [("Extension and Recovery", "Knit", "10")] = "Load: 50N",
+            [("Extension and Recovery", "Knit", "14")] = "Load: 70N",
             [("CF to Light", null, null)] = "L-4",
             [("CF to Washing", "5 Wash", null)] = "After 5 Washes",
             [("CF to Washing", null, null)] = "After 1 Wash",
@@ -239,6 +248,51 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 else return "Line Dry";
             }
 
+        }
+
+        private string MultiFiber1(List<FiberDto> fiberDto) 
+        {
+            var content = _helper.MaxComposition(fiberDto!);
+
+            return content;
+        }
+
+        private string MultiFiber2(List<FiberDto> fiberDto)
+        {
+            var content = _helper.MaxComposition(fiberDto!);
+            var multifiber2 = string.Empty;
+            if (_helper.CompositionRate(fiberDto, content!) == 100)
+            {
+                switch (content)
+                {
+                    case "Cotton":
+                        multifiber2 = "Wool";
+                        break;
+                    case "Wool":
+                        multifiber2 = "Cotton";
+                        break;
+                    case "Silk":
+                        multifiber2 = "Cotton";
+                        break;
+                    case "Ramie":
+                        multifiber2 = "Wool";
+                        break;
+                    case "Acetate":
+                        multifiber2 = "Viscose";
+                        break;
+                    default:
+                        multifiber2 = "Wool";
+                        break;
+                }
+            }
+            else
+            {
+                var sortedFibers = _helper.SortedComposition(fiberDto!);
+
+                multifiber2 = sortedFibers[1];
+            }
+
+            return multifiber2;
         }
     }
 }

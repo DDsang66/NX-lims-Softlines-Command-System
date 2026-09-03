@@ -117,11 +117,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
 
                 // 1) 买家层优先：如果存在 buyer 且不是散客，则先执行 buyer 关联的公式对应的结构
                 var buyerFormulaIds = new HashSet<FormulaId?>();
-                if (!string.IsNullOrWhiteSpace(buyerCode) && !isIndividualTraveler && schedule.Formulas != null)
+                if (!string.IsNullOrWhiteSpace(buyerCode)
+                    && !isIndividualTraveler 
+                    && schedule.Formulas != null)
                 {
                     foreach (var f in schedule.Formulas)
                     {
                         if (f == null) continue;
+
                         if (f.BuyerIds != null && f.BuyerIds.Any(b => b != null && string.Equals(b.Value, buyerCode, StringComparison.OrdinalIgnoreCase)))
                         {
                             buyerFormulaIds.Add(f.Id);

@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<Result> AddCheckList(AddCheckListDto dto, CancellationToken ct);
+        Task<Result<Guid>> AddCheckList(AddCheckListDto dto, CancellationToken ct);
 
         /// <summary>
         /// 更新清单
@@ -20,7 +20,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        Task<Result> UpdateCheckList(UpdateCheckListDto dto, CancellationToken ct);
+        Task<Result<Guid>> UpdateCheckList(UpdateCheckListDto dto, CancellationToken ct);
 
         /// <summary>
         /// 获取清单

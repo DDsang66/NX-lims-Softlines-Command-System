@@ -8,6 +8,11 @@
         public string? SourceId { get; set; }
 
         /// <summary>
+        /// 买家id
+        /// </summary>
+        public string BuyerCode { get; set; } = string.Empty;
+
+        /// <summary>
         /// 测试清单中的测试项
         /// </summary>
         public IReadOnlyList<CheckListItemDto> Items { get; set; }= new List<CheckListItemDto>();

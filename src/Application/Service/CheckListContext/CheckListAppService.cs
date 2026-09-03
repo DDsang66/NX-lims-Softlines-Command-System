@@ -42,17 +42,22 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> AddCheckList(AddCheckListDto dto,CancellationToken ct) 
+        public async Task<Result<Guid>> AddCheckList(AddCheckListDto dto,CancellationToken ct) 
         {
-            var checkList = dto.Adapt<CheckList>();//已在Mapping调用工厂方法统一创建
+            try {
+                var checkList = dto.Adapt<CheckList>();//已在Mapping调用工厂方法统一创建
 
-            Console.WriteLine(checkList);
+                Console.WriteLine(checkList);
 
-            await _checkListRepository.AddAsync(checkList, ct);
+                await _checkListRepository.AddAsync(checkList, ct);
 
-            await  _unitOfWork.SaveChangesAsync(ct);
+                await _unitOfWork.SaveChangesAsync(ct);
 
-            return Result.Ok();
+                return Result<Guid>.Ok(checkList.Id.Value);
+            }catch(Exception ex) 
+            {
+                return Result<Guid>.Fail(ex.InnerException?.Message ?? ex.Message);
+            }
         }
 
         /// <summary>
@@ -61,17 +66,24 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
         /// <param name="dto"></param>
         /// <param name="ct"></param>
         /// <returns></returns>
-        public async Task<Result> UpdateCheckList(UpdateCheckListDto dto, CancellationToken ct)
+        public async Task<Result<Guid>> UpdateCheckList(UpdateCheckListDto dto, CancellationToken ct)
         {
-            var checkList = await _checkListRepository.GetByIdAsync(new CheckListId(dto.Id), ct);
+            try 
+            {
+                var checkList = await _checkListRepository.GetByIdAsync(new CheckListId(dto.Id), ct);
 
-            checkList.Update();
+                checkList.Update();
 
-            await _checkListRepository.UpdateAsync(checkList, ct);
+                await _checkListRepository.UpdateAsync(checkList, ct);
 
-            await _unitOfWork.SaveChangesAsync(ct);
-
-            return Result.Ok();
+                await _unitOfWork.SaveChangesAsync(ct);
+                 
+                return Result<Guid>.Ok(checkList.Id.Value);
+            }
+            catch (Exception ex)
+            {
+                return Result<Guid>.Fail(ex.InnerException?.Message ?? ex.Message);
+            }
         }
 
         /// <summary>

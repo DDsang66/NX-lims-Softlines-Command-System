@@ -220,6 +220,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Sweat"] = "CFtoSaliva&Sweat",
             ["CF to Chlorinated Water"] = "CFtoOrganic&Cl",
             ["CF to Organic Solvents"] = "CFtoOrganic&Cl",
+            ["Appearance"] = "AppearanceAfterWashing",
         };
         private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
         {
@@ -276,8 +277,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Sweat"] = (n, m, l) => ExcelLPPMapper.MapCFtoSalivaSweat(),
             ["CF to Chlorinated Water"] = (n, m, l) => ExcelLPPMapper.MapCFtoCl(),
             ["CF to Organic Solvents"] = (n, m, l) => ExcelLPPMapper.MapCFtoOrganic(),
-            ["Spirality/Skewing"] = (n, m, l) => ExcelLPPMapper.MapSpirality(l),
+            ["Spirality/Skewing"] = (n, m, l) => ExcelLPPMapper.MapSpirality(m),
             ["DS to Washing"] = (n, m, l) => ExcelLPPMapper.MapDStoWashing(m),
+            ["Appearance"] = (n, m, l) => ExcelLPPMapper.MapAppearance(),
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()
@@ -386,7 +388,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["D1"] = (wp, dto, esDto, ws, reportNo) => reportNo,
                 ["A3"] = (wp, dto, esDto, ws, reportNo) => dto.Standard!,
-                ["G3"] = (wp, dto, esDto, ws, reportNo) => "√"
+                ["C6"] = (wp, dto, esDto, ws, reportNo) => wp.Ballast!,
+                ["C9"] = (wp, dto, esDto, ws, reportNo) => wp.SpecialCareInstruction!,
             },
             ["CF to Sweat"] = (wp, dto, esDto, ws, reportNo) => new Dictionary<string, Func<WetParameterIso,CheckListDto, ExcelSubmitDto, ExcelWorksheet, string, string>>
             {
@@ -490,14 +493,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     "Knitted Fabric: method B---Loop trials  Perimeter =200mm Speed =500mm/min" :
                     "Knitted Fabric: method A---Stripe trials Guage length=100mm Speed =500mm/min.";
                     map["F7"] = (wp, dto, esDto, ws, reportNo) =>
-                    dto.sampleDescription!.Contains("3")?"3"
-                    : dto.sampleDescription!.Contains("4") ? "4"
-                    : dto.sampleDescription!.Contains("5") ? "5"
-                    : dto.sampleDescription!.Contains("6") ? "6"
-                    : dto.sampleDescription!.Contains("7") ? "7"
-                    : dto.sampleDescription!.Contains("8") ? "8"
-                    : dto.sampleDescription!.Contains("10") ? "10"
-                    :"14";
+                    dto.Parameter!.Contains("15")?"15"
+                    : dto.Parameter!.Contains("20") ? "20"
+                    : dto.Parameter!.Contains("25") ? "25"
+                    : dto.Parameter!.Contains("30") ? "30"
+                    : dto.Parameter!.Contains("35") ? "35"
+                    : dto.Parameter!.Contains("40") ? "40"
+                    : dto.Parameter!.Contains("50") ? "50"
+                    :"70";
                 }
                 map["L7"] = (wp, dto, esDto, ws, reportNo) => "5";
                 return map;
