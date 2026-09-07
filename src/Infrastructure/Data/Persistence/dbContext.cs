@@ -53,6 +53,8 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<PhysicalWeightRecord> PhysicalWeightRecords { get; set; }
 
+    public virtual DbSet<Aatcc201Config> Aatcc201Configs { get; set; }
+
     public virtual DbSet<ProcessedEvent> ProcessedEvents { get; set; }
 
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
@@ -682,6 +684,67 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Weight)
                 .HasColumnType("decimal(10, 4)")
                 .HasColumnName("weight");
+        });
+
+        modelBuilder.Entity<Aatcc201Config>(entity =>
+        {
+            entity.ToTable("aatcc201_config");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.D)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("d");
+            entity.Property(e => e.FlatPoint).HasColumnName("flat_point");
+            entity.Property(e => e.I)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("i");
+            entity.Property(e => e.MachineNo)
+                .HasMaxLength(50)
+                .HasColumnName("machine_no");
+            entity.Property(e => e.P)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("p");
+            entity.Property(e => e.SetTemp)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("set_temp");
+            entity.Property(e => e.SlopeContinueNo).HasColumnName("slope_continue_no");
+            entity.Property(e => e.SlopeContinueTemp)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("slope_continue_temp");
+            entity.Property(e => e.SlopeDgNo).HasColumnName("slope_dg_no");
+            entity.Property(e => e.SlopePoint).HasColumnName("slope_point");
+            entity.Property(e => e.TempBoard1)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board1");
+            entity.Property(e => e.TempBoard1X)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board1_x");
+            entity.Property(e => e.TempBoard2)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board2");
+            entity.Property(e => e.TempBoard2X)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board2_x");
+            entity.Property(e => e.TempHw1)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_hw1");
+            entity.Property(e => e.TempHw2)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_hw2");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(50)
+                .HasColumnName("updated_by");
+            entity.Property(e => e.Wind1)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("wind1");
+            entity.Property(e => e.Wind2)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("wind2");
         });
 
         modelBuilder.Entity<ProcessedEvent>(entity =>
