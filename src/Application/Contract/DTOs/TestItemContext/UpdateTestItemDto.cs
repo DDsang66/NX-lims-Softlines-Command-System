@@ -27,7 +27,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TestIte
         /// <summary>
         /// 测试组别
         /// </summary>
-        public int Group { get; set; }
+        public string Group { get; set; } = string.Empty;
 
         /// <summary>
         /// 是否在能力范围内
@@ -37,7 +37,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.TestIte
         /// <summary>
         /// 项目状态
         /// </summary>
-        public int Status { get; set; }
+        public string Status { get; set; } = string.Empty;
 
         /// <summary>
         /// 项目参数定义

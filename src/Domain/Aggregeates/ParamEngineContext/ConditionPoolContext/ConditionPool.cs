@@ -161,18 +161,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             foreach (var fieldName in values.Keys)
             {
                 if (!_conditions.ContainsKey(fieldName))
-                    throw new ArgumentException($"Unknown field: {fieldName}");
+                    continue; //跳过当前未定义字段
             }
 
             // 校验必填,所有条件均存在才进行下一步
             if (_conditions != null)
             {
-                foreach (var (fieldName, meta) in _conditions)
-                {
-                    if (!values.ContainsKey(fieldName) || values[fieldName] == null)
-                        throw new ArgumentException($"Required field missing: {fieldName}");
-                }
+                //foreach (var (fieldName, meta) in _conditions)
+                //{
+                //    if (!values.ContainsKey(fieldName) || values[fieldName] == null)
+                //        throw new ArgumentException($"Required field missing: {fieldName}");
+                //}
 
+                ////在此进行必要性验证会因为可以作为条件的参数缺失，导致验证失败，先注释等待后续处理
+                
                 // 覆盖值（清空后填充）
                 _conditions.Clear();
 

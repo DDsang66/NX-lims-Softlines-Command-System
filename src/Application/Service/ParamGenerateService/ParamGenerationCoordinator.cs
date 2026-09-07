@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
+﻿using Moq;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
@@ -14,6 +15,8 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Services.Compensation;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Service;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerateService
@@ -93,10 +96,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
 
             generated.TryGetValue(main.Name, out var value);
 
+            var typedValue = ConvertToTypedValueService.Convert(
+                value,
+                structure.MainParamDefinition.ValueTypeName
+                );
+
+            var typedDefault = ConvertToTypedValueService.Convert(
+                main.DefaultValue,
+                structure.MainParamDefinition.ValueTypeName
+            );
+
             if (isValid)
-                _compensation.CompensateParamWithStructure(generated, main.Name, value, main.DefaultValue);
+                _compensation.CompensateParamWithStructure(generated, main.Name, typedValue, typedDefault);
             else
-                _compensation.CompensateParamWithStructure(generated, main.Name, null, main.DefaultValue);
+                _compensation.CompensateParamWithStructure(generated, main.Name, null, typedDefault);
 
             // === 核心改变：实现你的“待做”逻辑，但不修改 pool，而是构建新的条件池 ===
             var newConditions = new Dictionary<string,object>();

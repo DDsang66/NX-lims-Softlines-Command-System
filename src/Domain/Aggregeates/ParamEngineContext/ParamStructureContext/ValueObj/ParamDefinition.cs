@@ -14,6 +14,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
 
         public string Description { get; init; } = string.Empty;
         public bool IsNullable { get; init; }
-        public object DefaultValue { get; init; } = new(); // 补偿机制用
+        public string? DefaultValue { get; init; } = string.Empty; // 补偿机制用
     }
 }

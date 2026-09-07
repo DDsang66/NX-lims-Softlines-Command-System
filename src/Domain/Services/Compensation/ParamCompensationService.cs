@@ -3,12 +3,13 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Service;
+using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services.Compensation
 {
-    public class ParamCompensationService:IParamCompensationService, IScopedDependency
+    public class ParamCompensationService : IParamCompensationService, IScopedDependency
     {
-
         /// <summary>
         /// 只做补偿（修改状态）
         /// </summary>
@@ -18,7 +19,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Compensation
         /// <param name="defaultValue">默认值</param>
         public void CompensateParamWithStructure(ParamSet generated, string name, object actualValue, object defaultValue)
         {
-            // 专注于赋值/补偿逻辑，不关心为什么补偿
+            // 如果默认值是 JsonElement，先按声明类型转成 .NET 对象
+
+            //不管有无值全都按照类型格式化后的值reset
             generated.SetValueOrFallback(name, actualValue, defaultValue);
         }
 
@@ -44,10 +47,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services.Compensation
                 if (existingValue == null)
                 {
                     // 调用你原有的赋值逻辑，如果 DefaultValue 也为 null，则根据 SetValueOrFallback 的内部逻辑处理
-                    param.SetValueOrFallback(pd.ParamName, null, pd.UniversalDefault);
+                    var typedDefault = ConvertToTypedValueService.ConvertToTypedValue(pd.UniversalDefault, pd.ParamTypeName);
+
+                    // 如果转换失败，typedDefault 为 null，SetValueOrFallback 内部可以继续处理
+                    param.SetValueOrFallback(pd.ParamName, null, typedDefault);
+
+                    //这里使用对应的类型来赋值而不是用直接用UniversalDefault
                 }
             }
         }
+
+
 
     }
 }

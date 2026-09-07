@@ -22,6 +22,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .MapWith(src => new ConditionPoolResponseDto
                 {
                     ConditionPoolId = src.Id.Value,
+                    CheckListId = src.CheckListId.Value,
                     Conditions = src.Conditions.ToDictionary()
                     ?? new Dictionary<string, object?>(),
                     CreatedAt = src.CreatedAt,

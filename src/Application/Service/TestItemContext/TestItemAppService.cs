@@ -67,7 +67,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TestItemConte
                     return def;
                 }).ToList();
 
-            testItem.Update(nameEN: dto.TestItemNameEn, nameChn: dto.TestItemNameChn,description: dto.Description, isFeasible: dto.IsFeasible,group: (TestGroup)dto.Group,status: (Status)dto.Status,paramRequireDefinitions: paramDefs);
+            // 2. 安全转换 Group（忽略大小写）
+            if (!Enum.TryParse<TestGroup>(dto.Group, ignoreCase: true, out var groupEnum))
+            {
+                return Result.Fail($"Invalid group value: '{dto.Group}'. Valid values are: {string.Join(", ", Enum.GetNames<TestGroup>())}");
+            }
+
+            // 3. 安全转换 Status（忽略大小写）
+            if (!Enum.TryParse<Status>(dto.Status, ignoreCase: true, out var statusEnum))
+            {
+                return Result.Fail($"Invalid status value: '{dto.Status}'. Valid values are: {string.Join(", ", Enum.GetNames<Status>())}");
+            }
+
+            testItem.Update(nameEN: dto.TestItemNameEn, nameChn: dto.TestItemNameChn,description: dto.Description, isFeasible: dto.IsFeasible,group: groupEnum,status: statusEnum,paramRequireDefinitions: paramDefs);
 
             await _testItemRepository.UpdateAsync(testItem, ct);
 

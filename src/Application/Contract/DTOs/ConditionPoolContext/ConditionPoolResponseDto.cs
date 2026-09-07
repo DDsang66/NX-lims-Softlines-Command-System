@@ -10,6 +10,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.Conditi
         public Guid ConditionPoolId { get; set; }
 
         /// <summary>
+        /// 工作单标识
+        /// </summary>
+        public Guid CheckListId { get; set; }
+
+        /// <summary>
         /// 条件池
         /// </summary>
         public Dictionary<string, object?> Conditions { get; set; } = new Dictionary<string, object?>();

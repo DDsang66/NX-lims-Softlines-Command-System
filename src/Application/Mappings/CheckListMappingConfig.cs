@@ -109,6 +109,33 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     src.Requirement!
                 ));
 
+            // ==== 新增：实体 -> Response DTO 的映射 ====
+            config.NewConfig<CheckList, CheckListResponseDto>()
+                .Map(dest => dest.ChecklistId, src => src.Id.Value.ToString())
+                .Map(dest => dest.Items, src => src.Items == null
+                    ? Enumerable.Empty<CheckListResponseItemDto>()
+                    : src.Items.Select(i => i.Adapt<CheckListResponseItemDto>()).ToList());
+
+            config.NewConfig<CheckListItem, CheckListResponseItemDto>()
+                .Map(dest => dest.TestItem, src => src.TestItemId == null ? string.Empty : src.TestItemId.Value)
+                .Map(dest => dest.Standards, src => src.StandardIds == null
+                    ? Enumerable.Empty<string>()
+                    : src.StandardIds.Where(s => s != null).Select(s => s!.Value).ToList())
+                .Map(dest => dest.TestGroup, src => (int)src.TestGroup)
+                .Map(dest => dest.Samples, src => src.Samples ?? new List<string>())
+                .Map(dest => dest.Parameter, src => JsonSerializer.Serialize<object>(
+                    src.TestPointParams == null     
+                    ? new Dictionary<string, object?>()      
+                    : src.TestPointParams.ToDictionary(     
+                        k => k.Key,   
+                        k => (object?)(k.Value == null ? null : k.Value.Values)),
+    new JsonSerializerOptions { WriteIndented = false }))
+                .Map(dest => dest.Requirement, src => src.Requirement ?? string.Empty)
+                .Map(dest => dest.CuttingMethod, src => string.Empty);
+
+
+
+
             config.NewConfig<ParamSet, ParamSetDto>()
                      .MapWith(src => new ParamSetDto
                      {

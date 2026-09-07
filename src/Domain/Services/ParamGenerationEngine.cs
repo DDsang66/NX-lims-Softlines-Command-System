@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Condition;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine.Conparison;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Service;
 using System.Diagnostics.CodeAnalysis;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
@@ -58,7 +59,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
                         var ruleResult = rule.GetResult();
                         var resultValue = ruleResult?.Value;
 
-                        // 写入结果
                         result.SetValueOrFallback(rule.ParamName, resultValue,null);
                         _logger.LogInformation("Rule '{RuleName}' matched and added value '{Value}' to result.", rule.ParamName, resultValue);
 

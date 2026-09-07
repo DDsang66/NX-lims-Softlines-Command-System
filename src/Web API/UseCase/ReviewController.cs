@@ -32,7 +32,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
         {
             var result = await _reviewUseCaseService.GenerateParam(dto, ct);
 
-            return result;
+            return result.IsSuccess? result : Result<CheckListResponseDto>.Fail(result.Error);
         }
     }
 }
