@@ -41,10 +41,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.FormulaContex
                 dto.StandardFamilyIds?
                 .Select(id => new StandardFamilyId(id))
                 ?? new List<StandardFamilyId?>(),
+
                 dto.ParamStructureIds?
                 .Select(id => new ParamStructureId(id)) 
                 ?? new List<ParamStructureId?>(),
-                   dto.BuyerIds?
+
+                dto.BuyerIds?
                 .Select(id => new BuyerId(id))
                 ?? new List<BuyerId?>(),
                 dto.ConditionFields,
