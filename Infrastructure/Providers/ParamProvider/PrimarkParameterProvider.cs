@@ -150,7 +150,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 Temperature = "40",
                 Program = "A2S",
-                SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10,
+                SteelBallNum = _helper.IsCompositionExist("Animal", fiberContent!) == true ? 0 : 10,
                 SpecialCareInstruction = (FetchSamplePropertyValue(sampleDesc, "Color").Contains("White") || FetchSamplePropertyValue(sampleDesc, "Color").Contains("Cream")) == true ? "N/A" : null
             },
             ("Absorbency of Textiles", "3H" or "4H", _, _) => new WetParameterIso
@@ -750,7 +750,6 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
             //抓绒只测试正面
             if(sampleDescription.Contains("Filament"))return Result = "N/A";
             var rateS = _helper.CompositionRate(fiberComposition, "Silk");
-            if (rateS > 0) return Result = "N/A";
             var rateW = _helper.CompositionRate(fiberComposition, "Wool");
             var rateQ = _helper.CompositionRate(fiberComposition, "Acrylic");
             if (rateW == 0 && rateQ == 0 && _helper.IsCompositionSourceExist("Synthetic", fiberComposition) == 0) return Result = "N/A";
