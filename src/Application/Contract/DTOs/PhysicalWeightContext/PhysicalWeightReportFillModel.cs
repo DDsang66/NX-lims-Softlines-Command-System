@@ -31,12 +31,13 @@ public class PhysicalWeightReportFillModel
     public List<PhysicalWeightReportRowModel> Rows { get; set; } = new();
 }
 
-/// <summary>表0 汇总网格行: [Sample, 双单位值]</summary>
+/// <summary>表0 汇总网格行: [Sample, 各单位值]</summary>
 public class PhysicalWeightSummaryRowModel
 {
     public string Point { get; set; } = string.Empty;
-    public decimal Value1 { get; set; }   // 第一种单位(如 g/m²)
-    public decimal Value2 { get; set; }   // 第二种单位(如 oz/yd²)
+    public decimal Value1 { get; set; }   // 第一种单位(如 g/m² / g/piece)
+    public decimal Value2 { get; set; }   // 第二种单位(如 oz/yd² / lb/dozen)
+    public decimal Value3 { get; set; }   // 第三种单位(仅条重 oz/dozen; 面积/长度不用)
 }
 
 /// <summary>模板数据行: [Sample, Measure, #1~#5, Average]</summary>

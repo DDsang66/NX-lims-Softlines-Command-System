@@ -49,7 +49,8 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             {
                 Point = string.IsNullOrEmpty(g.Key) ? (g.First().SampleId ?? "-") : g.Key,
                 Value1 = g.Average(r => Value1Of(r, dto.TestType)),
-                Value2 = g.Average(r => Value2Of(r, dto.TestType))
+                Value2 = g.Average(r => Value2Of(r, dto.TestType)),
+                Value3 = g.Average(r => Value3Of(r, dto.TestType))
             })
             .ToList();
 
@@ -143,6 +144,13 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
         TypeArea => r.Oz,
         TypeLength => r.OzPerYd,
         TypePiece => r.LbPerDozen,
+        _ => 0
+    };
+
+    /// <summary>表0 汇总第三种单位值(仅条重 oz/dozen; 其它类型无第三列不用)</summary>
+    private static decimal Value3Of(PhysicalWeightReportRecordDto r, string type) => type switch
+    {
+        TypePiece => r.OzPerDozen,
         _ => 0
     };
 

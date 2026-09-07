@@ -24,7 +24,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// <summary>
         /// 填充物理克重报告 — 流程地图:
         ///   1. 打开文件, 定位两张表并做结构校验(结构不符 → 抛异常, 不静默空白);
-        ///   2. 表0 摘要表: 填报告号/测试方法, 按测试类型填汇总网格(测点 + 两种单位均值);
+        ///   2. 表0 摘要表: 填报告号/测试方法, 按测试类型填汇总网格(测点 + 各单位均值; 条重含第三格 oz/dozen);
         ///   3. 表1 数据表: 表头写单位, 逐行填数据(超预留行 → 克隆行扩容);
         ///   4. 页脚: 填温湿度(带下划线, 模拟"写在横线上");
         ///   5. 保存。OpenXml 操作全部留在本层, 上层只管拼 PhysicalWeightReportFillModel。
@@ -40,9 +40,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             if (!string.IsNullOrWhiteSpace(model.TestMethod))
                 SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowTestMethod)!, PhysicalWeightDocxLayout.ValueColumn, model.TestMethod);
 
-            // 表0 汇总网格: 按测试类型填两列(其余列留空); 超预留行克隆
-            var (col1, col2) = PhysicalWeightDocxLayout.SummaryColumnsOf(model.TestType);
-            var (fmt1, fmt2) = SummaryFormatsOf(model.TestType);   // 面积克重: g/m² 整数, oz/yd² 一位小数
+            // 表0 汇总网格: 按测试类型填各值列(其余列留空); 超预留行克隆
+            // 条重比面积/长度多一格: g/piece | lb/dozen | oz/dozen (9 格数据行)
+            var cols = PhysicalWeightDocxLayout.SummaryColumnsOf(model.TestType);
+            var fmts = SummaryFormatsOf(model.TestType);
             int summaryRow = PhysicalWeightDocxLayout.SummaryDataStartRow;
             foreach (var s in model.SummaryRows)
             {
@@ -51,8 +52,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 if (sr == null) break;
 
                 SetCellText(sr, PhysicalWeightDocxLayout.SummarySampleColumn, s.Point);
-                SetCellText(sr, col1, s.Value1.ToString(fmt1));
-                SetCellText(sr, col2, s.Value2.ToString(fmt2));
+                var vals = new[] { s.Value1, s.Value2, s.Value3 };
+                for (int i = 0; i < cols.Length; i++)
+                    SetCellText(sr, cols[i], vals[i].ToString(fmts[i]));
                 summaryRow++;
             }
 
@@ -75,7 +77,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
                 SetCellText(r, PhysicalWeightDocxLayout.SampleColumn, row.Point);
                 // Measure 列按显示文本直填: 长×宽模式→"5×5" / 面积直填→"100.00"(cm²) /
-                // 长度→"10.00"(cm) / 条重→空。服务层已拼好展示字符串, 引擎不再做数值格式化。
+                // 长度→"10.00"(cm) / 条重→称重条数(如"12")。服务层已拼好展示字符串, 引擎不再做数值格式化。
                 if (!string.IsNullOrEmpty(row.Measure))
                     SetCellText(r, PhysicalWeightDocxLayout.MeasureColumn, row.Measure);
                 for (int c = 0; c < PhysicalWeightDocxLayout.ValueCount; c++)
@@ -91,13 +93,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 表0 汇总两列值的显示格式: 面积克重 g/m² 整数、oz/yd² 一位小数(报告惯例);
-        /// 长度/条重等其它类型暂保持 4 位小数。
+        /// 表0 汇总各列显示格式(与 SummaryColumnsOf 一一对应): 面积克重 g/m² 整数、oz/yd² 一位小数;
+        /// 条重 g/piece|lb/dozen|oz/dozen 及长度等其它类型保持 4 位小数。
         /// </summary>
-        private static (string V1, string V2) SummaryFormatsOf(string testType) => testType switch
+        private static string[] SummaryFormatsOf(string testType) => testType switch
         {
-            "area" => ("F0", "F1"),
-            _ => ("F4", "F4")
+            "area" => new[] { "F0", "F1" },
+            "piece" => new[] { "F4", "F4", "F4" },
+            _ => new[] { "F4", "F4" }
         };
 
         /// <summary>Measure 列的量纲(表头 Measure 换行后挂单位): 面积克重→cm² / 长度克重→cm / 条重→piece</summary>
@@ -190,10 +193,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 表0 (摘要表) 坐标
             public const int SummaryRowReportNumber = 0;  // R0 报告号
             public const int SummaryRowTestMethod = 5;    // R5 测试方法
-            public const int SummaryHeaderRow = 7;        // R7 表头 (8格: Sample|g/m²|oz/yd²|g/m|oz/yd|g/linear meter|g/piece|lb/dozen)
+            public const int SummaryHeaderRow = 7;        // R7 表头 (9格: Sample|g/m²|oz/yd²|g/m|oz/yd|g/linear meter|g/piece|lb/dozen|oz/dozen)
             public const int SummaryDataStartRow = 8;     // R8 汇总网格起始行
             public const int SummarySampleColumn = 0;     // Sample 列
-            public const int SummaryCellCount = 8;        // 汇总网格数据行应有格数
+            public const int SummaryCellCount = 9;        // 汇总网格数据行应有格数(新模板加了 oz/dozen 列)
             public const int ValueColumn = 1;             // 报告号/方法值所在列
 
             // 表1 (数据表)
@@ -218,12 +221,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int RowCellCount = 8;            // 数据行应有格数(Sample|Measure|#1~#5|Average)
             public const int HeaderCellCount = 4;         // 表头行1应有格数(Sample|Measure|Specimen|Average)
 
-            /// <summary>表0 汇总网格双列(0-based): 面积→(1,2), 长度→(3,4), 条重→(6,7)</summary>
-            public static (int, int) SummaryColumnsOf(string testType) => testType switch
+            /// <summary>
+            /// 表0 汇总网格值列(0-based tc, 首个数据行 R8 起, 新模板 9 格/行): 面积→(1,2) g/m²|oz/yd²,
+            /// 长度→(3,4) g/m|oz/yd, 条重→(6,7,8) g/piece|lb/dozen|oz/dozen(tc5 g/linear meter 不在范围内)。
+            /// </summary>
+            public static int[] SummaryColumnsOf(string testType) => testType switch
             {
-                "length" => (3, 4),
-                "piece" => (6, 7),
-                _ => (1, 2)
+                "length" => new[] { 3, 4 },
+                "piece" => new[] { 6, 7, 8 },
+                _ => new[] { 1, 2 }
             };
         }
 
