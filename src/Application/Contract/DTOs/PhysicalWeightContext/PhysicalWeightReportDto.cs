@@ -60,4 +60,7 @@ public class PhysicalWeightReportRecordDto
 
     /// <summary>条重 lb/dozen(前端已算)</summary>
     public decimal LbPerDozen { get; set; }
+
+    /// <summary>称重条数(条重, 前端默认 12=1打); 无尺寸文本时用作 Measure 列值</summary>
+    public decimal? PieceCount { get; set; }
 }

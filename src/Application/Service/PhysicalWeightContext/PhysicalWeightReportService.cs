@@ -73,13 +73,14 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
                 var chunk = g.Records.Skip(offset).Take(5).ToList();
 
                 // Measure 显示文本: 优先用前端尺寸文本(长×宽模式 "5×5"); 该行各条通常同尺寸, 取首个非空。
-                // 没有尺寸文本时退回数值: 面积直填→Area cm² / 长度→LengthCm cm(条重无 → 留空)。
+                // 没有尺寸文本时退回数值: 面积直填→Area cm² / 长度→LengthCm cm / 条重→称重条数(如 "12")。
                 string? measure = chunk.Select(r => r.Dimension).FirstOrDefault(d => !string.IsNullOrWhiteSpace(d));
                 if (measure == null)
                 {
                     var src = chunk.FirstOrDefault(r => DefaultMeasureValue(r, dto.TestType).HasValue);
                     var mv = src == null ? null : DefaultMeasureValue(src, dto.TestType);
-                    if (mv.HasValue) measure = mv.Value.ToString("F2");
+                    if (mv.HasValue)
+                        measure = mv.Value.ToString(dto.TestType == TypePiece ? "F0" : "F2");  // 条数整数, 面积/长度两位小数
                 }
 
                 rows.Add(new PhysicalWeightReportRowModel
@@ -145,11 +146,12 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
         _ => 0
     };
 
-    /// <summary>Measure 列退回数值源: 面积→Area cm², 长度→LengthCm cm, 条重→无(无 Dimension 文本时用)</summary>
+    /// <summary>Measure 列退回数值源: 面积→Area cm², 长度→LengthCm cm, 条重→称重条数 PieceCount(无 Dimension 文本时用)</summary>
     private static decimal? DefaultMeasureValue(PhysicalWeightReportRecordDto r, string type) => type switch
     {
         TypeArea => r.Area,
         TypeLength => r.LengthCm,
+        TypePiece => r.PieceCount,
         _ => null
     };
 

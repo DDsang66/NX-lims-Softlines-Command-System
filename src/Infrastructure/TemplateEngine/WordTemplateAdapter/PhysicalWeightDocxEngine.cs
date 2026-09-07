@@ -47,11 +47,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             foreach (var s in model.SummaryRows)
             {
                 var sr = Row(t0, summaryRow);
-                if (sr == null)
-                {
-                    AddRowToTable(t0);
-                    sr = Row(t0, summaryRow);
-                }
+                if (sr == null) sr = WordEditEngine.AppendClonedRow(t0);   // 超预留行 → 克隆末行追加(样式+清空)
                 if (sr == null) break;
 
                 SetCellText(sr, PhysicalWeightDocxLayout.SummarySampleColumn, s.Point);
@@ -60,11 +56,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 summaryRow++;
             }
 
-            // 表1 表头: Specimen 单位同行; Average 单位在单元格内换行到下一行
+            // 表1 表头: Specimen 单位同行; Measure / Average 单位仿同行下换行挂单位
             var headerRow = Row(t1, PhysicalWeightDocxLayout.DataHeaderRow);
             if (headerRow != null)
             {
                 SetCellText(headerRow, PhysicalWeightDocxLayout.DataSpecimenCell, $"Specimen ({model.DataUnit})");
+                // Measure 表头按测试类型挂量纲: 面积→cm² / 长度→cm / 条重→piece (数据格仍只写文本, 不带单位)
+                SetCellText(headerRow, PhysicalWeightDocxLayout.MeasureColumn, $"Measure\n({MeasureUnitOf(model.TestType)})");
                 SetCellText(headerRow, PhysicalWeightDocxLayout.DataAverageCell,  $"Average\n({model.DataUnit})");
             }
 
@@ -72,11 +70,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             foreach (var row in model.Rows)
             {
                 var r = Row(t1, dataRow);
-                if (r == null)                          // 超过模板预留行 → 克隆最后一数据行
-                {
-                    AddRowToTable(t1);
-                    r = Row(t1, dataRow);
-                }
+                if (r == null) r = WordEditEngine.AppendClonedRow(t1);   // 超过模板预留行 → 克隆末行追加
                 if (r == null) break;
 
                 SetCellText(r, PhysicalWeightDocxLayout.SampleColumn, row.Point);
@@ -104,6 +98,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         {
             "area" => ("F0", "F1"),
             _ => ("F4", "F4")
+        };
+
+        /// <summary>Measure 列的量纲(表头 Measure 换行后挂单位): 面积克重→cm² / 长度克重→cm / 条重→piece</summary>
+        private static string MeasureUnitOf(string testType) => testType switch
+        {
+            "area" => "cm²",
+            "length" => "cm",
+            "piece" => "piece",
+            _ => ""
         };
 
         /// <summary>
@@ -199,7 +202,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             //   R2 表头:   空   |   空    |    #1 ~ #5    |  空   —— 8个独立 tc
             //   R3+ 数据行: Sample | Measure | #1 | #2 | #3 | #4 | #5 | Average  —— 8个独立 tc
             // Measure 列内容(显示文本, 由服务层拼好): 面积长×宽模式→"长×宽"(如 5×5),
-            // 面积直填→面积 cm² 数值, 长度→试样长度 cm 数值; 条重无 Measure 留空。
+            // 面积直填→面积 cm² 数值, 长度→试样长度 cm 数值, 条重→称重条数(如 12)。
             // 注意 R1(合并行)与 R2/R3(独立格)的 tc 个数不同, 列索引分开定义。
             public const int HeaderRow1 = 1;              // 表头行1(合并): Sample|Measure|Specimen|Average
             public const int HeaderRow2 = 2;              // 表头行2: #1 ~ #5
@@ -324,53 +327,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             return padRun;
         }
 
-        /// <summary>
-        /// 对特定表格插入新行 — 数据超过模板预留行数时扩容。
-        ///
-        /// 做法: 克隆"最后一行"(连同样式: 边框/底纹/字体/合并格)追加到表尾, 再清空内容。
-        /// 为什么用克隆而不是新建空白行: 新行会丢失模板的边框和字号, 报告里出现"没框的行"很难看;
-        /// 克隆保留了完整样式, 只需把文本清掉即可当数据行复用。
-        /// 注意: 克隆源是 LastOrDefault(), 若模板最后一行的结构和标准数据行不同(如带合计行),
-        /// 克隆出来的行样式会不标准——模板设计时应保证"最后一个预留数据行"落在末行, 或此处改为克隆指定行。
-        /// </summary>
-        private void AddRowToTable(Table table)
-        {
-            if (table == null) return;
-
-            var lastRow = table.Elements<TableRow>().LastOrDefault();
-            if (lastRow == null) return;
-
-            var newRow = (TableRow)lastRow.CloneNode(true);
-
-            table.Append(newRow);
-
-            foreach (var cell in newRow.Elements<TableCell>())
-            {
-                ClearCellContent(cell);
-            }
-        }
-
-        /// <summary>
-        /// 清空单元格内容（保留段落结构）
-        /// </summary>
-        private void ClearCellContent(TableCell cell)
-        {
-            var paragraphs = cell.Elements<Paragraph>().ToList();
-
-            foreach (var para in paragraphs)
-            {
-                var runs = para.Elements<Run>().ToList();
-                foreach (var run in runs)
-                {
-                    run.Remove();
-                }
-
-                if (!para.HasChildren)
-                {
-                    para.Append(new Run(new Text("")));
-                }
-            }
-        }
+        // 行扩容(克隆末行追加+清空)逻辑已抽到 WordEditEngine.AppendClonedRow
 
         /// <summary>
         /// 定位表格（支持书签、内容匹配、索引等多种策略）。

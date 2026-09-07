@@ -46,7 +46,7 @@ public class PhysicalWeightReportRowModel
 
     /// <summary>
     /// Measure 列显示文本(引擎直填, 不做格式化):
-    /// 面积长×宽模式→"5×5"; 面积直填→"100.00"(cm²); 长度→"10.00"(cm); 条重→null 留空。
+    /// 面积长×宽模式→"5×5"; 面积直填→"100.00"(cm²); 长度→"10.00"(cm); 条重→称重条数 "12"。
     /// </summary>
     public string? Measure { get; set; }
 
