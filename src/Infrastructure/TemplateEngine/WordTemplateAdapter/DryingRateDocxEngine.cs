@@ -51,7 +51,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             if (participated.Count > 0)
             {
                 double avgRateGPerHour = participated.Average(s => s.RateGPerHour);
-                SetCellText(Row(summary, Gb21655Layout.SummaryRowRate)!, Gb21655Layout.ValueColumn, avgRateGPerHour.ToString("F3"));
+                var rateRow = Row(summary, Gb21655Layout.SummaryRowRate)!;
+                var rateCell = rateRow.Elements<TableCell>().ElementAtOrDefault(Gb21655Layout.ValueColumn);
+                // 模板值格原内容 = 单位 token"(g/h)"(摘要行 [干燥速率：, (g/h)])——SetCellText 整格重建
+                // 会把它冲掉, 故先取回再拼在数值后。
+                string unit = rateCell?.InnerText.Trim() ?? "";
+                string value = avgRateGPerHour.ToString("F3");
+                SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value);
             }
 
             // 结果表(测点表之后): 每 3 样品一组; 整组无参与工位 → 不产生空表
@@ -268,7 +274,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var drawing = CreateChartDrawing(relId, $"Gb21655Chart{index}", index,
                 Gb21655Layout.ChartWidthEmu, Gb21655Layout.ChartHeightEmu);
 
-            body.Append(new Paragraph(new Run(new RunProperties(new NoProof()), drawing)));
+            var para = new Paragraph(new Run(new RunProperties(new NoProof()), drawing));
+            // body 级 sectPr 必须是 w:body 最后一个孩子(schema 规定); 直接 Append 会把曲线段排到 sectPr 之后
+            // → 文档违例。曲线图本就该在文末 → 插到最后一个 body 级 sectPr 之前(无 sectPr 才 Append 兜底)。
+            var lastSectPr = body.Elements<SectionProperties>().LastOrDefault();
+            if (lastSectPr != null)
+                lastSectPr.InsertBeforeSelf(para);
+            else
+                body.Append(para);
         }
 
         private static Drawing CreateChartDrawing(string relationshipId, string imageName, int id, long widthEmu, long heightEmu)

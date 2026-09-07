@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using A = DocumentFormat.OpenXml.Drawing;
@@ -13,7 +14,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     /// AATCC 201 干燥速率 docx 填充引擎 — 按坐标填格 PHY_AATCC201_DryingRate.docx。
     /// 模板结构（用户提供, 勿改）:
     ///   表0 摘要: R0 Test Report Number | 值; R11 空(col0) | Average drying rate (mL/h):(col1-2) 后追加值
-    ///   表1/2/3 结果表: R0 表头(Sample/Start/End/Rate/Average, vMerge), R2=#1, R3=#2, R4=#3
+    ///   表1/2/3 结果表: R0 表头(Sample/Start/End/Rate/Average, vMerge), R1=#1, R2=#2, R3=#3
     /// 速率单位 mL/h = 存储 mg/h ÷ 1000（决策7: 存 mg/h 报告 g/h; 原软件查询列即标 mL/h）。
     /// 无"曲线图"占位段 → 曲线 PNG 追加到文档末尾（用户: aatcc曲线图放在表最后）。
     /// 页脚(footer1, TÜV 签名行): R1 末两格 ____°C / ____%RH = 环境温度/湿度(同克重 PHY_Weight)
@@ -24,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 填充 AATCC 201 干燥速率报告 — 流程地图:
         ///   1. 打开文件, 定位摘要表 + 第一张结果表并做结构校验(结构不符 → 抛异常, 不静默空白);
         ///   2. 表0 摘要: R0 报告号(col1); R11 平均干燥速率(mL/h, 两工位均值, 追加在标签后);
-        ///   3. 表1 结果: 按顺序填 #1/#2 (Start/End/Rate/运行平均); 未参与工位整行留空;
+        ///   3. 表1 结果: R0 Sample 表头格第二行写样品名; 按顺序填 #1/#2 (Start/End/Rate/运行平均); 未参与工位整行留空;
         ///   4. 曲线 PNG → 追加到文档末尾;
         ///   5. 页脚 footer1 末两格: 环境温度(°C)/环境湿度(%RH), 照克重页脚处理;
         ///   6. 保存。OpenXml 操作全部留在本层, 上层只管拼 Aatcc201ReportFillModel。
@@ -37,7 +38,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 表0 摘要: R0 报告号(col1); R11 平均干燥速率(col0, 标签占 col1-2)
             SetCellText(Row(summary, Aatcc201Layout.SummaryRowReportNumber)!, Aatcc201Layout.ValueColumn, model.ReportNumber);
 
-            // 表1(第一张结果表): #1→R2, #2→R3, #3 及表2/表3 留空不动; 未参与工位整行留空
+            // 表1 Sample 表头格(col0): 原 "Sample" 行保留, 同格第二行写样品名称
+            AppendSampleNameUnderHeader(result, model.SampleName);
+
+            // 表1(第一张结果表): #1→R1, #2→R2, #3 及表2/表3 留空不动; 未参与工位整行留空
             int runningCount = 0;
             double runningRate = 0;   // 运行平均(mL/h = mg/h ÷ 1000), 只统计参与工位
             FillStationRow(result, Aatcc201Layout.RowSample1, model.Stations.ElementAtOrDefault(0), ref runningCount, ref runningRate);
@@ -59,6 +63,32 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             FillFooter(doc, model);
 
             doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 结果表 R0 col0 的 "Sample" 表头格内第二行写样品名称——原 "Sample" 行保留, 同格堆两行
+        /// 空白样品名不写(不产生空行)。段落样式(对齐/缩进)克隆首段, run 样式克隆格内已有 run。
+        /// </summary>
+        private static void AppendSampleNameUnderHeader(Table result, string? sampleName)
+        {
+            if (string.IsNullOrWhiteSpace(sampleName)) return;
+
+            var header = Row(result, Aatcc201Layout.HeaderRow);
+            var cell = header?.Elements<TableCell>().ElementAtOrDefault(0);
+            if (cell == null) return;
+
+            // 样式源: 段落属性取首段, run 属性取格内带格式的 run(兜底任意 run); 都先克隆再挂, 原节点不动
+            var srcPara = cell.Elements<Paragraph>().FirstOrDefault();
+            var pPr = srcPara?.ParagraphProperties?.CloneNode(true) as ParagraphProperties;
+            var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null)
+                         ?? cell.Descendants<Run>().FirstOrDefault();
+            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
+
+            var para = new Paragraph();
+            if (pPr != null) para.Append(pPr);
+            para.Append(new Run(rp ?? new RunProperties(),
+                new Text(sampleName.Trim()) { Space = SpaceProcessingModeValues.Preserve }));
+            cell.Append(para);
         }
 
         /// <summary>
@@ -207,7 +237,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             if (header!.Elements<TableCell>().Count() < Aatcc201Layout.ResultColumnCount)
                 throw new InvalidOperationException("Aatcc201 模板结果表头格数不足(应含 Sample/Start/End/Rate/Average)");
             if (Row(result, Aatcc201Layout.RowSample2) == null)
-                throw new InvalidOperationException("Aatcc201 模板结果表行数不足(缺到 R3)");
+                throw new InvalidOperationException("Aatcc201 模板结果表行数不足(缺 #2(R2) 数据行)");
 
             return (summary, result);
         }
@@ -230,7 +260,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var drawing = CreateChartDrawing(relId, "Aatcc201Chart",
                 Aatcc201Layout.ChartWidthEmu, Aatcc201Layout.ChartHeightEmu);
 
-            body.Append(new Paragraph(new Run(new RunProperties(new NoProof()), drawing)));
+            var para = new Paragraph(new Run(new RunProperties(new NoProof()), drawing));
+            // body 级 sectPr 必须是 w:body 最后一个孩子(schema 规定); 直接 Append 会把曲线段排到 sectPr 之后
+            // → 文档违例。曲线图本就该在文末 → 插到最后一个 body 级 sectPr 之前(无 sectPr 才 Append 兜底)。
+            var lastSectPr = body.Elements<SectionProperties>().LastOrDefault();
+            if (lastSectPr != null)
+                lastSectPr.InsertBeforeSelf(para);
+            else
+                body.Append(para);
         }
 
         private static Drawing CreateChartDrawing(string relationshipId, string imageName, long widthEmu, long heightEmu)
@@ -287,10 +324,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int SummaryRowAverage = 11;      // R11 平均干燥速率: [空(col0)|Average drying rate (mL/h):(span2) 后追加值]
             public const int AverageLabelColumn = 1;      // R11 标签格在第 1 列, 值追加在标签文本之后(不能填 col0 → 跑到标签前)
 
-            // 表1 (第一张结果表): R0 表头(vMerge), R2=#1, R3=#2, R4=#3(留空)
+            // 表1 (第一张结果表): R0 表头, R1=#1, R2=#2, R3=#3(留空) —— 模板无空白占位行
             public const int HeaderRow = 0;
-            public const int RowSample1 = 2;   // #1
-            public const int RowSample2 = 3;   // #2
+            public const int RowSample1 = 1;   // #1
+            public const int RowSample2 = 2;   // #2
             public const int ColumnStartTime = 1;  // Start time (s)
             public const int ColumnEndTime = 2;    // End time (s)
             public const int ColumnRate = 3;       // Drying rate (mL/h)
