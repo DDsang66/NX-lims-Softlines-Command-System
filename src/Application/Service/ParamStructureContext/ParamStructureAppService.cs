@@ -1,6 +1,7 @@
 ﻿using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface.ParamStructureContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
@@ -8,6 +9,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngin
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructureContext
@@ -64,7 +66,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
 
             var schema = dto.ParamSchema.Adapt<ParamSchema>();
 
-            paramStructure.Update(dto.ParamName, schema);
+            paramStructure.Update(
+                dto.ParamName,
+                dto.IsEligibleAsCondition,
+                (EngineLayer)Enum.Parse(typeof(EngineLayer), 
+                dto.EngineLayer),
+                dto.BuyerIds.Select(id => (BuyerId?)new BuyerId(id)),
+                schema);
 
             await  _paramStructureRepository.UpdateAsync(paramStructure, ct);
 

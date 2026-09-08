@@ -2,6 +2,7 @@
 using Mapster;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
+using NX_lims_Softlines_Command_System.src.Application.Service.FieldHandlerResolverContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
@@ -22,17 +23,20 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         private readonly IConditionPoolRepository _conditionPoolRepository;
         private readonly IConditionPoolDomainService _conditionPoolDomainService;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly FieldHandlerResolver _fieldHandlerResolver;
 
         public ConditionPoolAppService(
             IUnitOfWork unitOfWork, 
             IParamRequireConditionGenerateService paramRequireConditionGenerateService,
             IConditionPoolDomainService conditionPoolDomainService,
-            IConditionPoolRepository conditionPoolRepository)
+            IConditionPoolRepository conditionPoolRepository,
+            FieldHandlerResolver fieldHandlerResolver)
         {
             _unitOfWork = unitOfWork;
             _conditionPoolRepository = conditionPoolRepository;
             _conditionPoolDomainService = conditionPoolDomainService;
             _paramRequireConditionGenerateService = paramRequireConditionGenerateService;
+            _fieldHandlerResolver = fieldHandlerResolver;
         }
 
         /// <summary>
@@ -131,9 +135,28 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
 
             // 3. DTO 转换
             var groupData = dto.Select(d => (
-                d.Conditions ?? new Dictionary<string, object?>(),
+                Conditions: d.Conditions ?? new Dictionary<string, object?>(),
                 d.TestPoints
             )).ToList();
+
+            //groupData中的conditions字段和OriginalPool中的conditions字段比较，记录缺失字段
+            var missingConditions = originalPool.Conditions.Keys.Except(groupData.SelectMany(x => x.Conditions.Keys)).ToList();
+            //缺失字段即为反射的标签通过resolve获取各个字段的值，重新添加进入到groupData中，保证groupData中的conditions字段和OriginalPool中的conditions字段一致
+            foreach (var missingCondition in missingConditions)
+            {
+                foreach (var group in groupData)
+                {
+                    if (!group.Conditions.ContainsKey(missingCondition))
+                    {
+                        var resolvedValue =
+                            _fieldHandlerResolver.Resolve(missingCondition,group.Conditions);
+
+                        if (resolvedValue.IsFailure) continue;
+
+                        group.Conditions[missingCondition] = resolvedValue.Value;
+                    }
+                }
+            }
 
             try
             {

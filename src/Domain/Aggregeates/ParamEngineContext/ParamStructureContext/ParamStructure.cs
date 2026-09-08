@@ -217,7 +217,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// <summary>
         /// 更新除外键以外的字段
         /// </summary>
-        public void Update(string paramName, ParamSchema schema)
+        public void Update(
+            string paramName, 
+            bool isEligibleAsCondition,
+            EngineLayer engineLayer,
+            IEnumerable<BuyerId?> buyerIds,
+            ParamSchema schema)
         {
             if (string.IsNullOrWhiteSpace(paramName))
                 throw new ArgumentException("paramName required", nameof(paramName));
@@ -226,8 +231,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 throw new ArgumentNullException(nameof(schema));
 
             ParamName = paramName.Trim();
+            IsEligibleAsCondition = isEligibleAsCondition;
+            EngineLayer = engineLayer;
             Schema = schema;
             EffectiveDate = DateTime.UtcNow;
+
+            if (buyerIds != null)
+            {
+                foreach (var buyerId in buyerIds.Where(f => f != null))
+                {
+                    _buyerIds.Add(buyerId);
+                }
+            }
 
             //领域事件，通知对应formula参数结构更新
             AddDomainEvent(new ParamStructureUpdatedEvent(Id, ParamName, Schema));

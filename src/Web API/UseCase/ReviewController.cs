@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ConditionPoolContext;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.StandardCompositionContext;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.UseCase;
+using NX_lims_Softlines_Command_System.src.Application.Service.StandardCompositionContext;
 using NX_lims_Softlines_Command_System.src.Application.UseCase;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
@@ -13,10 +15,14 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
     public class ReviewController : ControllerBase
     {
         private readonly ReviewUseCaseService _reviewUseCaseService;
+        private readonly CompositionQueryService _compositionQueryService;
 
-        public ReviewController(ReviewUseCaseService reviewUseCaseService) 
+        public ReviewController(
+            ReviewUseCaseService reviewUseCaseService, 
+            CompositionQueryService compositionQueryService) 
         {
             _reviewUseCaseService = reviewUseCaseService;
+            _compositionQueryService = compositionQueryService;
         }
 
         [HttpPost("generate-checklist")]
@@ -33,6 +39,14 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
             var result = await _reviewUseCaseService.GenerateParam(dto, ct);
 
             return result.IsSuccess? result : Result<CheckListResponseDto>.Fail(result.Error);
+        }
+
+        [HttpGet("render-composition")]
+        public async Task<Result<List<CompositionResponseDto>>> RenderComposition(CancellationToken ct)
+        {
+            var result = await _compositionQueryService.GetFiberCompositionsAsync();
+
+            return Result<List<CompositionResponseDto>>.Ok(result);
         }
     }
 }

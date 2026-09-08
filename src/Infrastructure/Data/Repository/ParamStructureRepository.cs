@@ -1,4 +1,5 @@
-﻿using Mapster;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
@@ -291,6 +292,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             // 3. 同步规则关联(同型 bug,一并修)
             await SyncRulesAsync(paramStructurePo.ParamStructureId, paramStructure.ApplicableRuleIds, ct);
+
+            // 4. 同步关联表数据 (Buyers)
+            if (paramStructure.BuyerIds != null && paramStructure.BuyerIds.Any())
+            {
+                await SyncBuyersAsync(paramStructurePo.ParamStructureId, paramStructure.BuyerIds!, ct);
+            }
         }
 
         /// <summary>
@@ -316,12 +323,20 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             existingPo.Schema = JsonSerializer.Serialize(paramStructure.Schema, new JsonSerializerOptions { WriteIndented = false });
             existingPo.Status = (byte)paramStructure.Status;
             existingPo.EffectiveDate = paramStructure.EffectiveDate;
+            existingPo.EngineLayer = (byte)paramStructure.EngineLayer;
+            existingPo.IsEligibleAsCondition = paramStructure.IsEligibleAsCondition;
 
             // 3. 同步关联表数据 (StandardFamilies)
             await SyncStandardFamiliesAsync(id, paramStructure.StandardFamilyIds, ct);
 
             // 4. 同步关联表数据 (Rules)
             await SyncRulesAsync(id, paramStructure.ApplicableRuleIds, ct);
+
+            // 5. 同步关联表数据 (Buyers)
+            if (paramStructure.BuyerIds != null&& paramStructure.BuyerIds.Any())
+            {
+                await SyncBuyersAsync(id, paramStructure.BuyerIds!, ct);
+            }
 
         }
 
@@ -587,6 +602,36 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     ParamStructureId = paramStructureId,
                     IdStandardFamily = newId
                 }, ct);
+            }
+        }
+
+        /// <summary>
+        /// 同步参数结构与买家的关联关系
+        /// </summary>
+        /// <param name="paramStructureId"></param>
+        /// <param name="latestBuyerIds"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        private async Task SyncBuyersAsync(string paramStructureId, IEnumerable<BuyerId> latestBuyerIds, CancellationToken ct) 
+        {
+            var existingRelations = await _dbContext.ParamsturctureBuyers
+                .Where(af => af.ParamStructureId == paramStructureId)
+                .ToListAsync(ct);
+
+            var latestIdValues = latestBuyerIds.Select(id => id.Value).ToList();
+
+            // 删除不再需要的关联
+            var toRemove = existingRelations.Where(er => !latestIdValues.Contains(er.BuyerId)).ToList();
+            _dbContext.ParamsturctureBuyers.RemoveRange(toRemove);
+
+            var existingIdValues = existingRelations.Select(er => er.BuyerId).ToList();
+            foreach (var newId in latestIdValues.Except(existingIdValues))
+            {
+                await _dbContext.ParamsturctureBuyers.AddAsync(new ParamsturctureBuyer 
+                {
+                    ParamStructureId = paramStructureId,
+                    BuyerId = newId
+                },ct);
             }
         }
 
