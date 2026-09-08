@@ -36,7 +36,7 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             return Result<DocxUrlResponseDto>.Fail("不支持的测试类型: " + dto.TestType);
 
         string fileName = $"{dto.ReportNumber}_{DateTime.Now:yyMMddHHmmss}_PHY_Weight.docx";
-        // 模板已移入 Common_PHY/ (与干燥速率等共用目录); 新模板表1 带 Measure 列
+        // 模板已移入 Common_PHY/ (与干燥速率等共用目录)
         string targetPath = _fileStorage.CopyTemplate(
             Path.Combine("DocxModel", "Common_PHY", "PHY_Weight.docx"),
             Path.Combine("DocxModel", "SaveDocx"),
@@ -65,34 +65,33 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             .ToList();
 
         // 同测点每 5 条一行: 超过 5 条拆到下一行 (新行仍标同一测点)。
-        // Measure 列显示文本见下方循环(尺寸文本优先, 无则退回面积/长度数值)。
         var rows = new List<PhysicalWeightReportRowModel>();
         foreach (var g in groups)
         {
             for (int offset = 0; offset < g.Records.Count; offset += 5)
             {
                 var chunk = g.Records.Skip(offset).Take(5).ToList();
-
-                // Measure 显示文本: 优先用前端尺寸文本(长×宽模式 "5×5"); 该行各条通常同尺寸, 取首个非空。
-                // 没有尺寸文本时退回数值: 面积直填→Area cm² / 长度→LengthCm cm / 条重→称重条数(如 "12")。
-                string? measure = chunk.Select(r => r.Dimension).FirstOrDefault(d => !string.IsNullOrWhiteSpace(d));
-                if (measure == null)
-                {
-                    var src = chunk.FirstOrDefault(r => DefaultMeasureValue(r, dto.TestType).HasValue);
-                    var mv = src == null ? null : DefaultMeasureValue(src, dto.TestType);
-                    if (mv.HasValue)
-                        measure = mv.Value.ToString(dto.TestType == TypePiece ? "F0" : "F2");  // 条数整数, 面积/长度两位小数
-                }
-
                 rows.Add(new PhysicalWeightReportRowModel
                 {
                     Point = g.Point,
-                    Measure = measure,
                     Values = chunk.Select(r => ToDataValue(r, dto.TestType)).ToList(),
                     Average = chunk.Count > 0 ? chunk.Average(r => ToDataValue(r, dto.TestType)) : null
                 });
             }
         }
+
+        // 表2 文档末登记: 每次测量一行(与前端导出 Excel 原始数据表前 5 列一致):
+        //   次数 | 试样编号(报告号) | 试样测点 | 重量(g) | 尺寸(面积/长度/条数)。按 dto.Records 原序即前端行序。
+        //   area 长×宽录入 → 第5列直写尺寸文本 "5×5"(MeasureText), 不再显示换算面积 cm²。
+        var trailerRows = dto.Records.Select((r, i) => new PhysicalWeightTrailerRowModel
+        {
+            No = i + 1,
+            ReportNumber = string.IsNullOrWhiteSpace(r.SampleId) ? dto.ReportNumber : r.SampleId,
+            Sample = r.Point?.Trim() ?? "",
+            Weight = r.Weight,
+            Measure = TrailerMeasureOf(r, dto.TestType),
+            MeasureText = dto.TestType == TypeArea && !string.IsNullOrWhiteSpace(r.Dimension) ? r.Dimension : null
+        }).ToList();
 
         var model = new PhysicalWeightReportFillModel
         {
@@ -103,7 +102,8 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             EnvironmentTemperature = dto.EnvironmentTemperature,
             EnvironmentHumidity = dto.EnvironmentHumidity,
             SummaryRows = summaryRows,
-            Rows = rows
+            Rows = rows,
+            TrailerRows = trailerRows
         };
 
         try
@@ -154,8 +154,8 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
         _ => 0
     };
 
-    /// <summary>Measure 列退回数值源: 面积→Area cm², 长度→LengthCm cm, 条重→称重条数 PieceCount(无 Dimension 文本时用)</summary>
-    private static decimal? DefaultMeasureValue(PhysicalWeightReportRecordDto r, string type) => type switch
+    /// <summary>表2 第5列尺寸值: 面积→面积cm², 长度→长度cm, 条重→称重条数(与导出原始数据表第5列一致)</summary>
+    private static decimal? TrailerMeasureOf(PhysicalWeightReportRecordDto r, string type) => type switch
     {
         TypeArea => r.Area,
         TypeLength => r.LengthCm,

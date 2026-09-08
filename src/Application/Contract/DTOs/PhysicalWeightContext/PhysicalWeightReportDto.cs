@@ -40,13 +40,13 @@ public class PhysicalWeightReportRecordDto
     /// <summary>重量 g(可选)</summary>
     public decimal? Weight { get; set; }
 
-    /// <summary>面积 cm²(可选, area 类型的 Measure 列 / gsm 换算)</summary>
+    /// <summary>面积 cm²(可选, area 类型的录入尺寸, 溯源保留)</summary>
     public decimal? Area { get; set; }
 
-    /// <summary>长×宽模式的前端尺寸文本, 如 "5×5"(可选, area 类型 Measure 列直填此文本)</summary>
+    /// <summary>长×宽模式的前端尺寸文本, 如 "5×5"(可选, area 类型录入尺寸, 溯源保留)</summary>
     public string? Dimension { get; set; }
 
-    /// <summary>试样长度 cm(可选, length 类型的 Measure 列 / g/m 换算)</summary>
+    /// <summary>试样长度 cm(可选, length 类型的录入尺寸, 溯源保留)</summary>
     public decimal? LengthCm { get; set; }
 
     /// <summary>长度克重 g/m(前端已算)</summary>
@@ -64,6 +64,6 @@ public class PhysicalWeightReportRecordDto
     /// <summary>条重 oz/dozen(前端已算, 表0 汇总第三格用)</summary>
     public decimal OzPerDozen { get; set; }
 
-    /// <summary>称重条数(条重, 前端默认 12=1打); 无尺寸文本时用作 Measure 列值</summary>
+    /// <summary>称重条数(条重, 前端默认 12=1打; lb/dozen·oz/dozen 换算的 dozen 基准, 溯源保留)</summary>
     public decimal? PieceCount { get; set; }
 }

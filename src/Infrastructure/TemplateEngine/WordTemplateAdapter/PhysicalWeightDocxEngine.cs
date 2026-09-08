@@ -23,11 +23,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     {
         /// <summary>
         /// 填充物理克重报告 — 流程地图:
-        ///   1. 打开文件, 定位两张表并做结构校验(结构不符 → 抛异常, 不静默空白);
+        ///   1. 打开文件, 定位三张表并做结构校验(结构不符 → 抛异常, 不静默空白);
         ///   2. 表0 摘要表: 填报告号/测试方法, 按测试类型填汇总网格(测点 + 各单位均值; 条重含第三格 oz/dozen);
         ///   3. 表1 数据表: 表头写单位, 逐行填数据(超预留行 → 克隆行扩容);
-        ///   4. 页脚: 填温湿度(带下划线, 模拟"写在横线上");
-        ///   5. 保存。OpenXml 操作全部留在本层, 上层只管拼 PhysicalWeightReportFillModel。
+        ///   4. 表2 文档末登记表: 补第5列类型尺寸表头, 每次测量一行填原始数据前 5 列(超预留行 → 克隆行扩容);
+        ///   5. 页脚: 填温湿度(带下划线, 模拟"写在横线上");
+        ///   6. 保存。OpenXml 操作全部留在本层, 上层只管拼 PhysicalWeightReportFillModel。
         /// </summary>
         public void FillReport(string filePath, PhysicalWeightReportFillModel model)
         {
@@ -58,13 +59,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 summaryRow++;
             }
 
-            // 表1 表头: Specimen 单位同行; Measure / Average 单位仿同行下换行挂单位
+            // 表1 表头: Specimen 单位同行; Average 单位在单元格内换行到下一行(无 Measure 列的 7 格版)
             var headerRow = Row(t1, PhysicalWeightDocxLayout.DataHeaderRow);
             if (headerRow != null)
             {
                 SetCellText(headerRow, PhysicalWeightDocxLayout.DataSpecimenCell, $"Specimen ({model.DataUnit})");
-                // Measure 表头按测试类型挂量纲: 面积→cm² / 长度→cm / 条重→piece (数据格仍只写文本, 不带单位)
-                SetCellText(headerRow, PhysicalWeightDocxLayout.MeasureColumn, $"Measure\n({MeasureUnitOf(model.TestType)})");
                 SetCellText(headerRow, PhysicalWeightDocxLayout.DataAverageCell,  $"Average\n({model.DataUnit})");
             }
 
@@ -76,16 +75,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 if (r == null) break;
 
                 SetCellText(r, PhysicalWeightDocxLayout.SampleColumn, row.Point);
-                // Measure 列按显示文本直填: 长×宽模式→"5×5" / 面积直填→"100.00"(cm²) /
-                // 长度→"10.00"(cm) / 条重→称重条数(如"12")。服务层已拼好展示字符串, 引擎不再做数值格式化。
-                if (!string.IsNullOrEmpty(row.Measure))
-                    SetCellText(r, PhysicalWeightDocxLayout.MeasureColumn, row.Measure);
                 for (int c = 0; c < PhysicalWeightDocxLayout.ValueCount; c++)
                     SetCellText(r, PhysicalWeightDocxLayout.ValueStartColumn + c,
                         c < row.Values.Count ? row.Values[c].ToString("F4") : "");
                 SetCellText(r, PhysicalWeightDocxLayout.AverageColumn, row.Average?.ToString("F4") ?? "");
                 dataRow++;
             }
+
+            // 表2 文档末登记表: 每次测量一行, 等同导出原始数据表前 5 列
+            FillTrailer(doc, t1, model);
 
             FillFooter(doc, model);
 
@@ -103,14 +101,83 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             _ => new[] { "F4", "F4" }
         };
 
-        /// <summary>Measure 列的量纲(表头 Measure 换行后挂单位): 面积克重→cm² / 长度克重→cm / 条重→piece</summary>
-        private static string MeasureUnitOf(string testType) => testType switch
+        /// <summary>表2 第5列表头文字(与导出原始数据表第5列一致)</summary>
+        private static string TrailerMeasureHeaderOf(string testType) => testType switch
         {
-            "area" => "cm²",
-            "length" => "cm",
-            "piece" => "piece",
-            _ => ""
+            "area" => "Area (cm²)",
+            "length" => "Length (cm)",
+            "piece" => "Piece (count)",
+            _ => "Area (cm²)"
         };
+
+        /// <summary>表2 第5列尺寸值显示格式: 面积/长度两位小数(导出 toFixed(2)), 条数为整数</summary>
+        private static string TrailerMeasureFormatOf(string testType) => testType switch
+        {
+            "piece" => "F0",
+            _ => "F2"
+        };
+
+        /// <summary>
+        /// 填表2(文档末登记表): 补 R0 第5列类型尺寸表头(第4列 Weight (g) 模板已含), R1+ 每次测量一行填原始数据前 5 列。
+        /// 定位靠"表1 之后、表头含 No. 与 Report Number 的表", 超预留行 → 克隆末行扩容。
+        /// </summary>
+        private void FillTrailer(WordprocessingDocument doc, Table dataTable, PhysicalWeightReportFillModel model)
+        {
+            var t2 = LocateTrailerTable(doc, dataTable)
+                ?? throw new InvalidOperationException("PHY_Weight 模板缺少文档末登记表(No. | Report Number | Sample)");
+
+            if (Row(t2, PhysicalWeightDocxLayout.TrailerHeaderRow) is not { } hdrRow
+                || hdrRow.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.TrailerCellCount)
+                throw new InvalidOperationException("PHY_Weight 模板登记表表头格数不足(应含 No./Report Number/Sample/重量/尺寸 5 列)");
+            var dataRow0 = Row(t2, PhysicalWeightDocxLayout.TrailerDataStartRow);
+            if (dataRow0 == null || dataRow0.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.TrailerCellCount)
+                throw new InvalidOperationException("PHY_Weight 模板登记表没有数据行");
+
+            // R0 表头: 模板已有 No./Report Number/Sample/Weight (g), 只补第 5 列类型尺寸列名(面积/长度/条数)
+            SetHeaderCellTextSeeded(hdrRow, PhysicalWeightDocxLayout.TrailerMeasureColumn,
+                PhysicalWeightDocxLayout.TrailerNoColumn, TrailerMeasureHeaderOf(model.TestType));
+
+            // R1+ 数据行: 每次测量一行(等同导出原始数据表前 5 列)
+            string measureFmt = TrailerMeasureFormatOf(model.TestType);
+            int rowIdx = PhysicalWeightDocxLayout.TrailerDataStartRow;
+            foreach (var tr in model.TrailerRows)
+            {
+                var r = Row(t2, rowIdx);
+                if (r == null) r = WordEditEngine.AppendClonedRow(t2);   // 超过预留行 → 克隆末行追加
+                if (r == null) break;
+
+                SetCellText(r, PhysicalWeightDocxLayout.TrailerNoColumn, tr.No.ToString());
+                SetCellText(r, PhysicalWeightDocxLayout.TrailerReportNumberColumn, tr.ReportNumber);
+                SetCellText(r, PhysicalWeightDocxLayout.TrailerSampleColumn, tr.Sample);
+                SetCellText(r, PhysicalWeightDocxLayout.TrailerWeightColumn, tr.Weight?.ToString("F4") ?? "");
+                // 面积长×宽录入: 直写尺寸文本 "5×5"; 否则按类型格式写数值
+                string measureText = string.IsNullOrEmpty(tr.MeasureText)
+                    ? tr.Measure?.ToString(measureFmt) ?? ""
+                    : tr.MeasureText;
+                SetCellText(r, PhysicalWeightDocxLayout.TrailerMeasureColumn, measureText);
+                rowIdx++;
+            }
+        }
+
+        /// <summary>
+        /// 定位表2(文档末登记表): 从表1 之后的 body 表里, 找第一张 R0 表头同时含 "No." 与 "Report Number" 的表。
+        /// 为何不用 LocateTable 内容匹配: "Report Number" 是表0 "Test Report Number" 的子串, 内容匹配会误中表0;
+        /// 登记表紧跟表1, 从其后顺序扫描最稳, 再以表头文字兜底校验结构。
+        /// </summary>
+        private Table? LocateTrailerTable(WordprocessingDocument doc, Table dataTable)
+        {
+            var bodyTables = doc.MainDocumentPart?.Document.Body.Elements<Table>().ToList();
+            if (bodyTables == null) return null;
+
+            int start = bodyTables.IndexOf(dataTable) + 1;
+            for (int i = start; i < bodyTables.Count; i++)
+            {
+                var hdrText = Row(bodyTables[i], PhysicalWeightDocxLayout.TrailerHeaderRow)?.InnerText ?? "";
+                if (hdrText.Contains("No.") && hdrText.Contains("Report Number"))
+                    return bodyTables[i];
+            }
+            return null;
+        }
 
         /// <summary>
         /// 填写页脚温湿度格子(footer2: R1 第 3 格温度 °C、第 4 格湿度 %RH)。
@@ -161,7 +228,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             if (Row(t0, PhysicalWeightDocxLayout.SummaryHeaderRow) == null)
                 throw new InvalidOperationException("PHY_Weight 模板摘要表行数不足(缺 R7 表头行)");
             if (Row(t0, PhysicalWeightDocxLayout.SummaryHeaderRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SummaryCellCount)
-                throw new InvalidOperationException("PHY_Weight 模板摘要表头格数不足(应含 g/m²、g/m、g/piece 等 8 列)");
+                throw new InvalidOperationException("PHY_Weight 模板摘要表头格数不足(应含 g/m²、g/m、g/piece、lb/dozen、oz/dozen 等 9 列)");
             if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow) == null)
                 throw new InvalidOperationException("PHY_Weight 模板摘要表没有汇总数据行");
             if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SummaryCellCount)
@@ -199,27 +266,34 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int SummaryCellCount = 9;        // 汇总网格数据行应有格数(新模板加了 oz/dozen 列)
             public const int ValueColumn = 1;             // 报告号/方法值所在列
 
-            // 表1 (数据表)
-            // 新模板(2026-09改版)在 Sample 和 Specimen 之间插入了 Measure 列(表头文字 "Measure"):
-            //   R1 表头: Sample | Measure | Specimen(合并5格) | Average  —— 4个真实 tc
-            //   R2 表头:   空   |   空    |    #1 ~ #5    |  空   —— 8个独立 tc
-            //   R3+ 数据行: Sample | Measure | #1 | #2 | #3 | #4 | #5 | Average  —— 8个独立 tc
-            // Measure 列内容(显示文本, 由服务层拼好): 面积长×宽模式→"长×宽"(如 5×5),
-            // 面积直填→面积 cm² 数值, 长度→试样长度 cm 数值, 条重→称重条数(如 12)。
-            // 注意 R1(合并行)与 R2/R3(独立格)的 tc 个数不同, 列索引分开定义。
-            public const int HeaderRow1 = 1;              // 表头行1(合并): Sample|Measure|Specimen|Average
+            // 表1 (数据表) — 2026-09-08 模板去掉 Measure 列, 回到 7 格(与最早版一致):
+            //   R1 表头: Sample | Specimen(合并5格) | Average  —— 3个真实 tc
+            //   R2 表头:   空   |    #1 ~ #5      |  空    —— 7个独立 tc(部分格合并加宽)
+            //   R3+ 数据行: Sample | #1 | #2 | #3 | #4 | #5 | Average  —— 7个独立 tc
+            public const int HeaderRow1 = 1;              // 表头行1(合并): Sample|Specimen|Average
             public const int HeaderRow2 = 2;              // 表头行2: #1 ~ #5
             public const int DataHeaderRow = 1;           // 表头行(写单位)
-            public const int DataSpecimenCell = 2;        // R1 表头 Specimen 单元格(第3个tc: Sample,Measure,Specimen,Average)
-            public const int DataAverageCell = 3;         // R1 表头 Average 单元格(第4个tc)
+            public const int DataSpecimenCell = 1;        // R1 表头 Specimen 单元格(第2个tc: Sample,Specimen,Average)
+            public const int DataAverageCell = 2;         // R1 表头 Average 单元格(第3个tc)
             public const int DataStartRow = 3;            // 数据区起始行
             public const int SampleColumn = 0;            // Sample 列 (测点)
-            public const int MeasureColumn = 1;           // Measure 列 (数据行 tc1: 显示文本, 见上方注释; 条重留空)
-            public const int ValueStartColumn = 2;        // 第一个值列(数据行 tc2: Sample,Measure,#1...#5,Average → 从2开始)
+            public const int ValueStartColumn = 1;        // 第一个值列(数据行 tc1: Sample,#1..#5,Average → 从1开始)
             public const int ValueCount = 5;              // 每行 5 个值
-            public const int AverageColumn = 7;           // 平均列(数据行 tc7, 第8个tc)
-            public const int RowCellCount = 8;            // 数据行应有格数(Sample|Measure|#1~#5|Average)
-            public const int HeaderCellCount = 4;         // 表头行1应有格数(Sample|Measure|Specimen|Average)
+            public const int AverageColumn = 6;           // 平均列(数据行 tc6, 第7个tc)
+            public const int RowCellCount = 7;            // 数据行应有格数(Sample|#1~#5|Average)
+            public const int HeaderCellCount = 3;         // 表头行1应有格数(Sample|Specimen|Average)
+
+            // 表2 (文档末登记表) — 每行=一次测量, 与导出原始数据表前 5 列一致:
+            //   R0 表头: No. | Report Number | Sample | Weight (g) | <类型尺寸>  —— 5 个独立 tc
+            //   R1+ 数据行: 次数 | 试样编号 | 测点 | 重量g | 尺寸    —— 5 个独立 tc
+            public const int TrailerHeaderRow = 0;
+            public const int TrailerDataStartRow = 1;
+            public const int TrailerCellCount = 5;        // 表头/数据行应有格数
+            public const int TrailerNoColumn = 0;         // 次数
+            public const int TrailerReportNumberColumn = 1; // 试样编号(报告号)
+            public const int TrailerSampleColumn = 2;     // 测点
+            public const int TrailerWeightColumn = 3;     // 重量(g)
+            public const int TrailerMeasureColumn = 4;    // 类型尺寸(面积/长度/条数)
 
             /// <summary>
             /// 表0 汇总网格值列(0-based tc, 首个数据行 R8 起, 新模板 9 格/行): 面积→(1,2) g/m²|oz/yd²,
@@ -248,6 +322,30 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 为什么要"先抓样式再删内容": 新 run 的样式(字号/字体/加粗)必须从旧 run 复制;
         /// 而旧 run 在步骤③会被删掉, 所以顺序反了就再也取不到样式源, 填进去的字会变成默认格式。
         /// </summary>
+        /// <summary>
+        /// 写表头文字; 目标格若没有任何带样式 run(模板空白格), 先从同行样式源格(如 No. 格)克隆 RunProperties 注入,
+        /// 再走 SetCellText, 保证新写的列名与整行表头同字体。
+        /// </summary>
+        private void SetHeaderCellTextSeeded(TableRow row, int cellIndex, int styleSourceCellIndex, string text)
+        {
+            var cell = row.Elements<TableCell>().ElementAtOrDefault(cellIndex);
+            if (cell == null) return;
+
+            if (cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null) == null)
+            {
+                var src = row.Elements<TableCell>().ElementAtOrDefault(styleSourceCellIndex);
+                var srcRp = src?.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null)
+                    ?.RunProperties?.CloneNode(true) as RunProperties;
+                if (srcRp != null)
+                {
+                    var para = cell.Elements<Paragraph>().FirstOrDefault();
+                    if (para == null) { para = new Paragraph(); cell.Append(para); }
+                    para.Append(new Run(srcRp));
+                }
+            }
+            SetCellText(cell, text);
+        }
+
         private void SetCellText(TableCell? cell, string text)
         {
             if (cell == null) return;
