@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
+﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
@@ -37,5 +38,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<Result> CalculateParamAsync(Guid id, CancellationToken ct);
+
+        /// <summary>
+        /// 生成纸质版清单
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Result<DocxUrlResponseDto>> GenerateCheckListAsync(CheckListGenerateDto dto, CancellationToken ct);
     }
 }

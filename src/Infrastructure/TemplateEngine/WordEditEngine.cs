@@ -68,6 +68,31 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 }
             }
         }
-        
+
+        /// <summary>
+        /// 在指定表格后面插入一个空段落（空行）
+        /// </summary>
+        internal static void InsertEmptyParagraphAfterTable(Table table)
+        {
+            var parent = table.Parent;
+            if (parent == null) return;
+
+            var emptyParagraph = new Paragraph(new Run(new Text("")));
+
+            // 在表格后面插入空段落
+            parent.InsertAfter(emptyParagraph, table);
+        }
+
+        /// <summary>
+        /// 清空行内容 (保留结构)
+        /// </summary>
+        internal static void ClearRowContent(TableRow row)
+        {
+            foreach (var cell in row.Elements<TableCell>())
+            {
+                ClearCellContent(cell);
+            }
+        }
+
     }
 }

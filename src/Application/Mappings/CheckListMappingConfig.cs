@@ -34,7 +34,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             config.NewConfig<CheckListItemDto, CheckListItem>()
                 .Map(dest => dest.TestItemId, src => new TestItemId(src.TestItemId))
                 .Map(dest => dest.StandardIds, src => src.StandardIds.Select(i => new StandardId(i)).ToList())
-                .Map(dest => dest.TestGroup, src => (TestGroup)src.TestGroup)
+                .Map(dest => dest.TestGroup, src =>
+                Enum.IsDefined(typeof(TestGroup), src.TestGroup)
+                ? (TestGroup)Enum.Parse(typeof(TestGroup), src.TestGroup)
+                : TestGroup.Wet)
                 .Map(dest => dest.Requirement, src => src.Requirement);
 
             //entity=>数据库模型
@@ -121,7 +124,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.Standards, src => src.StandardIds == null
                     ? Enumerable.Empty<string>()
                     : src.StandardIds.Where(s => s != null).Select(s => s!.Value).ToList())
-                .Map(dest => dest.TestGroup, src => (int)src.TestGroup)
+                .Map(dest => dest.TestGroup, src => src.TestGroup.ToString())
                 .Map(dest => dest.Samples, src => src.Samples ?? new List<string>())
                 .Map(dest => dest.Parameter, src => JsonSerializer.Serialize<object>(
                     src.TestPointParams == null     
@@ -129,9 +132,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     : src.TestPointParams.ToDictionary(     
                         k => k.Key,   
                         k => (object?)(k.Value == null ? null : k.Value.Values)),
-    new JsonSerializerOptions { WriteIndented = false }))
-                .Map(dest => dest.Requirement, src => src.Requirement ?? string.Empty)
-                .Map(dest => dest.CuttingMethod, src => string.Empty);
+                    new JsonSerializerOptions { WriteIndented = false }))
+                .Map(dest => dest.Requirement, src => src.Requirement ?? string.Empty);
 
 
 

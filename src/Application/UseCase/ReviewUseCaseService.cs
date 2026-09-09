@@ -1,4 +1,5 @@
-﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
+﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
@@ -76,6 +77,23 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
             var checklist = await  _checkListAppService.GetCheckListAsync(checklistId, ct);
 
             return checklist;
+        }
+
+        /// <summary>
+        /// 执行checklist操作
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result<DocxUrlResponseDto>> CheckListGenerateAndPrint(CheckListGenerateDto dto, CancellationToken ct)
+        {
+            var result = await _checkListAppService.GenerateCheckListAsync(dto, ct);
+
+            //如果需要
+            //实例化datasheet聚合根发布生成工作单事件
+            //var datasheet = DataSheet.Create(dto.CheckListId);
+
+            return result;
         }
     }
 } 

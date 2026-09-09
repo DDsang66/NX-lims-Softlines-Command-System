@@ -51,7 +51,7 @@
         /// <summary>
         /// 测试小组
         /// </summary>
-        public int TestGroup { get; set; }
+        public string TestGroup { get; set; } = string.Empty;
 
         /// <summary>
         /// 样品列表

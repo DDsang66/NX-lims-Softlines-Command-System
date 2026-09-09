@@ -25,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckLi
         /// <summary>
         /// 测试小组
         /// </summary>
-        public int TestGroup { get; set; }
+        public string TestGroup { get; set; }
 
         /// <summary>
         /// 样品列表
