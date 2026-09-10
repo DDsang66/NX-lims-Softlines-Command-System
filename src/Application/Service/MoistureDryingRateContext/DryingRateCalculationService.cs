@@ -2,7 +2,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.MoistureDryin
 
 /// <summary>
 /// NF5022 测试方法 —— 对应原软件 comboBox2 的两种结束条件。
-/// GBT2008=GBT 21655.1 2008（±5mg / ±3mg）；GBT2023=GBT 21655.1 2023（≤20mg / ≥60s）。
+/// GBT2008=GBT 21655.1 2008（残留不足5mg，或相邻采样蒸发增量不足3mg，均需点数大于3）；
+/// GBT2023=GBT 21655.1 2023（残留不超过20mg，或采样间隔(分)×(点数−1)达 60 即测满60分钟，均需点数大于3）。
+/// 注意 60 是"分钟"不是秒（sp 单位即分钟，见 Nf5022Formulas.Time）。
 /// </summary>
 public enum Nf5022TestMethod
 {

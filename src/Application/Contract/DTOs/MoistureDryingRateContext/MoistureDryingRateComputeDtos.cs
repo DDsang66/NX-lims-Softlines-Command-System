@@ -34,8 +34,12 @@ public class Nf5022ComputeRequestDto
     /// <summary>水分残留率检测时刻(min), 原软件 textBox11, 默认 30。</summary>
     public int ResidualMinute { get; set; }
 
-    /// <summary>测试方法: 0=GBT 21655.1 2008, 1=GBT 21655.1 2023（原软件 comboBox2）</summary>
-    public int TestMethod { get; set; }
+    /// <summary>
+    /// 测试方法: 0=GBT 21655.1 2008, 1=GBT 21655.1 2023（原软件 comboBox2）。
+    /// 默认 1=2023 —— 照原软件 comboBox2 构造时 SelectedIndex=1(默认选中 GBT 21655.1 2023):
+    /// 请求 JSON 没带该字段时走 2023, 显式传 0 才用 2008。
+    /// </summary>
+    public int TestMethod { get; set; } = 1;
 
     /// <summary>6 工位原始时序（未参与工位传空列表即可, 不会产生结果）</summary>
     public List<Nf5022StationComputeInputDto> Stations { get; set; } = new();
@@ -121,13 +125,27 @@ public class Aatcc201ComputeRequestDto
     /// <summary>环境湿度（原软件文本输入）</summary>
     public string Humidity { get; set; } = string.Empty;
 
-    /// <summary>2 工位温度时序（未参与工位传空列表即可）</summary>
+    /// <summary>
+    /// 每次测试的温度时序（1..3 项, 槽位对齐: 列表第 i 项 = 报告 #(i+1)）。
+    /// #1=工位1 首次测试、#2=工位2 首次测试、#3=测试3(任选工位重测)。
+    /// 未测的中间槽也要占位: 传空 Frames(→ Participated=false → 报告该行留空), 否则会挤位。
+    /// </summary>
     public List<Aatcc201StationComputeInputDto> Stations { get; set; } = new();
 }
 
-/// <summary>AATCC 201 单工位计算输入：滴水量 + 逐帧温度/盖板时序。</summary>
+/// <summary>
+/// AATCC 201 单次测试计算输入：物理工位 + 滴水量 + 逐帧温度/盖板时序。
+/// Station 是本次测试实际用的物理工位(1|2)——测试3 可能复用工位1 或工位2,
+/// 面温偏置(TempHw1/TempHw2)必须按它取, 不能按列表下标推断。
+/// </summary>
 public class Aatcc201StationComputeInputDto
 {
+    /// <summary>
+    /// 物理工位 1|2（本项所在报告槽位 #1→1、#2→2、#3→重测选用的工位）。
+    /// 0 = 未指定, 由计算服务按槽位下标回退(index+1)。
+    /// </summary>
+    public int Station { get; set; }
+
     /// <summary>滴水量(mL), 原软件 textBox8, 默认 0.2。速率公式分子。</summary>
     public double WaterMl { get; set; }
 
@@ -154,7 +172,9 @@ public class Aatcc201FrameSampleDto
 /// <summary>AATCC 201 权威计算结果（不落库, 直接回给前端刷新结果表）。</summary>
 public class Aatcc201ComputeResultDto
 {
-    /// <summary>每工位结果（2 项, 未参与工位 Participated=false）</summary>
+    /// <summary>
+    /// 每次测试结果（槽位对齐, 最多 3 项; 第 i 项 = 报告 #(i+1), 未参与测试 Participated=false）。
+    /// </summary>
     public List<Aatcc201StationResultDto> Stations { get; set; } = new();
 }
 
@@ -174,7 +194,7 @@ public class Aatcc201TempPointDto
 /// <summary>AATCC 201 单工位权威计算结果（与 Aatcc201StationResult 对应）。</summary>
 public class Aatcc201StationResultDto
 {
-    /// <summary>工位号 1..2</summary>
+    /// <summary>本次测试实际使用的物理工位 1|2（测试3 复用工位时, 工位号可能重复出现）</summary>
     public int Station { get; set; }
 
     /// <summary>是否参与（有盖板闭→开沿 + 有平台终点 + 交点合法）。未参与时其余字段全 0。</summary>

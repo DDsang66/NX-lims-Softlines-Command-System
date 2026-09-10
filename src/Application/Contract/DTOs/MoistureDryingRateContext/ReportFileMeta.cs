@@ -16,6 +16,13 @@ public class ReportFileMeta
     /// <summary>模式：nf5022 | aatcc201（文件名末段）</summary>
     public string Mode { get; set; } = string.Empty;
 
+    /// <summary>
+    /// 样品名称（读报告 docx 内 "Sample" 表头格回填, 不是来自文件名）。
+    /// AATCC 201 历史列表用它分辨同报告号下不同时间做的样品; 合并报告 = 各样品名以顿号拼接。
+    /// 非 aatcc201 模式 / 文件结构不符 / 读取失败 → 空串(列表照常返回, 不因单个坏文件失败)。
+    /// </summary>
+    public string SampleName { get; set; } = string.Empty;
+
     /// <summary>文件大小（字节）</summary>
     public long SizeBytes { get; set; }
 

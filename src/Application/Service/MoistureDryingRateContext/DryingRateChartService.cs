@@ -52,16 +52,18 @@ public static class DryingRateChartService
     }
 
     /// <summary>
-    /// AATCC 201 表面温度曲线 PNG：2 工位表面温度曲线同图。
+    /// AATCC 201 表面温度曲线 PNG：最多 3 次测试(测试1/2/3)表面温度曲线同图。
     /// X = 帧真实到达秒（FrameTimeSec，测试开始起）；Y = 温度(℃) = SurfaceTemp01 ÷ 100（已叠偏置）。
+    /// 图例带测试序号 → 测试3 复用工位时(如 测试3·工位1)也不与首次测试的曲线重名/覆盖。
     /// </summary>
     public static byte[]? RenderAatcc201TemperatureChart(Aatcc201ComputeResultDto result)
     {
         var series = result.Stations
-            .Where(s => s.Participated && s.SurfaceTempSeries is { Count: > 0 })
-            .Select(s => new LineSeries(
-                $"工位{s.Station}",
-                s.SurfaceTempSeries!.Select(p => (X: p.FrameTimeSec, Y: p.SurfaceTemp01 / 100.0)).ToList()))
+            .Select((s, i) => (s, i))
+            .Where(x => x.s.Participated && x.s.SurfaceTempSeries is { Count: > 0 })
+            .Select(x => new LineSeries(
+                $"测试{x.i + 1} · 工位{x.s.Station}",
+                x.s.SurfaceTempSeries!.Select(p => (X: p.FrameTimeSec, Y: p.SurfaceTemp01 / 100.0)).ToList()))
             .ToList();
 
         return series.Count == 0
@@ -72,7 +74,7 @@ public static class DryingRateChartService
     /// <summary>单条曲线：标签 + 有序点集(X, Y)。</summary>
     private sealed record LineSeries(string Label, IReadOnlyList<(double X, double Y)> Points);
 
-    /// <summary>工位配色（前两色够 AATCC 2 工位，全色板够 NF5022 6 工位）。</summary>
+    /// <summary>工位配色（前三色够 AATCC 3 次测试，全色板够 NF5022 6 工位）。</summary>
     private static readonly Color[] StationColors =
     {
         Color.FromArgb(230, 25, 75),    // 红

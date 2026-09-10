@@ -34,4 +34,11 @@ public interface IReportFileStore : IScopedDependency
     /// 由文件名解析出报告文件的完整路径；文件名不合法（含路径穿越等）或文件不存在返回 null。
     /// </summary>
     string? ResolvePath(string fileName);
+
+    /// <summary>
+    /// 删除一份历史报告文件（历史列表"删除"按钮）。
+    /// 只认报告目录下的 .docx 且必须已存在：文件名不合法 / 不是 docx / 文件不在 → 返回 false，不抛异常。
+    /// 物理删除，不可恢复（前端负责二次确认）。
+    /// </summary>
+    bool DeleteReport(string fileName);
 }

@@ -12,7 +12,7 @@ namespace NX_lims_Softlines_Command_System.src.Web_API;
 /// 报告文件名带秒级时间戳，不同模式/报告号即不同文件，互不覆盖；
 /// 校准参数单行配置，并发保存 last-write-wins。
 /// 当前提供：AATCC 201 校准参数读写 + 权威计算（compute/nf5022、compute/aatcc201）
-///           + 报告生成（report/nf5022、report/aatcc201）+ 历史报告文件列表/下载。
+///           + 报告生成（report/nf5022、report/aatcc201、多样品合成 combine/aatcc201）+ 历史报告文件列表/下载/删除。
 /// </summary>
 [ApiController]
 [Route("api/[Controller]")]
@@ -88,12 +88,35 @@ public class MoistureDryingRateController : ControllerBase
     public async Task<Result<DocxUrlResponseDto>> GenerateAatcc201Report([FromBody] Aatcc201ReportRequestDto dto, CancellationToken ct)
         => await _reportService.GenerateAatcc201(dto, ct);
 
+    /// <summary>
+    /// AATCC 201 合并报告：把历史报告界面勾选的（同一报告号下）多个样品文件合成一份,
+    /// 一个样品填一张 Sample 表（多于模板自带 3 张时克隆）; 数据源是所选 docx 本身, 不重算。
+    /// </summary>
+    [HttpPost("combine/aatcc201")]
+    public Result<DocxUrlResponseDto> CombineAatcc201Reports([FromBody] Aatcc201CombineRequestDto dto)
+        => _reportService.GenerateAatcc201Combined(dto);
+
     // ============ 历史报告文件（不落结构化库） ============
 
-    /// <summary>按模式 + 报告号关键字列历史报告文件（数据查询入口）</summary>
+    /// <summary>
+    /// 按模式 + 报告号关键字列历史报告文件（数据查询入口）。
+    /// AATCC 模式走报告服务: 额外从报告 docx 回填样品名称(界面样品名列), 供挑选同报告号下不同样品做合并。
+    /// </summary>
     [HttpGet("reports")]
     public Result<List<ReportFileMeta>> ListReports([FromQuery] string mode, [FromQuery] string? keyword)
-        => Result<List<ReportFileMeta>>.Ok(_reportStore.ListReports(mode, keyword));
+        => string.Equals(mode, "aatcc201", StringComparison.OrdinalIgnoreCase)
+            ? _reportService.ListAatcc201Reports(keyword)
+            : Result<List<ReportFileMeta>>.Ok(_reportStore.ListReports(mode, keyword));
+
+    /// <summary>
+    /// 删除指定报告文件（历史列表"删除"按钮，物理删除不可恢复，前端已二次确认）。
+    /// 文件名由 ListReports 提供；不合法 / 不是报告 docx / 文件已不在 → Fail。
+    /// </summary>
+    [HttpDelete("reports/{fileName}")]
+    public Result<bool> DeleteReport(string fileName)
+        => _reportStore.DeleteReport(fileName)
+            ? Result<bool>.Ok(true)
+            : Result<bool>.Fail("报告文件不存在或不可删除");
 
     /// <summary>下载指定报告文件（文件名由 ListReports 提供）</summary>
     [HttpGet("reports/{fileName}")]

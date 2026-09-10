@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using A = DocumentFormat.OpenXml.Drawing;
@@ -17,7 +18,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     ///             R5 干燥速率 (g/h) | 值; R7 □洗前□洗后
     ///   表1 测点: 单行"测点：|值", 值=样品名称
     ///   表2 结果: R0 样品1/2/3; R1 [m0:][值]×3; R4..R24 = 0/3/6..60min 网格,
-    ///            每样品 3 列 [时间 | Δmi(span2) | mi]; 6 工位 → 克隆整表(表头改样品4/5/6)
+    ///            每样品 3 列 [时间 | Δmi(span2) | mi]; 6 工位两种排版:
+    ///            FillReport = 克隆结果表(旧, 保留); FillReportByPages = 整页克隆+分页符(报告用)
     ///   表3 备注: 静态(最小二乘法说明)
     ///   无"曲线图"占位段 → 每个参与工位(样品)独立一张曲线 PNG 追加到文档末尾
     ///   页脚(footer1, TÜV 签名行): R1 末两格 ____°C / ____%RH = 环境温度/湿度(同克重 PHY_Weight)
@@ -83,6 +85,103 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             FillFooter(doc, model);
 
             doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 填充 GB21655 干燥速率报告 —— 整页克隆版(报告新布局)。每个参与组(≤3 工位)独占一整页:
+        /// 第 2 组起把模板"整页"块(摘要+测点+结果+Equipment+备注, 见 <see cref="CollectTemplatePage"/>)
+        /// 整页深拷贝成新页, 页前加分页符(同一节内分页 → 每页共享模板页脚/页边距)。
+        /// 摘要(报告号/干燥速率均值)/样品名称/Equipment/备注随页重复。
+        /// 与 FillReport(整表克隆)的分工: FillReport 保留原行为供回归对照; 报告生成走本方法。
+        /// 单组(≤3 工位)时与 FillReport 输出一致(不克隆, 原地填模板页)。
+        /// </summary>
+        public void FillReportByPages(string filePath, DryingRateReportFillModel model)
+        {
+            using var doc = WordprocessingDocument.Open(filePath, true);
+            var body = doc.MainDocumentPart?.Document?.Body
+                ?? throw new InvalidOperationException("GB21655 模板正文缺失");
+            var (summary, sampleNameTable, result) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
+
+            // 表0 摘要: 报告号 + 干燥速率(参与工位回归斜率均值, g/h); R4 加水量/R7 洗前洗后为模板静态内容
+            SetCellText(Row(summary, Gb21655Layout.SummaryRowReportNumber)!, Gb21655Layout.ValueColumn, model.ReportNumber);
+
+            // 表1 = 模板"测点："单行表, 该格填样品名称 → 值格写 SampleName
+            SetCellText(Row(sampleNameTable, Gb21655Layout.MeasurePointRow)!, Gb21655Layout.ValueColumn, model.SampleName);
+
+            var participated = model.Stations.Where(s => s.Participated).ToList();
+            if (participated.Count > 0)
+            {
+                double avgRateGPerHour = participated.Average(s => s.RateGPerHour);
+                var rateRow = Row(summary, Gb21655Layout.SummaryRowRate)!;
+                var rateCell = rateRow.Elements<TableCell>().ElementAtOrDefault(Gb21655Layout.ValueColumn);
+                // 模板值格原内容 = 单位 token"(g/h)"(摘要行 [干燥速率：, (g/h)])——SetCellText 整格重建
+                // 会把它冲掉, 故先取回再拼在数值后。
+                string unit = rateCell?.InnerText.Trim() ?? "";
+                string value = avgRateGPerHour.ToString("F3");
+                SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value);
+            }
+
+            // 参与工位按 3 个一组切页; 整组无参与工位 → 该组不出页。
+            //   第 1 组直接用模板自带整页; 之后每组整页克隆。克隆时机在填网格之前:
+            //   上面摘要/样品名/速率已填(克隆页继承同款报告头), 结果网格此刻仍空 → 克隆不会把上一组数据带进新页。
+            var groups = new List<List<DryingRateStationRowModel>>();
+            for (int start = 0; start < model.Stations.Count; start += Gb21655Layout.SamplesPerTable)
+            {
+                var group = model.Stations.Skip(start).Take(Gb21655Layout.SamplesPerTable).ToList();
+                if (group.Any(s => s.Participated)) groups.Add(group);
+            }
+
+            var pageBlock = CollectTemplatePage(doc);        // 模板整页元素块(克隆源)
+            var pageTables = new List<Table> { result };     // 每组一页: [0]=模板自带页
+            for (int gi = 1; gi < groups.Count; gi++)
+            {
+                var clones = WordEditEngine.ClonePageBlock(body, pageBlock);   // 分页符段+整页深拷贝 → 文末 sectPr 前
+                Table? pageResult = null;
+                for (int i = 0; i < pageBlock.Count; i++)
+                    if (ReferenceEquals(pageBlock[i], result)) pageResult = clones[i] as Table;
+                if (pageResult == null)
+                    throw new InvalidOperationException("GB21655 模板页块缺结果表, 无法克隆新页");
+                pageTables.Add(pageResult);
+            }
+
+            // 每页各填自己的 3 个样品槽(表头样品号=工位号、m0、0..60min 网格; 未参与留空)
+            for (int gi = 0; gi < groups.Count; gi++)
+                FillSampleGroup(pageTables[gi], groups[gi], model.SpaceTimeMin);
+
+            // 曲线图: 每个参与工位(样品)独立一张 PNG →
+            // 按序追加到文档末尾(模板无占位段), 图内已自带头"样品N 蒸发曲线"
+            for (int i = 0; i < model.ChartPngs.Count; i++)
+                if (model.ChartPngs[i] is { Length: > 0 })
+                    AppendChartAtEnd(doc, model.ChartPngs[i], i);
+
+            // 页脚: 环境温度/湿度 → footer1 签名行末两格(____°C / ____%RH), 照克重 PHY_Weight
+            FillFooter(doc, model);
+
+            doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 取模板"整页"元素块(整页克隆的克隆源)。模板 body 布局:
+        /// [前导分节空段(带 w:pPr/w:sectPr)] 摘要表 测点表 结果表 Equipment 段 备注表 [文末 body 级 sectPr]。
+        /// 页块 = 文末 body 级 sectPr 之前、前导分节段之后的全部元素 —— 摘要(报告号/均值速率)/样品名称/
+        /// Equipment/备注 全部随页重复。插入位置与分页符由 WordEditEngine.ClonePageBlock 处理,
+        /// 这里只负责"哪些元素算一页"。
+        /// </summary>
+        private static List<OpenXmlElement> CollectTemplatePage(WordprocessingDocument doc)
+        {
+            var body = doc.MainDocumentPart?.Document?.Body
+                ?? throw new InvalidOperationException("GB21655 模板正文缺失");
+            var lastSectPr = body.Elements<SectionProperties>().LastOrDefault();
+
+            var page = new List<OpenXmlElement>();
+            foreach (var e in body.ChildElements)
+            {
+                if (ReferenceEquals(e, lastSectPr)) break;
+                // 前导分节空段(带 w:pPr/w:sectPr)不属于页内容, 不随页克隆
+                if (e is Paragraph p && p.ParagraphProperties?.SectionProperties is not null) continue;
+                page.Add(e);
+            }
+            return page;
         }
 
         /// <summary>
@@ -351,9 +450,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int SamplesPerTable = 3; // 每表样品数(超 3 克隆整表)
             public const int CellsPerSample = 3;  // 网格每样品列数 [时间|Δmi|mi]
 
-            // 曲线图尺寸(EMU, 1cm=360000): 14cm × 8cm
-            public const long ChartWidthEmu = 14 * 360000L;
-            public const long ChartHeightEmu = 8 * 360000L;
+            // 曲线图显示尺寸(EMU, 1cm=360000): 宽 12cm, 高按图像素 1400:800=7:4 等比 → ≈6.9cm
+            // (2026-09-08 目视反馈整体略缩, 原 14cm × 8cm; 保持同比例不拉伸)
+            public const long ChartWidthEmu = 12 * 360000L;        // 4,320,000 EMU = 12cm
+            public const long ChartHeightEmu = 12 * 360000L * 4 / 7;  // ≈ 2,468,571 EMU ≈ 6.86cm
         }
 
         private static TableRow? Row(Table? t, int i) => t?.Elements<TableRow>().ElementAtOrDefault(i);

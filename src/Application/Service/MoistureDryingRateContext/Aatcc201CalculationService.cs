@@ -23,8 +23,14 @@ public sealed record Aatcc201FrameSample(
     int CoverStatus,              // 盖板状态 0=开 1=闭 —— 起点的唯一判据
     double FrameTimeSec);         // 本帧真实到达秒（保留给步骤5帧率校准；当前公式仍按"每点=1秒"，未使用）
 
-/// <summary>AATCC 201 单工位输入。</summary>
+/// <summary>
+/// AATCC 201 单次测试输入。
+/// Station = 本次测试实际使用的物理工位 1|2（测试3 复用工位时可能与先前重复）。
+/// 0 = 未指定，由计算服务按槽位下标回退(index+1)。测试3 若重测工位1(index 2)但没带 Station，
+/// 偏置会错拿 TempHw2 —— 前端送算必须显式带 Station。
+/// </summary>
 public sealed record Aatcc201StationInput(
+    int Station,                                // 物理工位 1|2（0=按槽位下标回退）
     double WaterMl,                             // 滴水量 mL（原 textBox8/5，默认 0.2）
     IReadOnlyList<Aatcc201FrameSample> Frames); // 原始帧时序（按接收顺序）
 
@@ -37,8 +43,9 @@ public sealed record Aatcc201TempPoint(
     double SurfaceTemp01);  // 采纳后表面温度（0.01℃ 单位整数，已叠 temp_hw 偏置）
 
 /// <summary>
-/// AATCC 201 单工位权威计算结果。
+/// AATCC 201 单次测试权威计算结果。
 /// Participated=false 表示未完成整轮测试（无帧 / 盖板无"闭→开"沿 / 未达平台 / 交点无效），其余值均为默认 0。
+/// Station = 本次测试实际使用的物理工位 1|2（测试3 复用工位时, 工位号可能重复出现）。
 /// </summary>
 public sealed record Aatcc201StationResult(
     int Station,
@@ -52,7 +59,9 @@ public sealed record Aatcc201StationResult(
     double WaterMl,         // 滴水量（原样回显）
     IReadOnlyList<Aatcc201TempPoint>? TempSeries = null); // 采纳后温度曲线（仅参与工位非空；报告嵌图数据源）
 
-/// <summary>AATCC 201 整机权威计算结果（2 工位）。</summary>
+/// <summary>
+/// AATCC 201 整机权威计算结果（1..3 次测试, 顺序 = 报告槽位; 每次测试一个物理工位）。
+/// </summary>
 public sealed record Aatcc201CalculationResult(
     IReadOnlyList<Aatcc201StationResult> Stations);
 
@@ -92,7 +101,10 @@ public static class Aatcc201CalculationService
     private const double IntersectMinDist = 100.0;  // draw_two：交点搜索初始"最小间距"
     private const int IntersectBreakCount = 20;     // draw_two：交点搜索 break 计数
 
-    /// <summary>对整机所有工位逐一计算（每工位独立状态机，互不影响）。</summary>
+    /// <summary>
+    /// 对每次测试逐一计算（每次测试独立状态机，互不影响；输入顺序 = 报告槽位顺序）。
+    /// 偏置/结果工位按 input.Station（物理工位）取 —— 测试3 复用工位时不能按数组下标推断。
+    /// </summary>
     public static Aatcc201CalculationResult Calculate(
         Aatcc201CalibrationParams calibration,
         IReadOnlyList<Aatcc201StationInput> stations)
@@ -106,13 +118,14 @@ public static class Aatcc201CalculationService
     private static Aatcc201StationResult CalculateStation(
         int index, Aatcc201CalibrationParams cal, Aatcc201StationInput input)
     {
-        int station = index + 1;
+        // 物理工位：显式 Station 优先（1|2），0=未指定 → 按槽位下标回退 index+1（兼容旧调用）
+        int station = input.Station is 1 or 2 ? input.Station : index + 1;
 
         // ① 无任何帧 → 未参与
         if (input.Frames.Count == 0)
             return NotParticipated(station, input.WaterMl);
 
-        double tempBias01 = index == 0 ? cal.TempHw1 : cal.TempHw2; // 工位1/工位2 各自表面温度偏置
+        double tempBias01 = station == 1 ? cal.TempHw1 : cal.TempHw2; // 物理工位1/工位2 各自表面温度偏置
 
         // ② 复刻接收端：偏置 + 抗抖动，得到"采纳温度序列"（1-based，下标0空置）
         double[] temps = ApplyBiasAndAntiJitter(input.Frames, tempBias01);

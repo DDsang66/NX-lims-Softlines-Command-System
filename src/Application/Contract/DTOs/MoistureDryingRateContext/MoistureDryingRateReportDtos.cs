@@ -50,3 +50,35 @@ public class Aatcc201ReportRequestDto
     /// <summary>compute/aatcc201 返回的权威结果（内嵌整体, 报告照它生成）</summary>
     public Aatcc201ComputeResultDto? Result { get; set; }
 }
+
+/// <summary>
+/// AATCC 201 合并报告请求 —— 历史报告界面勾选同一报告号下的多个样品文件, 合成一份报告。
+/// 数据源是历史 docx 本身（生成时刻没有另存结构化结果）, 由引擎 ReadReport 解析回来。
+/// </summary>
+public class Aatcc201CombineRequestDto
+{
+    /// <summary>所选历史报告文件名（含 .docx, 来自 GET reports 列表; 必须同报告号, 至少 1 份）</summary>
+    public List<string> FileNames { get; set; } = new();
+}
+
+/// <summary>
+/// 解析一份历史 AATCC 报告 docx 得到的内容（引擎 ReadReport 返回）。
+/// Samples/Charts 的形状与 Aatcc201SampleBlockModel 一致, 服务可直接拼进合并填充模型。
+/// </summary>
+public class Aatcc201ParsedReport
+{
+    /// <summary>报告号（摘要表 R0 col1 读出）</summary>
+    public string ReportNumber { get; set; } = string.Empty;
+
+    /// <summary>环境温度（页脚读出; 模板横线未填过 → null）</summary>
+    public string? Temperature { get; set; }
+
+    /// <summary>环境湿度（页脚读出; 模板横线未填过 → null）</summary>
+    public string? Humidity { get; set; }
+
+    /// <summary>该文件里实际有数据的样品块（空白 Sample 表不产出块; 合并产物再合并时逐表都算样品）</summary>
+    public List<Aatcc201SampleBlockModel> Samples { get; set; } = new();
+
+    /// <summary>正文里的曲线图 PNG（正文只有追加在文末的曲线图; 表头/页脚 logo 在别的部件, 不会进来）</summary>
+    public List<byte[]> Charts { get; set; } = new();
+}

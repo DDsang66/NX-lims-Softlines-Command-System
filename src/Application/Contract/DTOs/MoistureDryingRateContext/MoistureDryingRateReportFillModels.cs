@@ -94,7 +94,10 @@ public class Aatcc201ReportFillModel
     /// </summary>
     public string CalibrationText { get; set; } = string.Empty;
 
-    /// <summary>逐工位结果行（2 项, 未参与工位 Participated=false, 引擎留空格）</summary>
+    /// <summary>
+    /// 每次测试结果行（槽位对齐的 1..3 项: 列表第 i 项 = 报告 #(i+1), #1=工位1 首次、#2=工位2 首次、#3=测试3）。
+    /// 缺/无效 Participated=false → 引擎整行留空(中间缺槽不挤位); 均值只统计参与项。
+    /// </summary>
     public List<Aatcc201StationRowModel> Stations { get; set; } = new();
 
     /// <summary>
@@ -105,7 +108,7 @@ public class Aatcc201ReportFillModel
     public byte[]? ChartImagePng { get; set; }
 }
 
-/// <summary>AATCC 201 报告单工位行（对应 Aatcc201StationResultDto 的报告视图）。</summary>
+/// <summary>AATCC 201 报告单行（一次测试; 对应 Aatcc201StationResultDto 的报告视图）。</summary>
 public class Aatcc201StationRowModel
 {
     public int Station { get; set; }
@@ -135,4 +138,39 @@ public class Aatcc201StationRowModel
     /// 报告服务用它在图表库决策后生成温度曲线 PNG（当前 ChartImagePng 仍由图表库未定而恒为 null）。
     /// </summary>
     public List<Aatcc201TempPointDto>? SurfaceTempSeries { get; set; }
+}
+
+/// <summary>
+/// 合并报告里的"一个样品" = 结果表里的一张 Sample 表（表头格写 SampleName, R1/R2/R3 写各次测试）。
+/// 单样品报告就是 1 个块; 历史文件解析(ReadReport)出的也是这个形状, 可直接喂给 FillCombinedReport。
+/// </summary>
+public class Aatcc201SampleBlockModel
+{
+    /// <summary>样品名称（写在 Sample 表头格 "Sample" 行下方的第二段）</summary>
+    public string SampleName { get; set; } = string.Empty;
+
+    /// <summary>该样品的 1.2.3 次测试行（槽位对齐, 第 i 项 = 报告 #(i+1); 缺/无效 Participated=false → 留空）</summary>
+    public List<Aatcc201StationRowModel> Stations { get; set; } = new();
+}
+
+/// <summary>
+/// AATCC 201 合并报告填充模型 —— 同一报告号下多个样品合成一份报告:
+/// 每个样品填一张 Sample 表, 样品多于模板自带的 3 张时引擎克隆空白 Sample 表继续填。
+/// </summary>
+public class Aatcc201CombinedReportFillModel
+{
+    /// <summary>报告号（所选历史文件必须同一报告号）</summary>
+    public string ReportNumber { get; set; } = string.Empty;
+
+    /// <summary>环境温度（取所选文件里最新一份的值共用）</summary>
+    public string Temperature { get; set; } = string.Empty;
+
+    /// <summary>环境湿度（取所选文件里最新一份的值共用）</summary>
+    public string Humidity { get; set; } = string.Empty;
+
+    /// <summary>样品块（顺序 = 报告里 Sample 表的顺序; 服务按文件生成时间旧→新拼）</summary>
+    public List<Aatcc201SampleBlockModel> Samples { get; set; } = new();
+
+    /// <summary>各样品曲线图 PNG, 顺序拼好后**全部追加到文档末尾**（用户: 曲线图放表最后）</summary>
+    public List<byte[]> Charts { get; set; } = new();
 }

@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -13,9 +15,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     /// <summary>
     /// AATCC 201 干燥速率 docx 填充引擎 — 按坐标填格 PHY_AATCC201_DryingRate.docx。
     /// 模板结构（用户提供, 勿改）:
-    ///   表0 摘要: R0 Test Report Number | 值; R11 空(col0) | Average drying rate (mL/h):(col1-2) 后追加值
-    ///   表1/2/3 结果表: R0 表头(Sample/Start/End/Rate/Average, vMerge), R1=#1, R2=#2, R3=#3
-    /// 速率单位 mL/h = 存储 mg/h ÷ 1000（决策7: 存 mg/h 报告 g/h; 原软件查询列即标 mL/h）。
+    ///   表0 摘要: R0 Test Report Number | 值; R11 空(col0) | Average drying rate (mL/h):(col1-2);
+    ///   表1/2/3 结果表: R0 表头(Sample/Start/End/Rate/Average), R1=#1, R2=#2, R3=#3;
+    ///   表1 Average 数据列 = #1~#3 纵向合并单格(vMerge restart@R1, continue@R2/R3) → 引擎把两工位
+    ///   最终均值一次写进 restart 格; 旧"分割"模板(每行独立格)仍兼容 = 逐行写运行平均
+    /// 速率单位 mL/h = 存储 mg/h ÷ 1000（存 mg/h 报告 g/h; 原软件查询列即标 mL/h）。
     /// 无"曲线图"占位段 → 曲线 PNG 追加到文档末尾（用户: aatcc曲线图放在表最后）。
     /// 页脚(footer1, TÜV 签名行): R1 末两格 ____°C / ____%RH = 环境温度/湿度(同克重 PHY_Weight)
     /// </summary>
@@ -24,8 +28,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// <summary>
         /// 填充 AATCC 201 干燥速率报告 — 流程地图:
         ///   1. 打开文件, 定位摘要表 + 第一张结果表并做结构校验(结构不符 → 抛异常, 不静默空白);
-        ///   2. 表0 摘要: R0 报告号(col1); R11 平均干燥速率(mL/h, 两工位均值, 追加在标签后);
-        ///   3. 表1 结果: R0 Sample 表头格第二行写样品名; 按顺序填 #1/#2 (Start/End/Rate/运行平均); 未参与工位整行留空;
+        ///   2. 表0 摘要: R0 报告号(col1); R11 标签行保持模板原样(不再追加均值);
+        ///   3. 表1 结果: R0 Sample 表头格第二行写样品名; 按顺序填 #1/#2 (Start/End/Rate);
+        ///      Average 合并格(restart@R1) = 参与工位最终均值, 只写一次; 未参与工位整行留空;
         ///   4. 曲线 PNG → 追加到文档末尾;
         ///   5. 页脚 footer1 末两格: 环境温度(°C)/环境湿度(%RH), 照克重页脚处理;
         ///   6. 保存。OpenXml 操作全部留在本层, 上层只管拼 Aatcc201ReportFillModel。
@@ -38,31 +43,150 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 表0 摘要: R0 报告号(col1); R11 平均干燥速率(col0, 标签占 col1-2)
             SetCellText(Row(summary, Aatcc201Layout.SummaryRowReportNumber)!, Aatcc201Layout.ValueColumn, model.ReportNumber);
 
-            // 表1 Sample 表头格(col0): 原 "Sample" 行保留, 同格第二行写样品名称
-            AppendSampleNameUnderHeader(result, model.SampleName);
-
-            // 表1(第一张结果表): #1→R1, #2→R2, #3 及表2/表3 留空不动; 未参与工位整行留空
-            int runningCount = 0;
-            double runningRate = 0;   // 运行平均(mL/h = mg/h ÷ 1000), 只统计参与工位
-            FillStationRow(result, Aatcc201Layout.RowSample1, model.Stations.ElementAtOrDefault(0), ref runningCount, ref runningRate);
-            FillStationRow(result, Aatcc201Layout.RowSample2, model.Stations.ElementAtOrDefault(1), ref runningCount, ref runningRate);
-
-            double average = runningCount > 0 ? runningRate / runningCount : 0;
-            // R11 平均干燥速率: 模板该行是 空(col0) | 标签(col1-2), 值必须跟在标签后(不能填 col0 跑到标签前)。
-            // 读标签格原文, 拼成 "标签 值" 复用 SetCellText 写回 —— 不覆盖模板标签, 无需新增追加方法。
-            var avgCell = Row(summary, Aatcc201Layout.SummaryRowAverage)!
-                .Elements<TableCell>().ElementAtOrDefault(Aatcc201Layout.AverageLabelColumn);
-            if (avgCell != null)
-                SetCellText(avgCell, avgCell.InnerText.Trim() + " " + average.ToString("F3"));
+            // 表1(第一张结果表)填这个样品; 表2/表3 留空不动 —— 逐张填是合并报告的路径
+            FillSampleTable(result, new Aatcc201SampleBlockModel
+            {
+                SampleName = model.SampleName,
+                Stations = model.Stations
+            });
 
             // 曲线图: 模型带 PNG 才嵌入(追加到文档末尾, 模板无占位段)
             if (model.ChartImagePng is { Length: > 0 })
                 AppendChartAtEnd(doc, model.ChartImagePng);
 
             // 页脚: 环境温度/湿度 → footer1 签名行末两格(____°C / ____%RH), 照克重 PHY_Weight
-            FillFooter(doc, model);
+            FillFooter(doc, model.Temperature, model.Humidity);
 
             doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 填一张 Sample 表 = 一个样品: 表头格第二行写样品名, R1/R2/R3 逐行填该样品的第 1.2.3 次测试,
+        /// Average 合并格(restart)一次写最终均值。单样品(FillReport)与合并报告(FillCombinedReport)共用本方法,
+        /// 保证"报告里一张 Sample 表怎么长"只有一处实现。
+        /// 行填法: 槽位对齐(报告第 i 行 = 模型第 i 项), 未参与/缺槽的项整行留空(允许 1~3 次, 中间缺槽不挤位)。
+        /// Average 列新版模板把 #1~#3 合并成单格(vMerge restart@R1, continue@R2/R3): 合并列只认 restart 格内容,
+        /// 续格必须空白 —— 所以 3 行只累计, 结束后把最终均值一次写进 restart 格;
+        /// 旧模板(分割, 无 vMerge)由 FillStationRow 逐行写运行平均。
+        /// </summary>
+        private void FillSampleTable(Table result, Aatcc201SampleBlockModel block)
+        {
+            // Sample 表头格(col0): 原 "Sample" 行保留, 同格第二行写样品名称
+            AppendSampleNameUnderHeader(result, block.SampleName);
+
+            int avgMergeRow = FindAverageMergeRow(result);
+            int runningCount = 0;
+            double runningRate = 0;   // 平均(mL/h = mg/h ÷ 1000), 只统计参与项
+            for (int i = 0; i < Aatcc201Layout.SampleRowCount; i++)
+                FillStationRow(result, Aatcc201Layout.RowSample1 + i,
+                    block.Stations.ElementAtOrDefault(i), ref runningCount, ref runningRate, avgMergeRow >= 0);
+            if (avgMergeRow >= 0 && runningCount > 0)
+                SetCellText(Row(result, avgMergeRow), Aatcc201Layout.ColumnAverage, (runningRate / runningCount).ToString("F3"));
+            // 摘要 R11 "Average drying rate (mL/h):" 行不再填值(均值只出现在结果表合并格)
+        }
+
+        /// <summary>
+        /// 填合并报告 —— 同一报告号下多个样品合成一份:
+        ///   1. 摘要 R0 报告号;
+        ///   2. 枚举模板全部 Sample 表(模板自带 3 张), 样品数不超过就用现有表, 超过则克隆空白母本补表;
+        ///   3. 每个样品填一张表(顺序 = Samples 顺序, 服务侧按文件生成时间旧→新排);
+        ///   4. 所有曲线图按序追加到文档末尾;
+        ///   5. 页脚温湿度(服务侧取最新一份文件的值)写入。
+        /// 克隆母本在填充前先深拷贝一张空白 Sample 表 —— 模板前几张表马上会被填, 之后再克隆会把数据一起带过去。
+        /// </summary>
+        public void FillCombinedReport(string filePath, Aatcc201CombinedReportFillModel model)
+        {
+            using var doc = WordprocessingDocument.Open(filePath, true);
+            var (summary, _) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不产出错位文档
+
+            SetCellText(Row(summary, Aatcc201Layout.SummaryRowReportNumber)!, Aatcc201Layout.ValueColumn, model.ReportNumber);
+
+            var sampleTables = FindSampleTables(doc);
+            if (sampleTables.Count == 0)
+                throw new InvalidOperationException("Aatcc201 模板缺少结果表(Sample 表头)");
+
+            // 空白母本: 现在就深拷贝, 保证之后每次克隆拿到的都是没填过的模板表(含 vMerge 合并结构)
+            var pristine = (Table)sampleTables[0].CloneNode(true);
+
+            Table? prev = null;
+            for (int i = 0; i < model.Samples.Count; i++)
+            {
+                Table target;
+                if (i < sampleTables.Count)
+                {
+                    target = sampleTables[i];
+                }
+                else
+                {
+                    // 第 4 个样品起: 克隆空白表, 插到上一张之后(顺序即 Samples 顺序)
+                    target = (Table)pristine.CloneNode(true);
+                    (prev ?? sampleTables[^1]).InsertAfterSelf(target);
+                }
+                FillSampleTable(target, model.Samples[i]);
+                prev = target;
+            }
+
+            // 曲线图: 全部追加到文档末尾(用户: aatcc 曲线图放在表最后)
+            foreach (var png in model.Charts)
+                if (png is { Length: > 0 })
+                    AppendChartAtEnd(doc, png);
+
+            FillFooter(doc, model.Temperature, model.Humidity);
+
+            doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 解析一份历史报告 docx —— 合并报告的数据源(生成时刻没有落结构化结果, 只能从文件本身读回):
+        ///   报告号 = 摘要表 R0 col1;
+        ///   样品块 = 每张有数据的 Sample 表(空白表不产出块 → 合并产物再被合并时不会重复带空样品);
+        ///   曲线图 = 正文里的图片(正文只有追加在文末的曲线图; 表头/页脚 logo 在别的部件, 不会进来);
+        ///   温湿度 = 页脚温湿度表(没填过 → null)。
+        /// </summary>
+        public Aatcc201ParsedReport ReadReport(string filePath)
+        {
+            using var doc = WordprocessingDocument.Open(filePath, false);
+            var mainPart = doc.MainDocumentPart
+                ?? throw new InvalidOperationException($"AATCC 报告缺少主部件: {Path.GetFileName(filePath)}");
+            var body = mainPart.Document?.Body
+                ?? throw new InvalidOperationException($"AATCC 报告缺少正文: {Path.GetFileName(filePath)}");
+
+            var parsed = new Aatcc201ParsedReport();
+
+            var summary = LocateTable(doc, Aatcc201Layout.SummaryTableMarker);
+            parsed.ReportNumber = Row(summary, Aatcc201Layout.SummaryRowReportNumber)?
+                .Elements<TableCell>().ElementAtOrDefault(Aatcc201Layout.ValueColumn)?.InnerText.Trim() ?? string.Empty;
+
+            foreach (var table in FindSampleTables(doc))
+            {
+                var block = ReadSampleBlock(table);
+                if (block != null) parsed.Samples.Add(block);
+            }
+
+            parsed.Charts.AddRange(ReadBodyChartPngs(mainPart, body));
+            (parsed.Temperature, parsed.Humidity) = ReadFooterValues(doc);
+            return parsed;
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<string> ReadSampleNames(string filePath)
+        {
+            try
+            {
+                using var doc = WordprocessingDocument.Open(filePath, false);
+                var names = new List<string>();
+                foreach (var table in FindSampleTables(doc))
+                {
+                    string name = ReadSampleName(table);
+                    if (!string.IsNullOrWhiteSpace(name)) names.Add(name);
+                }
+                return names;
+            }
+            catch
+            {
+                // 单个文件读不出来不影响列表其它行(报告坏了不该让历史界面打不开)
+                return Array.Empty<string>();
+            }
         }
 
         /// <summary>
@@ -92,11 +216,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 填一行工位结果: Start(s)/End(s)/Rate(mL/h)/运行平均(mL/h)。
-        /// 未参与 → 整行留空(模板 #3 行即自然留空, 本方法不碰它)。
+        /// 填一行工位结果: Start(s)/End(s)/Rate(mL/h), 并累计参与数/速率和。
+        /// 未参与 → 整行留空。
+        /// averageColumnMerged=true(Average 列 vMerge 单格): 不逐行写平均(续格必须空白),
+        /// 由 FillReport 结束后把最终均值一次写进 restart 格; false(旧分割布局): 照旧逐行写运行平均。
         /// </summary>
         private void FillStationRow(Table result, int rowIdx, Aatcc201StationRowModel? s,
-            ref int runningCount, ref double runningRate)
+            ref int runningCount, ref double runningRate, bool averageColumnMerged)
         {
             if (s?.Participated != true) return;
 
@@ -110,15 +236,34 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             runningCount++;
             runningRate += rateMlPerHour;
-            SetCellText(r, Aatcc201Layout.ColumnAverage, (runningRate / runningCount).ToString("F3"));
+            if (!averageColumnMerged)
+                SetCellText(r, Aatcc201Layout.ColumnAverage, (runningRate / runningCount).ToString("F3"));
+        }
+
+        /// <summary>
+        /// 新版模板把结果表 Average 数据列 #1~#3 纵向合并成单格(vMerge restart@首行, continue@后续行):
+        /// 从 #1 行起找 Average 格带 vMerge 的首行(即合并锚点/restart 格)。旧模板(每行独立格, 无 vMerge)返回 -1。
+        /// 引擎两种布局都支持: 合并 → 最终均值一次写 restart 格, continue 续格保持空白;
+        /// 分割 → FillStationRow 逐行写运行平均(旧模板 & 单测内存模板路径)。
+        /// </summary>
+        private static int FindAverageMergeRow(Table result)
+        {
+            for (int r = Aatcc201Layout.RowSample1; ; r++)
+            {
+                var row = Row(result, r);
+                if (row == null) return -1;
+                var cell = row.Elements<TableCell>().ElementAtOrDefault(Aatcc201Layout.ColumnAverage);
+                if (cell?.TableCellProperties?.VerticalMerge != null) return r;
+            }
         }
 
         /// <summary>
         /// 页脚: 把环境温度/湿度填进 footer1 签名行末两格(R1 第 3 格 °C、第 4 格 %RH),
         /// 同克重 PHY_Weight 的页脚处理(模板这三份 TÜV 报告的 footer1 结构一致)。
-        /// 按 "%RH" 标记定位 footer, 结构不符立即抛异常; 模型值空白 → 不填(保留模板横线)。
+        /// 按 "%RH" 标记定位 footer, 结构不符立即抛异常; 值空白 → 不填(保留模板横线)。
+        /// 参数取字符串而不是模型: 单样品报告(FillReport)与合并报告(FillCombinedReport)共用。
         /// </summary>
-        private void FillFooter(WordprocessingDocument doc, Aatcc201ReportFillModel model)
+        private void FillFooter(WordprocessingDocument doc, string? temperature, string? humidity)
         {
             var footer = doc.MainDocumentPart?.FooterParts
                 .FirstOrDefault(fp => fp.Footer?.InnerText.Contains("%RH") == true)
@@ -135,8 +280,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             if (cells.Count < 4)
                 throw new InvalidOperationException("Aatcc201 模板页脚温湿度表 R1 格数不足(应含温度/湿度格)");
 
-            WriteFooterValue(cells[2], model.Temperature, "°C");
-            WriteFooterValue(cells[3], model.Humidity, "%RH");
+            WriteFooterValue(cells[2], temperature, "°C");
+            WriteFooterValue(cells[3], humidity, "%RH");
 
             footerEl.Save();
         }
@@ -214,6 +359,123 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var padRun = new Run(padRp);
             padRun.Append(new Text(new string('_', count)));
             return padRun;
+        }
+
+        // ============ 解析侧(合并报告的数据源 = 历史 docx 本身) ============
+
+        /// <summary>
+        /// 枚举正文里全部 Sample 结果表(模板自带 3 张; 合并报告可能更多)。
+        /// 判据 = R0 col0 格文本含 "Sample" —— 填充后该格是 "Sample + 样品名", 仍命中;
+        /// 摘要表 R0 col0 是 "Test Report Number", 不会误中。
+        /// </summary>
+        private static IReadOnlyList<Table> FindSampleTables(WordprocessingDocument doc)
+        {
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body == null) return Array.Empty<Table>();
+
+            return body.Elements<Table>().Where(IsSampleTable).ToList();
+        }
+
+        private static bool IsSampleTable(Table table)
+        {
+            var header = Row(table, Aatcc201Layout.HeaderRow);
+            var first = header?.Elements<TableCell>().ElementAtOrDefault(0);
+            return first?.InnerText.Contains("Sample", StringComparison.Ordinal) == true;
+        }
+
+        /// <summary>
+        /// 读一张 Sample 表: 逐行读 #1~#3 的 Start/End/Rate 还原成结果行模型
+        /// (写侧是 int mg/h ÷1000 打 F3, 读回 ×1000 四舍五入即原值, 往返无损),
+        /// 一行都读不出数据(= 模板留的空表) → 返回 null, 不算样品。
+        /// </summary>
+        private static Aatcc201SampleBlockModel? ReadSampleBlock(Table table)
+        {
+            var stations = new List<Aatcc201StationRowModel>();
+            for (int i = 0; i < Aatcc201Layout.SampleRowCount; i++)
+            {
+                var r = Row(table, Aatcc201Layout.RowSample1 + i);
+                var cells = r?.Elements<TableCell>().ToList();
+                var rateText = cells?.ElementAtOrDefault(Aatcc201Layout.ColumnRate)?.InnerText;
+                if (cells == null ||
+                    !double.TryParse(rateText, NumberStyles.Float, CultureInfo.InvariantCulture, out double rateMlPerHour))
+                {
+                    stations.Add(new Aatcc201StationRowModel { Participated = false });
+                    continue;
+                }
+
+                int.TryParse(cells.ElementAtOrDefault(Aatcc201Layout.ColumnStartTime)?.InnerText, out int start);
+                int.TryParse(cells.ElementAtOrDefault(Aatcc201Layout.ColumnEndTime)?.InnerText, out int end);
+                stations.Add(new Aatcc201StationRowModel
+                {
+                    Participated = true,
+                    StartPoint = start,
+                    EndPoint = end,
+                    // 报告写的是 mL/h(= mg/h ÷ 1000 的 F3 串), 读回换算成存储单位 mg/h
+                    RateMgPerHour = (int)Math.Round(rateMlPerHour * 1000.0),
+                    RateGPerHour = Math.Round(rateMlPerHour, 3)
+                });
+            }
+
+            if (!stations.Any(s => s.Participated)) return null;
+            return new Aatcc201SampleBlockModel { SampleName = ReadSampleName(table), Stations = stations };
+        }
+
+        /// <summary>
+        /// 读 Sample 表头格(col0)里的样品名称: 模板首段固定是 "Sample", 样品名写在同一格的第 2 段起
+        /// (见 AppendSampleNameUnderHeader); 只剩模板那一段 → 没写样品名, 返回空串。
+        /// </summary>
+        private static string ReadSampleName(Table table)
+        {
+            var cell = Row(table, Aatcc201Layout.HeaderRow)?.Elements<TableCell>().ElementAtOrDefault(0);
+            if (cell == null) return string.Empty;
+
+            var lines = cell.Elements<Paragraph>().Skip(1)
+                .Select(p => p.InnerText.Trim())
+                .Where(t => t.Length > 0);
+            return string.Join(" ", lines);
+        }
+
+        /// <summary>
+        /// 读正文里的图片字节(= 引擎追加到文末的曲线图)。遍历正文 blip 关系逐个取 ImagePart 流;
+        /// 关系失效/非图片一律跳过(宽容), 一张坏图不影响其它图。
+        /// </summary>
+        private static List<byte[]> ReadBodyChartPngs(MainDocumentPart mainPart, Body body)
+        {
+            var pngs = new List<byte[]>();
+            foreach (var blip in body.Descendants<A.Blip>())
+            {
+                string? relId = blip.Embed?.Value;
+                if (string.IsNullOrEmpty(relId)) continue;
+                try
+                {
+                    if (mainPart.GetPartById(relId) is not ImagePart image) continue;
+                    using var ms = new MemoryStream();
+                    using (var stream = image.GetStream()) stream.CopyTo(ms);
+                    if (ms.Length > 0) pngs.Add(ms.ToArray());
+                }
+                catch (ArgumentOutOfRangeException) { /* 关系失效的图: 跳过 */ }
+                catch (KeyNotFoundException) { /* 关系缺失的图: 跳过 */ }
+            }
+            return pngs;
+        }
+
+        /// <summary>读页脚温湿度(没填过 → null, 由调用方决定回退到别的文件或留空)。</summary>
+        private static (string? Temperature, string? Humidity) ReadFooterValues(WordprocessingDocument doc)
+        {
+            var footerEl = doc.MainDocumentPart?.FooterParts
+                .FirstOrDefault(fp => fp.Footer?.InnerText.Contains("%RH") == true)?.Footer;
+            var row = footerEl?.Elements<Table>().FirstOrDefault()?.Elements<TableRow>().ElementAtOrDefault(1);
+            var cells = row?.Elements<TableCell>().ToList();
+            if (cells == null || cells.Count < 4) return (null, null);
+
+            return (ExtractNumber(cells[2].InnerText), ExtractNumber(cells[3].InnerText));
+        }
+
+        /// <summary>取文本里第一个数字(页脚格是 "__23.5__°C" 这种带横线/单位的形态)。</summary>
+        private static string? ExtractNumber(string? text)
+        {
+            var m = Regex.Match(text ?? string.Empty, @"-?\d+(\.\d+)?");
+            return m.Success ? m.Value : null;
         }
 
         /// <summary>
@@ -324,19 +586,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int SummaryRowAverage = 11;      // R11 平均干燥速率: [空(col0)|Average drying rate (mL/h):(span2) 后追加值]
             public const int AverageLabelColumn = 1;      // R11 标签格在第 1 列, 值追加在标签文本之后(不能填 col0 → 跑到标签前)
 
-            // 表1 (第一张结果表): R0 表头, R1=#1, R2=#2, R3=#3(留空) —— 模板无空白占位行
+            // 表1 (第一张结果表): R0 表头, R1=#1, R2=#2, R3=#3 —— 3 行都可能被填(允许 1~3 次)
             public const int HeaderRow = 0;
             public const int RowSample1 = 1;   // #1
             public const int RowSample2 = 2;   // #2
+            public const int RowSample3 = 3;   // #3
+            public const int SampleRowCount = 3;   // 一张 Sample 表最多 3 次测试(R1~R3); 填/读两侧共用
             public const int ColumnStartTime = 1;  // Start time (s)
             public const int ColumnEndTime = 2;    // End time (s)
             public const int ColumnRate = 3;       // Drying rate (mL/h)
             public const int ColumnAverage = 4;    // Average drying rate (mL/h)
             public const int ResultColumnCount = 5;
 
-            // 曲线图尺寸(EMU, 1cm=360000): 14cm × 8cm
-            public const long ChartWidthEmu = 14 * 360000L;
-            public const long ChartHeightEmu = 8 * 360000L;
+            // 曲线图显示尺寸(EMU, 1cm=360000): 宽 12cm, 高按图像素 1400:800=7:4 等比 → ≈6.9cm
+            // (与 NF5022/Gb21655Layout 同尺寸, 两张图长得一样大; 2026-09-10 用户要求缩小, 原 14cm × 8cm)
+            public const long ChartWidthEmu = 12 * 360000L;        // 4,320,000 EMU = 12cm
+            public const long ChartHeightEmu = 12 * 360000L * 4 / 7;  // ≈ 2,468,571 EMU ≈ 6.86cm
         }
 
         private static TableRow? Row(Table? t, int i) => t?.Elements<TableRow>().ElementAtOrDefault(i);

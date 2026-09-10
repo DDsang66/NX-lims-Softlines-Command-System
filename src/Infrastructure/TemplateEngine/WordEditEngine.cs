@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
@@ -22,6 +23,41 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             var clone = (Table)source.CloneNode(true);
             source.InsertAfterSelf(clone);
             return clone;
+        }
+
+        /// <summary>
+        /// 整页克隆: 把一组连续 body 块级元素(通常=模板一整页: 摘要表+测点表+结果表+Equipment 段+备注表等)
+        /// 逐个深拷贝成新页, 默认以分页符段落开头(新页从页首开始, 同一节内分页 → 共享模板页脚/页边距),
+        /// 插到文末 body 级 sectPr 之前(schema 规定 sectPr 必须是 w:body 最后一个孩子);
+        /// 模板无 body 级 sectPr 时追加到文末(兜底)。返回新克隆的块级元素, 顺序与入参一致——
+        /// 调用方按入参元素 ReferenceEquals 即可定位其中某张克隆表。
+        /// 用途: 多组报告(如 GB21655 6 工位分两组)要"每组独占一整页", 不是只克隆结果表——
+        ///       摘要(报告号/均值)/样品名称/Equipment/备注等页内容都随页重复。
+        /// </summary>
+        internal static List<OpenXmlElement> ClonePageBlock(
+            Body body, IEnumerable<OpenXmlElement> pageElements, bool insertPageBreak = true)
+        {
+            var clones = new List<OpenXmlElement>();
+            var boundary = body.Elements<SectionProperties>().LastOrDefault();
+
+            OpenXmlElement? anchor = null;
+            if (insertPageBreak)
+            {
+                var breakPara = new Paragraph(new Run(new Break { Type = BreakValues.Page }));
+                if (boundary != null) { boundary.InsertBeforeSelf(breakPara); anchor = breakPara; }
+                else { body.Append(breakPara); anchor = breakPara; }
+            }
+
+            foreach (var src in pageElements)
+            {
+                var clone = src.CloneNode(true);
+                if (anchor != null) anchor.InsertAfterSelf(clone);
+                else if (boundary != null) boundary.InsertBeforeSelf(clone);
+                else body.Append(clone);
+                anchor = clone;
+                clones.Add(clone);
+            }
+            return clones;
         }
 
         /// <summary>

@@ -135,6 +135,19 @@ public class ReportFileStore : IReportFileStore, IScopedDependency
         return full;
     }
 
+    /// <inheritdoc />
+    public bool DeleteReport(string fileName)
+    {
+        // ResolvePath 已挡住路径穿越并确认文件存在且只在本报告目录下;
+        // 加扩展名校验是防手滑——目录按约定只放报告 docx, 别的一律不删。
+        string? path = ResolvePath(fileName);
+        if (path == null || !path.EndsWith(".docx", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        System.IO.File.Delete(path);
+        return true;
+    }
+
     /// <summary>模式统一转小写，非法值回退原值（列表时匹配不上即空结果）。</summary>
     private static string NormalizeMode(string mode)
         => string.IsNullOrWhiteSpace(mode) ? string.Empty : mode.Trim().ToLowerInvariant();

@@ -72,6 +72,7 @@ public class MoistureDryingRateComputeService : IMoistureDryingRateComputeServic
 
         var stations = dto.Stations
             .Select(s => new Aatcc201StationInput(
+                s.Station,      // 物理工位 1|2（测试3 复用工位 → 偏置按它取, 不能靠下标）
                 s.WaterMl,
                 s.Frames.Select(f => new Aatcc201FrameSample(f.SurfaceRaw01, f.BoardRaw01, f.CoverStatus, f.FrameTimeSec)).ToList()))
             .ToList();
