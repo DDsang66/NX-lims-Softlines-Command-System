@@ -56,18 +56,45 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 清除模板行中的示例数据 (保留结构)
             WordEditEngine.ClearRowContent(templateRow);
 
-            // 处理第一个组: 直接填充主表
+            //// 处理第一个组: 直接填充主表
+            //var firstGroup = groups.First();
+            //FillGroupTable(mainTable, templateRow, firstGroup.Key, firstGroup.ToList(), 1);
+
+            //// 处理其余组: 克隆表格
+            //for (int i = 1; i < groups.Count; i++)
+            //{
+            //    var group = groups[i];
+
+            //    WordEditEngine.InsertEmptyParagraphAfterTable(mainTable);
+
+            //    var clonedTable = WordEditEngine.CloneTableAfter(mainTable);
+
+            //    // 获取克隆表中的数据行 (与模板行结构一致)
+            //    var clonedRow = GetClonedDataRow(clonedTable, templateRow)
+            //        ?? throw new InvalidOperationException($"克隆表缺少数据行结构 (组: {group.Key})");
+
+            //    FillGroupTable(clonedTable, clonedRow, group.Key, group.ToList(), i + 1);
+            //}
+
+            // ==================== 1. 先完成所有克隆（此时主表未被填充，保证克隆纯净） ====================
+            var clonedTables = new List<Table>();
+            for (int i = 1; i < groups.Count; i++)
+            {
+                WordEditEngine.InsertEmptyParagraphAfterTable(mainTable);
+                var clonedTable = WordEditEngine.CloneTableAfter(mainTable);
+                clonedTables.Add(clonedTable);
+            }
+
+            // ==================== 2. 再进行所有填充 ====================
+            // 填充第一组: 主表
             var firstGroup = groups.First();
             FillGroupTable(mainTable, templateRow, firstGroup.Key, firstGroup.ToList(), 1);
 
-            // 处理其余组: 克隆表格
+            // 填充其余组: 克隆出来的表
             for (int i = 1; i < groups.Count; i++)
             {
                 var group = groups[i];
-
-                WordEditEngine.InsertEmptyParagraphAfterTable(mainTable);
-
-                var clonedTable = WordEditEngine.CloneTableAfter(mainTable);
+                var clonedTable = clonedTables[i - 1]; // 取出之前克隆好的表
 
                 // 获取克隆表中的数据行 (与模板行结构一致)
                 var clonedRow = GetClonedDataRow(clonedTable, templateRow)

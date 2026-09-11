@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.Value
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -72,6 +73,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamStructur
                 (EngineLayer)Enum.Parse(typeof(EngineLayer), 
                 dto.EngineLayer),
                 dto.BuyerIds.Select(id => (BuyerId?)new BuyerId(id)),
+                dto.StandardFamilyIds.Select(id => (StandardFamilyId?)new StandardFamilyId(id)),
+                new FormulaId(dto.FormulaId),
                 schema);
 
             await  _paramStructureRepository.UpdateAsync(paramStructure, ct);

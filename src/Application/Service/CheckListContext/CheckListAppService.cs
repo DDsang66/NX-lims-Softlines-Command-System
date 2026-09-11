@@ -119,9 +119,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
                 var newItem = item with { };  // 复制
                 if (!string.IsNullOrWhiteSpace(newItem.Parameter))
                 {
-                    var cutting = ExtractCuttingMethodFromParameter(newItem.Parameter);
-                    if (!string.IsNullOrEmpty(cutting))
-                        newItem.CuttingMethod = cutting;
+                    // 一次性处理提取和清理
+                    var (cuttingMethod, cleanedParameter) = ProcessParameterCutting(newItem.Parameter);
+
+                    if (!string.IsNullOrEmpty(cuttingMethod))
+                    {
+                        newItem.CuttingMethod = cuttingMethod;
+                    }
+
+                    // 无论是否提取到了 cutting，都将清理过（移除了指定字段）的 Parameter 赋回去
+                    newItem.Parameter = cleanedParameter;
                 }
                 items.Add(newItem);
             }
@@ -237,31 +244,42 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
 
 
         /// <summary>
-        /// CuttingMethod赋值方法
+        /// 提取 CuttingMethod 并从 Parameter 中移除 SpecimenArea 和 SpecimenNum
         /// </summary>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
-        private static string? ExtractCuttingMethodFromParameter(string parameter)
+        /// <param name="parameter">原始 Parameter JSON 字符串</param>
+        /// <returns>Item1: CuttingMethod字符串 (可能为null), Item2: 清理后的 Parameter JSON 字符串</returns>
+        private static (string? CuttingMethod, string? CleanedParameter) ProcessParameterCutting(string parameter)
         {
             if (string.IsNullOrWhiteSpace(parameter))
-                return null;
+                return (null, parameter);
 
             try
             {
                 var root = JsonSerializer.Deserialize<JsonElement>(parameter);
                 var parts = new List<string>();
 
+                // 创建一个新的 Dictionary 来重建清理后的 JSON 结构
+                var newRootDict = new Dictionary<string, JsonElement>();
+
                 foreach (var tp in root.EnumerateObject())
                 {
                     if (tp.Value.ValueKind != JsonValueKind.Object)
+                    {
+                        // 非 Object 节点直接保留
+                        newRootDict[tp.Name] = tp.Value;
                         continue;
+                    }
 
                     // 获取 values 对象
                     if (!tp.Value.TryGetProperty("values", out JsonElement values)
                         || values.ValueKind != JsonValueKind.Object)
+                    {
+                        // 没有 values 节点或 values 非 Object，直接保留原样
+                        newRootDict[tp.Name] = tp.Value;
                         continue;
+                    }
 
-                    // 提取 SpecimenArea
+                    // --- 开始提取逻辑 ---
                     string? specimenArea = null;
                     if (values.TryGetProperty("SpecimenArea", out JsonElement area))
                     {
@@ -270,7 +288,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
                             : area.ToString();
                     }
 
-                    // 提取 SpecimenNum
                     string? specimenNum = null;
                     if (values.TryGetProperty("SpecimenNum", out JsonElement num))
                     {
@@ -279,7 +296,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
                             : num.ToString();
                     }
 
-                    // 如果有值，添加到 parts
                     if (!string.IsNullOrEmpty(specimenArea) || !string.IsNullOrEmpty(specimenNum))
                     {
                         var groupParts = new List<string>();
@@ -290,15 +306,52 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
 
                         parts.Add(string.Join(", ", groupParts));
                     }
+
+                    // --- 开始移除逻辑 (重建 values 对象) ---
+                    var newValuesDict = new Dictionary<string, JsonElement>();
+                    foreach (var valProp in values.EnumerateObject())
+                    {
+                        // 过滤掉 SpecimenArea 和 SpecimenNum
+                        if (valProp.NameEquals("SpecimenArea") || valProp.NameEquals("SpecimenNum"))
+                        {
+                            continue;
+                        }
+                        newValuesDict[valProp.Name] = valProp.Value;
+                    }
+
+                    // --- 重建 tp 对象 ---
+                    var newTpDict = new Dictionary<string, JsonElement>();
+                    foreach (var tpProp in tp.Value.EnumerateObject())
+                    {
+                        if (tpProp.NameEquals("values"))
+                        {
+                            // 将重建的 values 字典序列化为 JsonElement 放入
+                            using var doc = JsonSerializer.SerializeToDocument(newValuesDict);
+                            newTpDict["values"] = doc.RootElement.Clone();
+                        }
+                        else
+                        {
+                            newTpDict[tpProp.Name] = tpProp.Value;
+                        }
+                    }
+
+                    // 将重建的 tp 放入新的根字典
+                    using var tpDoc = JsonSerializer.SerializeToDocument(newTpDict);
+                    newRootDict[tp.Name] = tpDoc.RootElement.Clone();
                 }
 
-                return parts.Count > 0 ? string.Join("; ", parts) : null;
+                // 重建最终的 JSON 字符串
+                var cleanedParameter = JsonSerializer.Serialize(newRootDict);
+                var cuttingMethod = parts.Count > 0 ? string.Join("; ", parts) : null;
+
+                return (cuttingMethod, cleanedParameter);
             }
             catch (JsonException ex)
             {
                 Console.WriteLine($"Failed to parse parameter: {ex.Message}");
-                return null;
+                return (null, parameter); // 发生异常时，返回原始 parameter，避免数据丢失
             }
         }
+
     }
 }

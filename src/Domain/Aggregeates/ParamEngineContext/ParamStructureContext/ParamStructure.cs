@@ -222,6 +222,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             bool isEligibleAsCondition,
             EngineLayer engineLayer,
             IEnumerable<BuyerId?> buyerIds,
+            IEnumerable<StandardFamilyId> standardFamilyIds,
+            FormulaId formulaId,
             ParamSchema schema)
         {
             if (string.IsNullOrWhiteSpace(paramName))
@@ -235,12 +237,21 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             EngineLayer = engineLayer;
             Schema = schema;
             EffectiveDate = DateTime.UtcNow;
+            FormulaId = formulaId;
 
             if (buyerIds != null)
             {
                 foreach (var buyerId in buyerIds.Where(f => f != null))
                 {
                     _buyerIds.Add(buyerId);
+                }
+            }
+
+            if (standardFamilyIds != null) 
+            {
+                foreach (var familyId in standardFamilyIds.Where(f => f != null))
+                {
+                    _standardFamilyIds.Add(familyId);
                 }
             }
 
