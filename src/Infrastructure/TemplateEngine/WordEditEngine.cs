@@ -11,6 +11,48 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
     internal static class WordEditEngine
     {
         /// <summary>
+        /// 让新 run 加粗(见 SetRprChild 的顺序说明)。
+        /// </summary>
+        internal static void MakeBold(RunProperties rp) => SetRprChild(rp, new Bold { Val = true });
+
+        /// <summary>
+        /// 设定字号(半磅, 如 28 = 14pt)。sz 与 szCs(复杂文种)成对写, 否则阿拉伯语等文种不跟随。
+        /// </summary>
+        internal static void SetFontSize(RunProperties rp, int halfPoints)
+        {
+            SetRprChild(rp, new FontSize { Val = halfPoints.ToString() });
+            SetRprChild(rp, new FontSizeComplexScript { Val = halfPoints.ToString() });
+        }
+
+        /// <summary>
+        /// CT_RPr 子元素的标准顺序(ECMA-376 的序列), 新增/覆盖属性时按此定位插入点。
+        /// 为什么不直接 Append: Word 严格按 schema 顺序读 RunProperties, 顺序错了会**静默忽略**该属性
+        /// (例如 w:sz 排到 w:u 之后就不生效, 表现为"代码写了但报告里字号没变")。数组里没有的元素视为未知, 跳过。
+        /// 同类型先删干净再插, 避免模板原本就带该属性时出现两个(w:b / w:sz 各限一个)。
+        /// 这套 rPr 操作是各引擎共用的唯一实现(克重/NF5022/AATCC 都走这里), 改它=改全部报告。
+        /// </summary>
+        internal static readonly string[] RprOrder =
+        {
+            "rStyle", "rFonts", "b", "bCs", "i", "iCs", "caps", "smallCaps", "strike", "dstrike",
+            "outline", "shadow", "emboss", "imprint", "noProof", "snapToGrid", "vanish", "webHidden",
+            "color", "spacing", "w", "kern", "position", "sz", "szCs", "highlight", "u", "effect",
+            "bdr", "shd", "fitText", "vertAlign", "rtl", "cs", "em", "lang", "eastAsianLayout",
+            "specVanish", "oMath"
+        };
+
+        /// <summary>按 CT_RPr 标准顺序写入/覆盖一个 run 属性(见 RprOrder 的说明)。</summary>
+        internal static void SetRprChild(RunProperties rp, OpenXmlElement child)
+        {
+            string name = child.LocalName;
+            foreach (var old in rp.ChildElements.Where(e => e.LocalName == name).ToList()) old.Remove();
+
+            int rank = Array.IndexOf(RprOrder, name);
+            var next = rp.ChildElements.FirstOrDefault(e => Array.IndexOf(RprOrder, e.LocalName) > rank);
+            if (next != null) rp.InsertBefore(child, next);
+            else rp.Append(child);
+        }
+
+        /// <summary>
         /// 深拷贝整张表(结构+样式), 插到 source 之后, 返回克隆表供调用方继续填格。
         /// 用途: 模板结果表容量不够时按组扩表——如 GB21655 模板每张结果表只有 3 个样品槽,
         ///       6 工位测试需把结果表克隆出第二张(表头样品号由填格逻辑改为 4/5/6)。

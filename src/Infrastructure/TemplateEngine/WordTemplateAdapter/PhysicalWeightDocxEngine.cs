@@ -1,4 +1,3 @@
-using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.PhysicalWeightContext;
@@ -22,6 +21,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     public class PhysicalWeightDocxEngine : IPhysicalWeightDocxEngine, IScopedDependency
     {
         /// <summary>
+        /// 报告号字号(半磅): 28 = 14pt。
+        /// 为什么必须显式给: 模板该值格是空的(一个 run 都没有), 取不到样式源 → 只能吃文档默认(10pt),
+        /// 反而比左侧 "Test Report Number:" 标签的 12pt 还小。14pt 让它压过标签、一眼可见。
+        /// </summary>
+        private const int ReportNumberFontSizeHalfPoints = 28;
+
+        /// <summary>
         /// 填充物理克重报告 — 流程地图:
         ///   1. 打开文件, 定位三张表并做结构校验(结构不符 → 抛异常, 不静默空白);
         ///   2. 表0 摘要表: 填报告号/测试方法, 按测试类型填汇总网格(测点 + 各单位均值; 条重含第三格 oz/dozen);
@@ -35,8 +41,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             using var doc = WordprocessingDocument.Open(filePath, true);
             var (t0, t1) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
 
-            // 报告号加粗: 报告上要一眼可见
-            SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowReportNumber)!, PhysicalWeightDocxLayout.ValueColumn, model.ReportNumber, bold: true);
+            // 报告号加粗放大: 报告上要一眼可见
+            SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowReportNumber)!, PhysicalWeightDocxLayout.ValueColumn,
+                model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
             // 测试方法: 前端传了才覆盖模板该格, 传空(null/空白)则保留模板预填文字
             // (新模板 R5 已预填 "ISO 3801 method 5: 1977 /ASTM D3776/D37..." 等标准名)
             if (!string.IsNullOrWhiteSpace(model.TestMethod))
@@ -321,8 +328,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// <summary>
         /// 按坐标写单元格文本(0-based), 保留原样式。空文本清空该格。
         /// </summary>
-        private void SetCellText(TableRow row, int cellIndex, string text, bool bold = false)
-            => SetCellText(row.Elements<TableCell>().ElementAtOrDefault(cellIndex), text, bold);
+        private void SetCellText(TableRow row, int cellIndex, string text, bool bold = false, int? fontSizeHalfPoints = null)
+            => SetCellText(row.Elements<TableCell>().ElementAtOrDefault(cellIndex), text, bold, fontSizeHalfPoints);
 
         /// <summary>
         /// 写单元格文本, 保留原样式。空文本清空该格。
@@ -355,7 +362,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             SetCellText(cell, text);
         }
 
-        private void SetCellText(TableCell? cell, string text, bool bold = false)
+        private void SetCellText(TableCell? cell, string text, bool bold = false, int? fontSizeHalfPoints = null)
         {
             if (cell == null) return;
 
@@ -363,7 +370,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 后续段落里的 run 会一起被删, 那时再 fallback 就取不到样式了(如页脚湿度格两段落、首段无 run)。
             var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null);
             var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties ?? new RunProperties();
-            if (bold) MakeBold(rp);
+            if (bold) WordEditEngine.MakeBold(rp);
+            if (fontSizeHalfPoints != null) WordEditEngine.SetFontSize(rp, fontSizeHalfPoints.Value);
 
             // 保留第一个段落, 删除多余段落
             var paragraphs = cell.Elements<Paragraph>().ToList();
@@ -377,20 +385,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var newRun = new Run(rp);
             para.Append(newRun);
             TextRunHelper.InsertTextWithLineBreaks(text, newRun);
-        }
-
-        /// <summary>
-        /// 让新 run 加粗。Bold 在 CT_RPr 的 schema 序列里排在 rStyle/rFonts 之后、i/sz/u 之前,
-        /// 直接 Append 会排到末尾(顺序不合 schema, Word 可能忽略), 所以插到第一个"非 rStyle/rFonts"子元素之前。
-        /// 模板该格本来就有 Bold 时先删再插, 避免出现两个 w:b。
-        /// </summary>
-        private static void MakeBold(RunProperties rp)
-        {
-            rp.RemoveAllChildren<Bold>();
-            var bold = new Bold { Val = true };
-            var after = rp.ChildElements.FirstOrDefault(e => e is not (RunStyle or RunFonts));
-            if (after != null) rp.InsertBefore(bold, after);
-            else rp.Append(bold);
         }
 
         /// <summary>

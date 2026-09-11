@@ -37,9 +37,11 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
 
         string fileName = $"{dto.ReportNumber}_{DateTime.Now:yyMMddHHmmss}_PHY_Weight.docx";
         // 模板已移入 Common_PHY/ (与干燥速率等共用目录)
+        // 报告按月归档: SaveDocx/Weight{yyyyMM}/ —— 单月报告多了以后 SaveDocx 根目录会被塞爆, 按月分便于清理/查找。
+        // 目录不存在时 CopyTemplate 会自建; 下载侧(PhysicalWeightReportController)按月目录 → 根目录顺序找回。
         string targetPath = _fileStorage.CopyTemplate(
             Path.Combine("DocxModel", "Common_PHY", "PHY_Weight.docx"),
-            Path.Combine("DocxModel", "SaveDocx"),
+            Path.Combine("DocxModel", "SaveDocx", "Weight" + DateTime.Now.ToString("yyyyMM")),
             fileName);
 
         // 表0 汇总网格: 每测点一行(两种单位均值)

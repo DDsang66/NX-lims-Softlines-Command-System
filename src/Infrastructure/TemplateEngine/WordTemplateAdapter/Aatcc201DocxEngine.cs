@@ -26,9 +26,16 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     public class Aatcc201DocxEngine : IAatcc201DocxEngine, IScopedDependency
     {
         /// <summary>
-        /// 填充 AATCC 201 干燥速率报告 — 流程地图:
+        /// 报告号字号(半磅): 28 = 14pt。与克重/NF5022 报告同款(三份报告的报告号观感一致)。
+        /// 为什么必须显式给: 模板该值格是空的(一个 run 都没有), 取不到样式源 → 只能吃文档默认(10pt),
+        /// 反而比左侧 "Test Report Number" 标签的 12pt 还小。14pt 让它压过标签、一眼可见。
+        /// </summary>
+        private const int ReportNumberFontSizeHalfPoints = 28;
+
+        /// <summary>
+        /// 填充 AATCC 201 干燥速率报告(单样品) — 流程地图:
         ///   1. 打开文件, 定位摘要表 + 第一张结果表并做结构校验(结构不符 → 抛异常, 不静默空白);
-        ///   2. 表0 摘要: R0 报告号(col1); R11 标签行保持模板原样(不再追加均值);
+        ///   2. 表0 摘要: R0 报告号(col1, 加粗 14pt); R11 标签行保持模板原样(不再追加均值);
         ///   3. 表1 结果: R0 Sample 表头格第二行写样品名; 按顺序填 #1/#2 (Start/End/Rate);
         ///      Average 合并格(restart@R1) = 参与工位最终均值, 只写一次; 未参与工位整行留空;
         ///   4. 曲线 PNG → 追加到文档末尾;
@@ -41,7 +48,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var (summary, result) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
 
             // 表0 摘要: R0 报告号(col1); R11 平均干燥速率(col0, 标签占 col1-2)
-            SetCellText(Row(summary, Aatcc201Layout.SummaryRowReportNumber)!, Aatcc201Layout.ValueColumn, model.ReportNumber);
+            // 报告号加粗放大: 报告上要一眼可见
+            SetCellText(Row(summary, Aatcc201Layout.SummaryRowReportNumber)!, Aatcc201Layout.ValueColumn,
+                        model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
 
             // 表1(第一张结果表)填这个样品; 表2/表3 留空不动 —— 逐张填是合并报告的路径
             FillSampleTable(result, new Aatcc201SampleBlockModel
@@ -99,7 +108,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             using var doc = WordprocessingDocument.Open(filePath, true);
             var (summary, _) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不产出错位文档
 
-            SetCellText(Row(summary, Aatcc201Layout.SummaryRowReportNumber)!, Aatcc201Layout.ValueColumn, model.ReportNumber);
+            // 报告号加粗放大(同单样品路径)
+            SetCellText(Row(summary, Aatcc201Layout.SummaryRowReportNumber)!, Aatcc201Layout.ValueColumn,
+                        model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
 
             var sampleTables = FindSampleTables(doc);
             if (sampleTables.Count == 0)
@@ -607,8 +618,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         private static TableRow? Row(Table? t, int i) => t?.Elements<TableRow>().ElementAtOrDefault(i);
 
         /// <summary>按坐标写单元格文本(0-based), 保留原样式。空文本清空该格。</summary>
-        private void SetCellText(TableRow row, int cellIndex, string text)
-            => SetCellText(row.Elements<TableCell>().ElementAtOrDefault(cellIndex), text);
+        private void SetCellText(TableRow row, int cellIndex, string text, bool bold = false, int? fontSizeHalfPoints = null)
+            => SetCellText(row.Elements<TableCell>().ElementAtOrDefault(cellIndex), text, bold, fontSizeHalfPoints);
 
         /// <summary>
         /// 写单元格文本, 保留原样式。空文本清空该格。
@@ -616,8 +627,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 为什么"先抓样式再删内容": 新 run 的样式(字号/字体/加粗)必须从旧 run 复制;
         /// 而旧 run 在步骤③会被删掉, 所以顺序反了就再也取不到样式源, 填进去的字会变成默认格式。
         /// 样式源抓取带兜底: 优先带 rPr 的 run, 其次任意 run(模板值格可能只有裸 run)。
+        /// bold/fontSizeHalfPoints = 在该样式源之上再叠加加粗/字号(报告号要一眼可见)。
         /// </summary>
-        private void SetCellText(TableCell? cell, string text)
+        private void SetCellText(TableCell? cell, string text, bool bold = false, int? fontSizeHalfPoints = null)
         {
             if (cell == null) return;
 
@@ -625,7 +637,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 后续段落里的 run 会一起被删, 那时再 fallback 就取不到样式了。
             var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null)
                          ?? cell.Descendants<Run>().FirstOrDefault();
-            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
+            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties ?? new RunProperties();
+
+            if (bold) WordEditEngine.MakeBold(rp);
+            if (fontSizeHalfPoints != null) WordEditEngine.SetFontSize(rp, fontSizeHalfPoints.Value);
 
             // 保留第一个段落, 删除多余段落
             var paragraphs = cell.Elements<Paragraph>().ToList();

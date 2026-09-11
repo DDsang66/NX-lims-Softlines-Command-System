@@ -15,23 +15,33 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     /// NF5022(GB/T 21655.1) 干燥速率 docx 填充引擎 — 按坐标填格 PHY_GB21655_DryingRate.docx。
     /// 模板结构（用户提供, 勿改; 表号=文档内物理顺序, 定位靠内容标记而非表序号）:
     ///   表0 摘要: R0 Test Report Number | 值; R3 标准引文行(静态); R4 加水量 静态;
-    ///             R5 干燥速率 (g/h) | 值; R7 □洗前□洗后
-    ///   表1 测点: 单行"测点：|值", 值=样品名称
+    ///             R5 测点 | 值(=样品名称); R7 □洗前□洗后
+    ///   表1 干燥速率: 单行"干燥速率：|(g/h)", 值格 = 均值 + 原单位 token
     ///   表2 结果: R0 样品1/2/3; R1 [m0:][值]×3; R4..R24 = 0/3/6..60min 网格,
     ///            每样品 3 列 [时间 | Δmi(span2) | mi]; 6 工位两种排版:
     ///            FillReport = 克隆结果表(旧, 保留); FillReportByPages = 整页克隆+分页符(报告用)
     ///   表3 备注: 静态(最小二乘法说明)
     ///   无"曲线图"占位段 → 每个参与工位(样品)独立一张曲线 PNG 追加到文档末尾
     ///   页脚(footer1, TÜV 签名行): R1 末两格 ____°C / ____%RH = 环境温度/湿度(同克重 PHY_Weight)
-    /// 摘要"干燥速率"单元格 = 参与工位回归斜率(g/h) 的均值。
+    /// "干燥速率："行值格 = 参与工位回归斜率(g/h) 的均值。
+    /// 注意"测点："与"干燥速率："两行的**位置会被实验室改动**(2026-09-11 两行互换:
+    /// 干燥速率从摘要表 R5 挪进独立单行表、测点进摘要表 R5), 故这两行一律按标签文字定位、
+    /// 不绑表序号也不绑表 —— 落在哪张表里都认。
     /// </summary>
     public class DryingRateDocxEngine : IDryingRateDocxEngine, IScopedDependency
     {
         /// <summary>
+        /// 报告号字号(半磅): 28 = 14pt。与克重报告同款。
+        /// 为什么必须显式给: 模板该值格是空的(一个 run 都没有), 取不到样式源 → 只能吃文档默认(10pt),
+        /// 反而比左侧 "Test Report Number" 标签的 12pt 还小。14pt 让它压过标签、一眼可见。
+        /// </summary>
+        private const int ReportNumberFontSizeHalfPoints = 28;
+
+        /// <summary>
         /// 填充 GB21655 干燥速率报告 — 流程地图:
-        ///   1. 打开文件, 定位摘要/测点/结果表并做结构校验(结构不符 → 抛异常, 不静默空白);
-        ///   2. 表0 摘要: 报告号 + 干燥速率均值(参与工位回归斜率, g/h);
-        ///   3. 表1 测点 = 样品名称(模板无独立"样品名称"格);
+        ///   1. 打开文件, 定位摘要表/测点行/干燥速率行/结果表并做结构校验(结构不符 → 抛异常, 不静默空白);
+        ///   2. 摘要表: 报告号; "干燥速率："行值格 = 均值(参与工位回归斜率, g/h) + 模板原单位 token;
+        ///   3. "测点："行值格 = 样品名称(模板无独立"样品名称"格);
         ///   4. 表2 结果: 每 3 样品一组填 m0 + Δmi/mi 时间网格; 超 3 样品 → 克隆整表扩容
         ///      (整组无参与工位 → 不产生空表); 表头样品号=工位号;
         ///   5. 曲线: 每个参与工位(样品)独立一张 PNG(模型 ChartPngs)按序追加到文档末尾(模板无占位段);
@@ -41,28 +51,28 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         public void FillReport(string filePath, DryingRateReportFillModel model)
         {
             using var doc = WordprocessingDocument.Open(filePath, true);
-            var (summary, sampleNameTable, result) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
+            var (summary, sampleNameCell, rateCell, result) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
 
-            // 表0 摘要: 报告号 + 干燥速率(参与工位回归斜率均值, g/h); R4 加水量/R7 洗前洗后为模板静态内容
-            SetCellText(Row(summary, Gb21655Layout.SummaryRowReportNumber)!, Gb21655Layout.ValueColumn, model.ReportNumber);
+            // 摘要表 报告号; R3 标准引文/R4 加水量/R7 洗前洗后为模板静态内容
+            // 报告号加粗放大: 报告上要一眼可见
+            SetCellText(Row(summary, Gb21655Layout.SummaryRowReportNumber)!, Gb21655Layout.ValueColumn,
+                        model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
 
-            // 表1 = 模板"测点："单行表, 该格填样品名称 → 值格写 SampleName
-            SetCellText(Row(sampleNameTable, Gb21655Layout.MeasurePointRow)!, Gb21655Layout.ValueColumn, model.SampleName);
+            // 样品名称 → "测点："行值格(模板无独立"样品名称"格)
+            SetCellText(sampleNameCell, model.SampleName);
 
             var participated = model.Stations.Where(s => s.Participated).ToList();
             if (participated.Count > 0)
             {
                 double avgRateGPerHour = participated.Average(s => s.RateGPerHour);
-                var rateRow = Row(summary, Gb21655Layout.SummaryRowRate)!;
-                var rateCell = rateRow.Elements<TableCell>().ElementAtOrDefault(Gb21655Layout.ValueColumn);
-                // 模板值格原内容 = 单位 token"(g/h)"(摘要行 [干燥速率：, (g/h)])——SetCellText 整格重建
-                // 会把它冲掉, 故先取回再拼在数值后。
-                string unit = rateCell?.InnerText.Trim() ?? "";
+                // 模板值格原内容 = 单位 token"(g/h)"([干燥速率：, (g/h)])——SetCellText 整格重建会把它冲掉,
+                // 故先取回再拼在数值后。
+                string unit = rateCell.InnerText.Trim();
                 string value = avgRateGPerHour.ToString("F3");
-                SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value);
+                SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value, bold: true);
             }
 
-            // 结果表(测点表之后): 每 3 样品一组; 整组无参与工位 → 不产生空表
+            // 结果表: 每 3 样品一组; 整组无参与工位 → 不产生空表
             Table current = result;
             for (int start = 0; start < model.Stations.Count; start += Gb21655Layout.SamplesPerTable)
             {
@@ -100,25 +110,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             using var doc = WordprocessingDocument.Open(filePath, true);
             var body = doc.MainDocumentPart?.Document?.Body
                 ?? throw new InvalidOperationException("GB21655 模板正文缺失");
-            var (summary, sampleNameTable, result) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
+            var (summary, sampleNameCell, rateCell, result) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
 
-            // 表0 摘要: 报告号 + 干燥速率(参与工位回归斜率均值, g/h); R4 加水量/R7 洗前洗后为模板静态内容
-            SetCellText(Row(summary, Gb21655Layout.SummaryRowReportNumber)!, Gb21655Layout.ValueColumn, model.ReportNumber);
+            // 摘要表 报告号; R3 标准引文/R4 加水量/R7 洗前洗后为模板静态内容
+            // 报告号加粗放大: 报告上要一眼可见
+            SetCellText(Row(summary, Gb21655Layout.SummaryRowReportNumber)!, Gb21655Layout.ValueColumn,
+                        model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
 
-            // 表1 = 模板"测点："单行表, 该格填样品名称 → 值格写 SampleName
-            SetCellText(Row(sampleNameTable, Gb21655Layout.MeasurePointRow)!, Gb21655Layout.ValueColumn, model.SampleName);
+            // 样品名称 → "测点："行值格(模板无独立"样品名称"格)
+            SetCellText(sampleNameCell, model.SampleName);
 
             var participated = model.Stations.Where(s => s.Participated).ToList();
             if (participated.Count > 0)
             {
                 double avgRateGPerHour = participated.Average(s => s.RateGPerHour);
-                var rateRow = Row(summary, Gb21655Layout.SummaryRowRate)!;
-                var rateCell = rateRow.Elements<TableCell>().ElementAtOrDefault(Gb21655Layout.ValueColumn);
-                // 模板值格原内容 = 单位 token"(g/h)"(摘要行 [干燥速率：, (g/h)])——SetCellText 整格重建
-                // 会把它冲掉, 故先取回再拼在数值后。
-                string unit = rateCell?.InnerText.Trim() ?? "";
+                // 模板值格原内容 = 单位 token"(g/h)"([干燥速率：, (g/h)])——SetCellText 整格重建会把它冲掉,
+                // 故先取回再拼在数值后。
+                string unit = rateCell.InnerText.Trim();
                 string value = avgRateGPerHour.ToString("F3");
-                SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value);
+                SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value, bold: true);
             }
 
             // 参与工位按 3 个一组切页; 整组无参与工位 → 该组不出页。
@@ -162,7 +172,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
         /// <summary>
         /// 取模板"整页"元素块(整页克隆的克隆源)。模板 body 布局:
-        /// [前导分节空段(带 w:pPr/w:sectPr)] 摘要表 测点表 结果表 Equipment 段 备注表 [文末 body 级 sectPr]。
+        /// [前导分节空段(带 w:pPr/w:sectPr)] 摘要表 干燥速率表 结果表 Equipment 段 备注表 [文末 body 级 sectPr]。
+        /// (摘要表内含"测点"行; 2026-09-11 版把"干燥速率"行抽成摘要表后独立的单行表。)
         /// 页块 = 文末 body 级 sectPr 之前、前导分节段之后的全部元素 —— 摘要(报告号/均值速率)/样品名称/
         /// Equipment/备注 全部随页重复。插入位置与分页符由 WordEditEngine.ClonePageBlock 处理,
         /// 这里只负责"哪些元素算一页"。
@@ -322,25 +333,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 校验 GB21655 模板结构并返回已定位的三张表(摘要/样品名称行/结果)。
-        /// "样品名称行"即模板表1 的"测点。
+        /// 校验 GB21655 模板结构并返回已定位的锚点: 摘要表 + 两个值格(样品名称/干燥速率) + 结果表。
         /// 这里把 FillReport 会用到的所有锚点(行存在性、列数、标记文字)逐项断言,
         /// 任何一项不符立即抛异常, 让生成失败暴露在调用处, 而不是把错位文档发出去。
         /// </summary>
-        private (Table Summary, Table SampleNameTable, Table Result) ValidateTemplate(WordprocessingDocument doc)
+        private (Table Summary, TableCell SampleNameCell, TableCell RateCell, Table Result) ValidateTemplate(WordprocessingDocument doc)
         {
             var summary = LocateTable(doc, Gb21655Layout.SummaryTableMarker)
                 ?? throw new InvalidOperationException("GB21655 模板缺少摘要表(Test Report Number)");
-            if (Row(summary, Gb21655Layout.SummaryRowReportNumber) == null || Row(summary, Gb21655Layout.SummaryRowRate) == null)
-                throw new InvalidOperationException("GB21655 模板摘要表缺 R0(报告号) 或 R5(干燥速率) 行");
+            if (Row(summary, Gb21655Layout.SummaryRowReportNumber) == null)
+                throw new InvalidOperationException("GB21655 模板摘要表缺 R0(报告号) 行");
             if (Row(summary, Gb21655Layout.SummaryRowReportNumber)!.Elements<TableCell>().Count() < 2)
                 throw new InvalidOperationException("GB21655 模板摘要表 R0 应有[标签|值]两格");
 
-            var sampleNameTable = LocateTable(doc, Gb21655Layout.MeasurePointTableMarker)
-                ?? throw new InvalidOperationException("GB21655 模板缺少样品名称行(测点：表)");
-            if (Row(sampleNameTable, Gb21655Layout.MeasurePointRow) == null
-                || Row(sampleNameTable, Gb21655Layout.MeasurePointRow)!.Elements<TableCell>().Count() < 2)
-                throw new InvalidOperationException("GB21655 模板样品名称行(测点：表) R0 应有[标签|值]两格");
+            var sampleNameCell = FindValueCellByLabel(doc, Gb21655Layout.MeasurePointLabel)
+                ?? throw new InvalidOperationException("GB21655 模板缺少样品名称行(测点：)");
+            var rateCell = FindValueCellByLabel(doc, Gb21655Layout.RateLabel)
+                ?? throw new InvalidOperationException("GB21655 模板缺少干燥速率行(干燥速率：)");
 
             var result = LocateTable(doc, Gb21655Layout.ResultTableMarker)
                 ?? throw new InvalidOperationException("GB21655 模板缺少结果表(水分蒸发时间)");
@@ -351,7 +360,30 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             if (Row(result, Gb21655Layout.FirstTimeRow)!.Elements<TableCell>().Count() < Gb21655Layout.CellsPerSample * Gb21655Layout.SamplesPerTable)
                 throw new InvalidOperationException($"GB21655 模板结果表网格行格数不足(应 {Gb21655Layout.SamplesPerTable} 样品×{Gb21655Layout.CellsPerSample} 列)");
 
-            return (summary, sampleNameTable, result);
+            return (summary, sampleNameCell, rateCell, result);
+        }
+
+        /// <summary>
+        /// 按标签格文字定位 [标签|值] 行, 返回值格(第 ValueColumn 格); 找不到返回 null。
+        /// 不绑表: 模板改版会把这两行在"摘要表内 / 独立单行表"之间搬(2026-09-11 就搬过一次),
+        /// 只认标签文字 —— 落在哪张表里都定位得到。取全文档第一个命中行。
+        /// 判据是"首格去空白后与标签全等"而非包含: 摘要表里还有静态格写着"干燥速率"(R3 标准引文行),
+        /// 用包含判定一旦那格补上冒号就会静默命中、把均值写进引文行; 全等判定下宁可 ValidateTemplate
+        /// 抛"缺少干燥速率行"这种看得见的错, 也不出错位文档。
+        /// </summary>
+        private static TableCell? FindValueCellByLabel(WordprocessingDocument doc, string label)
+        {
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body == null) return null;
+
+            foreach (var row in body.Elements<Table>().SelectMany(t => t.Elements<TableRow>()))
+            {
+                var cells = row.Elements<TableCell>().ToList();
+                if (cells.Count <= Gb21655Layout.ValueColumn) continue;
+                if (cells[0].InnerText.Trim() == label)
+                    return cells[Gb21655Layout.ValueColumn];
+            }
+            return null;
         }
 
         /// <summary>把一张曲线 PNG 追加到文档末尾(模板无占位段; 同 AATCC "曲线图放在表最后")。</summary>
@@ -430,16 +462,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         {
             // 定位文本 (LocateTable 按 InnerText.Contains 匹配)
             public const string SummaryTableMarker = "Test Report";       // 表0: 摘要表
-            public const string MeasurePointTableMarker = "测点";         // 表1: "测点："单行表(2026-09-03 模板新增; 值格=样品名称)
             public const string ResultTableMarker = "水分蒸发时间";        // 表2: 结果表(备注表也含此词, 但结果表在前)
 
-            // 表0 (摘要表): [标签|值], 值在第 1 列; R4 加水量/R7 洗前洗后为模板静态内容
-            public const int SummaryRowReportNumber = 0;  // R0 报告号
-            public const int SummaryRowRate = 5;          // R5 干燥速率 (g/h)
-            public const int ValueColumn = 1;             // 值所在列
+            // 按标签文字定位的两行(位置随模板改版搬动, 不绑表):
+            //   测点：值格 = 样品名称;  干燥速率：值格 = 均值 + 模板原单位 token
+            // 两个标签都带全角冒号且要求首格全等 → 不会误中摘要 R3 的静态行"干燥速率"(无冒号)
+            public const string MeasurePointLabel = "测点：";        // [测点：|值]
+            public const string RateLabel = "干燥速率：";           // [干燥速率：|(g/h)]
 
-            // 表1 (测点表): 单行 [测点：|值], 引擎把样品名称写进值格
-            public const int MeasurePointRow = 0;
+            // 表0 (摘要表): [标签|值], 值在第 1 列; R3 标准引文/R4 加水量/R7 洗前洗后为模板静态内容
+            public const int SummaryRowReportNumber = 0;  // R0 报告号
+            public const int ValueColumn = 1;             // 值所在列
 
             // 表2 (结果表)
             public const int HeaderRow = 0;       // R0 样品1/2/3(各 span4)
@@ -461,8 +494,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// <summary>
         /// 按坐标写单元格文本(0-based), 保留原样式。空文本清空该格。
         /// </summary>
-        private void SetCellText(TableRow row, int cellIndex, string text)
-            => SetCellText(row.Elements<TableCell>().ElementAtOrDefault(cellIndex), text);
+        private void SetCellText(TableRow row, int cellIndex, string text, bool bold = false, int? fontSizeHalfPoints = null)
+            => SetCellText(row.Elements<TableCell>().ElementAtOrDefault(cellIndex), text, bold, fontSizeHalfPoints);
 
         /// <summary>
         /// 写单元格文本, 保留原样式。空文本清空该格。
@@ -471,8 +504,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 为什么要"先抓样式再删内容": 新 run 的样式(字号/字体/加粗)必须从旧 run 复制;
         /// 而旧 run 在步骤③会被删掉, 所以顺序反了就再也取不到样式源, 填进去的字会变成默认格式。
         /// 样式源抓取带兜底: 优先带 rPr 的 run, 其次任意 run(模板值格可能只有裸 run)。
+        /// bold/fontSizeHalfPoints = 在该样式源之上再叠加加粗/字号(报告号、干燥速率均值要一眼可见)。
         /// </summary>
-        private void SetCellText(TableCell? cell, string text)
+        private void SetCellText(TableCell? cell, string text, bool bold = false, int? fontSizeHalfPoints = null)
         {
             if (cell == null) return;
 
@@ -480,7 +514,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 后续段落里的 run 会一起被删, 那时再 fallback 就取不到样式了。
             var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null)
                          ?? cell.Descendants<Run>().FirstOrDefault();
-            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties;
+            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties ?? new RunProperties();
+
+            if (bold) WordEditEngine.MakeBold(rp);
+            if (fontSizeHalfPoints != null) WordEditEngine.SetFontSize(rp, fontSizeHalfPoints.Value);
 
             // 保留第一个段落, 删除多余段落
             var paragraphs = cell.Elements<Paragraph>().ToList();
@@ -491,7 +528,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             foreach (var run in para.Elements<Run>().ToList()) run.Remove();
             if (string.IsNullOrEmpty(text)) return;
 
-            var newRun = new Run(rp ?? new RunProperties());
+            var newRun = new Run(rp);
             para.Append(newRun);
             TextRunHelper.InsertTextWithLineBreaks(text, newRun);
         }
