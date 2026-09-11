@@ -68,9 +68,18 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
             if (!System.IO.File.Exists(filePath))
                 return NotFound(new { success = false, message = "文件不存在" });
 
+            // 根据扩展名判断 MIME 类型
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                _ => "application/octet-stream"
+            };
+
             return PhysicalFile(
                 filePath,
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                contentType,
                 fileDownloadName: fileName,
                 enableRangeProcessing: true
             );

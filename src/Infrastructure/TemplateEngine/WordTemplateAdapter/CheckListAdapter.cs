@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml.Packaging;
+﻿using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
@@ -29,7 +30,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             {
                 // 处理条形码：调整为 Word 兼容尺寸并添加背景
                 var processedBarcode = BarcodePictureHelper.AddWhiteBackground(barcode, 10);
-                var resizedBarcode = BarcodePictureHelper.Resize(processedBarcode, 200, 80);
+                var resizedBarcode = BarcodePictureHelper.Resize(processedBarcode, 200, 40);
 
                 FillBarcode(doc, resizedBarcode);
 
@@ -55,26 +56,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             // 清除模板行中的示例数据 (保留结构)
             WordEditEngine.ClearRowContent(templateRow);
-
-            //// 处理第一个组: 直接填充主表
-            //var firstGroup = groups.First();
-            //FillGroupTable(mainTable, templateRow, firstGroup.Key, firstGroup.ToList(), 1);
-
-            //// 处理其余组: 克隆表格
-            //for (int i = 1; i < groups.Count; i++)
-            //{
-            //    var group = groups[i];
-
-            //    WordEditEngine.InsertEmptyParagraphAfterTable(mainTable);
-
-            //    var clonedTable = WordEditEngine.CloneTableAfter(mainTable);
-
-            //    // 获取克隆表中的数据行 (与模板行结构一致)
-            //    var clonedRow = GetClonedDataRow(clonedTable, templateRow)
-            //        ?? throw new InvalidOperationException($"克隆表缺少数据行结构 (组: {group.Key})");
-
-            //    FillGroupTable(clonedTable, clonedRow, group.Key, group.ToList(), i + 1);
-            //}
 
             // ==================== 1. 先完成所有克隆（此时主表未被填充，保证克隆纯净） ====================
             var clonedTables = new List<Table>();
@@ -165,7 +146,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 设置单元格文本
+        /// 设置单元格文本（支持换行）
         /// </summary>
         private void SetCellText(List<TableCell> cells, int index, string text)
         {
@@ -193,9 +174,27 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                     FontSize = new FontSize { Val = "18" }  // 9pt = 18 half-points
                 };
 
-                var run = new Run(runProperties);
-                run.Append(new Text(text));
-                para.Append(run);
+                // 👇 按换行符拆分（支持 \r\n、\n、\v）
+                var lines = text.Split(new[] { "\r\n", "\n", "\v" }, StringSplitOptions.None);
+
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    // 每行创建独立的 Run，保证字体样式一致
+                    var run = new Run((RunProperties)runProperties.CloneNode(true));
+                    run.Append(new Text(lines[i])
+                    {
+                        Space = SpaceProcessingModeValues.Preserve  // 保留前后空格
+                    });
+                    para.Append(run);
+
+                    // 如果不是最后一行，插入换行
+                    if (i < lines.Length - 1)
+                    {
+                        var breakRun = new Run((RunProperties)runProperties.CloneNode(true));
+                        breakRun.Append(new Break());
+                        para.Append(breakRun);
+                    }
+                }
             }
 
             if (!cell.HasChildren)

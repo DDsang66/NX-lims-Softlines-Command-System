@@ -170,7 +170,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// <param name="targetWidth">目标宽度（像素），自动缩放</param>
         /// <param name="targetHeight">目标高度（像素），自动缩放</param>
         /// <returns>字节数组</returns>
-        public static byte[] ToWordCompatibleBytes(Bitmap barcode, int targetWidth = 300, int targetHeight = 65)
+        public static byte[] ToWordCompatibleBytes(Bitmap barcode, int targetWidth = 200, int targetHeight = 40)
         {
             if (barcode == null)
                 throw new ArgumentNullException(nameof(barcode));
