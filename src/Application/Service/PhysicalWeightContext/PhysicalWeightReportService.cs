@@ -80,13 +80,11 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             }
         }
 
-        // 表2 文档末登记: 每次测量一行(与前端导出 Excel 原始数据表前 5 列一致):
-        //   次数 | 试样编号(报告号) | 试样测点 | 重量(g) | 尺寸(面积/长度/条数)。按 dto.Records 原序即前端行序。
-        //   area 长×宽录入 → 第5列直写尺寸文本 "5×5"(MeasureText), 不再显示换算面积 cm²。
-        var trailerRows = dto.Records.Select((r, i) => new PhysicalWeightTrailerRowModel
+        // 表2 文档末登记: 每次测量一行(模板 2026-09-10 改为 3 格: Sample | Weight (g) | 尺寸):
+        //   试样测点 | 重量(g) | 尺寸(面积/长度/条数)。按 dto.Records 原序即前端行序。
+        //   area 长×宽录入 → 第3列直写尺寸文本 "5×5"(MeasureText), 不再显示换算面积 cm²。
+        var trailerRows = dto.Records.Select(r => new PhysicalWeightTrailerRowModel
         {
-            No = i + 1,
-            ReportNumber = string.IsNullOrWhiteSpace(r.SampleId) ? dto.ReportNumber : r.SampleId,
             Sample = r.Point?.Trim() ?? "",
             Weight = r.Weight,
             Measure = TrailerMeasureOf(r, dto.TestType),

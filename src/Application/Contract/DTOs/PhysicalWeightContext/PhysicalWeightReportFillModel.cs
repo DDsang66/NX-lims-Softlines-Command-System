@@ -30,34 +30,27 @@ public class PhysicalWeightReportFillModel
     /// <summary>表1 数据行(每行=模板一行, Sample=测点, 最多5个值, Average=平均, 值为主单位)</summary>
     public List<PhysicalWeightReportRowModel> Rows { get; set; } = new();
 
-    /// <summary>表2 文档末登记行(每行=一次测量, 与导出原始数据表前 5 列一致)</summary>
+    /// <summary>表2 文档末登记行(每行=一次测量: 测点 | 重量g | 尺寸)</summary>
     public List<PhysicalWeightTrailerRowModel> TrailerRows { get; set; } = new();
 }
 
 /// <summary>
-/// 表2 文档末登记行(每行=一次测量): [No, Report Number, Sample(测点), 重量(g), 尺寸]。
-/// 语义 = 前端导出的原始数据表前 5 列: 次数 | 试样编号 | 试样测点 | 重量(g) | 第5列尺寸;
-/// 第5列按类型: area→面积(cm²), length→长度(cm), piece→称重条数。
+/// 表2 文档末登记行(每行=一次测量): [Sample(测点), 重量(g), 尺寸]。
+/// 对应导出的原始数据表列: 试样测点 | 重量(g) | 尺寸; 尺寸按类型: area→面积(cm²), length→长度(cm), piece→称重条数。
 /// area 长×宽录入时用 MeasureText 直写尺寸文本("5×5"), 不再显示换算后的 cm²。
 /// </summary>
 public class PhysicalWeightTrailerRowModel
 {
-    /// <summary>No: 本次测量的序号(1 起, 递增)</summary>
-    public int No { get; set; }
-
-    /// <summary>Report Number: 试样编号(报告号); 该记录无试样编号时回退整份报告的报告号</summary>
-    public string ReportNumber { get; set; } = string.Empty;
-
     /// <summary>Sample: 试样测点</summary>
     public string Sample { get; set; } = string.Empty;
 
     /// <summary>重量(g)</summary>
     public decimal? Weight { get; set; }
 
-    /// <summary>第5列尺寸值: area→面积cm², length→长度cm, piece→条数(引擎按测试类型定格式)</summary>
+    /// <summary>第3列尺寸值: area→面积cm², length→长度cm, piece→条数(引擎按测试类型定格式)</summary>
     public decimal? Measure { get; set; }
 
-    /// <summary>第5列文本覆盖(仅 area 长×宽模式, 如 "5×5"): 非空时引擎直写此文本, 忽略 Measure 数值</summary>
+    /// <summary>第3列文本覆盖(仅 area 长×宽模式, 如 "5×5"): 非空时引擎直写此文本, 忽略 Measure 数值</summary>
     public string? MeasureText { get; set; }
 }
 
