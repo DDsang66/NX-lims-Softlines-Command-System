@@ -17,7 +17,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
         /// <param name="height">条形码图片高度，默认100</param>
         /// <returns>条形码位图，失败时返回 null</returns>
          [SupportedOSPlatform("windows")]
-        public static Bitmap GenerateBarcode(Guid id, int width = 200, int height = 40)
+        public static Bitmap GenerateBarcode(Guid id, int width = 150, int height = 30)
         {
             if (id == Guid.Empty)
                 return null;
@@ -58,7 +58,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
         /// <param name="filePath">保存路径</param>
         /// <returns>是否保存成功</returns>
         [SupportedOSPlatform("windows")]
-        public static bool GenerateBarcodeToFile(Guid id, string filePath, int width = 200, int height = 40)
+        public static bool GenerateBarcodeToFile(Guid id, string filePath, int width = 150, int height = 30)
         {
             var bitmap = GenerateBarcode(id, width, height);
             if (bitmap == null)

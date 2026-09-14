@@ -148,7 +148,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
             var checklist = await _checkListRepository.GetByIdAsync(new CheckListId(dto.CheckListId), ct);
 
             //根据checklistId生成barcode
-            using var barcodeBitmap = BarcodeGenerator.GenerateBarcode(checklist.Id, 200, 40);
+            using var barcodeBitmap = BarcodeGenerator.GenerateBarcode(checklist.Id, 100, 35);
 
             //生成copy文件
             string docxFileName = $"{checklist.OderId}_{DateTime.Now:yyMMddHHmmss}_CheckList.docx";

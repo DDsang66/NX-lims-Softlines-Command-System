@@ -75,6 +75,37 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.StandardCompo
         }
 
         /// <summary>
+        /// 计算动物素纤维的含量
+        /// </summary>
+        /// <param name="input"></param>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        [FieldHandler("AnimalFiberContent")]
+        public object HandleAnimalFiberContent(object input, Dictionary<string, object> context = null)
+        {
+            if (input is not Dictionary<string, object> dict)
+                return 0;
+            if (!dict.TryGetValue("composition", out var compositionObj))
+                return 0;
+            if (compositionObj is not System.Text.Json.JsonElement jsonElement)
+                return 0;
+            if (jsonElement.ValueKind != System.Text.Json.JsonValueKind.Array)
+                return 0;
+
+            var options = new System.Text.Json.JsonSerializerOptions
+            {
+                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+            };
+
+            var compositions = System.Text.Json.JsonSerializer.Deserialize<List<CompositionCalculateDto>>(jsonElement.GetRawText(), options);
+
+            return compositions?
+                    .Where(c => c.SecondaryClassificationEn == "Animal fibre")
+                    .Sum(c => c.Rate) ?? 0;
+
+        }
+
+        /// <summary>
         /// 计算最大成分类型
         /// </summary>
         /// <param name="input"></param>
