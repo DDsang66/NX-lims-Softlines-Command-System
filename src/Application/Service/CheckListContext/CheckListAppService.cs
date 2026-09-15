@@ -58,8 +58,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
             try {
                 var checkList = dto.Adapt<CheckList>();//已在Mapping调用工厂方法统一创建
 
-                Console.WriteLine(checkList);
-
                 await _checkListRepository.AddAsync(checkList, ct);
 
                 await _unitOfWork.SaveChangesAsync(ct);
@@ -84,7 +82,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
             {
                 var checkList = await _checkListRepository.GetByIdAsync(new CheckListId(dto.Id), ct);
 
-                checkList.Update();
+                if (checkList == null)
+                    return Result<Guid>.Fail($"未找到Id为 {dto.Id} 的测试清单");
+
+                // 3. DTO 转换为领域对象/值对象 (使用 Mapster 或手动映射)
+                // 注意：这里假设 UpdateCheckListDto 里有 Items 和 Remark 属性
+                var newItems = dto.Items?.Adapt<IReadOnlyList<CheckListItem>>();
+                var newRemark = dto.Remark;
+
+                // 4. 调用领域对象的 Update 方法，由领域对象内部保证业务规则和一致性
+                checkList.Update(newItems, newRemark);
 
                 await _checkListRepository.UpdateAsync(checkList, ct);
 
@@ -206,48 +213,92 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
         /// <returns></returns>
         public async Task<Result> CalculateParamAsync(Guid id, CancellationToken ct) 
         {
+            /*  abandoned
+            //var checkListId = new CheckListId(id);
+
+            //var checkList = await _checkListRepository.GetByIdAsync(checkListId, ct);
+
+            //var checkListItems = checkList.GetTestItem(); // 通过聚合根获取内部实体
+            //if (checkListItems == null)
+            //    return Result.Fail("未能找到测试项目");
+
+            //// 2. 获取与该检查项关联的所有条件池（假设已经分组完毕）
+            //var existingPools = await _conditionPoolRepository.GetByCheckListIdAsync(checkListId, ct);
+
+            ////对existingPools中的FiberCondition进行预拓展，如果没有Fiber Condition的Key可以直接跳过
+
+            //// 3. 为每个测试项生成参数
+            //foreach (var item in checkListItems)
+            //{
+            //    // 创建新的参数字典
+            //    var TestPointParams = new Dictionary<string, ParamSet?>();
+
+            //    // 遍历每个测点
+            //    foreach (var testPoint in item.Samples)
+            //    {
+            //        // 找到该测点对应的条件池
+            //        var pool = existingPools.FirstOrDefault(p => p.TestPoints.Contains(testPoint));
+
+            //        // 使用单个条件池生成参数
+            //        var result = await _paramGenerationUseCaseService.GenerateForCheckListItemAsync( item, pool, ct);
+
+            //        if (!result.IsSuccess)
+            //            return Result.Fail($"生成测试项 {item.Id} 的测点 {testPoint} 参数时发生错误: {result.Error}");
+                   
+            //        // 将生成的参数添加到新字典中
+            //        TestPointParams.Add(testPoint, result.Value);
+            //    }
+
+            //    // 更新测试项的参数
+            //    item.TestPointParams = TestPointParams;
+            //}
+
+            //// 4. 保存更改
+            //checkList.Update();
+
+            //await _checkListRepository.UpdateAsync(checkList, ct);
+
+            //await _unitOfWork.SaveChangesAsync(ct);
+
+            //return Result.Ok();
+
+            */
             var checkListId = new CheckListId(id);
 
+            // 1. 获取聚合根
             var checkList = await _checkListRepository.GetByIdAsync(checkListId, ct);
+            if (checkList == null)
+                return Result.Fail("未能找到该测试清单");
 
-            var checkListItems = checkList.GetTestItem(); // 通过聚合根获取内部实体
-            if (checkListItems == null)
-                return Result.Fail("未能找到测试项目");
-
-            // 2. 获取与该检查项关联的所有条件池（假设已经分组完毕）
+            // 2. 获取条件池
             var existingPools = await _conditionPoolRepository.GetByCheckListIdAsync(checkListId, ct);
 
-            //对existingPools中的FiberCondition进行预拓展，如果没有Fiber Condition的Key可以直接跳过
+            // 3. 领域计算：在应用层组装计算结果字典
+            var calculatedItemParams = new Dictionary<Guid, IReadOnlyDictionary<string, ParamSet?>>();
 
-            // 3. 为每个测试项生成参数
-            foreach (var item in checkListItems)
+            foreach (var item in checkList.Items) // 通过聚合根暴露的只读集合遍历
             {
-                // 创建新的参数字典
-                var TestPointParams = new Dictionary<string, ParamSet?>();
+                var testPointParams = new Dictionary<string, ParamSet?>();
 
-                // 遍历每个测点
                 foreach (var testPoint in item.Samples)
                 {
-                    // 找到该测点对应的条件池
                     var pool = existingPools.FirstOrDefault(p => p.TestPoints.Contains(testPoint));
-
-                    // 使用单个条件池生成参数
-                    var result = await _paramGenerationUseCaseService.GenerateForCheckListItemAsync( item, pool, ct);
+                    var result = await _paramGenerationUseCaseService.GenerateForCheckListItemAsync(item, pool, ct);
 
                     if (!result.IsSuccess)
                         return Result.Fail($"生成测试项 {item.Id} 的测点 {testPoint} 参数时发生错误: {result.Error}");
-                   
-                    // 将生成的参数添加到新字典中
-                    TestPointParams.Add(testPoint, result.Value);
+
+                    testPointParams.Add(testPoint, result.Value);
                 }
 
-                // 更新测试项的参数
-                item.TestPointParams = TestPointParams;
+                // 将单个 Item 的计算结果加入总字典
+                calculatedItemParams.Add(item.Id, testPointParams);
             }
 
-            // 4. 保存更改
-            checkList.Update();
+            // 4. 调用聚合根的领域行为，一次性更新所有参数
+            checkList.UpdateItemParameters(calculatedItemParams);
 
+            // 5. 持久化
             await _checkListRepository.UpdateAsync(checkList, ct);
 
             await _unitOfWork.SaveChangesAsync(ct);

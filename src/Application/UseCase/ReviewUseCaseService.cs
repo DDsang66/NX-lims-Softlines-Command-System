@@ -57,6 +57,39 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
         }
 
         /// <summary>
+        /// 对已经生成的checklist进行修改
+        /// </summary>
+        /// <param name="dto"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result<ConditionPoolResponseDto>> RegenerateCheckList(UpdateCheckListDto dto, CancellationToken ct) 
+        {
+            var result = await _checkListAppService.UpdateCheckList(dto, ct);
+
+            if (result.IsFailure) 
+            {
+                return Result<ConditionPoolResponseDto>.Fail(result.Error);
+            }
+
+            //先删除原有条件池
+            await  _conditionPoolAppService.RemoveConditionPoolAsyncByChecklistId(result.Value, ct);
+
+            var addConditionResult = await _conditionPoolAppService.AddConditionPoolAsync(
+                new AddConditionPoolDto
+                {
+                    CheckListId = result.Value,
+                    OrderId = dto.SourceId,
+                    BuyerCode = dto.BuyerCode,
+                    BuyerIsIndividualTraveler = false
+                }, ct);
+
+            //将新增条件池的id传入，查询条件池
+            var conditionPoolDto = await _conditionPoolAppService.GetConditionPoolAsync(addConditionResult.Value, ct);
+
+            return conditionPoolDto;
+        }
+
+        /// <summary>
         /// 执行计算参数
         /// </summary>
         /// <returns></returns>

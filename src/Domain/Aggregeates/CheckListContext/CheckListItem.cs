@@ -42,11 +42,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// </summary>
         public TestGroup TestGroup { get; set; } = new();
 
-        ///// <summary>
-        ///// 参数集
-        ///// </summary>
-        //public ParamSet? Param { get; set; } = new();
-
         /// <summary>
         /// 样品列表
         /// </summary>
@@ -126,17 +121,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         public void AddOrUpdateTestPointParam(string testPointId, ParamSet paramSet)
         {
             if (string.IsNullOrWhiteSpace(testPointId))
-            {
                 throw new ArgumentException("测点ID不能为空", nameof(testPointId));
-            }
 
             if (paramSet == null)
-            {
                 throw new ArgumentNullException(nameof(paramSet));
-            }
 
-            var dictionary = (Dictionary<string, ParamSet>)TestPointParams;
-            dictionary[testPointId] = paramSet;
+            // 安全的方式：创建一个新的字典替换旧的，保证不可变性
+            var dictionary = new Dictionary<string, ParamSet?>(TestPointParams) { [testPointId] = paramSet };
             TestPointParams = dictionary;
         }
 
@@ -174,6 +165,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             }
 
             return TestPointParams.TryGetValue(testPointId, out var paramSet) ? paramSet : null;
+        }
+
+        /// <summary>
+        /// 批量更新测点参数集（通常在参数计算完成后调用）
+        /// </summary>
+        /// <param name="newParams">新的测点参数字典</param>
+        public void UpdateTestPointParams(IReadOnlyDictionary<string, ParamSet?> newParams)
+        {
+            // 可以加入业务校验，比如如果当前 Item 已经完成测试，可能就不允许更新参数了
+            // if (Status == CheckListStatus.Completed) throw new InvalidOperationException("...");
+
+            TestPointParams = newParams ?? throw new ArgumentNullException(nameof(newParams));
         }
     }
 }

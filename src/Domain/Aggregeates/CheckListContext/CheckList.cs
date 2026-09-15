@@ -108,9 +108,64 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         }
 
         /// <summary>
-        /// 更新测试清单
+        /// 更新测试清单（更新备注及测试项）
         /// </summary>
-        public void Update() { }
+        /// <param name="newItems">新的测试项集合</param>
+        /// <param name="remark">新的备注</param>
+        /// <exception cref="InvalidOperationException">当清单状态不允许更新时抛出</exception>
+        /// <exception cref="ArgumentNullException">当测试项为空时抛出</exception>
+        public void Update(IReadOnlyList<CheckListItem> newItems, string? remark)
+        {
+            // 1. 状态守卫：已完成或进行中的清单通常不允许被随意更新
+            if (Status == CheckListStatus.Completed || Status == CheckListStatus.InProgress)
+            {
+                throw new InvalidOperationException($"当前清单状态为 {Status}，不允许更新！");
+            }
+
+            // 2. 业务规则校验：测试项不能为空
+            if (newItems == null || newItems.Count == 0)
+                throw new ArgumentNullException(nameof(newItems), "测试清单至少需要包含一个测试项");
+
+            // 3. 更新属性，保持聚合根内部一致性
+            Remark = remark;
+
+            // 4. 维护聚合根与内部实体的关联关系
+            foreach (var item in newItems)
+            {
+                item.CheckListId = Id; // 确保所有的测试项都归属于当前清单
+            }
+            Items = newItems;
+
+            // 5. (可选) 如果领域事件存在，可以触发清单更新事件
+            // AddDomainEvent(new CheckListUpdatedEvent(Id));
+        }
+
+
+        /// <summary>
+        /// 更新测试项的参数计算结果（领域行为）
+        /// </summary>
+        /// <param name="itemParamsDict">Key: CheckListItem的Id, Value: 该Item的测点参数字典</param>
+        public void UpdateItemParameters(Dictionary<Guid, IReadOnlyDictionary<string, ParamSet?>> itemParamsDict)
+        {
+            // 1. 状态守卫
+            if (Status == CheckListStatus.Completed)
+            {
+                throw new InvalidOperationException("已完成的清单不允许重新计算/更新参数");
+            }
+
+            // 2. 遍历当前清单的测试项，将计算结果更新进去
+            foreach (var item in Items)
+            {
+                if (itemParamsDict.TryGetValue(item.Id, out var paramsForItem))
+                {
+                    // 调用内部实体的领域方法
+                    item.UpdateTestPointParams(paramsForItem);
+                }
+            }
+
+            // 状态流转：参数计算完成，清单可以进入进行中状态（根据你的业务逻辑调整）
+            // ChangeInProcess(); 
+        }
 
         /// <summary>
         /// 删除

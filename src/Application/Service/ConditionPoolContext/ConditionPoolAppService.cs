@@ -92,6 +92,26 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ConditionPool
         }
 
         /// <summary>
+        /// 根据checklistid删除条件池
+        /// </summary>
+        /// <param name="checklistId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> RemoveConditionPoolAsyncByChecklistId(Guid checklistId, CancellationToken ct) 
+        {
+            var conditionPools = await _conditionPoolRepository.GetByCheckListIdAsync(new CheckListId(checklistId), ct);
+
+            foreach (var conditionPool in conditionPools) 
+            {
+                await _conditionPoolRepository.RemoveAsync(conditionPool.Id, ct);
+            }
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        /// <summary>
         /// 获取条件池
         /// </summary>
         /// <param name="conditionPoolId"></param>

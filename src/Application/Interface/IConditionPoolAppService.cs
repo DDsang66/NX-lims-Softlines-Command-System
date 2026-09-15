@@ -24,6 +24,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Interface
         Task<Result<Guid>> UpdateConditionPoolAsync(UpdateConditionPoolDto dto, CancellationToken ct);
 
         /// <summary>
+        /// 根据ChecklistId删除条件池
+        /// </summary>
+        /// <param name="checklistId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<Result> RemoveConditionPoolAsyncByChecklistId(Guid checklistId, CancellationToken ct);
+
+        /// <summary>
         /// 分组条件池
         /// </summary>
         /// <param name="dto"></param>

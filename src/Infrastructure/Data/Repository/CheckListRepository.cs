@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Office2010.Excel;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
@@ -8,6 +9,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Value
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+using System.Text.Json;
 using CheckList = NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence.CheckList;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
@@ -55,32 +57,78 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /// <returns></returns>
         public async Task UpdateAsync(Domain.Aggregeates.CheckListContext.CheckList aggregateRoot, CancellationToken ct) 
         {
-            var existingPo = await _dbContext.CheckLists.FindAsync(aggregateRoot.Id.Value);
+            var existingPo = await _dbContext.CheckLists
+                .FirstOrDefaultAsync(cl => cl.CheckListId == aggregateRoot.Id.Value, ct);
 
-            aggregateRoot.Adapt(existingPo);
+            if (existingPo == null)
+                throw new KeyNotFoundException($"CheckList with ID {aggregateRoot.Id.Value} not found");
 
-            if (aggregateRoot.Items != null)
+            // 2. 更新主实体属性（Remark, Status 等）
+            existingPo.Remark = aggregateRoot.Remark;
+            existingPo.Status = (byte)aggregateRoot.Status;
+            // ...其他主实体属性
+
+            // 3. 处理所有 Items 的变更（新增/修改/删除）
+            // 获取当前数据库中的 Items ID
+            var existingItemIds = await _dbContext.CheckListItems
+               .Where(i => i.CheckListId == aggregateRoot.Id.Value)
+               .Select(i => i.CheckListItemId)
+               .ToListAsync(ct);
+            // 获取聚合根中的 Items ID
+            var newItemIds = aggregateRoot.Items.Select(i => i.Id).ToList();
+
+            // 3.1 删除 Items（如果聚合根中不再有）
+            foreach (var itemId in existingItemIds.Except(newItemIds))
             {
-                foreach (var item in aggregateRoot.Items)
+                var itemToRemove = await _dbContext.CheckListItems.FindAsync(new object[] { itemId }, ct);
+                if (itemToRemove != null)
                 {
-                    var itemPo = await _dbContext.CheckListItems.FindAsync(item.Id);
-                    itemPo.TestItemId = item.TestItemId == null ? string.Empty : item.TestItemId.Value;
+                    _dbContext.CheckListItems.Remove(itemToRemove);
+                }
+            }
+
+            // 3.2 更新或新增所有 Items
+            foreach (var item in aggregateRoot.Items)
+            {
+                var itemPo = await _dbContext.CheckListItems
+                    .FirstOrDefaultAsync(i => i.CheckListItemId == item.Id && i.CheckListId == aggregateRoot.Id.Value, ct);
+
+                if (itemPo != null)
+                {
+                    // 更新现有 Item
+                    itemPo.TestItemId = item.TestItemId?.Value ?? string.Empty;
                     itemPo.StandardId = string.Join(",", item.StandardIds.Select(id => id.Value));
                     itemPo.BuyerModifiedTestItem = item.BuyerModifiedTestItemId;
                     itemPo.BuyerModifiedTestStandard = item.BuyerModifiedTextMethodId;
                     itemPo.TestGroup = (byte)item.TestGroup;
-                    itemPo.TestPointParams = System.Text.Json.JsonSerializer.Serialize(
+                    itemPo.TestPointParams = JsonSerializer.Serialize(
                         item.TestPointParams,
-                        new System.Text.Json.JsonSerializerOptions
-                        {
-                            WriteIndented = false,
-                            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-                        });
+                        new JsonSerializerOptions { WriteIndented = false, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
                     itemPo.Samples = string.Join(",", item.Samples);
                     itemPo.Status = (byte)item.Status;
                 }
+                else
+                {
+                    // 新增 Item
+                    itemPo = new Infrastructure.Data.Persistence.CheckListItem
+                    {
+                        CheckListItemId = item.Id,
+                        CheckListId = aggregateRoot.Id.Value, // 关联到正确的 CheckList
+                        TestItemId = item.TestItemId?.Value ?? string.Empty,
+                        StandardId = string.Join(",", item.StandardIds.Select(id => id.Value)),
+                        BuyerModifiedTestItem = item.BuyerModifiedTestItemId,
+                        BuyerModifiedTestStandard = item.BuyerModifiedTextMethodId,
+                        TestGroup = (byte)item.TestGroup,
+                        TestPointParams = JsonSerializer.Serialize(
+                            item.TestPointParams,
+                            new JsonSerializerOptions { WriteIndented = false, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
+                        Samples = string.Join(",", item.Samples),
+                        Status = (byte)item.Status
+                    };
+                    _dbContext.CheckListItems.Add(itemPo);
+                }
             }
-            _dbContext.CheckLists.Update(existingPo);
+
         }
 
         /// <summary>

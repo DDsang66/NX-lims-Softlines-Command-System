@@ -37,6 +37,14 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
             return result;
         }
 
+        [HttpPost("regenerate-checklist")]
+        public async Task<Result<ConditionPoolResponseDto>> RegenerateCheckList(UpdateCheckListDto dto, CancellationToken ct) 
+        {
+            var result = await _reviewUseCaseService.RegenerateCheckList(dto, ct);
+
+            return result;
+        }
+
         [HttpPost("generate-param")]
         public async Task<Result<CheckListResponseDto>> GenerateParam(List<UpdateConditionPoolDto> dto, CancellationToken ct)
         {
