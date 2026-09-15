@@ -163,11 +163,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
                 //调用ChecklistAdapter
                 await _checkListAdapter.FillCheckListAsync(targetDocxPath, dto, barcodeBitmap);
 
-                // 2. 将填充好的 docx 转换为 pdf
-                string pdfFileName = Path.ChangeExtension(docxFileName, ".pdf");
-                string targetPdfPath = Path.ChangeExtension(targetDocxPath, ".pdf");
+                //// 2. 将填充好的 docx 转换为 pdf
+                //string pdfFileName = Path.ChangeExtension(docxFileName, ".pdf");
+                //string targetPdfPath = Path.ChangeExtension(targetDocxPath, ".pdf");
 
-                PDFConverter.ConvertDocxToPdf(targetDocxPath, targetPdfPath);
+                //PDFConverter.ConvertDocxToPdf(targetDocxPath, targetPdfPath);
 
                 //生成成功后改变checklist状态为InProgress，保存至数据库
                 checklist.ChangeInProcess();
@@ -178,19 +178,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
 
                 await _unitOfWork.SaveChangesAsync(ct);
 
-                //return Result<DocxUrlResponseDto>.Ok(new DocxUrlResponseDto
-                //{
-                //    fileKey = fileName,
-                //    fileName = fileName,
-                //    downloadUrl = $"/api/Review/checklist-{fileName}/download"
-                //});
-
                 return Result<DocxUrlResponseDto>.Ok(new DocxUrlResponseDto
                 {
-                    fileKey = pdfFileName,
-                    fileName = pdfFileName,
-                    downloadUrl = $"/api/Review/checklist-{pdfFileName}/download"
+                    fileKey = docxFileName,
+                    fileName = docxFileName,
+                    downloadUrl = $"/api/Review/checklist-{docxFileName}/download"
                 });
+
+                //return Result<DocxUrlResponseDto>.Ok(new DocxUrlResponseDto
+                //{
+                //    fileKey = pdfFileName,
+                //    fileName = pdfFileName,
+                //    downloadUrl = $"/api/Review/checklist-{pdfFileName}/download"
+                //});
             }
             catch (Exception ex) 
             {

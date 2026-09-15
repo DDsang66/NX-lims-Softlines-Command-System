@@ -28,10 +28,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // ==================== 2. 填充条形码 ====================
             if (barcode != null)
             {
-                // 处理条形码：调整为 Word 兼容尺寸并添加背景
-                //var processedBarcode = BarcodePictureHelper.AddWhiteBackground(barcode, 10);
                 FillBarcode(doc, barcode);
-                //processedBarcode.Dispose();
             }
 
             var mainTable = LocateMainTable(doc)
