@@ -12,6 +12,21 @@ public class PhysicalWeightReportFillModel
     /// <summary>测试方法(可选)</summary>
     public string? TestMethod { get; set; }
 
+    /// <summary>
+    /// 买家: 决定引擎按哪份模板的布局填("Normal" | "Adidas" | "FOCUS" | "NEXT")。
+    /// 取值与 PhysicalWeightReportRequestDto.Buyer* 常量一致 —— 由服务端白名单校验过才到得了这里。
+    /// </summary>
+    public string Buyer { get; set; } = PhysicalWeightReportRequestDto.BuyerNormal;
+
+    /// <summary>
+    /// NEXT 每测点汇总表(Specimen | Number of Sample | Total(g) | Ave(g/m²))的行。
+    /// 与 Rows / TrailerRows 是**按录入方式分流**的: 长×宽录的行有逐条的尺寸, 走数据表(#1~#5)与
+    /// 3 格登记表; 直接填面积录的行一条只有一个面积, 摊不进 #1~#5, 汇总到这里每测点一行。
+    /// 一份报告里两种录入都有时, 两张表各自都有数; 某一种没有时对应那张表整张不动。
+    /// 其余买家没有这张表, 引擎按买家跳过(本列表算了也不读)。
+    /// </summary>
+    public List<PhysicalWeightPerPointRowModel> PerPointRows { get; set; } = new();
+
     /// <summary>测试类型: "area"(面积克重) | "length"(长度克重) | "piece"(条重)</summary>
     public string TestType { get; set; } = "area";
 
@@ -60,7 +75,35 @@ public class PhysicalWeightSummaryRowModel
     public string Point { get; set; } = string.Empty;
     public decimal Value1 { get; set; }   // 第一种单位(如 g/m² / g/piece)
     public decimal Value2 { get; set; }   // 第二种单位(如 oz/yd² / lb/dozen)
-    public decimal Value3 { get; set; }   // 第三种单位(仅条重 oz/dozen; 面积/长度不用)
+    public decimal Value3 { get; set; }   // 第三种单位(条重 oz/dozen; FOCUS 面积 g/m; 其余不用)
+
+    /// <summary>该测点用的布边长度 cm(仅 FOCUS 的 Sample | Selvage Length 表读它) —— 面积模式下长度是
+    /// 单独录的, 同测点各条长度应相同, 取第一条有值的; 全没录则为 null(该格留空)。</summary>
+    public decimal? SelvageLength { get; set; }
+}
+
+/// <summary>
+/// NEXT 每测点汇总行: [Specimen, Number of Sample, Total(g), Ave(g/m²)] —— 与表0 汇总行不是一回事:
+/// 表0 是全部记录的均值网格, 这张表只统计"直接填面积"录的那些行(见 PhysicalWeightReportFillModel.PerPointRows)。
+/// </summary>
+public class PhysicalWeightPerPointRowModel
+{
+    /// <summary>Specimen: 试样测点</summary>
+    public string Point { get; set; } = string.Empty;
+
+    /// <summary>Number of Sample: 该测点样品数 = 各条记录 SampleCount 之和(不填按 1 算)</summary>
+    public int SampleCount { get; set; }
+
+    /// <summary>Total(g): 该测点重量合计</summary>
+    public decimal? TotalWeight { get; set; }
+
+    /// <summary>
+    /// Ave(g/m²): 该测点 g/m²(报告里取整, 与表0 同格式)。
+    /// **不是各条 g/m² 的等权平均**: 单块试样固定 100 cm², 该次称重的重量是 N 块的总重,
+    /// 所以 = 重量合计 ÷ (样品数合计 × 100 cm²) × 10000 —— 池化口径, 算法在
+    /// PhysicalWeightReportService 的 perPointRows。
+    /// </summary>
+    public decimal AverageGsm { get; set; }
 }
 
 /// <summary>模板数据行: [Sample, #1~#5, Average]</summary>

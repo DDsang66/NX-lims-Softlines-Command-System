@@ -7,16 +7,24 @@ using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter
 {
     /// <summary>
-    /// 物理克重 docx 填充引擎 — 按坐标填格 PHY_Weight.docx, 与成分模板(IWordTemplateEngine)完全隔离。
+    /// 物理克重 docx 填充引擎 — 按坐标填格, 与成分模板(IWordTemplateEngine)完全隔离。
     ///
     /// 设计总览(为什么"按坐标填格"):
     ///   - docx 没有像素坐标, 它是 XML 的树状结构: Document → Table → TableRow → TableCell → Paragraph → Run。
     ///     所以"定位"= 在表格数组里取"第几行的第几个单元格", 而非像画布那样给 x/y。
-    ///   - 所有行列坐标集中在嵌套类 PhysicalWeightDocxLayout(本文底部), 是"照着 PHY_Weight.docx
-    ///     模板的真实布局人工数出来"的常量。模板增删行列/表头文字时, 只需改那一处。
+    ///   - 所有行列坐标集中在嵌套类 PhysicalWeightDocxLayout(本文底部), 是"照着模板的真实布局
+    ///     人工数出来"的常量。模板增删行列/表头文字时, 只需改那一处。
     ///   - 坐标错位会静默生成错误报告, 所以配套 ValidateTemplate 做结构校验: 模板结构一旦与
     ///     坐标假设不符, 立即抛异常, 宁可失败也不产出"看起来正常实则错位"的文档。
-    ///   - 与成分模板(IWordTemplateEngine)完全隔离: 本引擎专管物理克重 PHY_Weight.docx 一种模板。
+    ///   - 与成分模板(IWordTemplateEngine)完全隔离: 本引擎专管物理克重报告模板。
+    ///
+    /// 四份模板 / 买家分流: 同一份报告按买家有四种模板, 表0 汇总表列数不同、文末登记表是两张不同的表,
+    /// NEXT 更是同一份模板里就放着两套表 —— 差异全部收敛在 PhysicalWeightDocxLayout 的买家布局方法里
+    /// (SummaryCellCountOf / SummaryValuesOf / DataHeaderRow*Of / HasTestMethodCell / HasSelvageTable / HasPerPointTable)。
+    ///
+    /// 引擎**不判断录入模式**: 服务端已按录入方式把行分好(Rows/TrailerRows 装长×宽录的, PerPointRows 装
+    /// 直接填面积录的), 引擎只看哪份数据非空 —— 非空就填对应那张表, 空了就整张不动。一份报告里两种录入
+    /// 都有时, 两张表各自都有数(见 PhysicalWeightReportService.Generate 的行分流注释)。
     /// </summary>
     public class PhysicalWeightDocxEngine : IPhysicalWeightDocxEngine, IScopedDependency
     {
@@ -29,30 +37,32 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
         /// <summary>
         /// 填充物理克重报告 — 流程地图:
-        ///   1. 打开文件, 定位三张表并做结构校验(结构不符 → 抛异常, 不静默空白);
-        ///   2. 表0 摘要表: 填报告号/测试方法, 按测试类型填汇总网格(测点 + 各单位均值; 条重含第三格 oz/dozen);
-        ///   3. 表1 数据表: 表头写单位, 逐行填数据(超预留行 → 克隆行扩容);
-        ///   4. 表2 文档末登记表: 补第3列类型尺寸表头, 每次测量一行填 测点|重量|尺寸(超预留行 → 克隆行扩容);
+        ///   1. 打开文件, 按买家定位表0与表1并做结构校验(结构不符 → 抛异常, 不静默空白);
+        ///   2. 表0 摘要表: 填报告号/测试方法, 按买家+测试类型填汇总网格(测点 + 各单位均值);
+        ///   3. 表1 数据表: 表头写单位, 逐行填数据(超预留行 → 克隆行扩容); 没有数据行则整张不动;
+        ///   4. 文末登记表: 3 格版(Normal/Adidas/FOCUS + NEXT 长×宽录的行)每次测量一行(测点|重量|尺寸);
+        ///      NEXT 另有每测点汇总表(直接填面积录的行)每测点一行(测点|样品数|重量合计|g/m² 均值), 两张各自看数据有无;
         ///   5. 页脚: 填温湿度(带下划线, 模拟"写在横线上");
         ///   6. 保存。OpenXml 操作全部留在本层, 上层只管拼 PhysicalWeightReportFillModel。
         /// </summary>
         public void FillReport(string filePath, PhysicalWeightReportFillModel model)
         {
             using var doc = WordprocessingDocument.Open(filePath, true);
-            var (t0, t1) = ValidateTemplate(doc);   // 结构不符 → 抛异常, 不再静默空白
+            // 结构不符 → 抛异常, 不再静默空白
+            var (t0, t1) = ValidateTemplate(doc, model.Buyer, model.TestType);
 
-            // 报告号加粗放大: 报告上要一眼可见
+            // 报告号加粗放大
             SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowReportNumber)!, PhysicalWeightDocxLayout.ValueColumn,
                 model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
             // 测试方法: 前端传了才覆盖模板该格, 传空(null/空白)则保留模板预填文字
-            // (新模板 R5 已预填 "ISO 3801 method 5: 1977 /ASTM D3776/D37..." 等标准名)
-            if (!string.IsNullOrWhiteSpace(model.TestMethod))
+            // (Normal/Adidas/FOCUS 的 R5 已预填 "ISO 3801 method 5: 1977 /ASTM D3776/D37..." 等标准名;
+            //  NEXT 的 R5 只有一格标题、没有值格, 显式跳过 —— 别指望 SetCellText 取不到格时静默 return 来兜底)
+            if (PhysicalWeightDocxLayout.HasTestMethodCell(model.Buyer) && !string.IsNullOrWhiteSpace(model.TestMethod))
                 SetCellText(Row(t0, PhysicalWeightDocxLayout.SummaryRowTestMethod)!, PhysicalWeightDocxLayout.ValueColumn, model.TestMethod);
 
-            // 表0 汇总网格: 按测试类型填各值列(其余列留空); 超预留行克隆
-            // 条重比面积/长度多一格: g/piece | lb/dozen | oz/dozen (9 格数据行)
-            var cols = PhysicalWeightDocxLayout.SummaryColumnsOf(model.TestType);
-            var fmts = SummaryFormatsOf(model.TestType);
+            // 表0 汇总网格: 按买家+测试类型填各值列(模板没有的列不写); 超预留行克隆
+            // 列与显示格式成对给出, 因为各买家模板实际列数/列序不同(Normal 面积 2 格、条重 3 格; FOCUS 3 格; Adidas/NEXT 1 格)
+            var cols = PhysicalWeightDocxLayout.SummaryValuesOf(model.Buyer, model.TestType);
             int summaryRow = PhysicalWeightDocxLayout.SummaryDataStartRow;
             foreach (var s in model.SummaryRows)
             {
@@ -64,12 +74,33 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 SetCellText(sr, PhysicalWeightDocxLayout.SummarySampleColumn, s.Point, bold: true);
                 var vals = new[] { s.Value1, s.Value2, s.Value3 };
                 for (int i = 0; i < cols.Length; i++)
-                    SetCellText(sr, cols[i], vals[i].ToString(fmts[i]), bold: true);
+                    SetCellText(sr, cols[i].Column, vals[i].ToString(cols[i].Format), bold: true);
                 summaryRow++;
             }
 
-            // 表1 表头: Specimen 单位同行; Average 单位在单元格内换行到下一行(无 Measure 列的 7 格版)
-            var headerRow = Row(t1, PhysicalWeightDocxLayout.DataHeaderRow);
+            // 表1 数据表: 没有行就整张不动(宁可留白也不填一张空表) —— NEXT 只把"长×宽"录的行放进来,
+            // 全是直接填面积的报告这里自然为空
+            if (model.Rows.Count > 0) FillDataTable(t1, model);
+
+            // FOCUS 的布边长度表(数据表下方, 每测点一行) —— 表0 的 g/m 那一格就是拿这个长度算出来的, 单列一张备查
+            if (PhysicalWeightDocxLayout.HasSelvageTable(model.Buyer))
+                FillSelvageLength(doc, model);
+
+            // 文末登记表: NEXT 模板里两套并存, 按录入方式各归各的
+            FillTrailer(doc, t1, model);
+
+            FillFooter(doc, model);
+
+            doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 填表1 数据表: 表头写单位(Specimen/Average 两格), R3+ 逐行填 #1~#5 与平均。
+        /// 表头: Specimen 单位同行; Average 单位在单元格内换行到下一行(无 Measure 列的 7 格版)。
+        /// </summary>
+        private void FillDataTable(Table t1, PhysicalWeightReportFillModel model)
+        {
+            var headerRow = Row(t1, PhysicalWeightDocxLayout.DataHeaderRow1Of(model.Buyer));
             if (headerRow != null)
             {
                 SetCellText(headerRow, PhysicalWeightDocxLayout.DataSpecimenCell, $"Specimen ({model.DataUnit})");
@@ -77,7 +108,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }
 
             string dataFmt = DataFormatOf(model.TestType);
-            int dataRow = PhysicalWeightDocxLayout.DataStartRow;
+            int dataRow = PhysicalWeightDocxLayout.DataStartRowOf(model.Buyer);
             foreach (var row in model.Rows)
             {
                 var r = Row(t1, dataRow);
@@ -91,25 +122,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 SetCellText(r, PhysicalWeightDocxLayout.AverageColumn, row.Average?.ToString(dataFmt) ?? "");
                 dataRow++;
             }
-
-            // 表2 文档末登记表: 每次测量一行, 等同导出原始数据表前 5 列
-            FillTrailer(doc, t1, model);
-
-            FillFooter(doc, model);
-
-            doc.MainDocumentPart?.Document?.Save();
         }
-
-        /// <summary>
-        /// 表0 汇总各列显示格式(与 SummaryColumnsOf 一一对应): 面积克重 g/m² 整数、oz/yd² 一位小数(模板要求);
-        /// 条重 g/piece|lb/dozen|oz/dozen 及长度取 3 位, 与页面/导出 Excel/表2 的精度一致。
-        /// </summary>
-        private static string[] SummaryFormatsOf(string testType) => testType switch
-        {
-            "area" => new[] { "F0", "F1" },
-            "piece" => new[] { "F3", "F3", "F3" },
-            _ => new[] { "F3", "F3" }
-        };
 
         /// <summary>
         /// 表1 数据格与平均格的显示格式: 仅面积克重(g/m²)取整, 长度/条重与页面/导出 Excel 一致取 3 位。
@@ -137,10 +150,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         };
 
         /// <summary>
-        /// 填表2(文档末登记表): 补 R0 第3列类型尺寸表头(Sample / Weight (g) 模板已含), R1+ 每次测量一行填 测点|重量|尺寸。
-        /// 定位靠"表1 之后、表头含 Sample 与 Weight 的表", 超预留行 → 克隆末行扩容。
+        /// 填文末登记表 — NEXT 的模板里两套表并存, 行按录入方式各归各的, 所以两份数据都可能有、两张都要填:
+        ///   每测点汇总表(Specimen | Number of Sample | Total(g) | Ave(g/m²)) ← 直接填面积录的行, 每个测点一行;
+        ///   3 格登记表(Sample | Weight (g) | 尺寸)                        ← 长×宽录的行(以及其余买家的全部行), 每次测量一行。
+        /// 某一份没有数据时对应的那张表整张不动 —— 连表头的单位/类型尺寸列名都不补。
+        /// 两条都靠"超预留行 → 克隆末行扩容"。
         /// </summary>
-        private void FillTrailer(WordprocessingDocument doc, Table dataTable, PhysicalWeightReportFillModel model)
+        private void FillTrailer(WordprocessingDocument doc, Table? dataTable, PhysicalWeightReportFillModel model)
+        {
+            if (PhysicalWeightDocxLayout.HasPerPointTable(model.Buyer) && model.PerPointRows.Count > 0)
+                FillPerPointTrailer(doc, model);
+
+            if (model.TrailerRows.Count > 0)
+                FillMeasurementTrailer(doc, dataTable, model);
+        }
+
+        /// <summary>填 3 格版登记表(Sample | Weight (g) | 尺寸): 补第 3 列列名, R1+ 每次测量一行。</summary>
+        private void FillMeasurementTrailer(WordprocessingDocument doc, Table? dataTable, PhysicalWeightReportFillModel model)
         {
             var t2 = LocateTrailerTable(doc, dataTable)
                 ?? throw new InvalidOperationException("PHY_Weight 模板缺少文档末登记表(Sample | Weight (g))");
@@ -178,16 +204,100 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 定位表2(文档末登记表): 从表1 之后的 body 表里, 找第一张 R0 表头同时含 "Sample" 与 "Weight" 的表。
-        /// 为何不用 LocateTable 内容匹配: 表0/表1 也含 Sample 等字样, 内容匹配会误中; 登记表紧跟表1,
-        /// 从其后顺序扫描最稳, 再以表头文字兜底校验结构。
+        /// 填 NEXT 每测点汇总表(4 格: Specimen | Number of Sample | Total(g) | Ave(g/m²)) — **每个测点一行**,
+        /// 与 3 格版的"每次测量一行"语义不同, 数据源也不同(只统计"直接填面积"录的行):
+        ///   Number of Sample = 该测点各条记录样品数之和; Total(g) = 该测点重量合计; Ave(g/m²) = 该测点 g/m² 均值。
         /// </summary>
-        private Table? LocateTrailerTable(WordprocessingDocument doc, Table dataTable)
+        private void FillPerPointTrailer(WordprocessingDocument doc, PhysicalWeightReportFillModel model)
+        {
+            var t2 = LocatePerPointTrailerTable(doc)
+                ?? throw new InvalidOperationException("PHY_Weight - NEXT 模板缺少每测点汇总表(Specimen | Number of Sample | Total(g) | Ave(g/m²))");
+
+            var hdrRow = Row(t2, PhysicalWeightDocxLayout.TrailerHeaderRow);
+            if (hdrRow == null || hdrRow.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.NextTrailerCellCount)
+                throw new InvalidOperationException("PHY_Weight - NEXT 模板每测点汇总表表头格数不足(应含 Specimen/Number of Sample/Total(g)/Ave(g/m²) 4 列)");
+            var dataRow0 = Row(t2, PhysicalWeightDocxLayout.TrailerDataStartRow);
+            if (dataRow0 == null || dataRow0.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.NextTrailerCellCount)
+                throw new InvalidOperationException("PHY_Weight - NEXT 模板每测点汇总表没有数据行");
+
+            // 表头 4 列模板已写全, 不补列名(与 3 格版不同)
+            int rowIdx = PhysicalWeightDocxLayout.TrailerDataStartRow;
+            foreach (var p in model.PerPointRows)
+            {
+                var r = Row(t2, rowIdx);
+                if (r == null) r = WordEditEngine.AppendClonedRow(t2);   // 超过预留行 → 克隆末行追加
+                if (r == null) break;
+
+                SetCellText(r, PhysicalWeightDocxLayout.NextTrailerPointColumn, p.Point);
+                SetCellText(r, PhysicalWeightDocxLayout.NextTrailerCountColumn, p.SampleCount.ToString());
+                // 天平实际精度 3 位(0.001 g), 与 3 格版的重量列一致
+                SetCellText(r, PhysicalWeightDocxLayout.NextTrailerTotalColumn, p.TotalWeight?.ToString("F3") ?? "");
+                // Ave(g/m²) 取整 —— 与表0 那一格同格式
+                SetCellText(r, PhysicalWeightDocxLayout.NextTrailerAveColumn, p.AverageGsm.ToString("F0"));
+                rowIdx++;
+            }
+        }
+
+        /// <summary>
+        /// 填 FOCUS 的布边长度表(Sample | Selvage Length) — **每个测点一行**, 写该测点用的布边长度 cm(2 位小数)。
+        /// 长度取自页面面积卡片里那个「长度」框(算 g/m 用的同一个数), 服务端按测点取了第一条有值的;
+        /// 没录长度的测点仍占一行、该格留空 —— 行是"测点"的, 不是"长度"的。
+        /// 表头模板已写全, 引擎不补列名(与 NEXT 登记表同); 超预留行 → 克隆末行。
+        /// </summary>
+        private void FillSelvageLength(WordprocessingDocument doc, PhysicalWeightReportFillModel model)
+        {
+            var t = LocateSelvageTable(doc)
+                ?? throw new InvalidOperationException("PHY_Weight - FOCUS 模板缺少布边长度表(Sample | Selvage Length)");
+
+            var hdrRow = Row(t, PhysicalWeightDocxLayout.TrailerHeaderRow);
+            if (hdrRow == null || hdrRow.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SelvageCellCount)
+                throw new InvalidOperationException("PHY_Weight - FOCUS 模板布边长度表表头格数不足(应含 Sample/Selvage Length 2 列)");
+            var dataRow0 = Row(t, PhysicalWeightDocxLayout.TrailerDataStartRow);
+            if (dataRow0 == null || dataRow0.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SelvageCellCount)
+                throw new InvalidOperationException("PHY_Weight - FOCUS 模板布边长度表没有数据行");
+
+            int rowIdx = PhysicalWeightDocxLayout.TrailerDataStartRow;
+            foreach (var s in model.SummaryRows)
+            {
+                var r = Row(t, rowIdx);
+                if (r == null) r = WordEditEngine.AppendClonedRow(t);   // 超过预留行 → 克隆末行追加
+                if (r == null) break;
+
+                SetCellText(r, PhysicalWeightDocxLayout.SelvagePointColumn, s.Point);
+                // 长度 cm 取 2 位(页面那个框就是 precision=2); 没录 → 空
+                SetCellText(r, PhysicalWeightDocxLayout.SelvageLengthColumn, s.SelvageLength?.ToString("F2") ?? "");
+                rowIdx++;
+            }
+        }
+
+        /// <summary>
+        /// 定位 FOCUS 的布边长度表: 逐张 body 表找 R0 表头含 "Selvage Length" 的那张。
+        /// 它和数据表 / 文末登记表都不同名, 按这句标记认最稳 —— 也不用管它被插在第几张。
+        /// </summary>
+        private Table? LocateSelvageTable(WordprocessingDocument doc)
+        {
+            var bodyTables = doc.MainDocumentPart?.Document?.Body?.Elements<Table>();
+            if (bodyTables == null) return null;
+
+            return bodyTables.FirstOrDefault(t =>
+                Row(t, PhysicalWeightDocxLayout.TrailerHeaderRow)?.InnerText
+                    .Contains(PhysicalWeightDocxLayout.SelvageMarker, StringComparison.OrdinalIgnoreCase) == true);
+        }
+
+        /// <summary>
+        /// 定位表2/表4(3 格文末登记表): 从数据表之后的 body 表里, 找第一张 R0 表头同时含 "Sample" 与 "Weight" 的表。
+        /// 为何不用 LocateTable 内容匹配: 表0/表1 也含 Sample 等字样, 内容匹配会误中; 登记表排在数据表之后,
+        /// 从其后顺序扫描最稳, 再以表头文字兜底校验结构。
+        /// NEXT 的"每测点汇总表"(Specimen | Number of Sample | …)排在数据表**前面**, 且表头有 Sample 无 Weight,
+        /// 所以既不会被扫到、也不会被认错。
+        /// dataTable 为 null 时(结构校验保证不会发生)从第 0 张表起扫。
+        /// </summary>
+        private Table? LocateTrailerTable(WordprocessingDocument doc, Table? dataTable)
         {
             var bodyTables = doc.MainDocumentPart?.Document?.Body?.Elements<Table>().ToList();
             if (bodyTables == null) return null;
 
-            int start = bodyTables.IndexOf(dataTable) + 1;
+            int start = (dataTable == null ? -1 : bodyTables.IndexOf(dataTable)) + 1;
             for (int i = start; i < bodyTables.Count; i++)
             {
                 var hdrText = Row(bodyTables[i], PhysicalWeightDocxLayout.TrailerHeaderRow)?.InnerText ?? "";
@@ -195,6 +305,21 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                     return bodyTables[i];
             }
             return null;
+        }
+
+        /// <summary>
+        /// 定位 NEXT 版每测点汇总表: 逐张 body 表找 R0 表头含 "Number of sample" 的那张。
+        /// 不能用 LocateTable("Specimen") —— 数据表(T3)的表头行也含 Specimen 且排在它**前面**,
+        /// 内容匹配会先命中数据表, 于是测点被写进 Specimen 列、数值被写进 Number of Sample 列, 静默错位。
+        /// </summary>
+        private Table? LocatePerPointTrailerTable(WordprocessingDocument doc)
+        {
+            var bodyTables = doc.MainDocumentPart?.Document?.Body?.Elements<Table>();
+            if (bodyTables == null) return null;
+
+            return bodyTables.FirstOrDefault(t =>
+                Row(t, PhysicalWeightDocxLayout.TrailerHeaderRow)?.InnerText
+                    .Contains(PhysicalWeightDocxLayout.NextTrailerCountMarker, StringComparison.OrdinalIgnoreCase) == true);
         }
 
         /// <summary>
@@ -227,72 +352,90 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 校验 PHY_Weight.docx 模板结构并返回已定位的两张表。
+        /// 校验模板结构并返回已定位的表0(摘要)与表1(数据表)。
         ///
         /// 为什么宁可抛异常也不静默: 本引擎的填格依赖 PhysicalWeightDocxLayout 里人工数的坐标。
         /// 模板只要被人改过(增删一行/一列/改表头文字), 坐标就可能整体错位——那种情况下继续填,
         /// 会产出"报告号填到数据行、数值错列"这种表面上能打开、实则全错的 docx, 最难以发现。
         /// 所以这里把 FillReport 会用到的所有锚点(行存在性、列数、标记文字)逐项断言,
         /// 任何一项不符立即抛异常, 让生成失败暴露在调用处, 而不是把错位文档发出去。
+        ///
+        /// 四份模板的格数不同, 所以断言按买家取(SummaryCellCountOf), 异常消息一律带买家名 ——
+        /// 前端能选四份模板, 出错时必须一眼看出是哪一份坏了。
+        /// 其中"格数 > 最大值列号"这条是本次最要紧的: SetCellText 遇到不存在的格是静默 return,
+        /// 少一格就会整列单位的数据凭空消失, 报告看上去完全正常。
         /// </summary>
-        private (Table Summary, Table Data) ValidateTemplate(WordprocessingDocument doc)
+        private (Table Summary, Table Data) ValidateTemplate(WordprocessingDocument doc, string buyer, string testType)
         {
+            int cellCount = PhysicalWeightDocxLayout.SummaryCellCountOf(buyer);
+
             var t0 = LocateTable(doc, PhysicalWeightDocxLayout.SummaryTableMarker)
-                ?? throw new InvalidOperationException("PHY_Weight 模板缺少摘要表(Test Report Number)");
+                ?? throw new InvalidOperationException($"{buyer} 模板缺少摘要表(Test Report Number)");
             if (Row(t0, PhysicalWeightDocxLayout.SummaryRowReportNumber) == null)
-                throw new InvalidOperationException("PHY_Weight 模板摘要表行数不足(缺 R0 报告号行)");
+                throw new InvalidOperationException($"{buyer} 模板摘要表行数不足(缺 R0 报告号行)");
             if (Row(t0, PhysicalWeightDocxLayout.SummaryRowTestMethod) == null)
-                throw new InvalidOperationException("PHY_Weight 模板摘要表行数不足(缺 R5 测试方法行)");
+                throw new InvalidOperationException($"{buyer} 模板摘要表行数不足(缺 R5 测试方法行)");
             if (Row(t0, PhysicalWeightDocxLayout.SummaryHeaderRow) == null)
-                throw new InvalidOperationException("PHY_Weight 模板摘要表行数不足(缺 R7 表头行)");
-            if (Row(t0, PhysicalWeightDocxLayout.SummaryHeaderRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SummaryCellCount)
-                throw new InvalidOperationException("PHY_Weight 模板摘要表头格数不足(应含 g/m²、g/m、g/piece、lb/dozen、oz/dozen 等 9 列)");
+                throw new InvalidOperationException($"{buyer} 模板摘要表行数不足(缺 R7 表头行)");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryHeaderRow)!.Elements<TableCell>().Count() < cellCount)
+                throw new InvalidOperationException($"{buyer} 模板摘要表头格数不足(应含 {cellCount} 列)");
             if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow) == null)
-                throw new InvalidOperationException("PHY_Weight 模板摘要表没有汇总数据行");
-            if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.SummaryCellCount)
-                throw new InvalidOperationException("PHY_Weight 模板摘要表汇总数据行格数不足");
+                throw new InvalidOperationException($"{buyer} 模板摘要表没有汇总数据行");
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow)!.Elements<TableCell>().Count() < cellCount)
+                throw new InvalidOperationException($"{buyer} 模板摘要表汇总数据行格数不足");
+
+            // 选中类型的值列必须真的存在 —— 否则 SetCellText 静默丢弃整列数据
+            int maxColumn = PhysicalWeightDocxLayout.SummaryValuesOf(buyer, testType).Max(v => v.Column);
+            if (Row(t0, PhysicalWeightDocxLayout.SummaryDataStartRow)!.Elements<TableCell>().Count() <= maxColumn)
+                throw new InvalidOperationException($"{buyer} 模板摘要表数据行格数({cellCount})不够写 {testType} 的第 {maxColumn} 列");
 
             var t1 = LocateTable(doc, PhysicalWeightDocxLayout.DataTableMarker)
-                ?? throw new InvalidOperationException("PHY_Weight 模板缺少数据表(Specimen)");
-            if (Row(t1, PhysicalWeightDocxLayout.HeaderRow1)?.InnerText.Contains("Sample") != true)
-                throw new InvalidOperationException("PHY_Weight 模板数据表头异常(缺 Sample 列)");
-            if (Row(t1, PhysicalWeightDocxLayout.HeaderRow1)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.HeaderCellCount)
-                throw new InvalidOperationException("PHY_Weight 模板数据表头格数不足(缺 Specimen/Average)");
-            if (Row(t1, PhysicalWeightDocxLayout.HeaderRow2)?.InnerText.Contains("#1") != true)
-                throw new InvalidOperationException("PHY_Weight 模板数据表头异常(缺 #1~#5)");
-            if (Row(t1, PhysicalWeightDocxLayout.DataStartRow) == null)
-                throw new InvalidOperationException("PHY_Weight 模板数据表没有数据行");
-            if (Row(t1, PhysicalWeightDocxLayout.DataStartRow)!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.RowCellCount)
-                throw new InvalidOperationException("PHY_Weight 模板数据行格数不足");
+                ?? throw new InvalidOperationException($"{buyer} 模板缺少数据表(#1~#5 那行)");
+            if (Row(t1, PhysicalWeightDocxLayout.DataHeaderRow1Of(buyer))?.InnerText.Contains("Sample") != true)
+                throw new InvalidOperationException($"{buyer} 模板数据表头异常(缺 Sample 列)");
+            if (Row(t1, PhysicalWeightDocxLayout.DataHeaderRow1Of(buyer))!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.HeaderCellCount)
+                throw new InvalidOperationException($"{buyer} 模板数据表头格数不足(缺 Specimen/Average)");
+            if (Row(t1, PhysicalWeightDocxLayout.DataHeaderRow2Of(buyer))?.InnerText.Contains("#1") != true)
+                throw new InvalidOperationException($"{buyer} 模板数据表头异常(缺 #1~#5)");
+            if (Row(t1, PhysicalWeightDocxLayout.DataStartRowOf(buyer)) == null)
+                throw new InvalidOperationException($"{buyer} 模板数据表没有数据行");
+            if (Row(t1, PhysicalWeightDocxLayout.DataStartRowOf(buyer))!.Elements<TableCell>().Count() < PhysicalWeightDocxLayout.RowCellCount)
+                throw new InvalidOperationException($"{buyer} 模板数据行格数不足");
 
             return (t0, t1);
         }
 
-        /// <summary>PHY_Weight.docx 模板坐标 — 模板布局一变, 只改这里</summary>
+        /// <summary>物理克重模板坐标 — 模板布局一变, 只改这里。四份模板(Normal/Adidas/FOCUS/NEXT)的差异见底部买家布局方法</summary>
         private static class PhysicalWeightDocxLayout
         {
             // 定位文本 (LocateTable 按 InnerText.Contains 匹配)
             public const string SummaryTableMarker = "Test Report Number";  // 表0: 摘要表
-            public const string DataTableMarker = "Specimen";               // 表1: 数据表
 
-            // 表0 (摘要表) 坐标
+            /// <summary>表1 数据表的唯一标记。用 "#1" 而不是 "Specimen": 2026-09-15 版 NEXT 模板里
+            /// "每测点汇总表"(Specimen | Number of Sample | Total(g) | Ave(g/m²)) 的 R0 也含 Specimen
+            /// 且排在数据表**前面**, 用 Specimen 定位会先命中它 —— 于是测点被写进 Specimen 列、数值被写进
+            /// Number of Sample 列, 静默错位。 "#1" 只出现在数据表那行 #1~#5 表头里。</summary>
+            public const string DataTableMarker = "#1";
+
+            // 表0 (摘要表) 坐标 — 四份模板共用
             public const int SummaryRowReportNumber = 0;  // R0 报告号
             public const int SummaryRowTestMethod = 5;    // R5 测试方法
-            public const int SummaryHeaderRow = 7;        // R7 表头 (9格: Sample|g/m²|oz/yd²|g/m|oz/yd|g/linear meter|g/piece|lb/dozen|oz/dozen)
+            public const int SummaryHeaderRow = 7;        // R7 表头
             public const int SummaryDataStartRow = 8;     // R8 汇总网格起始行
             public const int SummarySampleColumn = 0;     // Sample 列
-            public const int SummaryCellCount = 9;        // 汇总网格数据行应有格数(新模板加了 oz/dozen 列)
+            public const int SummaryCellCount = 9;        // Normal 汇总网格数据行应有格数(Sample|g/m²|oz/yd²|g/m|oz/yd|g/linear meter|g/piece|lb/dozen|oz/dozen)
             public const int ValueColumn = 1;             // 报告号/方法值所在列
 
             // 表1 (数据表) — 2026-09-08 模板去掉 Measure 列, 回到 7 格(与最早版一致):
             //   R1 表头: Sample | Specimen(合并5格) | Average  —— 3个真实 tc
             //   R2 表头:   空   |    #1 ~ #5      |  空    —— 7个独立 tc(部分格合并加宽)
             //   R3+ 数据行: Sample | #1 | #2 | #3 | #4 | #5 | Average  —— 7个独立 tc
+            // 行号用下面的 DataHeaderRow1Of / DataHeaderRow2Of / DataStartRowOf 取 ——
+            // NEXT 的数据表上面没有那行单位注释, 整张表上移一行(0/1/2)。
             public const int HeaderRow1 = 1;              // 表头行1(合并): Sample|Specimen|Average
             public const int HeaderRow2 = 2;              // 表头行2: #1 ~ #5
-            public const int DataHeaderRow = 1;           // 表头行(写单位)
-            public const int DataSpecimenCell = 1;        // R1 表头 Specimen 单元格(第2个tc: Sample,Specimen,Average)
-            public const int DataAverageCell = 2;         // R1 表头 Average 单元格(第3个tc)
+            public const int DataSpecimenCell = 1;        // 表头行1 的 Specimen 单元格(第2个tc: Sample,Specimen,Average)
+            public const int DataAverageCell = 2;         // 表头行1 的 Average 单元格(第3个tc)
             public const int DataStartRow = 3;            // 数据区起始行
             public const int SampleColumn = 0;            // Sample 列 (测点)
             public const int ValueStartColumn = 1;        // 第一个值列(数据行 tc1: Sample,#1..#5,Average → 从1开始)
@@ -311,16 +454,99 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int TrailerWeightColumn = 1;     // 重量(g)
             public const int TrailerMeasureColumn = 2;    // 类型尺寸(面积/长度/条数)
 
+            // 表2 NEXT 版 (4 格, 每个测点一行) — 与上面 3 格版是两份不同的表:
+            //   R0 表头: Specimen | Number of sample | Total(g) | Ave(g/m²)   —— 模板已写全, 引擎不补列名
+            //   R1+ 数据行: 测点 | 样品数 | 重量合计g | g/m² 均值(整数)
+            public const int NextTrailerCellCount = 4;
+            public const int NextTrailerPointColumn = 0;   // 测点(Specimen)
+            public const int NextTrailerCountColumn = 1;   // Number of sample
+            public const int NextTrailerTotalColumn = 2;   // Total(g)
+            public const int NextTrailerAveColumn = 3;     // Ave(g/m²)
+
+            // 表3 FOCUS 版布边长度表 (2026-09-15 模板新增, 在数据表与文末登记表之间) —— **每个测点一行**:
+            //   R0 表头: Sample | Selvage Length   —— 模板已写全, 引擎不补列名
+            //   R1+ 数据行: 测点 | 该测点用的布边长度 cm
+            public const int SelvageCellCount = 2;
+            public const int SelvagePointColumn = 0;    // 测点(Sample)
+            public const int SelvageLengthColumn = 1;   // Selvage Length (cm)
+
+            // 认表的标记文字一律**大小写不敏感**比较: 模板改过一次 "Number of sample" → "Number of Sample",
+            // 列名大小写是客户模板的书写习惯, 不该让引擎的定位跟着坏。
+            public const string NextTrailerCountMarker = "Number of sample";  // 认 NEXT 登记表的唯一标记
+            public const string SelvageMarker = "Selvage Length";             // 认 FOCUS 布边长度表的唯一标记
+
             /// <summary>
-            /// 表0 汇总网格值列(0-based tc, 首个数据行 R8 起, 新模板 9 格/行): 面积→(1,2) g/m²|oz/yd²,
+            /// 表0 汇总网格值列(0-based tc, 首个数据行 R8 起, Normal 9 格/行): 面积→(1,2) g/m²|oz/yd²,
             /// 长度→(3,4) g/m|oz/yd, 条重→(6,7,8) g/piece|lb/dozen|oz/dozen(tc5 g/linear meter 不在范围内)。
             /// </summary>
-            public static int[] SummaryColumnsOf(string testType) => testType switch
+            private static int[] SummaryColumnsOf(string testType) => testType switch
             {
                 "length" => new[] { 3, 4 },
                 "piece" => new[] { 6, 7, 8 },
                 _ => new[] { 1, 2 }
             };
+
+            /// <summary>
+            /// 表0 汇总各列显示格式(与 SummaryColumnsOf 一一对应): 面积克重 g/m² 整数、oz/yd² 一位小数(模板要求);
+            /// 长度/条重取一位小数。
+            /// </summary>
+            private static string[] SummaryFormatsOf(string testType) => testType switch
+            {
+                "area" => new[] { "F0", "F1" },
+                "piece" => new[] { "F1", "F1", "F1" },
+                _ => new[] { "F1", "F1" }
+            };
+
+            // ── 买家布局 ──
+            // 四份模板不是"同一套表换文案": 表0 汇总表被裁过列(Adidas/NEXT 只剩 g/m², FOCUS 剩 g/m²|oz/yd²|g/m),
+            // FOCUS 另外多一张布边长度表; NEXT 的模板里同时放了 3 格登记表与每测点汇总表两套。
+            // 下面这些方法就是全部差异 —— FillReport / FillTrailer 用它们决定"这份模板有没有这张表",
+            // "有没有数据"则由服务端分好的三个行列表是否为空决定。
+
+            /// <summary>表0 汇总行的格数(即该模板实际有的列数) —— 写值前用它断言, 防止静默丢列</summary>
+            public static int SummaryCellCountOf(string buyer) => buyer switch
+            {
+                PhysicalWeightReportRequestDto.BuyerAdidas => 2,   // Sample | g/m²
+                PhysicalWeightReportRequestDto.BuyerFocus => 4,    // Sample | g/m² | oz/yd² | g/m
+                PhysicalWeightReportRequestDto.BuyerNext => 2,     // Sample | (g/m²)
+                _ => SummaryCellCount
+            };
+
+            /// <summary>
+            /// 表0 汇总值列与显示格式 —— 两者天然一一对应, 所以合成一个方法返回, 避免列和格式各改一处改漏。
+            /// 只列该模板真有的列: Adidas 只有 g/m²(模板无 oz/yd²); NEXT 只有 g/m² 且取整;
+            /// FOCUS 三格全填, 其中 g/m 来自面积卡片里新加的长度框(第 3 格);
+            /// Normal 沿用原来的列映射(面积 2 格 / 长度 2 格 / 条重 3 格)。
+            /// </summary>
+            public static (int Column, string Format)[] SummaryValuesOf(string buyer, string testType) => buyer switch
+            {
+                PhysicalWeightReportRequestDto.BuyerAdidas => new[] { (1, "F1") },
+                PhysicalWeightReportRequestDto.BuyerFocus => new[] { (1, "F0"), (2, "F1"), (3, "F0") },
+                PhysicalWeightReportRequestDto.BuyerNext => new[] { (1, "F0") },
+                _ => SummaryColumnsOf(testType)
+                        .Zip(SummaryFormatsOf(testType), (c, f) => (Column: c, Format: f))
+                        .ToArray()
+            };
+
+            /// <summary>表1 数据表的三行坐标 —— 2026-09-15 版 NEXT 模板有了数据表, 但**没有顶部那行单位换算注释**
+            /// (Normal 系: R0 注释 / R1 Sample|Specimen|Average / R2 #1~#5 / R3 起数据),
+            /// 所以 NEXT 整张表比其余买家上移一行(0/1/2)。</summary>
+            public static int DataHeaderRow1Of(string buyer) => buyer == PhysicalWeightReportRequestDto.BuyerNext ? 0 : HeaderRow1;
+            public static int DataHeaderRow2Of(string buyer) => buyer == PhysicalWeightReportRequestDto.BuyerNext ? 1 : HeaderRow2;
+            public static int DataStartRowOf(string buyer) => buyer == PhysicalWeightReportRequestDto.BuyerNext ? 2 : DataStartRow;
+
+            /// <summary>R5 是否有"测试方法"值格 —— NEXT 的 R5 只有一格标题, 写了也没地方落</summary>
+            public static bool HasTestMethodCell(string buyer) => buyer != PhysicalWeightReportRequestDto.BuyerNext;
+
+            /// <summary>
+            /// 是否填 NEXT 的每测点汇总表(Specimen | Number of Sample | Total(g) | Ave(g/m²)) —— 只有 NEXT 模板有这张表。
+            /// 它与 3 格登记表**不是二选一**: 行按录入方式各归各的, 一份报告里两张都可能有数,
+            /// 所以引擎还另外看 PerPointRows / TrailerRows 有没有数据。数据表(T3)同理, 由 Rows 是否为空决定。
+            /// </summary>
+            public static bool HasPerPointTable(string buyer) => buyer == PhysicalWeightReportRequestDto.BuyerNext;
+
+            /// <summary>是否有布边长度表(Sample | Selvage Length, 每测点一行) —— 只有 FOCUS 模板有</summary>
+            public static bool HasSelvageTable(string buyer) => buyer == PhysicalWeightReportRequestDto.BuyerFocus;
         }
 
         private static TableRow? Row(Table? t, int i) => t?.Elements<TableRow>().ElementAtOrDefault(i);
