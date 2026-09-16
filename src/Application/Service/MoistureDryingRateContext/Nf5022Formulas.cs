@@ -28,10 +28,21 @@ public static class Nf5022Formulas
     /// 采样点不足 2 个 / 间隔非正 / 拟合退化（分母≈0）→ NaN（调用方负责转 0）。
     /// </summary>
     public static double RegressionSlopeMgPerHour(IReadOnlyList<double>? evapCurveMg, int resultPoint, int spaceTime)
+        => RegressionFitMgPerHour(evapCurveMg, resultPoint, spaceTime)?.Slope ?? double.NaN;
+
+    /// <summary>
+    /// 干燥段【最小二乘拟合直线】: 斜率(mg/h) + 截距(mg) —— RegressionSlopeMgPerHour 的一般化,
+    /// 多返回一个截距, 只为了把这条线本身画在报告曲线图上（有斜率没截距画不出线）。
+    /// 拟合域与单位与它逐字一致: x_k = 采样间隔(sp, 分) × k ÷ 60（小时）, y_k = evap[k]（mg）,
+    /// 截距 = 均值y − 斜率 × 均值x（直线必过拟合域重心）。
+    /// 采样点不足 2 个 / 间隔非正 / 分母退化 → null（不画线）。
+    /// </summary>
+    public static (double Slope, double Intercept)? RegressionFitMgPerHour(
+        IReadOnlyList<double>? evapCurveMg, int resultPoint, int spaceTime)
     {
-        if (evapCurveMg == null || resultPoint < 2 || spaceTime <= 0) return double.NaN;
+        if (evapCurveMg == null || resultPoint < 2 || spaceTime <= 0) return null;
         int n = Math.Min(resultPoint, evapCurveMg.Count);
-        if (n < 2) return double.NaN;
+        if (n < 2) return null;
 
         double sx = 0, sy = 0, sxx = 0, sxy = 0;
         for (int k = 0; k < n; k++)
@@ -41,8 +52,9 @@ public static class Nf5022Formulas
             sx += x; sy += y; sxx += x * x; sxy += x * y;
         }
         double denom = n * sxx - sx * sx;
-        if (Math.Abs(denom) < 1e-12) return double.NaN;
-        return (n * sxy - sx * sy) / denom;
+        if (Math.Abs(denom) < 1e-12) return null;
+        double slope = (n * sxy - sx * sy) / denom;
+        return (slope, (sy - slope * sx) / n);   // 截距 = 重心y − 斜率 × 重心x
     }
 
     /// <summary>

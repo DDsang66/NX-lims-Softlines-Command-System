@@ -162,10 +162,10 @@ public class Aatcc201FrameSampleDto
     /// <summary>加热板温度1 原始值(0.01℃ 单位整数; 偏置叠加在设备侧或前端, 计算只按差值用)</summary>
     public int BoardRaw01 { get; set; }
 
-    /// <summary>盖板状态 0=开 1=闭（闭→开沿用于记起点）</summary>
+    /// <summary>盖板状态 0=闭 1=开（开→闭沿用于记起点）</summary>
     public int CoverStatus { get; set; }
 
-    /// <summary>本帧到达的真实秒数（相对测试开始; 步骤5 帧率校准后用于换算真实时间）</summary>
+    /// <summary>本帧到达的真实秒数（相对测试开始; 留作帧率校准用, 不参与算法与曲线横轴）</summary>
     public double FrameTimeSec { get; set; }
 }
 
@@ -184,7 +184,7 @@ public class Aatcc201ComputeResultDto
 /// </summary>
 public class Aatcc201TempPointDto
 {
-    /// <summary>本帧真实到达秒（测试开始起; 步骤5帧率校准后作横轴/换算时间用）</summary>
+    /// <summary>本帧真实到达秒（测试开始起; 留作帧率校准用, 不作曲线横轴——横轴是点序）</summary>
     public double FrameTimeSec { get; set; }
 
     /// <summary>采纳后表面温度(0.01℃ 单位整数, 已叠 temp_hw 偏置)</summary>
@@ -197,7 +197,7 @@ public class Aatcc201StationResultDto
     /// <summary>本次测试实际使用的物理工位 1|2（测试3 复用工位时, 工位号可能重复出现）</summary>
     public int Station { get; set; }
 
-    /// <summary>是否参与（有盖板闭→开沿 + 有平台终点 + 交点合法）。未参与时其余字段全 0。</summary>
+    /// <summary>是否参与（有盖板开→闭沿 + 有平台终点 + 终点合法）。未参与时其余字段全 0。</summary>
     public bool Participated { get; set; }
 
     /// <summary>干燥速率存储原值(mg/h, 整数) = (int)(水mL×1000 ÷(终点−起点) ×3600 + 0.5)</summary>
@@ -209,7 +209,7 @@ public class Aatcc201StationResultDto
     /// <summary>起点采样序号（盖板 1→0 沿）</summary>
     public int StartPoint { get; set; }
 
-    /// <summary>终点采样序号（draw_two 斜坡/平缓线交点）</summary>
+    /// <summary>终点采样序号（draw_two 斜坡/平缓线收敛点，含早停口径；不等于两条线的几何交点）</summary>
     public int EndPoint { get; set; }
 
     /// <summary>斜坡最大点（draw_two 斜坡线的锚点）</summary>

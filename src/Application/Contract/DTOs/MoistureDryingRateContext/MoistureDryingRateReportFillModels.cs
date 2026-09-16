@@ -133,6 +133,12 @@ public class Aatcc201StationRowModel
     /// <summary>终点采样序号</summary>
     public int EndPoint { get; set; }
 
+    /// <summary>斜坡最大点(斜率线锚点) —— 曲线图前那张数据表的 slope_time 行</summary>
+    public int SlopeMaxPoint { get; set; }
+
+    /// <summary>平缓最小点(平缓线锚点) —— 曲线图前那张数据表的 flat_time 行</summary>
+    public int FlatMinPoint { get; set; }
+
     /// <summary>
     /// 采纳后温度曲线（已叠偏置+抗抖动, 点序=采样序; 未参与工位为 null）。
     /// 报告服务用它在图表库决策后生成温度曲线 PNG（当前 ChartImagePng 仍由图表库未定而恒为 null）。
