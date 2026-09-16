@@ -107,7 +107,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 SetCellText(headerRow, PhysicalWeightDocxLayout.DataAverageCell,  $"Average\n({model.DataUnit})");
             }
 
-            string dataFmt = DataFormatOf(model.TestType);
+            string dataFmt = DataFormatOf(model.Buyer, model.TestType);
             int dataRow = PhysicalWeightDocxLayout.DataStartRowOf(model.Buyer);
             foreach (var row in model.Rows)
             {
@@ -126,10 +126,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
         /// <summary>
         /// 表1 数据格与平均格的显示格式: 仅面积克重(g/m²)取整, 长度/条重与页面/导出 Excel 一致取 3 位。
+        /// Adidas 与 NEXT 例外: 这两家的 g/m² 保留一位小数(Adidas 与其概要表同精度, NEXT 是模板自己的要求,
+        /// 见数据表上方那句 *nearest 0.1g/m²), 所以数据格与平均格都跟着一位。
         /// </summary>
-        private static string DataFormatOf(string testType) => testType switch
+        private static string DataFormatOf(string buyer, string testType) => (buyer, testType) switch
         {
-            "area" => "F0",
+            (PhysicalWeightReportRequestDto.BuyerAdidas or PhysicalWeightReportRequestDto.BuyerNext, "area") => "F1",
+            (_, "area") => "F0",
             _ => "F3"
         };
 
@@ -514,15 +517,16 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             /// <summary>
             /// 表0 汇总值列与显示格式 —— 两者天然一一对应, 所以合成一个方法返回, 避免列和格式各改一处改漏。
-            /// 只列该模板真有的列: Adidas 只有 g/m²(模板无 oz/yd²); NEXT 只有 g/m² 且取整;
+            /// 只列该模板真有的列: Adidas 只有 g/m²(模板无 oz/yd²); NEXT 只有 g/m²;
             /// FOCUS 三格全填, 其中 g/m 来自面积卡片里新加的长度框(第 3 格);
             /// Normal 沿用原来的列映射(面积 2 格 / 长度 2 格 / 条重 3 格)。
+            /// Adidas 与 NEXT 的 g/m² 都保留一位小数 —— 这两家模板的精度要求, 与面积默认的取整不同。
             /// </summary>
             public static (int Column, string Format)[] SummaryValuesOf(string buyer, string testType) => buyer switch
             {
                 PhysicalWeightReportRequestDto.BuyerAdidas => new[] { (1, "F1") },
                 PhysicalWeightReportRequestDto.BuyerFocus => new[] { (1, "F0"), (2, "F1"), (3, "F0") },
-                PhysicalWeightReportRequestDto.BuyerNext => new[] { (1, "F0") },
+                PhysicalWeightReportRequestDto.BuyerNext => new[] { (1, "F1") },
                 _ => SummaryColumnsOf(testType)
                         .Zip(SummaryFormatsOf(testType), (c, f) => (Column: c, Format: f))
                         .ToArray()
