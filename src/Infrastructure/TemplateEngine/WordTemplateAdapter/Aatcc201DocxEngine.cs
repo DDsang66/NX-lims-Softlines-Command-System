@@ -21,6 +21,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     ///   最终均值一次写进 restart 格; 旧"分割"模板(每行独立格)仍兼容 = 逐行写运行平均
     /// 速率单位 mL/h = 存储 mg/h ÷ 1000（存 mg/h 报告 g/h; 原软件查询列即标 mL/h）。
     /// 无"曲线图"占位段 → 曲线 PNG 追加到文档末尾（用户: aatcc曲线图放在表最后）。
+    /// 曲线图前面另加一张【样品数据表】(照原软件 Excel 版式: start_time/slope_time/flat_time/water/
+    ///   dry rate/end_time + average drying rate, 字段为行、测试为列) —— 表由本引擎从零生成, 模板里没有,
+    ///   写在文末但排在曲线图之前; 合并报告每个样品一张, 表外挂一段样品名。
     /// 页脚(footer1, TÜV 签名行): R1 末两格 ____°C / ____%RH = 环境温度/湿度(同克重 PHY_Weight)
     /// </summary>
     public class Aatcc201DocxEngine : IAatcc201DocxEngine, IScopedDependency
@@ -38,7 +41,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         ///   2. 表0 摘要: R0 报告号(col1, 加粗 14pt); R11 标签行保持模板原样(不再追加均值);
         ///   3. 表1 结果: R0 Sample 表头格第二行写样品名; 按顺序填 #1/#2 (Start/End/Rate);
         ///      Average 合并格(restart@R1) = 参与工位最终均值, 只写一次; 未参与工位整行留空;
-        ///   4. 曲线 PNG → 追加到文档末尾;
+        ///   4. 样品数据表 → 追加到文末, 紧跟其后的才是曲线 PNG(顺序: 表 → 图);
         ///   5. 页脚 footer1 末两格: 环境温度(°C)/环境湿度(%RH), 照克重页脚处理;
         ///   6. 保存。OpenXml 操作全部留在本层, 上层只管拼 Aatcc201ReportFillModel。
         /// </summary>
@@ -57,6 +60,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             {
                 SampleName = model.SampleName,
                 Stations = model.Stations
+            });
+
+            // 数据表 → 曲线图: 两者都排到文末, 先调的先排 → 文档里是"表在前、图在后"(用户要求)
+            AppendDataTablesAtEnd(doc, new[]
+            {
+                new Aatcc201SampleBlockModel { SampleName = model.SampleName, Stations = model.Stations }
             });
 
             // 曲线图: 模型带 PNG 才嵌入(追加到文档末尾, 模板无占位段)
@@ -137,6 +146,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 prev = target;
             }
 
+            // 数据表: 每个样品一张, 全部排在曲线图之前(每张表外挂一段样品名便于区分)
+            AppendDataTablesAtEnd(doc, model.Samples);
+
             // 曲线图: 全部追加到文档末尾(用户: aatcc 曲线图放在表最后)
             foreach (var png in model.Charts)
                 if (png is { Length: > 0 })
@@ -172,6 +184,21 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             {
                 var block = ReadSampleBlock(table);
                 if (block != null) parsed.Samples.Add(block);
+            }
+
+            // 数据表按顺序与样品块一一对应(写侧是"每个有数据的样品块一张表"), 补回 Sample 表里没有的
+            // slope_time / flat_time。数量对不上就不补, 这两行留空(写侧见空值留白)。
+            var dataTables = FindDataTables(doc);
+            for (int i = 0; i < parsed.Samples.Count && i < dataTables.Count; i++)
+            {
+                var columns = ReadDataTable(dataTables[i]);
+                var stations = parsed.Samples[i].Stations;
+                for (int k = 0; k < stations.Count && k < columns.Count; k++)
+                {
+                    if (!stations[k].Participated) continue;
+                    stations[k].SlopeMaxPoint = columns[k].Slope;
+                    stations[k].FlatMinPoint = columns[k].Flat;
+                }
             }
 
             parsed.Charts.AddRange(ReadBodyChartPngs(mainPart, body));
@@ -395,6 +422,43 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
+        /// 枚举正文里的数据表(曲线图前那张)。判据 = 表内文本含 "slope_time" —— 只有数据表有这一行,
+        /// Sample 结果表/摘要表都不会命中。老文件(本功能之前生成的)没有这张表 → 返回空。
+        /// </summary>
+        private static IReadOnlyList<Table> FindDataTables(WordprocessingDocument doc)
+        {
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body == null) return Array.Empty<Table>();
+
+            return body.Elements<Table>()
+                .Where(t => t.InnerText.Contains(Aatcc201Layout.DataTableMarker, StringComparison.Ordinal))
+                .ToList();
+        }
+
+        /// <summary>
+        /// 读数据表的 slope_time / flat_time 两行, 按测试列返回。读不出的格(空/非数字)一律 0。
+        /// </summary>
+        private static IReadOnlyList<(int Slope, int Flat)> ReadDataTable(Table table)
+        {
+            var result = new List<(int, int)>(Aatcc201Layout.SampleRowCount);
+            for (int i = 0; i < Aatcc201Layout.SampleRowCount; i++)
+            {
+                int column = Aatcc201Layout.DataColumnLabel + 1 + i;
+                result.Add((
+                    ReadIntCell(Row(table, Aatcc201Layout.DataRowSlopeTime), column),
+                    ReadIntCell(Row(table, Aatcc201Layout.DataRowFlatTime), column)));
+            }
+            return result;
+        }
+
+        /// <summary>读一个整数格; 空格/非数字/行不存在 → 0。</summary>
+        private static int ReadIntCell(TableRow? row, int cellIndex)
+        {
+            string text = row?.Elements<TableCell>().ElementAtOrDefault(cellIndex)?.InnerText ?? string.Empty;
+            return int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) ? value : 0;
+        }
+
+        /// <summary>
         /// 读一张 Sample 表: 逐行读 #1~#3 的 Start/End/Rate 还原成结果行模型
         /// (写侧是 int mg/h ÷1000 打 F3, 读回 ×1000 四舍五入即原值, 往返无损),
         /// 一行都读不出数据(= 模板留的空表) → 返回 null, 不算样品。
@@ -534,13 +598,138 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 Aatcc201Layout.ChartWidthEmu, Aatcc201Layout.ChartHeightEmu);
 
             var para = new Paragraph(new Run(new RunProperties(new NoProof()), drawing));
-            // body 级 sectPr 必须是 w:body 最后一个孩子(schema 规定); 直接 Append 会把曲线段排到 sectPr 之后
-            // → 文档违例。曲线图本就该在文末 → 插到最后一个 body 级 sectPr 之前(无 sectPr 才 Append 兜底)。
+            AppendAtBodyEnd(body, para);
+        }
+
+        /// <summary>
+        /// 把段落/表格排到正文末尾 —— 插在最后一个 body 级 sectPr 之前。
+        /// body 级 sectPr 必须是 w:body 最后一个孩子(schema 规定): 直接 Append 会把它排到 sectPr 之后
+        /// → 文档违例。无 sectPr 才 Append 兜底。多次调用按调用顺序排列 —— 数据表比曲线图先调,
+        /// 于是文档里自然是"表 → 图"。
+        /// </summary>
+        private static void AppendAtBodyEnd(Body body, OpenXmlElement element)
+        {
             var lastSectPr = body.Elements<SectionProperties>().LastOrDefault();
             if (lastSectPr != null)
-                lastSectPr.InsertBeforeSelf(para);
+                lastSectPr.InsertBeforeSelf(element);
             else
-                body.Append(para);
+                body.Append(element);
+        }
+
+        /// <summary>
+        /// 把曲线图前那张数据表逐个排到正文末尾(调用点必须在 AppendChartAtEnd 之前, 顺序才是"表→图")。
+        /// 版式照原软件 Excel: 字段为行(start_time/slope_time/flat_time/water/dry rate/end_time)、测试为列;
+        /// 末行 average drying rate 横跨 3 个测试列。
+        /// 样品名写成表【外】的一段, 不放进格子里 —— 格子一旦出现 "Sample" 字样, 定位 Sample 结果表的
+        /// 逻辑(IsSampleTable 看 R0 col0)就可能把这张数据表当成第 4 个样品, 合并解析会跟着错位。
+        /// 没有任何参与测试的样品块直接跳过: 数据表与样品块按顺序一一对应(读侧配对的前提)。
+        /// </summary>
+        private static void AppendDataTablesAtEnd(WordprocessingDocument doc, IReadOnlyList<Aatcc201SampleBlockModel> samples)
+        {
+            var body = doc.MainDocumentPart?.Document?.Body;
+            if (body == null) return;
+
+            foreach (var block in samples)
+            {
+                if (!block.Stations.Any(s => s.Participated)) continue;
+                if (!string.IsNullOrWhiteSpace(block.SampleName))
+                    AppendAtBodyEnd(body, new Paragraph(new Run(new Text($"Sample: {block.SampleName}"))));
+                AppendAtBodyEnd(body, CreateDataTable(block));
+            }
+        }
+
+        /// <summary>
+        /// 造一张样品数据表: R0 = ["", #1, #2, #3]; R1..R6 = 六个字段; R7 = 平均值(值格横跨 3 列)。
+        /// 未参与的测试列留空(槽位对齐, 与 Sample 表同一套槽位语义)。边框显式给, 不依赖模板里有没有 TableGrid 样式。
+        /// </summary>
+        private static Table CreateDataTable(Aatcc201SampleBlockModel block)
+        {
+            var table = new Table(
+                new TableProperties(
+                    new TableWidth { Width = "5000", Type = TableWidthUnitValues.Pct },
+                    BuildDataTableBorders()));
+
+            var grid = new TableGrid(
+                new GridColumn { Width = Aatcc201Layout.DataLabelColumnWidth });
+            for (int i = 0; i < Aatcc201Layout.SampleRowCount; i++)
+                grid.Append(new GridColumn { Width = Aatcc201Layout.DataValueColumnWidth });
+            table.Append(grid);
+
+            var header = new TableRow(DataCell(string.Empty, bold: true));
+            for (int i = 0; i < Aatcc201Layout.SampleRowCount; i++)
+                header.Append(DataCell($"#{i + 1}", bold: true));
+            table.Append(header);
+
+            AppendFieldRow(table, block, "start_time (s)",
+                s => s.StartPoint.ToString(CultureInfo.InvariantCulture));
+            AppendFieldRow(table, block, "slope_time (s)",
+                s => s.SlopeMaxPoint.ToString(CultureInfo.InvariantCulture));
+            AppendFieldRow(table, block, "flat_time (s)",
+                s => s.FlatMinPoint.ToString(CultureInfo.InvariantCulture));
+            AppendFieldRow(table, block, "water (mL)",
+                s => s.WaterMl.ToString("0.###", CultureInfo.InvariantCulture));
+            AppendFieldRow(table, block, "dry rate (mL/h)",
+                s => s.RateGPerHour.ToString("F3", CultureInfo.InvariantCulture));
+            AppendFieldRow(table, block, "end_time (s)",
+                s => s.EndPoint.ToString(CultureInfo.InvariantCulture));
+
+            var rates = block.Stations.Where(s => s.Participated).Select(s => s.RateGPerHour).ToList();
+            string avg = rates.Count > 0
+                ? (rates.Sum() / rates.Count).ToString("F3", CultureInfo.InvariantCulture)
+                : string.Empty;
+            var avgRow = new TableRow(DataCell("average drying rate (mL/h)", bold: true));
+            avgRow.Append(DataCell(avg, merge: MergedCellValues.Restart));
+            for (int i = 1; i < Aatcc201Layout.SampleRowCount; i++)
+                avgRow.Append(DataCell(string.Empty, merge: MergedCellValues.Continue));
+            table.Append(avgRow);
+
+            return table;
+        }
+
+        /// <summary>一行"标签 + 各测试值"; 未参与的测试格留空。</summary>
+        private static void AppendFieldRow(
+            Table table, Aatcc201SampleBlockModel block, string label, Func<Aatcc201StationRowModel, string> value)
+        {
+            var row = new TableRow(DataCell(label, bold: true));
+            for (int i = 0; i < Aatcc201Layout.SampleRowCount; i++)
+            {
+                var station = block.Stations.ElementAtOrDefault(i);
+                row.Append(DataCell(station is { Participated: true } ? value(station) : string.Empty));
+            }
+            table.Append(row);
+        }
+
+        /// <summary>数据表边框(全单线): 表里每条线都显式给, 换模板/换 Word 版本都不会画丢。</summary>
+        private static TableBorders BuildDataTableBorders()
+        {
+            const int size = 4;               // 1/8 pt 为单位 → 4 = 0.5pt
+            const string black = "000000";
+            return new TableBorders(
+                new TopBorder { Val = BorderValues.Single, Size = size, Color = black },
+                new LeftBorder { Val = BorderValues.Single, Size = size, Color = black },
+                new BottomBorder { Val = BorderValues.Single, Size = size, Color = black },
+                new RightBorder { Val = BorderValues.Single, Size = size, Color = black },
+                new InsideHorizontalBorder { Val = BorderValues.Single, Size = size, Color = black },
+                new InsideVerticalBorder { Val = BorderValues.Single, Size = size, Color = black });
+        }
+
+        /// <summary>
+        /// 造一个数据表格子: 可选合并标记 + 单段落单 run。空文本也给段落(Word 要求 tc 至少有一个 p)。
+        /// 字号/字体一概不设 → 吃文档默认, 与报告其余表格同观感。
+        /// </summary>
+        private static TableCell DataCell(string text, bool bold = false, MergedCellValues? merge = null)
+        {
+            var cell = new TableCell();
+            if (merge is { } m)
+                cell.Append(new TableCellProperties(new HorizontalMerge { Val = m }));
+
+            var rp = new RunProperties();
+            if (bold) WordEditEngine.MakeBold(rp);
+            var run = new Run(rp);
+            if (text.Length > 0)
+                run.Append(new Text(text) { Space = SpaceProcessingModeValues.Preserve });
+            cell.Append(new Paragraph(run));
+            return cell;
         }
 
         private static Drawing CreateChartDrawing(string relationshipId, string imageName, long widthEmu, long heightEmu)
@@ -608,6 +797,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int ColumnRate = 3;       // Drying rate (mL/h)
             public const int ColumnAverage = 4;    // Average drying rate (mL/h)
             public const int ResultColumnCount = 5;
+
+            // 数据表(曲线图前面那张, 照原软件 Excel 版式): 字段为行、测试为列 —— 1 列标签 + 3 列测试
+            public const string DataTableMarker = "slope_time";  // 表内含此文本即认作数据表(与 Sample 表区分)
+            public const int DataColumnLabel = 0;
+            public const int DataRowHeader = 0;       // #1/#2/#3
+            public const int DataRowStartTime = 1;
+            public const int DataRowSlopeTime = 2;
+            public const int DataRowFlatTime = 3;
+            public const int DataRowWater = 4;
+            public const int DataRowRate = 5;
+            public const int DataRowEndTime = 6;
+            public const int DataRowAverage = 7;
+            // 数据表列宽(twips, 1cm≈567): 标签列要装下 "average drying rate (mL/h)" → 给宽些
+            public const string DataGridWidth = "9000";
+            public const string DataLabelColumnWidth = "3600";
+            public const string DataValueColumnWidth = "1800";
 
             // 曲线图显示尺寸(EMU, 1cm=360000): 宽 12cm, 高按图像素 1400:800=7:4 等比 → ≈6.9cm
             // (与 NF5022/Gb21655Layout 同尺寸, 两张图长得一样大; 2026-09-10 用户要求缩小, 原 14cm × 8cm)

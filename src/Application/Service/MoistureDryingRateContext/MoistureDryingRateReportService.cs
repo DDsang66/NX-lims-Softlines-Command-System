@@ -55,7 +55,9 @@ public class MoistureDryingRateReportService : IMoistureDryingRateReportService,
         {
             try
             {
-                var png = DryingRateChartService.RenderNf5022StationChart(s.Station, s.EvaporationCurveMg, dto.Result.SpaceTimeMin);
+                // 末参 ResultPoint = 该工位干燥段终点, 让图叠上干燥速率斜率线(与表格同源同值)
+                var png = DryingRateChartService.RenderNf5022StationChart(
+                    s.Station, s.EvaporationCurveMg, dto.Result.SpaceTimeMin, s.ResultPoint);
                 if (png != null) chartPngs.Add(png);
             }
             catch { /* 单个样品图渲染失败 → 跳过, 不拖垮整份报告 */ }
@@ -105,8 +107,13 @@ public class MoistureDryingRateReportService : IMoistureDryingRateReportService,
             return Result<DocxUrlResponseDto>.Fail("读取校准参数失败: " + config.Error);
 
         // 温度曲线 PNG 渲染异常不阻塞报告: 失败置 null, 引擎见 null 不插图
+        // 带校准参数 → 图上叠 draw_two 的两条延长线 + 终点竖线（横轴 = 采样点号, 与结果表同坐标系）
         byte[]? chartPng;
-        try { chartPng = DryingRateChartService.RenderAatcc201TemperatureChart(dto.Result); }
+        try
+        {
+            chartPng = DryingRateChartService.RenderAatcc201TemperatureChart(
+                dto.Result, config.Value!.SlopePoint, config.Value!.FlatPoint);
+        }
         catch { chartPng = null; }
 
         var model = new Aatcc201ReportFillModel
@@ -126,6 +133,9 @@ public class MoistureDryingRateReportService : IMoistureDryingRateReportService,
                 RateGPerHour = s.RateGPerHour,
                 StartPoint = s.StartPoint,
                 EndPoint = s.EndPoint,
+                // 曲线图前数据表的 slope_time / flat_time 两行; 合并报告解析历史文件时从该表读回
+                SlopeMaxPoint = s.SlopeMaxPoint,
+                FlatMinPoint = s.FlatMinPoint,
                 // 采纳后温度曲线已随结果 DTO 回传
                 SurfaceTempSeries = s.SurfaceTempSeries
             }).ToList(),
