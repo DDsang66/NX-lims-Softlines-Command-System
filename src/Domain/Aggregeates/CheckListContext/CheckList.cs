@@ -53,7 +53,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
 
             foreach (var item in items)
             {
-                item.CheckListId = id;
+                item.BindToCheckList(id);
             }
 
             var c = new CheckList
@@ -132,7 +132,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             // 4. 维护聚合根与内部实体的关联关系
             foreach (var item in newItems)
             {
-                item.CheckListId = Id; // 确保所有的测试项都归属于当前清单
+                item.BindToCheckList(Id); // 确保所有的测试项都归属于当前清单
             }
             Items = newItems;
 

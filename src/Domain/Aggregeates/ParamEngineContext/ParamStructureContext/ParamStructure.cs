@@ -26,11 +26,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         private readonly List<StandardFamilyId?> _standardFamilyIds = new();
 
         /// <summary>
-        /// 挂载的规则
-        /// </summary>
-        private readonly List<ParamRuleId> _ruleIds  = new();
-
-        /// <summary>
         /// 适用买家id集合
         /// </summary>
         private readonly List<BuyerId?> _buyerIds = new();
@@ -39,11 +34,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// 适用标准族
         /// </summary>
         public IReadOnlyCollection<StandardFamilyId?> StandardFamilyIds => _standardFamilyIds.AsReadOnly();
-
-        /// <summary>
-        /// 适用规则
-        /// </summary>
-        public IReadOnlyCollection<ParamRuleId> ApplicableRuleIds => _ruleIds.AsReadOnly();
 
         /// <summary>
         /// 买家关联 Id
@@ -94,7 +84,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             FormulaId? formulaId,
             string paramName,
             ParamSchema schema,
-            IEnumerable<ParamRuleId?> ruleIds,
             IEnumerable<BuyerId?> buyerIds,
             EngineLayer engineLayer,
             bool isEligibleAsCondition,
@@ -130,14 +119,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 }
             }
 
-            if (ruleIds != null) 
-            {
-                foreach (var ruleId in ruleIds.Where(f => f != null)) 
-                {
-                    ps._ruleIds.Add(ruleId);
-                }
-            }
-
             if (buyerIds != null) 
             {
                 foreach (var buyerId in buyerIds.Where(f => f != null)) 
@@ -163,7 +144,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public static ParamStructure Reconstitute(
             ParamStructureId id,
             IEnumerable<StandardFamilyId?> standardFamilyIds, // 3. 修改为集合
-            IEnumerable<ParamRuleId>? ruleIds,
             IEnumerable<BuyerId?> buyerIds,
             FormulaId? formulaId,               // 4. 修改为集合
             string paramName,
@@ -192,14 +172,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                 foreach (var familyId in standardFamilyIds.Where(f => f != null))
                 {
                     ps._standardFamilyIds.Add(familyId);
-                }
-            }
-
-            if (ruleIds != null)
-            {
-                foreach (var ruleId in ruleIds.Where(f => f != null))
-                {
-                    ps._ruleIds.Add(ruleId);
                 }
             }
 

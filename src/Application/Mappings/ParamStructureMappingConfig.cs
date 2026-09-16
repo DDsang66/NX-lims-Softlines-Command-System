@@ -27,9 +27,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     new FormulaId(src.FormulaId),
                     src.ParamName,
                     src.ParamSchema.Adapt<ParamSchema>(),  // Mapster 递归映射
-                    src.RuleIds == null
-                    ? new List<ParamRuleId>()
-                    : src.RuleIds.Select(id => new ParamRuleId(id)).ToList(),
                     src.BuyerIds == null
                     ? new List<BuyerId>()
                     : src.BuyerIds.Select(id => new BuyerId(id)).ToList(),
@@ -103,10 +100,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.StandardFamilyIds,
                      src => src.StandardFamilyIds != null
                             ? src.StandardFamilyIds.Select(id => id.Value).ToList()
-                            : new List<string>())
-                .Map(dest => dest.RuleIds,
-                     src => src.ApplicableRuleIds != null
-                            ? src.ApplicableRuleIds.Select(id => id.Value).ToList()
                             : new List<string>())
                 .Map(dest => dest.BuyerCodes,
                      src => src.BuyerIds != null

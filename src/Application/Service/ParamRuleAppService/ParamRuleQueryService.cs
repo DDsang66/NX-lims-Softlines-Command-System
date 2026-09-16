@@ -50,7 +50,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamRuleAppS
             var result = new Dictionary<ParamStructureId, List<ParamRule>>();
             foreach (var structure in structures)
             {
-                var rules = await _ruleRepo.GetByIdsAsync(structure.ApplicableRuleIds, ct);
+                var rules = await _ruleRepo.GetByStructureIdAsync(structure.Id, ct);
+
                 result[structure.Id] = rules.ToList();
             }
 

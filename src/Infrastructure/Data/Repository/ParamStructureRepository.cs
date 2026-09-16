@@ -43,11 +43,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Select(af => new StandardFamilyId(af.IdStandardFamily))
                 .ToListAsync(ct);
 
-            var ruleIds = await  _dbContext.BasicParamRules
-                .Where(br => br.ParamStructureId == paramStructurePo.ParamStructureId)
-                .Select(br => new ParamRuleId(br.RuleId))
-                .ToListAsync(ct);
-
             var buyerIds = await _dbContext.ParamsturctureBuyers
                 .Where(pb => pb.ParamStructureId == paramStructurePo.ParamStructureId)
                 .Select(pb => new BuyerId(pb.BuyerId))
@@ -56,7 +51,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var paramStructure = ParamStructure.Reconstitute(
                 id,
                 standardFamilyIds,
-                ruleIds,
                 buyerIds,
                 paramStructurePo.FormulaId != null ? new FormulaId(paramStructurePo.FormulaId) : null,
                 paramStructurePo.ParamName,
@@ -118,15 +112,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     g => g.Select(pb => new BuyerId(pb.BuyerId)).ToList(),
                     ct);
 
-            // 4. 批量查询关联的 RuleIds (根据你的实际表结构调整，假设有 ParamStructureRule 关系表)
-            var ruleMapping = await _dbContext.BasicParamRules
-                .Where(ar => idValues.Contains(ar.ParamStructureId))
-                .GroupBy(ar => ar.ParamStructureId)
-                .ToDictionaryAsync(
-                    g => g.Key,
-                    g => g.Select(ar => new ParamRuleId(ar.RuleId)).ToList(),
-                    ct);
-
             // 5. 遍历 PO 列表，批量重建聚合根
             var paramStructures = paramStructurePos.Select(paramStructurePo =>
             {
@@ -134,14 +119,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
                 // 从字典中安全获取关联ID集合，如果不存在则赋空集合
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<StandardFamilyId>());
-                var ruleIds = ruleMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<ParamRuleId>());
 
                 var buyerIds = buyerMapping.GetValueOrDefault(paramStructurePo.ParamStructureId, new List<BuyerId>());
 
                 return ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
-                    ruleIds,
                     buyerIds,
                     paramStructurePo.FormulaId != null ? new FormulaId(paramStructurePo.FormulaId) : null,
                     paramStructurePo.ParamName,
@@ -179,7 +162,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             // 批量获取关联表数据
             var standardFamilyMapping = await GetStandardFamilyMappingAsync(ids, ct);
-            var ruleMapping = await GetRuleMappingAsync(ids, ct);
             var buyerMapping = await GetBuyerMappingAsync(ids, ct);
 
             // 内存中组装聚合根
@@ -188,14 +170,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             {
                 var id = new ParamStructureId(po.ParamStructureId);
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
-                var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
 
                 var buyerIds = buyerMapping.GetValueOrDefault(po.ParamStructureId, new List<BuyerId>());
                 var engineLayer = po.EngineLayer.HasValue ? (EngineLayer)po.EngineLayer.Value : EngineLayer.Standard;
                 var paramStructure = ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
-                    ruleIds,
                     buyerIds,
                     po.FormulaId != null ? new FormulaId(po.FormulaId) : null,
                     po.ParamName,
@@ -240,7 +220,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var paramStructureIds = ids.Select(id => new ParamStructureId(id)).ToList();
 
             var standardFamilyMapping = await GetStandardFamilyMappingAsync(ids, ct);
-            var ruleMapping = await GetRuleMappingAsync(ids, ct);
             var buyerMapping = await GetBuyerMappingAsync(ids, ct);
 
             var result = new List<ParamStructure>(paramStructurePos.Count);
@@ -248,14 +227,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             {
                 var id = new ParamStructureId(po.ParamStructureId);
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
-                var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
                 var buyerIds = buyerMapping.GetValueOrDefault(po.ParamStructureId, new List<BuyerId>());
                 var engineLayer = po.EngineLayer.HasValue ? (EngineLayer)po.EngineLayer.Value : EngineLayer.Standard;
 
                 var paramStructure = ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
-                    ruleIds,
                     buyerIds,
                     po.FormulaId != null ? new FormulaId(po.FormulaId) : null,
                     po.ParamName,
@@ -289,9 +266,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             // 2. 同步标准族关联(与 UpdateAsync 一致,幂等)
             await SyncStandardFamiliesAsync(paramStructurePo.ParamStructureId, paramStructure.StandardFamilyIds, ct);
-
-            // 3. 同步规则关联(同型 bug,一并修)
-            await SyncRulesAsync(paramStructurePo.ParamStructureId, paramStructure.ApplicableRuleIds, ct);
 
             // 4. 同步关联表数据 (Buyers)
             if (paramStructure.BuyerIds != null && paramStructure.BuyerIds.Any())
@@ -329,9 +303,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 3. 同步关联表数据 (StandardFamilies)
             await SyncStandardFamiliesAsync(id, paramStructure.StandardFamilyIds, ct);
 
-            // 4. 同步关联表数据 (Rules)
-            await SyncRulesAsync(id, paramStructure.ApplicableRuleIds, ct);
-
             // 5. 同步关联表数据 (Buyers)
             if (paramStructure.BuyerIds != null&& paramStructure.BuyerIds.Any())
             {
@@ -354,19 +325,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     ct);
         }
 
-        /// <summary>
-        /// 批量获取规则映射字典
-        /// </summary>
-        private async Task<Dictionary<string, List<ParamRuleId>>> GetRuleMappingAsync(List<string> idValues, CancellationToken ct)
-        {
-            return await _dbContext.BasicParamRules
-                .Where(ar => idValues.Contains(ar.ParamStructureId))
-                .GroupBy(ar => ar.ParamStructureId)
-                .ToDictionaryAsync(
-                    g => g.Key,
-                    g => g.Select(ar => new ParamRuleId(ar.RuleId)).ToList(),
-                    ct);
-        }
 
         /// <summary>
         /// 批量获取买家映射字典
@@ -410,7 +368,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             // 2. 批量获取关联映射
             var standardFamilyMapping = await GetStandardFamilyMappingAsync(paramStructureIds, ct);
-            var ruleMapping = await GetRuleMappingAsync(paramStructureIds, ct);
             var buyerMapping = await GetBuyerMappingAsync(paramStructureIds, ct);
 
             // 3. 重建聚合并返回
@@ -418,14 +375,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             {
                 var id = new ParamStructureId(po.ParamStructureId);
                 var standardFamilyIds = standardFamilyMapping.GetValueOrDefault(po.ParamStructureId, new List<StandardFamilyId>());
-                var ruleIds = ruleMapping.GetValueOrDefault(po.ParamStructureId, new List<ParamRuleId>());
                 var buyers = buyerMapping.GetValueOrDefault(po.ParamStructureId, new List<BuyerId>());
                 var engineLayer = po.EngineLayer.HasValue ? (EngineLayer)po.EngineLayer.Value : EngineLayer.Standard;
 
                 return ParamStructure.Reconstitute(
                     id,
                     standardFamilyIds,
-                    ruleIds,
                     buyers,
                     po.FormulaId != null ? new FormulaId(po.FormulaId) : null,
                     po.ParamName,
@@ -502,8 +457,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     StandardFamilyIds = g
                         .Select(x => new StandardFamilyId(x.StandardFamilyId))
                         .Distinct()
-                        .ToList(),
-                    RuleIds = ruleMapping.GetValueOrDefault(g.Key, new List<ParamRuleId>())
+                        .ToList()
                 })
                 .ToList();
 
@@ -517,7 +471,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 return ParamStructure.Reconstitute(
                     id,
                     item.StandardFamilyIds,
-                    item.RuleIds,
                     buyers,
                     item.ParamStructure.FormulaId != null ? new FormulaId(item.ParamStructure.FormulaId) : null,
                     item.ParamStructure.ParamName,
@@ -632,34 +585,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                     ParamStructureId = paramStructureId,
                     BuyerId = newId
                 },ct);
-            }
-        }
-
-        /// <summary>
-        /// 同步参数结构与规则的关联关系
-        /// </summary>
-        private async Task SyncRulesAsync(string paramStructureId, IEnumerable<ParamRuleId> latestRuleIds, CancellationToken ct)
-        {
-            // 获取当前数据库中存在的关联记录
-            var existingRelations = await _dbContext.BasicParamRules
-                .Where(ar => ar.ParamStructureId == paramStructureId)
-                .ToListAsync(ct);
-
-            var latestIdValues = latestRuleIds.Select(id => id.Value).ToList();
-
-            // 删除不再需要的关联
-            var toRemove = existingRelations.Where(er => !latestIdValues.Contains(er.RuleId)).ToList();
-            _dbContext.BasicParamRules.RemoveRange(toRemove);
-
-            // 添加新增的关联
-            var existingIdValues = existingRelations.Select(er => er.RuleId).ToList();
-            foreach (var newId in latestIdValues.Except(existingIdValues))
-            {
-                await _dbContext.BasicParamRules.AddAsync(new BasicParamRule
-                {
-                    ParamStructureId = paramStructureId,
-                    RuleId = newId
-                }, ct);
             }
         }
     }

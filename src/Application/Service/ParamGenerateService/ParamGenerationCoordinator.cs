@@ -81,7 +81,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.ParamGenerate
                 return Result<ParamGenerateOutput>.Fail(validation.Error);
 
             // 3. 加载规则
-            var rules = await _ruleRepo.GetByIdsAsync(structure.ApplicableRuleIds, ct);
+
+            var rules = await _ruleRepo.GetByStructureIdAsync(structure.Id, ct);
 
             // 4. 引擎生成
             var generated = _engine.Generate(pool, rules);

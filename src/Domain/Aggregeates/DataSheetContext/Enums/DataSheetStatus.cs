@@ -12,6 +12,24 @@
         /// </summary>
         Created = 1,
 
-        
+        /// <summary>
+        /// 进行中
+        /// </summary>
+        InProccess = 2,
+
+        /// <summary>
+        /// 已拒绝
+        /// </summary>
+        Rejected = 3,
+
+        /// <summary>
+        /// 已完成
+        /// </summary>
+        Completed = 4,
+
+        /// <summary>
+        /// 已发布
+        /// </summary>
+        Released = 5
     }
 }

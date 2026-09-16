@@ -2,7 +2,19 @@
 {
     public enum TemplateFileType
     {
-        Docx,
-        Excel
+        /// <summary>
+        /// docx
+        /// </summary>
+        Docx = 0,
+
+        /// <summary>
+        /// xlsx
+        /// </summary>
+        Excel = 1,
+
+        /// <summary>
+        /// pdf
+        /// </summary>
+        Pdf = 2
     }
 }

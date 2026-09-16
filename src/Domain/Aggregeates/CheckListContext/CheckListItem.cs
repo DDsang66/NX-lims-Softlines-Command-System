@@ -20,55 +20,55 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// <summary>
         /// 测试项目ID
         /// </summary>
-        public TestItemId? TestItemId { get; set; }
+        public TestItemId? TestItemId { get;private set; }
 
         /// <summary>
         /// 买家自定义测试项目ID
         /// </summary>
-        public string? BuyerModifiedTestItemId { get; set; } = string.Empty;
+        public string? BuyerModifiedTestItemId { get; private set; } = string.Empty;
 
         /// <summary>
         /// 标准ID
         /// </summary>
-        public IEnumerable<StandardId?> StandardIds { get; set; } = Enumerable.Empty<StandardId>();
+        public IEnumerable<StandardId?> StandardIds { get; private set; } = Enumerable.Empty<StandardId>();
 
         /// <summary>
         /// 买家自定义测试方法ID
         /// </summary>
-        public string? BuyerModifiedTextMethodId { get; set; } = string.Empty;
+        public string? BuyerModifiedTextMethodId { get; private set; } = string.Empty;
 
         /// <summary>
         /// 测试小组
         /// </summary>
-        public TestGroup TestGroup { get; set; } = new();
+        public TestGroup TestGroup { get; private set; } = new();
 
         /// <summary>
         /// 样品列表
         /// </summary>
-        public List<string> Samples { get; set; } = new();
+        public List<string> Samples { get; private set; } = new();
 
         /// <summary>
         /// 测点参数集字典（每个测点对应一个参数集）
         /// Key: 测点标识（可以是字符串形式的测点ID或其他唯一标识）
         /// Value: 对应的参数集
         /// </summary>
-        public IReadOnlyDictionary<string, ParamSet?> TestPointParams { get; set; } =
+        public IReadOnlyDictionary<string, ParamSet?> TestPointParams { get; private set; } =
             new Dictionary<string, ParamSet?>();
 
         /// <summary>
         /// 买家限值
         /// </summary>
-        public string Requirement { get; set; } = string.Empty;
+        public string Requirement { get; private set; } = string.Empty;
 
         /// <summary>
         /// 项目状态
         /// </summary>
-        public CheckListStatus Status { get; set; } = CheckListStatus.Created;
+        public CheckListStatus Status { get; private set; } = CheckListStatus.Created;
 
         /// <summary>
         /// 测试清单ID
         /// </summary>
-        public CheckListId CheckListId { get; set; } = new CheckListId(Guid.NewGuid());
+        public CheckListId CheckListId { get; private set; } = new CheckListId(Guid.NewGuid());
 
         /// <summary>
         /// 重建
@@ -177,6 +177,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             // if (Status == CheckListStatus.Completed) throw new InvalidOperationException("...");
 
             TestPointParams = newParams ?? throw new ArgumentNullException(nameof(newParams));
+        }
+
+        /// <summary>
+        /// 绑定至指定的测试清单（由聚合根调用，维护内部一致性）
+        /// </summary>
+        /// <param name="checkListId">清单Id</param>
+        internal void BindToCheckList(CheckListId checkListId)
+        {
+            CheckListId = checkListId;
         }
     }
 }

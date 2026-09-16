@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
@@ -92,6 +93,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             // 4. 批量映射 (Mapster/AutoMapper 等)
             return paramRulePos.Adapt<List<ParamRule>>();
         }
+
+        /// <summary>
+        /// 根据结构 id 获取参数规则集
+        /// </summary>
+        /// <param name="structureId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<IEnumerable<ParamRule>> GetByStructureIdAsync(ParamStructureId structureId, CancellationToken ct)
+        {
+            var paramRulePos = await _context.Set<BasicParamRule>()
+                .Where(po => po.ParamStructureId == structureId.Value)
+                .ToListAsync(ct);
+
+            return paramRulePos.Adapt<List<ParamRule>>();
+        }
+
 
         /// <summary>
         /// 添加参数规则

@@ -2,6 +2,7 @@
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
@@ -39,6 +40,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamE
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<IEnumerable<ParamRule>> GetByIdsAsync(IEnumerable<ParamRuleId> ids, CancellationToken ct);
+
+        /// <summary>
+        /// 根据结构查询规则
+        /// </summary>
+        /// <param name="structureId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<IEnumerable<ParamRule>> GetByStructureIdAsync(ParamStructureId structureId, CancellationToken ct);
 
         /// <summary>
         /// 添加规则
