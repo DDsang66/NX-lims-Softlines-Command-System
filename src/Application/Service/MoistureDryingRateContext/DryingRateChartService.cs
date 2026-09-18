@@ -62,6 +62,7 @@ public static class DryingRateChartService
     /// 干燥速率【斜率线】—— 由曲线干燥段（首点到终止点）的最小二乘拟合直线构造:
     /// 图坐标两端点（X=分钟, Y=mg）+ 线尾数值签（g/h, 与报告表格同口径同精度）。
     /// 这条线不是示意线: 它的斜率与报告里填的干燥速率同源同值, 画出来就是那个数字的可视化。
+    /// 配色走 SlopeLineColor（注解色, 不与曲线同色 —— 同色时中段两条线叠在一起看不出来）。
     /// resultPoint 不足 2 / 间隔非正 / 回归退化 → null（只画曲线, 不画线）。
     /// </summary>
     private static AuxLine? BuildSlopeLine(IReadOnlyList<double> curveMg, int spaceTimeMin, int resultPoint)
@@ -76,7 +77,7 @@ public static class DryingRateChartService
         double y0 = fit.Intercept;
         double y1 = fit.Intercept + fit.Slope * (xEndMin / 60.0);
         string label = (fit.Slope / 1000.0).ToString("F3", CultureInfo.InvariantCulture) + " g/h";
-        return new AuxLine(0, y0, xEndMin, y1, StationColors[0], 2, DashStyle.Dash, label);
+        return new AuxLine(0, y0, xEndMin, y1, SlopeLineColor, 2, DashStyle.Dash, label);
     }
 
     /// <summary>
@@ -168,6 +169,14 @@ public static class DryingRateChartService
         Color.FromArgb(145, 30, 180),   // 紫
         Color.FromArgb(66, 212, 244),   // 青
     };
+
+    /// <summary>
+    /// 斜率线配色 —— 刻意【不】取工位色（原先同色, 中段两条线叠在一起看不清）。
+    /// 拟合线在干燥段几乎压在蒸发曲线上, 同色时只有首尾偏离处才看得出有两条线, 中段就等于没画。
+    /// 用近黑作"注解色": 与它自己的数值签(黑字)同色, 一眼看出线签是一体的;
+    /// 且不与任何工位色(红/绿/蓝/橙/紫/青)撞色, 灰度打印时(红≈中灰)也与曲线拉得开。
+    /// </summary>
+    private static readonly Color SlopeLineColor = Color.FromArgb(40, 40, 40);
 
     /// <summary>画布尺寸（px）。引擎按 14cm×8cm 框缩放嵌入，高分辨率保证清晰。</summary>
     private const int Width = 1400;
@@ -293,8 +302,10 @@ public static class DryingRateChartService
             }
 
             // ── 辅助线（NF5022 的干燥速率斜率线 / AATCC 的两条延长线 + 终点竖线）──
-            // NF5022 那条与曲线同色、2px 虚线：同色=同一条数据（它就是这条曲线干燥段的拟合），
-            // 虚线=与实线的原始数据区分开。只覆盖拟合域（首点→终止点），不往后延伸
+            // NF5022 那条是 2px 虚线 + 注解色（SlopeLineColor, 不用工位色）：
+            // 虚线=与原数据的实线区分开, 异色=拟合线中段压在曲线上时两条都还看得见
+            // （同色时只有首尾偏离处能看出是两条线, 中段视觉上合成一条）。
+            // 只覆盖拟合域（首点→终止点），不往后延伸
             // —— 延伸会让人误读成"平台段仍按该速率失水"。线尾另挂数值签（见下）。
             // 两端都可能越出绘图区，统一先 ClipSegment 裁到窗口内再画；整条在外就跳过。
             (PointF At, AuxLine Line)? labeledEnd = null;
