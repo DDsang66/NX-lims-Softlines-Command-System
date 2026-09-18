@@ -41,10 +41,10 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
         if (!IsSupportedType(dto.TestType))
             return Result<DocxUrlResponseDto>.Fail("不支持的测试类型: " + dto.TestType);
 
-        // 买家白名单 → 模板文件名。前端传的值永不进 Path.Combine:
+        // 买家白名单 → 模板所在目录 + 文件名。前端传的值永不进 Path.Combine:
         // FileStorageService.CopyTemplate 对模板路径零校验且直接 File.Copy, 拼进去就是路径穿越。
-        string? templateFile = TemplateOf(dto.Buyer);
-        if (templateFile == null)
+        var template = TemplateOf(dto.Buyer);
+        if (template == null)
             return Result<DocxUrlResponseDto>.Fail("不支持的买家: " + dto.Buyer);
         if (!SupportsTestType(dto.Buyer, dto.TestType))
             return Result<DocxUrlResponseDto>.Fail($"{dto.Buyer} 报告模板不支持 {dto.TestType} 类型测试");
@@ -148,14 +148,15 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
         // 拷贝模板也在 try 内: 买家一多, "选到一份没放好的模板"就是现实故障路径。
         // 放在外面时 FileNotFoundException 会直穿成 500(前端只看到"网络错误"), 放进来才是可读的 Result.Fail。
         //
-        // 模板已移入 Common_PHY/ (与干燥速率等共用目录)。
+        // 模板位置见 TemplateOf: Normal 与干燥速率等共用 Common_PHY/, 三个买家各有自己的目录
+        // (Adidas_PHY / Focus_PHY / Next_PHY —— 买家模板由客户单独维护, 混在一个目录里容易串)。
         // 报告按月归档: SaveDocx/Weight{yyyyMM}/ —— 单月报告多了以后 SaveDocx 根目录会被塞爆, 按月分便于清理/查找。
         // 目录不存在时 CopyTemplate 会自建; 下载侧(PhysicalWeightReportController)按月目录 → 根目录顺序找回。
         string? targetPath = null;
         try
         {
             targetPath = _fileStorage.CopyTemplate(
-                Path.Combine("DocxModel", "Common_PHY", templateFile),
+                Path.Combine("DocxModel", template.Value.Dir, template.Value.File),
                 Path.Combine("DocxModel", "SaveDocx", "Weight" + DateTime.Now.ToString("yyyyMM")),
                 fileName);
 
@@ -181,15 +182,16 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
     };
 
     /// <summary>
-    /// 买家 → 模板文件名。返回 null 即非法买家。
+    /// 买家 → 模板在 DocxModel 下的 [目录, 文件名]。返回 null 即非法买家。
     /// 只有本方法的字符串常量会进 Path.Combine —— 前端传的买家值先过这道白名单。
+    /// Normal 与干燥速率等共用 Common_PHY/; 三个买家模板各自一个目录, 客户改模板时不会互相碰到。
     /// </summary>
-    private static string? TemplateOf(string buyer) => buyer switch
+    private static (string Dir, string File)? TemplateOf(string buyer) => buyer switch
     {
-        PhysicalWeightReportRequestDto.BuyerNormal => "PHY_Weight.docx",
-        PhysicalWeightReportRequestDto.BuyerAdidas => "PHY_Weight - ADI.docx",
-        PhysicalWeightReportRequestDto.BuyerFocus => "PHY_Weight - FOCUS.docx",
-        PhysicalWeightReportRequestDto.BuyerNext => "PHY_Weight - NEXT.docx",
+        PhysicalWeightReportRequestDto.BuyerNormal => ("Common_PHY", "PHY_Weight.docx"),
+        PhysicalWeightReportRequestDto.BuyerAdidas => ("Adidas_PHY", "PHY_Weight - ADI.docx"),
+        PhysicalWeightReportRequestDto.BuyerFocus => ("Focus_PHY", "PHY_Weight - FOCUS.docx"),
+        PhysicalWeightReportRequestDto.BuyerNext => ("Next_PHY", "PHY_Weight - NEXT.docx"),
         _ => null
     };
 
