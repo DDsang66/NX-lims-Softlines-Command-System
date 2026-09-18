@@ -815,7 +815,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const string DataValueColumnWidth = "1800";
 
             // 曲线图显示尺寸(EMU, 1cm=360000): 宽 12cm, 高按图像素 1400:800=7:4 等比 → ≈6.9cm
-            // (与 NF5022/Gb21655Layout 同尺寸, 两张图长得一样大; 2026-09-10 用户要求缩小, 原 14cm × 8cm)
+            // (与 NF5022/Gb21655Layout 同尺寸, 两张图长得一样大)
             public const long ChartWidthEmu = 12 * 360000L;        // 4,320,000 EMU = 12cm
             public const long ChartHeightEmu = 12 * 360000L * 4 / 7;  // ≈ 2,468,571 EMU ≈ 6.86cm
         }

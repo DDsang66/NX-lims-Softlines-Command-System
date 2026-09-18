@@ -25,6 +25,12 @@ public class MoistureDryingRateComputeService : IMoistureDryingRateComputeServic
     {
         if (dto.SpaceTimeMin <= 0)
             return Result<Nf5022ComputeResultDto>.Fail("采样间隔须为正整数分钟");
+        // 下限 3 分钟: 报告结果表的时间网格就是 21 行(3 分钟一格), 间隔更小需要更多行而引擎不扩容。
+        // 上限不设: 间隔只影响点数, 报告网格排到 60 分钟即止。
+        if (dto.SpaceTimeMin < 3)
+            return Result<Nf5022ComputeResultDto>.Fail("采样间隔不得小于 3 分钟(报告结果表最多 21 行时间网格)");
+        if (dto.ResidualMinute <= 0)
+            return Result<Nf5022ComputeResultDto>.Fail("残留时刻须为正整数分钟");
 
         var method = dto.TestMethod == 0 ? Nf5022TestMethod.Gbt2008 : Nf5022TestMethod.Gbt2023;
         var inputs = dto.Stations

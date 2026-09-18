@@ -125,6 +125,18 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         }
 
         /// <summary>
+        /// 删除表内第 lastRowIndex 行之后的全部行(0-based, 只从尾部裁), 用于模板预留行多于本次需要时裁掉。
+        /// 与 AppendClonedRow 对称(一个加行、一个减行); 裁掉的行不保留, 需要时重新从模板克隆。
+        /// 用途: GB21655 结果表的时间网格按采样间隔重排 —— 模板固定 21 行 3 分钟一格,
+        /// 采样间隔变大后行数变少, 多余的尾行必须删掉, 否则报告上多出一截没有数据的空行。
+        /// </summary>
+        internal static void RemoveRowsAfter(Table table, int lastRowIndex)
+        {
+            foreach (var row in table.Elements<TableRow>().Skip(lastRowIndex + 1).ToList())
+                row.Remove();
+        }
+
+        /// <summary>
         /// 清空单元格内全部文本 run, 保留段落结构(每段留一个空 Run 占位, 防样式丢失)。
         /// 供 AppendClonedRow 清空克隆行内容时调用。
         /// </summary>

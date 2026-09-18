@@ -199,11 +199,19 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 填一张结果表的 3 个样品槽:
         ///   R0 表头 → "样品{工位号}"(克隆表改号, 原表重写同文本无害);
         ///   R1 m0 值格(每样品 [m0:][值] 成对, 值在 2s+1) = 干布重(g);
-        ///   R4..R24 网格(每样品 [时间|Δmi|mi], Δmi=蒸发量, mi=布样总重) = 回归网格取值器按分钟插值;
-        ///   未参与工位留空; 超出曲线记录范围的分钟也留空(不凭空填数)。
+        ///   时间网格(每样品 [时间|Δmi|mi]) → 行数按采样间隔重排(见 ResizeTimeGrid),
+        ///   时间标签格写 序号×采样间隔, Δmi = 该点蒸发量, mi = 布样总重;
+        ///   未参与工位留空; 曲线没记到那一点(早停)也留空(不凭空填数, 也不插值)。
+        ///
+        /// 为什么时间标签要由代码写: 模板时间行的 "0 min".."60 min" 是 3 分钟一格的静态文字, 代码
+        /// 从不写这格。采样间隔一旦大于 3 分钟, 不重写标签、不裁掉多余尾行, 报告的时间轴就是假的
+        /// (每格标着的分钟数和实际采样点对不上)。取值一律落在网格点上(序号×间隔 分钟),
+        /// 所以取到的就是该点实测值 —— 不再插值出假数。
         /// </summary>
         private void FillSampleGroup(Table table, List<DryingRateStationRowModel> group, int spaceTimeMin)
         {
+            int gridRows = ResizeTimeGrid(table, spaceTimeMin);
+
             for (int s = 0; s < Gb21655Layout.SamplesPerTable; s++)
             {
                 var st = s < group.Count ? group[s] : null;
@@ -215,18 +223,48 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 SetCellText(Row(table, Gb21655Layout.M0Row)!, 2 * s + 1,
                     participated ? (st!.ClothWeightMg / 1000.0).ToString("F3") : "");
 
-                for (int r = Gb21655Layout.FirstTimeRow; r <= Gb21655Layout.LastTimeRow; r++)
+                for (int k = 0; k < gridRows; k++)
                 {
-                    int t = (r - Gb21655Layout.FirstTimeRow) * Gb21655Layout.TimeStepMin;
+                    var row = Row(table, Gb21655Layout.FirstTimeRow + k)!;
+                    int minutes = k * spaceTimeMin;
+                    SetCellText(row, 3 * s + 0, $"{minutes} min");
                     double? evap = participated
-                        ? Nf5022Formulas.EvapAtMin(t, st!.EvaporationCurveMg, spaceTimeMin)
+                        ? Nf5022Formulas.EvapAtMin(minutes, st!.EvaporationCurveMg, spaceTimeMin)
                         : null;
-                    SetCellText(Row(table, r)!, 3 * s + 1,
+                    SetCellText(row, 3 * s + 1,
                         evap.HasValue ? (evap.Value / 1000.0).ToString("F3") : "");
-                    SetCellText(Row(table, r)!, 3 * s + 2,
+                    SetCellText(row, 3 * s + 2,
                         evap.HasValue ? ((st!.ClothWeightMg + st.WaterMg - evap.Value) / 1000.0).ToString("F3") : "");
                 }
             }
+        }
+
+        /// <summary>
+        /// 按采样间隔重排结果表的时间网格行(只删尾部多余行), 返回本次网格行数(含 0 分钟那一行)。
+        /// 行数 = ceil(60/间隔)+1 —— 排到 60 分钟, 与 GBT2023 的停止点(间隔×(点数−1) 达到 60)同格;
+        /// 间隔不能整除 60 时向上取整(sp=7 → 10 行, 末格 63 min), 保证末个实测点也在表里。
+        ///
+        /// 模板自带 21 行(3 分钟一格)是行数上限: 间隔等于 3 时行数正好 21 → 一行不删, 写出的标签文本
+        /// 与模板静态文字相同 → sp=3 的产物与改动前逐格一致。间隔更大则删掉尾部多余行。
+        /// 间隔小于 3 需要多于 21 行, 本方法不克隆行 → 明确抛异常(前端输入框与服务层校验都拦在前面)。
+        /// </summary>
+        private static int ResizeTimeGrid(Table table, int spaceTimeMin)
+        {
+            if (spaceTimeMin <= 0)
+                throw new InvalidOperationException("GB21655 采样间隔须为正整数分钟");
+
+            int gridRows = (Gb21655Layout.GridMinutes + spaceTimeMin - 1) / spaceTimeMin + 1;
+            int templateRows = Gb21655Layout.LastTimeRow - Gb21655Layout.FirstTimeRow + 1;
+
+            if (gridRows > templateRows)
+                throw new InvalidOperationException(
+                    $"GB21655 采样间隔 {spaceTimeMin} 分钟需要 {gridRows} 行时间网格, " +
+                    $"模板只有 {templateRows} 行(最小支持 3 分钟), 不支持按行扩容");
+
+            if (gridRows < templateRows)
+                WordEditEngine.RemoveRowsAfter(table, Gb21655Layout.FirstTimeRow + gridRows - 1);
+
+            return gridRows;
         }
 
         /// <summary>
@@ -477,11 +515,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 表2 (结果表)
             public const int HeaderRow = 0;       // R0 样品1/2/3(各 span4)
             public const int M0Row = 1;           // R1 [m0:][值]×3, 值在 2s+1
-            public const int FirstTimeRow = 4;    // R4 0 min
-            public const int LastTimeRow = 24;    // R24 60 min
-            public const int TimeStepMin = 3;     // 网格步长(分)
+            public const int FirstTimeRow = 4;    // R4 首个时间行(模板静态 0 min)
+            public const int LastTimeRow = 24;    // R24 末个时间行(模板静态 60 min, 3 分钟一格共 21 行)
             public const int SamplesPerTable = 3; // 每表样品数(超 3 克隆整表)
             public const int CellsPerSample = 3;  // 网格每样品列数 [时间|Δmi|mi]
+
+            // 时间网格覆盖的观测窗(分): 时间标签由 FillSampleGroup 按采样间隔排到这一刻。
+            // 为什么是 60: GBT2023 的停止条件是 sp×(n−1) 达到 60 分钟, 所以报告网格排到 60
+            // 正好与停止点同格(间隔不能整除 60 时取向上整: sp=7 → 末格 63)。
+            public const int GridMinutes = 60;
 
             // 曲线图显示尺寸(EMU, 1cm=360000): 宽 12cm, 高按图像素 1400:800=7:4 等比 → ≈6.9cm
             // (2026-09-08 目视反馈整体略缩, 原 14cm × 8cm; 保持同比例不拉伸)
@@ -503,18 +545,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 流程: ①先抓取原样式(RunProperties) → ②删除多余段落只留首段 → ③删光该段所有 run → ④按新文本重建 run。
         /// 为什么要"先抓样式再删内容": 新 run 的样式(字号/字体/加粗)必须从旧 run 复制;
         /// 而旧 run 在步骤③会被删掉, 所以顺序反了就再也取不到样式源, 填进去的字会变成默认格式。
-        /// 样式源抓取带兜底: 优先带 rPr 的 run, 其次任意 run(模板值格可能只有裸 run)。
+        /// 样式源抓取带兜底: 优先带 rPr 的 run, 其次任意 run(模板值格可能只有裸 run),
+        /// 最后段落的段标记 rPr(pPr/rPr)。必须先取——删除多余段落后就再也取不到样式源了。
         /// bold/fontSizeHalfPoints = 在该样式源之上再叠加加粗/字号(报告号、干燥速率均值要一眼可见)。
         /// </summary>
         private void SetCellText(TableCell? cell, string text, bool bold = false, int? fontSizeHalfPoints = null)
         {
             if (cell == null) return;
 
-            // 取样式源: 优先任意带 RunProperties 的 run, 兜底第一个 run; 必须先取——删除多余段落后
-            // 后续段落里的 run 会一起被删, 那时再 fallback 就取不到样式了。
+            // 样式源第三档(段标记 rPr)是 GB21655 新模板的命门: 结果表网格整片留空(一个 run 都没有),
+            // 只有段标记带着 rFonts(黑体/Arial) + sz20 —— 拿不到它, 填进去的时间/蒸发量就会
+            // 掉回文档默认字体, 与模板清空前的外观不一致(值是"黑体 10pt", 标签却成了默认字体)。
             var refRun = cell.Descendants<Run>().FirstOrDefault(r => r.RunProperties != null)
                          ?? cell.Descendants<Run>().FirstOrDefault();
-            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties ?? new RunProperties();
+            var rp = refRun?.RunProperties?.CloneNode(true) as RunProperties
+                     ?? CopyParagraphMarkRunProperties(cell.Elements<Paragraph>().FirstOrDefault()
+                            ?.ParagraphProperties?.GetFirstChild<ParagraphMarkRunProperties>())
+                     ?? new RunProperties();
 
             if (bold) WordEditEngine.MakeBold(rp);
             if (fontSizeHalfPoints != null) WordEditEngine.SetFontSize(rp, fontSizeHalfPoints.Value);
@@ -531,6 +578,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var newRun = new Run(rp);
             para.Append(newRun);
             TextRunHelper.InsertTextWithLineBreaks(text, newRun);
+        }
+
+        /// <summary>
+        /// 把段落的段标记 rPr（pPr/rPr）搬成 run 的 RunProperties。
+        ///
+        /// 为什么要搬而不是直接克隆: 两者标签都是 w:rPr 但 CLR 类型不同,
+        /// 段标记那个是 ParagraphMarkRunProperties(不是 RunProperties 的子类), 只能逐个搬子元素。
+        /// 子元素顺序照抄源顺序 —— pPr/rPr 本身已按 schema 的 rPr 子元素序列排好, 搬完仍然合法。
+        /// </summary>
+        private static RunProperties? CopyParagraphMarkRunProperties(ParagraphMarkRunProperties? mark)
+        {
+            if (mark == null) return null;
+            var rp = new RunProperties();
+            foreach (var child in mark.ChildElements)
+                rp.Append(child.CloneNode(true));
+            return rp;
         }
 
         /// <summary>

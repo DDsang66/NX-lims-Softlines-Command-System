@@ -82,7 +82,7 @@ public class MoistureDryingRateReportService : IMoistureDryingRateReportService,
                 RateMgPerHour = s.RateMgPerHour,
                 RateGPerHour = s.RateGPerHour,
                 SfclPermille = s.SfclPermille,
-                // GB21655 报告: 按模板 3min 网格填 Δmi/mi + 算回归斜率的数据源
+                // GB21655 报告: 按采样间隔网格(排到 60min)填 Δmi/mi + 算回归斜率的数据源
                 EvaporationCurveMg = s.EvaporationCurveMg
             }).ToList(),
             ChartPngs = chartPngs

@@ -17,7 +17,7 @@ public static class Nf5022Formulas
         => spaceTime * (resultPoint - 1);
 
     /// <summary>
-    /// 干燥速率(mg/h) = 蒸发曲线对时间的【最小二乘回归斜率】（决策B: 全链路改用线性回归）。
+    /// 干燥速率(mg/h) = 蒸发曲线对时间的【最小二乘回归斜率】（全链路改用线性回归）。
     /// 拟合域取【干燥段】——首点到终止点共 resultPoint 个采样点（k=0..resultPoint−1），
     /// 与原中点公式只看 result_point/2 处同域; 若把终止后平台/尾部也纳入拟合, 斜率会被拉低。
     /// 单位自洽（与原公式一致, 决策7 存 mg/h）: x_k = 采样间隔(sp, 分) × k ÷ 60（小时）,
