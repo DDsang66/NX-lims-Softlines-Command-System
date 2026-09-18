@@ -235,8 +235,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 SetCellText(r, PhysicalWeightDocxLayout.NextTrailerCountColumn, p.SampleCount.ToString());
                 // 天平实际精度 3 位(0.001 g), 与 3 格版的重量列一致
                 SetCellText(r, PhysicalWeightDocxLayout.NextTrailerTotalColumn, p.TotalWeight?.ToString("F3") ?? "");
-                // Ave(g/m²) 取整 —— 与表0 那一格同格式
-                SetCellText(r, PhysicalWeightDocxLayout.NextTrailerAveColumn, p.AverageGsm.ToString("F0"));
+                // Ave(g/m²) 保留一位小数 —— 与表0、数据表同精度(NEXT 的 g/m² 格统一一位)
+                SetCellText(r, PhysicalWeightDocxLayout.NextTrailerAveColumn, p.AverageGsm.ToString("F1"));
                 rowIdx++;
             }
         }

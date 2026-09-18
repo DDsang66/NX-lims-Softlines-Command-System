@@ -98,7 +98,7 @@ public class PhysicalWeightPerPointRowModel
     public decimal? TotalWeight { get; set; }
 
     /// <summary>
-    /// Ave(g/m²): 该测点 g/m²(报告里取整, 与表0 同格式)。
+    /// Ave(g/m²): 该测点 g/m²(报告里保留一位小数, 与表0、数据表同精度)。
     /// **不是各条 g/m² 的等权平均**: 单块试样固定 100 cm², 该次称重的重量是 N 块的总重,
     /// 所以 = 重量合计 ÷ (样品数合计 × 100 cm²) × 10000 —— 池化口径, 算法在
     /// PhysicalWeightReportService 的 perPointRows。
