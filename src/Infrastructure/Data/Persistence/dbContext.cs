@@ -11,6 +11,8 @@ public partial class dbContext : DbContext
     {
     }
 
+    public virtual DbSet<Aatcc201Config> Aatcc201Configs { get; set; }
+
     public virtual DbSet<AbrasionFwConstantRecord> AbrasionFwConstantRecords { get; set; }
 
     public virtual DbSet<BasicBuyer> BasicBuyers { get; set; }
@@ -41,6 +43,10 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<ConditionPool> ConditionPools { get; set; }
 
+    public virtual DbSet<DataSheet> DataSheets { get; set; }
+
+    public virtual DbSet<DataSheetBatch> DataSheetBatches { get; set; }
+
     public virtual DbSet<FormulaBuyer> FormulaBuyers { get; set; }
 
     public virtual DbSet<FormulaStandardfamily> FormulaStandardfamilies { get; set; }
@@ -53,16 +59,79 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<PhysicalWeightRecord> PhysicalWeightRecords { get; set; }
 
-    public virtual DbSet<Aatcc201Config> Aatcc201Configs { get; set; }
-
     public virtual DbSet<ProcessedEvent> ProcessedEvents { get; set; }
 
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
 
     public virtual DbSet<Template> Templates { get; set; }
 
+    public virtual DbSet<TemplateStructure> TemplateStructures { get; set; }
+
+    public virtual DbSet<TestConditionTextTemplate> TestConditionTextTemplates { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Aatcc201Config>(entity =>
+        {
+            entity.ToTable("aatcc201_config");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.D)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("d");
+            entity.Property(e => e.FlatPoint).HasColumnName("flat_point");
+            entity.Property(e => e.I)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("i");
+            entity.Property(e => e.MachineNo)
+                .HasMaxLength(50)
+                .HasColumnName("machine_no");
+            entity.Property(e => e.P)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("p");
+            entity.Property(e => e.SetTemp)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("set_temp");
+            entity.Property(e => e.SlopeContinueNo).HasColumnName("slope_continue_no");
+            entity.Property(e => e.SlopeContinueTemp)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("slope_continue_temp");
+            entity.Property(e => e.SlopeDgNo).HasColumnName("slope_dg_no");
+            entity.Property(e => e.SlopePoint).HasColumnName("slope_point");
+            entity.Property(e => e.TempBoard1)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board1");
+            entity.Property(e => e.TempBoard1X)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board1_x");
+            entity.Property(e => e.TempBoard2)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board2");
+            entity.Property(e => e.TempBoard2X)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_board2_x");
+            entity.Property(e => e.TempHw1)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_hw1");
+            entity.Property(e => e.TempHw2)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("temp_hw2");
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.UpdatedBy)
+                .HasMaxLength(50)
+                .HasColumnName("updated_by");
+            entity.Property(e => e.Wind1)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("wind1");
+            entity.Property(e => e.Wind2)
+                .HasColumnType("decimal(10, 4)")
+                .HasColumnName("wind2");
+        });
+
         modelBuilder.Entity<AbrasionFwConstantRecord>(entity =>
         {
             entity.HasKey(e => e.ConstantRecordId);
@@ -508,6 +577,101 @@ public partial class dbContext : DbContext
                 .HasColumnName("test_points");
         });
 
+        modelBuilder.Entity<DataSheet>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pk_data_sheets");
+
+            entity.ToTable("data_sheets");
+
+            entity.HasIndex(e => e.BatchId, "ix_data_sheets_batch_id");
+
+            entity.HasIndex(e => e.CheckListId, "ix_data_sheets_check_list_id");
+
+            entity.HasIndex(e => new { e.Status, e.CreateTime }, "ix_data_sheets_status_create_time");
+
+            entity.HasIndex(e => new { e.CheckListId, e.TestItemId, e.ModelIndex }, "ux_data_sheets_check_list_item_index").IsUnique();
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.BatchId).HasColumnName("batch_id");
+            entity.Property(e => e.CheckListId).HasColumnName("check_list_id");
+            entity.Property(e => e.ContactTemplateUrl)
+                .HasMaxLength(512)
+                .HasColumnName("contact_template_url");
+            entity.Property(e => e.CreateTime).HasColumnName("create_time");
+            entity.Property(e => e.ErrorMessage)
+                .HasMaxLength(2000)
+                .HasColumnName("error_message");
+            entity.Property(e => e.ModelIndex).HasColumnName("model_index");
+            entity.Property(e => e.ModelKey)
+                .HasMaxLength(128)
+                .HasColumnName("model_key");
+            entity.Property(e => e.ModelSnapshot).HasColumnName("model_snapshot");
+            entity.Property(e => e.ReportNumber)
+                .HasMaxLength(64)
+                .HasColumnName("report_number");
+            entity.Property(e => e.RetryCount).HasColumnName("retry_count");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TestItemId)
+                .HasMaxLength(25)
+                .IsUnicode(false)
+                .HasColumnName("test_item_id");
+            entity.Property(e => e.UpdateTime).HasColumnName("update_time");
+            entity.Property(e => e.Url)
+                .HasMaxLength(512)
+                .HasDefaultValue("")
+                .HasColumnName("url");
+            entity.Property(e => e.Version)
+                .HasMaxLength(32)
+                .HasDefaultValue("v1.0")
+                .HasColumnName("version");
+
+            entity.HasOne(d => d.Batch).WithMany(p => p.DataSheets)
+                .HasForeignKey(d => d.BatchId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_data_sheets_data_sheet_batches");
+
+            entity.HasOne(d => d.CheckList).WithMany(p => p.DataSheets)
+                .HasForeignKey(d => d.CheckListId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_data_sheets_check_lists");
+        });
+
+        modelBuilder.Entity<DataSheetBatch>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pk_data_sheet_batches");
+
+            entity.ToTable("data_sheet_batches");
+
+            entity.HasIndex(e => e.CheckListId, "ix_data_sheet_batches_check_list_id");
+
+            entity.HasIndex(e => new { e.CheckListId, e.Status }, "ix_data_sheet_batches_check_list_id_status");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.CheckListId).HasColumnName("check_list_id");
+            entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            entity.Property(e => e.MergedPdfUrl)
+                .HasMaxLength(512)
+                .HasColumnName("merged_pdf_url");
+            entity.Property(e => e.ReportNo)
+                .HasMaxLength(64)
+                .HasColumnName("report_no");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TemplateUrl)
+                .HasMaxLength(512)
+                .HasColumnName("template_url");
+            entity.Property(e => e.Total).HasColumnName("total");
+            entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
+
+            entity.HasOne(d => d.CheckList).WithMany(p => p.DataSheetBatches)
+                .HasForeignKey(d => d.CheckListId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_data_sheet_batches_check_lists");
+        });
+
         modelBuilder.Entity<FormulaBuyer>(entity =>
         {
             entity.ToTable("formula_buyer");
@@ -686,67 +850,6 @@ public partial class dbContext : DbContext
                 .HasColumnName("weight");
         });
 
-        modelBuilder.Entity<Aatcc201Config>(entity =>
-        {
-            entity.ToTable("aatcc201_config");
-
-            entity.Property(e => e.Id)
-                .ValueGeneratedNever()
-                .HasColumnName("id");
-            entity.Property(e => e.D)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("d");
-            entity.Property(e => e.FlatPoint).HasColumnName("flat_point");
-            entity.Property(e => e.I)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("i");
-            entity.Property(e => e.MachineNo)
-                .HasMaxLength(50)
-                .HasColumnName("machine_no");
-            entity.Property(e => e.P)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("p");
-            entity.Property(e => e.SetTemp)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("set_temp");
-            entity.Property(e => e.SlopeContinueNo).HasColumnName("slope_continue_no");
-            entity.Property(e => e.SlopeContinueTemp)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("slope_continue_temp");
-            entity.Property(e => e.SlopeDgNo).HasColumnName("slope_dg_no");
-            entity.Property(e => e.SlopePoint).HasColumnName("slope_point");
-            entity.Property(e => e.TempBoard1)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("temp_board1");
-            entity.Property(e => e.TempBoard1X)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("temp_board1_x");
-            entity.Property(e => e.TempBoard2)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("temp_board2");
-            entity.Property(e => e.TempBoard2X)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("temp_board2_x");
-            entity.Property(e => e.TempHw1)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("temp_hw1");
-            entity.Property(e => e.TempHw2)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("temp_hw2");
-            entity.Property(e => e.UpdatedAt)
-                .HasColumnType("datetime")
-                .HasColumnName("updated_at");
-            entity.Property(e => e.UpdatedBy)
-                .HasMaxLength(50)
-                .HasColumnName("updated_by");
-            entity.Property(e => e.Wind1)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("wind1");
-            entity.Property(e => e.Wind2)
-                .HasColumnType("decimal(10, 4)")
-                .HasColumnName("wind2");
-        });
-
         modelBuilder.Entity<ProcessedEvent>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__processe__3214EC07B0EC46CB");
@@ -787,40 +890,83 @@ public partial class dbContext : DbContext
 
         modelBuilder.Entity<Template>(entity =>
         {
-            entity.ToTable("template", tb => tb.HasComment("模板聚合根表"));
+            entity.HasKey(e => e.Id).HasName("pk_templates");
 
-            entity.Property(e => e.TemplateId)
-                .HasMaxLength(75)
-                .IsUnicode(false)
-                .HasComment("模板唯一标识")
-                .HasColumnName("template_id");
+            entity.ToTable("templates");
+
+            entity.HasIndex(e => new { e.Site, e.BusinessCategory }, "ix_templates_site_business_category");
+
+            entity.HasIndex(e => e.Status, "ix_templates_status");
+
+            entity.Property(e => e.Id)
+                .HasMaxLength(64)
+                .HasColumnName("id");
             entity.Property(e => e.BusinessCategory)
                 .HasMaxLength(128)
-                .HasComment("业务子分类文件夹名称 (如 Common_FLAM, Common_PHY 等)")
                 .HasColumnName("business_category");
-            entity.Property(e => e.FileType)
-                .HasComment("模板文件类型枚举 (0=Docx, 1=Excel)")
-                .HasColumnName("file_type");
-            entity.Property(e => e.Site)
-                .HasComment("地区站点枚举 (例如: 0=NB)")
-                .HasColumnName("site");
-            entity.Property(e => e.Status)
-                .HasComment("当前datasheet状态枚举 (例如: 0=Draft, 1=Published)")
-                .HasColumnName("status");
+            entity.Property(e => e.FileType).HasColumnName("file_type");
+            entity.Property(e => e.Site).HasColumnName("site");
+            entity.Property(e => e.Status).HasColumnName("status");
+            entity.Property(e => e.TemplateIndex).HasColumnName("template_index");
             entity.Property(e => e.TemplateName)
-                .HasMaxLength(255)
-                .HasComment("模板名称")
+                .HasMaxLength(256)
                 .HasColumnName("template_name");
             entity.Property(e => e.TemplateUrl)
-                .HasMaxLength(1024)
-                .HasComment("模板的URL地址")
+                .HasMaxLength(512)
                 .HasColumnName("template_url");
-            entity.Property(e => e.UpdateAt)
-                .HasComment("变更时间")
-                .HasColumnName("update_at");
+            entity.Property(e => e.UpdateAt).HasColumnName("update_at");
             entity.Property(e => e.Version)
-                .HasComment("当前模板版本")
+                .HasDefaultValue(1)
                 .HasColumnName("version");
+        });
+
+        modelBuilder.Entity<TemplateStructure>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pk_template_structures");
+
+            entity.ToTable("template_structures");
+
+            entity.HasIndex(e => e.TemplateId, "ix_template_structures_template_id");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.AfterWashDataCount).HasColumnName("after_wash_data_count");
+            entity.Property(e => e.SampleDataAreaCount).HasColumnName("sample_data_area_count");
+            entity.Property(e => e.SampleResultAreaCount).HasColumnName("sample_result_area_count");
+            entity.Property(e => e.TemplateId)
+                .HasMaxLength(64)
+                .HasColumnName("template_id");
+            entity.Property(e => e.TestConditionCount).HasColumnName("test_condition_count");
+            entity.Property(e => e.TestMethodCount).HasColumnName("test_method_count");
+
+            entity.HasOne(d => d.Template).WithMany(p => p.TemplateStructures)
+                .HasForeignKey(d => d.TemplateId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_template_structures_templates");
+        });
+
+        modelBuilder.Entity<TestConditionTextTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("pk_test_condition_text_templates");
+
+            entity.ToTable("test_condition_text_templates");
+
+            entity.HasIndex(e => e.TemplateId, "ix_test_condition_text_templates_template_id");
+
+            entity.Property(e => e.Id)
+                .ValueGeneratedNever()
+                .HasColumnName("id");
+            entity.Property(e => e.TemplateId)
+                .HasMaxLength(64)
+                .HasColumnName("template_id");
+            entity.Property(e => e.TemplateIndex).HasColumnName("template_index");
+            entity.Property(e => e.Text).HasColumnName("text");
+
+            entity.HasOne(d => d.Template).WithMany(p => p.TestConditionTextTemplates)
+                .HasForeignKey(d => d.TemplateId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_test_condition_text_templates_templates");
         });
 
         OnModelCreatingPartial(modelBuilder);

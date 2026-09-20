@@ -14,4 +14,8 @@ public partial class CheckList
     public byte Status { get; set; }
 
     public string? OrderId { get; set; }
+
+    public virtual ICollection<DataSheetBatch> DataSheetBatches { get; set; } = new List<DataSheetBatch>();
+
+    public virtual ICollection<DataSheet> DataSheets { get; set; } = new List<DataSheet>();
 }

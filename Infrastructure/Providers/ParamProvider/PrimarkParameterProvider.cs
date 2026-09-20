@@ -734,11 +734,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         private string? HotPressingHelper(string? IronMethod, string MenuName)
         {
             string? Temperature = null;
-            Temperature = IronMethod!.Contains("Cool") ? "100"
-                : IronMethod!.Contains("Warm") ? "150"
-                : IronMethod!.Contains("Hot") ? "200"
+            Temperature = IronMethod!.Contains("Cool") ? "120"
+                : IronMethod!.Contains("Warm") ? "160"
+                : IronMethod!.Contains("Hot") ? "210"
                 : "/";
-            if ((MenuName == "PTC35" || MenuName == "PTC36") && Temperature == "100") Temperature = "110";
+            if ((MenuName == "PTC35" || MenuName == "PTC36") && Temperature == "120") Temperature = "130";
             return Temperature;
         }
 

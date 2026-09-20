@@ -74,7 +74,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
             // 将 dto.FileType (string) 解析为 TemplateFileType 枚举
             var fileType = MapFileExtensionToType(dto.FileType);
 
-            var template = Template.Create(templateId, dto.TemplateName, site, fileType, host,dto.Category);
+            var template = Template.Create(templateId, dto.TemplateName, site, fileType, host, dto.Category, null, null, null);
 
             var url = template.GetTemplateUrl();
 

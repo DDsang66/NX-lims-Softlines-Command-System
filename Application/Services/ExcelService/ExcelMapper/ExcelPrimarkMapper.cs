@@ -66,7 +66,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
             // 定义固定的单元格地址映射
             stringMap = matched switch
             {
-                "Garment" => new List<string> { "A7", "A8", "A9", "A10", "A11", "A12" },
+                "Garment" => new List<string> { "A7", "A8", "A9", "A10", "A11", "A12","A13","A14" },
                 "Fabric" => new List<string> { "A10", "A11", "A12" },
                 "Socks" => new List<string> { "F10", "F65" },
                 "Gloves" => new List<string> { "F19", "F74" },

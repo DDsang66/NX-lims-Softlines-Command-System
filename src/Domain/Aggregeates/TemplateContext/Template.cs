@@ -35,6 +35,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         public TemplateFileType FileType { get; private set; } = TemplateFileType.Docx;
 
         /// <summary>
+        /// 模板结构
+        /// </summary>
+        public TemplateStructure TemplateStructure { get; private set; }
+
+        /// <summary>
+        /// 模板索引
+        /// </summary>
+        public TemplateIndex TemplateIndex { get; private set; }
+
+        /// <summary>
+        /// 该模板关联的测试条件文本模板集合（多对多）
+        /// </summary>
+        private readonly List<TestConditionTextTemplate> _testConditionTextTemplates = new();
+
+        public IReadOnlyCollection<TestConditionTextTemplate> TestConditionTextTemplates
+            => _testConditionTextTemplates.AsReadOnly();
+        /// <summary>
         /// 业务子分类文件夹名称 (如 Common_FLAM, Common_PHY, 买家特定名称等)
         /// </summary>
         public string BusinessCategory { get; private set; } = string.Empty;
@@ -61,86 +78,191 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             Site site,
             TemplateFileType fileType,
             string host,
-            string businessCategory)
+            string businessCategory,
+            TemplateIndex? templateIndex,
+            TemplateStructure? templateStructure,
+            IEnumerable<TestConditionTextTemplate>? testConditionTextTemplates = null)
         {
             // 1. 参数校验
+            if (id == null)
+                throw new ArgumentNullException(nameof(id), "模板ID不能为空");
+
             if (string.IsNullOrWhiteSpace(templateName))
                 throw new ArgumentException("模板名称不能为空", nameof(templateName));
 
             if (string.IsNullOrWhiteSpace(businessCategory))
                 throw new ArgumentException("业务分类不能为空", nameof(businessCategory));
 
+            if (string.IsNullOrWhiteSpace(host))
+                throw new ArgumentException("Host 不能为空", nameof(host));
 
-            // 2. 创建实体并赋予初始状态
+            // 创建实体
             var template = new Template
             {
                 Id = id,
-                TemplateName = templateName,
+                TemplateName = templateName.Trim(),
                 Site = site,
-                Status = Status.Draft, // 新创建的模板默认为草稿状态
+                Status = Status.Draft,
                 Version = 1,
                 FileType = fileType,
-                BusinessCategory = businessCategory,
+                BusinessCategory = businessCategory.Trim(),
+                TemplateIndex = templateIndex ?? TemplateIndex.Empty(),
+                TemplateStructure = templateStructure,
                 UpdateAt = DateTime.Now
             };
 
+            // 可选：关联测试条件文本模板
+            if (testConditionTextTemplates != null)
+            {
+                foreach (var textTemplate in testConditionTextTemplates)
+                {
+                    template.AddTextTemplate(textTemplate);
+                }
+            }
+
             template.TemplateUrl = template.GenerateTemplateUrl(host);
 
-            // 3. 发布领域事件 (假设你的 AggregateRoot 提供了 AddDomainEvent 方法)
             // template.AddDomainEvent(new TemplateCreatedEvent(id, templateName));
 
             return template;
         }
 
-        /// <summary>
-        /// 重建模板（从基础设施层/数据库还原领域对象时使用）
-        /// </summary>
+
         public static Template Rebuild(
             TemplateId id,
             string templateName,
             string templateUrl,
             Site site,
             Status status,
+            TemplateFileType fileType,
+            string businessCategory,
+            TemplateIndex templateIndex,
+            TemplateStructure templateStructure,
             int version,
-            DateTime updateAt)
+            DateTime updateAt,
+            IEnumerable<TestConditionTextTemplate>? testConditionTextTemplates = null)
         {
-            return new Template
+            if (id == null)
+                throw new ArgumentNullException(nameof(id));
+
+            var template = new Template
             {
                 Id = id,
                 TemplateName = templateName,
                 TemplateUrl = templateUrl,
                 Site = site,
                 Status = status,
+                FileType = fileType,
+                BusinessCategory = businessCategory,
+                TemplateIndex = templateIndex ?? TemplateIndex.Empty(),
+                TemplateStructure = templateStructure,
                 Version = version,
                 UpdateAt = updateAt
             };
+
+            if (testConditionTextTemplates != null)
+            {
+                template._testConditionTextTemplates.AddRange(testConditionTextTemplates);
+            }
+
+            return template;
         }
 
         /// <summary>
-        /// 更新模板基本信息
+        /// 更新模板基本信息（仅草稿状态允许）
         /// </summary>
-        public void Update(string templateName, string templateUrl, Site site)
+        public void Update(string templateName, Site site, string businessCategory)
         {
-            // 1. 业务规则校验：只有草稿状态才允许修改基本信息
-            if (Status != Status.Draft)
-                throw new InvalidOperationException("只有草稿状态的模板才允许修改基本信息");
+            EnsureDraftStatus("修改基本信息");
 
-            // 2. 参数校验
             if (string.IsNullOrWhiteSpace(templateName))
                 throw new ArgumentException("模板名称不能为空", nameof(templateName));
-            if (string.IsNullOrWhiteSpace(templateUrl))
-                throw new ArgumentException("模板URL不能为空", nameof(templateUrl));
 
-            // 3. 更新状态
-            TemplateName = templateName;
-            TemplateUrl = templateUrl;
+            if (string.IsNullOrWhiteSpace(businessCategory))
+                throw new ArgumentException("业务分类不能为空", nameof(businessCategory));
+
+            TemplateName = templateName.Trim();
             Site = site;
+            BusinessCategory = businessCategory.Trim();
             UpdateAt = DateTime.Now;
 
-            // 4. 发布领域事件
             // AddDomainEvent(new TemplateUpdatedEvent(Id));
         }
 
+        /// <summary>
+        /// 更新模板结构配置
+        /// </summary>
+        public void UpdateStructure(TemplateStructure structure)
+        {
+            if (structure == null)
+                throw new ArgumentNullException(nameof(structure));
+
+            EnsureDraftStatus("修改模板结构");
+
+            TemplateStructure = structure;
+            UpdateAt = DateTime.Now;
+        }
+
+        /// <summary>
+        /// 添加一个测试条件文本模板关联
+        /// </summary>
+        public void AddTextTemplate(TestConditionTextTemplate textTemplate)
+        {
+            if (textTemplate == null)
+                throw new ArgumentNullException(nameof(textTemplate));
+
+            // 按 TemplateIndex 去重，避免同一索引重复关联
+            if (_testConditionTextTemplates.Any(t => t.TemplateIndex.Equals(textTemplate.TemplateIndex)))
+                return;
+
+            _testConditionTextTemplates.Add(textTemplate);
+            UpdateAt = DateTime.Now;
+        }
+
+        /// <summary>
+        /// 移除一个文本模板关联（只解除关系，不删除实体）
+        /// </summary>
+        public void RemoveTextTemplate(TestConditionTextTemplate textTemplate)
+        {
+            if (textTemplate == null)
+                throw new ArgumentNullException(nameof(textTemplate));
+
+            if (_testConditionTextTemplates.Remove(textTemplate))
+                UpdateAt = DateTime.Now;
+        }
+
+        /// <summary>
+        /// 根据索引条件查找本模板下的文本模板
+        /// </summary>
+        public TestConditionTextTemplate? FindTextTemplate(IReadOnlyDictionary<string, object?> conditions)
+        {
+            if (conditions == null || conditions.Count == 0)
+                return null;
+
+            var matched = _testConditionTextTemplates
+                .Where(t => t.Matches(conditions))
+                .ToList();
+
+            if (matched.Count > 1)
+                throw new InvalidOperationException(
+                    $"文本模板索引命中 {matched.Count} 个，无法唯一确定");
+
+            return matched.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 更新模板索引
+        /// </summary>
+        public void UpdateIndex(TemplateIndex index)
+        {
+            if (index == null)
+                throw new ArgumentNullException(nameof(index));
+
+            EnsureDraftStatus("修改模板索引");
+
+            TemplateIndex = index;
+            UpdateAt = DateTime.Now;
+        }
         /// <summary>
         /// 获取模板 URL
         /// </summary>
@@ -148,14 +270,34 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         public string GetTemplateUrl() => TemplateUrl;
 
         /// <summary>
-        /// 提交模板（将状态从 Draft 变更为 Published，并版本号+1）
+        /// 重新生成 TemplateUrl（例如 Host 变化或文件名规则变化时调用）
+        /// </summary>
+        public void RegenerateUrl(string host)
+        {
+            EnsureDraftStatus("重新生成URL");
+
+            if (string.IsNullOrWhiteSpace(host))
+                throw new ArgumentException("Host 不能为空", nameof(host));
+
+            TemplateUrl = GenerateTemplateUrl(host);
+            UpdateAt = DateTime.Now;
+        }
+
+        /// <summary>
+        /// 发布模板
         /// </summary>
         public void Publish()
         {
             if (Status != Status.Draft)
                 throw new InvalidOperationException("只有草稿状态的模板才能发布");
 
-            Status = Status.Active; 
+            if (TemplateStructure == null)
+                throw new InvalidOperationException("模板结构未配置，无法发布");
+
+            if (TemplateIndex == null || TemplateIndex.Values.Count == 0)
+                throw new InvalidOperationException("模板索引未配置，无法发布");
+
+            Status = Status.Active;
             Version += 1;
             UpdateAt = DateTime.Now;
 
@@ -163,62 +305,55 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         }
 
         /// <summary>
-        /// 回滚至上一个版本或指定版本
+        /// 回滚至指定版本
         /// </summary>
-        /// <param name="targetVersion">目标版本号。如果为null，则回滚至上一个版本</param>
         public void Rollback(int? targetVersion = null)
         {
-            // 1. 确定目标版本
             int expectedVersion = targetVersion ?? Version - 1;
 
-            // 2. 业务规则校验
             if (expectedVersion <= 0)
                 throw new InvalidOperationException("版本号不能小于或等于0，无法回滚");
 
             if (expectedVersion >= Version)
                 throw new InvalidOperationException($"目标版本 {expectedVersion} 大于或等于当前版本 {Version}，无法回滚");
 
-            // 3. 执行回滚逻辑
-            Status = Status.Draft; // 回滚后通常需要重新修改，所以状态切回 Draft
+            Status = Status.Draft;
             UpdateAt = DateTime.Now;
 
-            // 注意：回滚操作通常意味着我们需要从历史记录中恢复 TemplateUrl 等数据。
-            // 在 CQRS 架构中，这部分数据恢复逻辑通常在应用层处理（通过事件溯源或查询历史表），
-            // 聚合根这里只负责维护版本和状态的正确流转。
-
-            // 4. 发布领域事件
-            // AddDomainEvent(new TemplateRolledBackEvent(Id, Version));
+            // 注意：具体数据恢复由应用层通过事件溯源或历史表完成
+            // AddDomainEvent(new TemplateRolledBackEvent(Id, expectedVersion));
         }
 
-
         /// <summary>
-        /// 根据业务规则自动生成模板 URL
+        /// 软删除 / 归档（可选）
         /// </summary>
-        /// <returns>生成的 URL 字符串</returns>
+        public void Archive()
+        {
+            if (Status == Status.Archived)
+                throw new InvalidOperationException("模板已归档");
+
+            Status = Status.Archived;
+            UpdateAt = DateTime.Now;
+
+            // AddDomainEvent(new TemplateArchivedEvent(Id));
+        }
+
+        private void EnsureDraftStatus(string operation)
+        {
+            if (Status != Status.Draft)
+                throw new InvalidOperationException($"只有草稿状态的模板才允许{operation}");
+        }
+
         private string GenerateTemplateUrl(string host)
         {
-            // 这里的生成规则需要根据你的实际业务需求定制
-            // 示例规则: /templates/{Site}/{TemplateName}_{当前时间戳}.html
-            // 1. 获取后端运行的 IP 和端口 (注意：纯领域模型不建议直接依赖 HttpContext，这里作为领域规则演示)
-            // 实际生产中，IP端口和wwwroot前缀建议作为配置传入 Create 方法，或在应用层拼接前缀
-             // TODO: 替换为实际动态获取的 Host 地址
-
-            // 2. wwwroot 虚拟路径前缀
             string webRoot = "wwwroot";
-
-            // 3. 根据 Word/Excel 选择 DocxModel 或 ExcelModel
             string modelFolder = FileType == TemplateFileType.Docx ? "DocxModel" : "ExcelModel";
-
-            // 4. 业务分类文件夹 (如 Common_FLAM, Common_PHY 等，由外部传入)
             string categoryFolder = BusinessCategory;
-
-            // 5. 处理文件名：替换空格，拼接版本号和时间戳
             string safeName = TemplateName.Replace(" ", "_");
             string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
             string extension = FileType == TemplateFileType.Docx ? ".docx" : ".xlsx";
             string fileName = $"{safeName}_v{Version}_{timestamp}{extension}";
 
-            // 6. 组合路径 (使用 / 保证 URL 的兼容性)
             return $"{host}/{webRoot}/{modelFolder}/{categoryFolder}/{fileName}";
         }
     }

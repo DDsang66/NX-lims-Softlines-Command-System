@@ -220,6 +220,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Light"] = "CFtoWashing&Rubbing&Light",
             ["CF to Perspiration"] = "CFtoPerspiration&Water",
             ["CF to Water"] = "CFtoPerspiration&Water",
+            ["CF to Saliva"] = "CFtoSaliva&Sweat",
+            ["CF to Sweat"] = "CFtoSaliva&Sweat",
             ["Print Durability"] = "Print Durability",
         };
         private static readonly Dictionary<string, Dictionary<string[], string>> TemplateSheetNames = new()
@@ -258,6 +260,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             ["CF to Water"] = (n, _) => ExcelPepcoMapper.MapPW(n),
             ["Print Durability"] = (_, _) => ExcelPepcoMapper.MappPrintDurability(),
             ["DS to Washing"] = (_, m) => ExcelPepcoMapper.MapDStoWashing(m),
+            ["CF to Saliva"] = (n, m) => ExcelLPPMapper.MapCFtoSalivaSweat(),
+            ["CF to Sweat"] = (n, m) => ExcelLPPMapper.MapCFtoSalivaSweat(),
             ["Seam Slippage"] = (_, m) => ExcelPepcoMapper.MapSeamSlippage(m),
         };
         //取洗涤遍数映射地址的函数
@@ -359,6 +363,18 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 ["A3"] = (w, dto, reportNo) => dto.Standard!,
                 ["B8"] = (w, dto, reportNo) => dto.Parameter!.Contains("LyoW")? "Regenerated cellulose" : "Acetate"!,
                 ["B18"] = (w, dto, reportNo) => dto.Parameter!.Contains("LyoW") ? "Regenerated cellulose" : "Acetate"!,
+            },
+            ["CF to Saliva"] = (wp, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>
+            {
+                ["D1"] = (wp, dto, reportNo) => reportNo,
+                ["A3"] = (wp, dto, reportNo) => dto.Standard!,
+                ["G3"] = (wp, dto, reportNo) => "√"
+            },
+            ["CF to Sweat"] = (wp, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto,string, string>>
+            {
+                ["D1"] = (wp, dto,reportNo) => reportNo,
+                ["A3"] = (wp, dto,reportNo) => dto.Standard!,
+                ["J3"] = (wp, dto, reportNo) => "√"
             }
         };
 

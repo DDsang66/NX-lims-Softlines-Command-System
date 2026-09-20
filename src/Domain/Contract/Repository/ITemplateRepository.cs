@@ -36,5 +36,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<List<Template>> GetAllAsync(CancellationToken ct);
+
+        /// <summary>
+        /// 按索引的单个 key-value 粗筛候选模板
+        /// </summary>
+        IReadOnlyList<Template> FindByIndexKey(string key, object? value);
+
+        /// <summary>
+        /// 按 URL 精确查询
+        /// </summary>
+        Template? FindByUrl(string templateUrl);
     }
 }

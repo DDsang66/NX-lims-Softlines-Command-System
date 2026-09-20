@@ -1,4 +1,6 @@
-﻿namespace NX_lims_Softlines_Command_System.src.Domain.Share.Interface
+﻿using Microsoft.EntityFrameworkCore.Storage;
+
+namespace NX_lims_Softlines_Command_System.src.Domain.Share.Interface
 {
     public interface IUnitOfWork : IDisposable
     {
@@ -6,7 +8,7 @@
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
         // 如果需要手动开启事务（可选）
-        Task BeginTransactionAsync(CancellationToken cancellationToken = default);
+        Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 
         // 提交事务的方法
         Task CommitTransactionAsync(CancellationToken cancellationToken = default);

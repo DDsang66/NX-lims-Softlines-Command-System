@@ -60,10 +60,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Repositories
         /// </summary>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+        public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
         {
             // _transaction = await _labDbContextSec.Database.BeginTransactionAsync(cancellationToken);
             _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            return _transaction;
         }
 
         /// <summary>

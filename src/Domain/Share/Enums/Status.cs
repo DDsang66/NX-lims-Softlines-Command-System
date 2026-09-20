@@ -7,5 +7,6 @@
         Deprecated, // 废止
         Superseded,  // 被替代
         Pending,    // 待定
+        Archived
     }
 }

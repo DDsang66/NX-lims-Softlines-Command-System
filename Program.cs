@@ -17,6 +17,9 @@ using NX_lims_Softlines_Command_System.Infrastructure.Data.Repositories.RenderRe
 using NX_lims_Softlines_Command_System.Infrastructure.Providers.Order;
 using NX_lims_Softlines_Command_System.Infrastructure.Tool;
 using NX_lims_Softlines_Command_System.src.Application;
+using NX_lims_Softlines_Command_System.src.Application.Interface.WashLabel;
+using NX_lims_Softlines_Command_System.src.Application.Service.DataSheetContext;
+using NX_lims_Softlines_Command_System.src.Application.Service.FieldHandlerResolverContext;
 using NX_lims_Softlines_Command_System.src.Domain;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure;
@@ -26,7 +29,6 @@ using NX_lims_Softlines_Command_System.src.Infrastructure.Service.WashLabel;
 using OfficeOpenXml;
 using System.Reflection;
 using System.Text;
-using NX_lims_Softlines_Command_System.src.Application.Interface.WashLabel;
 
 namespace NX_lims_Softlines_Command_System
 {
@@ -50,7 +52,7 @@ namespace NX_lims_Softlines_Command_System
                 typeof(ApplicationAssemblyMarker).Assembly,
                 typeof(InfrastructureAssemblyMarker).Assembly));
 
-            builder.Services.AddHostedService<EventPublisherBackgroundService>();
+            //builder.Services.AddHostedService<EventPublisherBackgroundService>();
 
             // Add services to the container.
             var licenseType = builder.Configuration.GetValue<string>("EPPlus:License");
@@ -75,6 +77,11 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddHttpClient<IWashLabelAnalysisService, WashLabelAnalysisService>();
             builder.Services.AddScoped<RenderRepos>();
             builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddHostedService<DataSheetGenerateWorker>();
+            builder.Services.AddHostedService<DataSheetProgressPollingService>();
+            builder.Services.AddDistributedMemoryCache(); // 开发用，生产换 Redis
+
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(opt =>
@@ -109,11 +116,13 @@ namespace NX_lims_Softlines_Command_System
                                        "http://192.168.3.6:82",
                                        "http://192.168.3.6:81",
                                        "http://192.168.3.6:5051",
-                                        "http://192.168.76.8:5173",
+                                       "http://192.168.76.8:5173",
+                                       "https://10.247.184.8:81",
+                                       "https://10.247.184.8:82",
                                        "https://TheProductionDomain.com")
                           .AllowAnyHeader()
                           .AllowAnyMethod()
-                          .AllowCredentials(); // �� JWT/ Cookie �ɱ���
+                          .AllowCredentials(); 
                 });
             });
             builder.Services.AddEndpointsApiExplorer();
@@ -131,7 +140,7 @@ namespace NX_lims_Softlines_Command_System
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.RoutePrefix = "swagger";   // Ĭ�Ͼ��� swagger
+                c.RoutePrefix = "swagger"; 
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
             });
 

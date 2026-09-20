@@ -30,6 +30,21 @@
         /// <summary>
         /// 已发布
         /// </summary>
-        Released = 5
+        Released = 5,
+
+        /// <summary>
+        /// 待处理
+        /// </summary>
+        Pending = 6,
+
+        /// <summary>
+        /// 生成中
+        /// </summary>
+        Generating = 7,
+
+        /// <summary>
+        /// 生成失败
+        /// </summary>
+        Failed = 8
     }
 }

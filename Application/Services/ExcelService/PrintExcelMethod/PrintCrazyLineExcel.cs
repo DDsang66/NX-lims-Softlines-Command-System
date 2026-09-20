@@ -340,10 +340,10 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 var map = new Dictionary<string, Func<WetParameterAatcc, CheckListDto, string, string>>();
                 map["P1"] = (w, dto, reportNo) => reportNo;
-                map["A3"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Garment") == true ? "AATCC TM 179-2023, Method 2, Option 3" : "AATCC TM 179-2023, Method 1, Option 1";
+                map["A3"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Garment") == true ? "AATCC TM 179-2025, Method 2, Option 3" : "AATCC TM 179-2025, Method 1, Option 1";
                 if (w.WashingProcedure!.Contains("Machine"))
                 {
-                    map["O31"] = (w, dto, reportNo) => "AATCC TM 179-2023";
+                    map["O31"] = (w, dto, reportNo) =>dto.sampleDescription!.Contains("Garment")? "AATCC TM 150-2025":"AATCC TM 135-2025";
                     map["D32"] = (w, dto, reportNo) => w.Program!;
                     map["I32"] = (w, dto, reportNo) => w.DryCondition!;
                     map["U32"] = (w, dto, reportNo) => w.Temperature!;
@@ -353,7 +353,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 }
                 else if (w.WashingProcedure.Contains("Hand"))
                 {
-                    map["O35"] = (w, dto, reportNo) => "AATCC TM 179-2023";
+                    map["O35"] = (w, dto, reportNo) => dto.sampleDescription!.Contains("Garment") ? "AATCC TM 150-2025/AATCC TS-006:2004" : "AATCC TM 135-2025/AATCC TS-006:2004";
                     map["G36"] = (w, dto, reportNo) => w.Temperature!;
                     map["K36"] = (w, dto, reportNo) => w.DryProcedure!;
                 }

@@ -132,9 +132,29 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         }
 
 
-        protected override IEnumerable<object> GetEqualityComponents() 
+        protected override IEnumerable<object> GetEqualityComponents()
         {
-            yield return Values;
+            // 按 key 排序，保证顺序稳定
+            foreach (var kv in _values.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                yield return kv.Key.ToLowerInvariant();   // key 归一化，配合 OrdinalIgnoreCase
+                yield return NormalizeValue(kv.Value);     // value 归一化，处理集合
+            }
+        }
+
+        private static object NormalizeValue(object? value)
+        {
+            if (value == null) return "null";
+
+            // 集合：转成可比较的字符串签名
+            if (value is System.Collections.IEnumerable e && value is not string)
+            {
+                var items = new List<string>();
+                foreach (var item in e) items.Add(item?.ToString() ?? "null");
+                return string.Join(",", items);
+            }
+
+            return value;
         }
     }
 }
