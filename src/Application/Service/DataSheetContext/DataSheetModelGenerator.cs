@@ -6,6 +6,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.V
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.Standard.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
@@ -51,7 +52,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
 
                 if (pool == null) continue; // 防御性编程，避免后续空引用
 
-                var mockText = "Procedure No: {WashProcedure}; Using horizontal axis, front-loading type machie: Machine wash at {WashingTemperature} degree C with {WashLoad} kg total dry mass( {BallastType} + specimen) and {ReferenceDetergentsComposition}, {DryProcedure}, / Iron.";
+                //-----------------------------------------------------------------
 
                 var options = new JsonSerializerOptions { Converters = { new TypeConverter() } };
                
@@ -72,6 +73,22 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                     ? string.Join(";", standards.Select(s => s.StandardCode ?? s.StandardCodeNameEn ?? s.Id.Value))
                     : string.Join(";", item.StandardIds.Select(id => id?.Value ?? string.Empty));
 
+                var paramCondition = package.ParamSet!.Values.ToDictionary();
+
+                pool.Merge(package.ParamSet!.Values.ToDictionary()); // 临时全量condition,不进入数据库
+                pool.Merge(new Dictionary<string, object?>
+                {
+                    { "TestItemId", item.TestItemId!.Value },
+                    { "TestMethod", testMethod }
+                });
+
+                //-----------------------------------------------------------------
+
+                //显示指定初筛key，要求condition把testitem、method、state等其他传入保存
+                var template = _templateSelectService.FindByIndex(pool.Conditions, preFilterKey: "TestItemId");
+
+                //var mockText = "Procedure No: {WashProcedure}; Using horizontal axis, front-loading type machie: Machine wash at {WashingTemperature} degree C with {WashLoad} kg total dry mass( {BallastType} + specimen) and {ReferenceDetergentsComposition}, {DryProcedure}, / Iron.";
+
                 // 需根据 DataSheetModel 的实际构造函数或初始化方式进行调整
                 var model = new DataSheetModel
                 {
@@ -85,15 +102,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
 
                     DataAreaCount = CalculateDataAreaCount(item,package),
 
-                    TemplateUrl = "DocxModel/Common_WET/WET_Dimensional_Change_Wasing_Fabric.docx",
+                    //TemplateUrl = "DocxModel/Common_WET/WET_Dimensional_Change_Wasing_Fabric.docx",
+
+                    TemplateUrl = template.GetTemplateUrl(),
 
                     TestMethod = testMethod,
 
-                    TestCondition = TextReplaceHelper.FillTemplate(mockText, paramJson),
+                    TestCondition = TextReplaceHelper.FillTemplate(
+                        template.FindTextTemplate(pool.Conditions).Text,
+                        paramJson),
 
-                    SampleMap = await CalcuteSampleMapAsync(item, package, ExpandSampleArray(item, package)),
+                    SampleMap = await CalcuteSampleMapAsync(item, package, template ,ExpandSampleArray(item, package)),
                       
-                    AfterWashMap = await CalculateAfterWashMapAsync(item, package, ExpandAfterWashArray(item, package))
+                    AfterWashMap = await CalculateAfterWashMapAsync(item, package, template, ExpandAfterWashArray(item, package))
                 };
                 models.Add(model);
             }
@@ -120,14 +141,21 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                 {     
                     if (kv.Value?.Values == null)
                         return "{}"; // 空值统一返回空JSON字符串    
-                    
-                    // 克隆 Values 字典，若包含 WashCycle 则移除，避免影响参数合并的准确性
-                    var filteredValues = new Dictionary<string, object>(kv.Value.Values);  
-                    filteredValues.Remove("WashCycle");
 
-      
-                    // 统一将过滤后的字典序列化为 JSON 字符串作为分组键  
-                    return JsonConvert.SerializeObject(filteredValues);
+                    // 克隆 Values 字典，若包含 WashCycle 则移除，避免影响参数合并的准确性
+                    var filteredValues = new Dictionary<string, object>();
+                    foreach (var v in kv.Value.Values)
+                    {
+                        if ("WashCycle".Equals(v.Key, StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        filteredValues[v.Key] = v.Value is JsonElement je
+                            ? je.GetRawText() ?? string.Empty   // 拿原始 JSON 文本，若为null则降级为空字符串
+                            : v.Value ?? string.Empty;          // 若v.Value为null，同样降级为空字符串
+                    }
+                    var key = JsonConvert.SerializeObject(filteredValues);
+                    Console.WriteLine($"[{kv.Key}] -> [{key}]");
+                    return key;
                 })
                 // 2. 保留原始的 ParamSet (包含 WashCycle)，仅用分组键聚合测点
                 .Select(g => new TestPointPackage(
@@ -220,7 +248,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             return expandedSamples.ToArray();
         }
 
-        public async Task<SampleMap> CalcuteSampleMapAsync(CheckListItem item, TestPointPackage package, string[] samplemap) 
+        public async Task<SampleMap> CalcuteSampleMapAsync(CheckListItem item, TestPointPackage package, Template template , string[] samplemap) 
         {
             //获取Template对应的TemplateStructure数据，
             //获取SampleDataCount字段的值和SampleResultCount字段的值
@@ -231,7 +259,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             //      3.例外：如果没有sample，跳过即可
             // 1. 获取模板信息（假设已从数据库获取）
 
-            int sampleDataCount = 4; // templateInfo.SampleDataCount;
+            int sampleDataCount = template.TemplateStructure.SampleDataAreaCount; // templateInfo.SampleDataCount;
 
             // 2. 计算当前参数包因水洗扩展所需的实际数据区域总数
             int actualDataAreaCount = CalculateDataAreaCount(item, package);
@@ -267,10 +295,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
         /// <summary>
         /// 计算AfterWashMap
         /// </summary>
-        public async Task<AfterWashMap> CalculateAfterWashMapAsync(CheckListItem item, TestPointPackage package, string[] afterWashArray)
+        public async Task<AfterWashMap> CalculateAfterWashMapAsync(CheckListItem item, TestPointPackage package, Template template ,string[] afterWashArray)
         {
             // 1. 获取模板信息（假设已从数据库获取）
-            int afterWashDataCount = 4; // templateInfo.AfterWashDataCount;
+            int afterWashDataCount = template.TemplateStructure.AfterWashDataCount; // templateInfo.AfterWashDataCount;
 
             if ( afterWashDataCount <= 0)
             {

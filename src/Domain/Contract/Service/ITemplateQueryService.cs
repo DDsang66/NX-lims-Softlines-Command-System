@@ -14,7 +14,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service
         /// <param name="conditions">索引条件，如 { "TestMethod": "4N", "Site": "NB" }</param>
         /// <returns>命中的模板；未命中返回 null</returns>
         /// <exception cref="InvalidOperationException">命中多个模板时抛出</exception>
-        Template? FindByIndex(IReadOnlyDictionary<string, object?> conditions);
+        Template? FindByIndex(IReadOnlyDictionary<string, object?> conditions, string? preFilterKey = null);
 
         /// <summary>
         /// 根据文件路径查询模板

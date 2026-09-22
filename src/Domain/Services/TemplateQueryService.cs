@@ -16,30 +16,53 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
             _templateRepository = templateRepository ?? throw new ArgumentNullException(nameof(templateRepository));
         }
 
-        public Template? FindByIndex(IReadOnlyDictionary<string, object?> conditions)
+        public Template? FindByIndex(
+            IReadOnlyDictionary<string, object?> conditions,
+            string? preFilterKey = null)
         {
             if (conditions == null || conditions.Count == 0)
                 throw new ArgumentException("查询条件不能为空", nameof(conditions));
 
-            // 1. 先按第一个条件做粗筛（仓储层尽量下推到数据库）
-            //    这里假设仓储提供了按单个 key-value 查询的能力
-            var firstCondition = conditions.First();
-            var candidates = _templateRepository.FindByIndexKey(firstCondition.Key, firstCondition.Value);
+            // 1. 决定用哪个 key 粗筛
+            KeyValuePair<string, object?> preFilter;
+            if (!string.IsNullOrWhiteSpace(preFilterKey))
+            {
+                if (!conditions.TryGetValue(preFilterKey, out var preValue))
+                    throw new ArgumentException(
+                        $"粗筛 key '{preFilterKey}' 不在 conditions 里", nameof(preFilterKey));
 
-            // 2. 在内存中做完整匹配：候选模板的索引必须包含所有查询条件
+                preFilter = new KeyValuePair<string, object?>(preFilterKey, preValue);
+            }
+            else
+            {
+                preFilter = conditions.First();   // 兜底：不传时用第一个
+            }
+
+            // 2. 下推到 DB 粗筛
+            var candidates = _templateRepository.FindByIndexKey(preFilter.Key, preFilter.Value);
+
+            // 3. 内存完整匹配
             var matched = candidates
-                .Where(t => t.Status == Status.Active)   // 只查已发布的模板
+                .Where(t => t.Status == Status.Active)
                 .Where(t => t.TemplateIndex != null)
                 .Where(t => MatchesAll(t.TemplateIndex, conditions))
                 .ToList();
 
-            // 3. 处理结果
+            // 4. 处理结果
             if (matched.Count == 0)
                 return null;
 
             if (matched.Count > 1)
+            {
+                // 冲突时打印详情，方便排查数据问题
+                var conflictDetail = string.Join(" | ", matched.Select(t =>
+                    $"{t.Id.Value}[{string.Join(",", t.TemplateIndex!.Values.Select(v => $"{v.Key}={v.Value}"))}]"));
+
                 throw new InvalidOperationException(
-                    $"索引条件命中了 {matched.Count} 个模板，无法唯一确定。条件：{FormatConditions(conditions)}");
+                    $"索引条件命中了 {matched.Count} 个模板，无法唯一确定。" +
+                    $"粗筛key={preFilter.Key}，条件：{FormatConditions(conditions)}。" +
+                    $"冲突模板：{conflictDetail}");
+            }
 
             return matched[0];
         }
@@ -59,13 +82,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         {
             foreach (var kvp in conditions)
             {
+                // 模板索引里没有这个 key → 跳过，不当作不匹配
                 if (!index.Values.TryGetValue(kvp.Key, out var indexValue))
-                    return false;
+                    continue;
 
                 if (!AreEqual(indexValue, kvp.Value))
                     return false;
             }
-
             return true;
         }
 

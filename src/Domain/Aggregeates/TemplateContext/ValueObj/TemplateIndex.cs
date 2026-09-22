@@ -8,30 +8,30 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
     /// </summary>
     public class TemplateIndex: ValueObject
     {
-        private readonly Dictionary<string, object?> _values;
+        private readonly Dictionary<string, object> _values;
 
-        public IReadOnlyDictionary<string, object?> Values => _values;
+        public IReadOnlyDictionary<string, object> Values => _values;
 
         // EF Core 需要
         private TemplateIndex()
         {
-            _values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            _values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
         }
 
-        private TemplateIndex(Dictionary<string, object?> values)
+        private TemplateIndex(Dictionary<string, object> values)
         {
-            _values = new Dictionary<string, object?>(values, StringComparer.OrdinalIgnoreCase);
+            _values = new Dictionary<string, object>(values, StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>
         /// 创建模板索引
         /// </summary>
-        public static TemplateIndex Create(IEnumerable<KeyValuePair<string, object?>> values)
+        public static TemplateIndex Create(IEnumerable<KeyValuePair<string, object>> values)
         {
             if (values == null)
                 throw new ArgumentNullException(nameof(values));
 
-            var dict = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            var dict = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var kvp in values)
             {
@@ -55,18 +55,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         /// </summary>
         public static TemplateIndex Empty()
         {
-            return new TemplateIndex(new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase));
+            return new TemplateIndex(new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase));
         }
 
         /// <summary>
         /// 添加或更新一个索引项（返回新实例，保持不可变性）
         /// </summary>
-        public TemplateIndex AddOrUpdate(string key, object? value)
+        public TemplateIndex AddOrUpdate(string key, object value)
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("索引键不能为空", nameof(key));
 
-            var newDict = new Dictionary<string, object?>(_values, StringComparer.OrdinalIgnoreCase)
+            var newDict = new Dictionary<string, object>(_values, StringComparer.OrdinalIgnoreCase)
             {
                 [key] = value
             };
@@ -85,7 +85,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             if (!_values.ContainsKey(key))
                 return this;
 
-            var newDict = new Dictionary<string, object?>(_values, StringComparer.OrdinalIgnoreCase);
+            var newDict = new Dictionary<string, object>(_values, StringComparer.OrdinalIgnoreCase);
             newDict.Remove(key);
 
             return new TemplateIndex(newDict);

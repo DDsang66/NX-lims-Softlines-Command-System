@@ -32,6 +32,27 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         /// 创建测试条件文本模板
         /// </summary>
         public static TestConditionTextTemplate Create(
+            Dictionary<string, object> templateIndex,
+            string text)
+        {
+            if (templateIndex == null)
+                throw new ArgumentNullException(nameof(templateIndex), "模板索引不能为空");
+
+            if (templateIndex.Values.Count == 0)
+                throw new ArgumentException("模板索引不能为空索引", nameof(templateIndex));
+
+            if (string.IsNullOrWhiteSpace(text))
+                throw new ArgumentException("文本模板不能为空", nameof(text));
+
+            var index = TemplateIndex.Create(templateIndex); // 假设 TemplateIndex 提供了 Create 工厂方法
+            
+            return new TestConditionTextTemplate(index, text.Trim());
+        }
+
+        /// <summary>
+        /// 创建测试条件文本模板
+        /// </summary>
+        public static TestConditionTextTemplate Rebuild(
             TemplateIndex templateIndex,
             string text)
         {
@@ -82,8 +103,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
 
             foreach (var kvp in conditions)
             {
+                // 模板索引里没有这个 key → 跳过，不当作不匹配
                 if (!TemplateIndex.Values.TryGetValue(kvp.Key, out var indexValue))
-                    return false;
+                    continue;
 
                 if (!AreEqual(indexValue, kvp.Value))
                     return false;
@@ -94,6 +116,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
 
         private static bool AreEqual(object? a, object? b)
         {
+            a = NormalizeJsonElement(a);
+            b = NormalizeJsonElement(b);
+
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
 
@@ -104,6 +129,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
                 return Convert.ToDecimal(a) == Convert.ToDecimal(b);
 
             return a.Equals(b);
+        }
+
+        private static object? NormalizeJsonElement(object? v)
+        {
+            if (v is System.Text.Json.JsonElement je)
+            {
+                return je.ValueKind switch
+                {
+                    System.Text.Json.JsonValueKind.String => je.GetString(),
+                    System.Text.Json.JsonValueKind.Number => je.TryGetInt64(out var l) ? l : je.GetDecimal(),
+                    System.Text.Json.JsonValueKind.True => true,
+                    System.Text.Json.JsonValueKind.False => false,
+                    System.Text.Json.JsonValueKind.Null => null,
+                    _ => je.GetRawText()
+                };
+            }
+            return v;
         }
 
         private static bool IsNumeric(object value)

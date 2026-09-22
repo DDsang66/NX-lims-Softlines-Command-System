@@ -26,15 +26,52 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         public async Task AddAsync(Template aggregateRoot, CancellationToken ct) 
         {
             if (aggregateRoot == null)
-            {
                 throw new ArgumentNullException(nameof(aggregateRoot));
+
+            var po = new Persistence.Template
+            {
+                Id = aggregateRoot.Id.Value,
+                TemplateName = aggregateRoot.TemplateName,
+                TemplateUrl = aggregateRoot.TemplateUrl,
+                Site = (int)aggregateRoot.Site,
+                Status = (int)aggregateRoot.Status,
+                FileType = (int)aggregateRoot.FileType,
+                BusinessCategory = aggregateRoot.BusinessCategory,
+                TemplateIndex = aggregateRoot.TemplateIndex?.ToJson() ?? "{}",   // ★ 手动 ToJson
+                Version = aggregateRoot.Version,
+                UpdateAt = aggregateRoot.UpdateAt
+            };
+
+            await _context.Set<Persistence.Template>().AddAsync(po, ct);
+
+            // 结构
+            if (aggregateRoot.TemplateStructure != null)
+            {
+                var structurePo = new Persistence.TemplateStructure
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = po.Id,
+                    TestConditionCount = aggregateRoot.TemplateStructure.TestConditionCount,
+                    TestMethodCount = aggregateRoot.TemplateStructure.TestMethodCount,
+                    SampleDataAreaCount = aggregateRoot.TemplateStructure.SampleDataAreaCount,
+                    SampleResultAreaCount = aggregateRoot.TemplateStructure.SampleResultAreaCount,
+                    AfterWashDataCount = aggregateRoot.TemplateStructure.AfterWashDataCount
+                };
+                await _context.Set<Persistence.TemplateStructure>().AddAsync(structurePo, ct);
             }
 
-            var templatePo = aggregateRoot.Adapt<src.Infrastructure.Data.Persistence.Template>();
-
-            // 将聚合根添加到 DbContext 的内存集合中
-            await  _context.Set<src.Infrastructure.Data.Persistence.Template>().AddAsync(templatePo, ct);
-
+            // 文本模板
+            foreach (var text in aggregateRoot.TestConditionTextTemplates)
+            {
+                var textPo = new Persistence.TestConditionTextTemplate
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = po.Id,
+                    TemplateIndex = text.TemplateIndex.ToJson(),   // ★ 手动 ToJson
+                    Text = text.Text
+                };
+                await _context.Set<Persistence.TestConditionTextTemplate>().AddAsync(textPo, ct);
+            }
         }
 
         /// <summary>
@@ -255,7 +292,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             var texts = textTemplatePos != null && textTemplatePos.Count > 0
                 ? textTemplatePos.Select(t =>
-                    src.Domain.Aggregeates.TemplateContext.TestConditionTextTemplate.Create(
+                    src.Domain.Aggregeates.TemplateContext.TestConditionTextTemplate.Rebuild(
                         TemplateIndex.FromJson(t.TemplateIndex),
                         t.Text)).ToList()
                 : new List<src.Domain.Aggregeates.TemplateContext.TestConditionTextTemplate>();
