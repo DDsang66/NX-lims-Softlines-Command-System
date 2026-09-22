@@ -67,6 +67,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
                 relativePath = uri.PathAndQuery.TrimStart('/');
             }
 
+            // 剥掉前导分隔符: "/DocxModel/xxx" 这类路径在 Windows 上 IsPathRooted 为真,
+            // 下一句 Path.Combine 遇到已 rooted 的第二段会直接返回它、把 WebRootPath 丢掉
+            // (文件就落到盘根去了)。模板 URL 存的就是这种带头斜杠的相对路径, 必须在此收口。
+            relativePath = relativePath.TrimStart('/', '\\');
+
             // 移除可能存在的 wwwroot 前缀
             if (relativePath.StartsWith("wwwroot/", StringComparison.OrdinalIgnoreCase))
             {

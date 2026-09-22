@@ -1,8 +1,8 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.Enums;
+﻿using System.Text;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext
 {
@@ -77,11 +77,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             string templateName,
             Site site,
             TemplateFileType fileType,
-            string host,
             string businessCategory,
             TemplateIndex? templateIndex,
             TemplateStructure? templateStructure,
-            IEnumerable<TestConditionTextTemplate>? testConditionTextTemplates = null)
+            IEnumerable<TestConditionTextTemplate>? testConditionTextTemplates = null,
+            DateTime? now = null)
         {
             // 1. 参数校验
             if (id == null)
@@ -93,8 +93,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             if (string.IsNullOrWhiteSpace(businessCategory))
                 throw new ArgumentException("业务分类不能为空", nameof(businessCategory));
 
-            if (string.IsNullOrWhiteSpace(host))
-                throw new ArgumentException("Host 不能为空", nameof(host));
+            // 时间戳从外部传入, 便于测试断言生成的文件名; 默认取当前时间
+            var createdAt = now ?? DateTime.Now;
 
             // 创建实体
             var template = new Template
@@ -105,10 +105,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
                 Status = Status.Draft,
                 Version = 1,
                 FileType = fileType,
-                BusinessCategory = businessCategory.Trim(),
+                // 分类会进 URL 路径, 与 TemplateName 走同一套净化, 挡住路径穿越
+                BusinessCategory = SanitizeSegment(businessCategory, nameof(businessCategory)),
                 TemplateIndex = templateIndex ?? TemplateIndex.Empty(),
                 TemplateStructure = templateStructure,
-                UpdateAt = DateTime.Now
+                UpdateAt = createdAt
             };
 
             // 可选：关联测试条件文本模板
@@ -120,7 +121,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
                 }
             }
 
-            template.TemplateUrl = template.GenerateTemplateUrl(host);
+            template.TemplateUrl = template.GenerateTemplateUrl(createdAt);
 
             // template.AddDomainEvent(new TemplateCreatedEvent(id, templateName));
 
@@ -181,9 +182,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             if (string.IsNullOrWhiteSpace(businessCategory))
                 throw new ArgumentException("业务分类不能为空", nameof(businessCategory));
 
+            // 只换目录、保留文件名: 若连文件名一起重生成, 盘上已存在的文件就与 URL 失联了。
+            // 文件名只在版本变更(Publish / Rollback)时重生成, 那时调用方会同步搬文件。
+            string fileName = FileNameOf(TemplateUrl);
+
             TemplateName = templateName.Trim();
             Site = site;
-            BusinessCategory = businessCategory.Trim();
+            BusinessCategory = SanitizeSegment(businessCategory, nameof(businessCategory));
+            TemplateUrl = BuildPath(fileName);
             UpdateAt = DateTime.Now;
 
             // AddDomainEvent(new TemplateUpdatedEvent(Id));
@@ -270,23 +276,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         public string GetTemplateUrl() => TemplateUrl;
 
         /// <summary>
-        /// 重新生成 TemplateUrl（例如 Host 变化或文件名规则变化时调用）
+        /// 重新生成 TemplateUrl（重传模板文件、或文件名规则变化时调用）。
+        /// 会产生新的时间戳 —— 调用方必须同步把盘上文件搬到新路径，否则 URL 指向空文件。
         /// </summary>
-        public void RegenerateUrl(string host)
+        public void RegenerateUrl(DateTime? now = null)
         {
             EnsureDraftStatus("重新生成URL");
 
-            if (string.IsNullOrWhiteSpace(host))
-                throw new ArgumentException("Host 不能为空", nameof(host));
-
-            TemplateUrl = GenerateTemplateUrl(host);
+            TemplateUrl = GenerateTemplateUrl(now ?? DateTime.Now);
             UpdateAt = DateTime.Now;
         }
 
         /// <summary>
-        /// 发布模板
+        /// 发布模板（版本号 +1，并按新版本重新生成文件名）。
+        /// URL 会变 —— 调用方必须把盘上文件另存为新版本路径后，才能提交本次变更。
         /// </summary>
-        public void Publish()
+        public void Publish(DateTime? now = null)
         {
             if (Status != Status.Draft)
                 throw new InvalidOperationException("只有草稿状态的模板才能发布");
@@ -297,17 +302,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             if (TemplateIndex == null || TemplateIndex.Values.Count == 0)
                 throw new InvalidOperationException("模板索引未配置，无法发布");
 
+            var publishedAt = now ?? DateTime.Now;
+
             Status = Status.Active;
             Version += 1;
-            UpdateAt = DateTime.Now;
+            // 这里不能走 RegenerateUrl: 它带 EnsureDraftStatus, 而状态刚被置为 Active
+            TemplateUrl = GenerateTemplateUrl(publishedAt);
+            UpdateAt = publishedAt;
 
             // AddDomainEvent(new TemplatePublishedEvent(Id, Version));
         }
 
         /// <summary>
-        /// 回滚至指定版本
+        /// 回滚至指定版本（版本号真正回退，并按目标版本重新生成文件名）。
+        /// URL 会变 —— 调用方必须把盘上文件搬回对应版本的路径后，才能提交本次变更。
         /// </summary>
-        public void Rollback(int? targetVersion = null)
+        public void Rollback(int? targetVersion = null, DateTime? now = null)
         {
             int expectedVersion = targetVersion ?? Version - 1;
 
@@ -317,8 +327,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             if (expectedVersion >= Version)
                 throw new InvalidOperationException($"目标版本 {expectedVersion} 大于或等于当前版本 {Version}，无法回滚");
 
+            var rolledBackAt = now ?? DateTime.Now;
+
             Status = Status.Draft;
-            UpdateAt = DateTime.Now;
+            // 版本号必须真的退回去, 否则 URL 里的 _v{n}_ 会与实体版本长期不一致
+            Version = expectedVersion;
+            TemplateUrl = GenerateTemplateUrl(rolledBackAt);
+            UpdateAt = rolledBackAt;
 
             // 注意：具体数据恢复由应用层通过事件溯源或历史表完成
             // AddDomainEvent(new TemplateRolledBackEvent(Id, expectedVersion));
@@ -344,17 +359,60 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
                 throw new InvalidOperationException($"只有草稿状态的模板才允许{operation}");
         }
 
-        private string GenerateTemplateUrl(string host)
-        {
-            string webRoot = "wwwroot";
-            string modelFolder = FileType == TemplateFileType.Docx ? "DocxModel" : "ExcelModel";
-            string categoryFolder = BusinessCategory;
-            string safeName = TemplateName.Replace(" ", "_");
-            string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            string extension = FileType == TemplateFileType.Docx ? ".docx" : ".xlsx";
-            string fileName = $"{safeName}_v{Version}_{timestamp}{extension}";
+        /// <summary>
+        /// 生成模板相对 WebRoot 的访问路径（不含 host，也不含 wwwroot 段）。
+        /// 例: /DocxModel/Common_PHY/PHY_Weight_v1_20260922143000.docx
+        ///
+        /// 存相对路径而非绝对 URL: wwwroot 是静态文件的物理根, 不是 URL 段,
+        /// 拼进 URL 会 404; 而绝对 URL 会把请求时的 host 烤进库里, 换端口或走反代即失效。
+        /// </summary>
+        private string GenerateTemplateUrl(DateTime now)
+            => BuildPath(BuildFileName(now));
 
-            return $"{host}/{webRoot}/{modelFolder}/{categoryFolder}/{fileName}";
+        /// <summary>目录段 —— 只随 FileType / BusinessCategory 变化</summary>
+        private string BuildPath(string fileName)
+            => $"/{ModelFolder()}/{BusinessCategory}/{fileName}";
+
+        /// <summary>文件名段 —— 只随 TemplateName / Version 变化</summary>
+        private string BuildFileName(DateTime now)
+            => $"{SanitizeSegment(TemplateName, nameof(TemplateName))}_v{Version}_{now:yyyyMMddHHmmss}{Extension()}";
+
+        /// <summary>从现有 URL 取回文件名（URL 约定总是以文件名结尾）</summary>
+        private static string FileNameOf(string url)
+            => string.IsNullOrWhiteSpace(url) ? string.Empty : url[(url.LastIndexOf('/') + 1)..];
+
+        private string ModelFolder() => FileType == TemplateFileType.Docx ? "DocxModel" : "ExcelModel";
+
+        private string Extension() => FileType == TemplateFileType.Docx ? ".docx" : ".xlsx";
+
+        /// <summary>
+        /// 净化一个路径段（模板名 / 业务分类）。用户输入会直接进 URL 路径，
+        /// 路径分隔符与 ".." 一律拒绝而非静默改写 —— 这类输入是攻击或错误，不该被"修好"。
+        /// 其余非法文件名字符与空格统一替换为下划线。
+        /// </summary>
+        private static string SanitizeSegment(string raw, string paramName)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                throw new ArgumentException("路径段不能为空", paramName);
+
+            string trimmed = raw.Trim();
+
+            if (trimmed.Contains('/') || trimmed.Contains('\\') || trimmed.Contains(".."))
+                throw new ArgumentException($"路径段不能包含路径分隔符或 ..: {raw}", paramName);
+
+            var invalid = Path.GetInvalidFileNameChars();
+            var sb = new StringBuilder(trimmed.Length);
+            foreach (char c in trimmed)
+            {
+                sb.Append(c == ' ' || Array.IndexOf(invalid, c) >= 0 ? '_' : c);
+            }
+
+            // 首尾的点会拼出隐藏文件或 "..", 统一削掉
+            string sanitized = sb.ToString().Trim('.', '_');
+            if (sanitized.Length == 0)
+                throw new ArgumentException($"路径段净化后为空: {raw}", paramName);
+
+            return sanitized;
         }
     }
 }

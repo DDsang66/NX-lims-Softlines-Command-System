@@ -18,7 +18,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
     {
         private readonly ITemplateRepository _templateRepository;
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IServerConfig _serverConfig;
         private readonly IFileSecurityValidator _fileSecurityValidator;
         private readonly IFileStorageService _fileStorageService;
         private readonly ITemplateIdGenerator _templateIdGenerator;
@@ -26,14 +25,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
         public TemplateAppService(
             ITemplateRepository templateRepository,
             IUnitOfWork unitOfWork,
-            IServerConfig serverConfig,
             IFileSecurityValidator fileSecurityValidator,
             IFileStorageService fileStorageService,
             ITemplateIdGenerator templateIdGenerator)
         {
             _templateRepository = templateRepository;
             _unitOfWork = unitOfWork;
-            _serverConfig = serverConfig;
             _fileSecurityValidator = fileSecurityValidator;
             _fileStorageService = fileStorageService;
             _templateIdGenerator = templateIdGenerator;
@@ -50,18 +47,22 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
             if (dto.TemplateFile == null)
                 return Result.Fail("Template file is required");
 
+            // 扩展名取自上传文件本身 —— dto.FileType 是业务分类字符串(如 "Docx"), 不是扩展名
+            var fileExtension = Path.GetExtension(dto.TemplateFile.FileName);
+
             using (var stream = dto.TemplateFile.OpenReadStream())
             {
-                // ✅ 从文件名提取扩展名
-                var fileExtension = Path.GetExtension(dto.TemplateFile.FileName);
-
                 var validationResult = await _fileSecurityValidator.ValidateAsync(stream, fileExtension);
 
                 if (!validationResult.IsValid)
                     return Result.Fail("Template is Unsafe");
             }
 
-            var host = _serverConfig.GetBaseUrl();
+            // 生成的 URL 与落盘文件名都按 FileType 固定取 .docx / .xlsx,
+            // 放 .doc / .xls / .xlsm 进来会得到"叫 .docx 但内容是旧格式"的文件, 这里直接拒掉。
+            var fileType = MapFileExtensionToType(fileExtension);
+            if (fileType == null)
+                return Result.Fail($"不支持的文件类型: {fileExtension}（只接受 .docx / .xlsx）");
 
             var templateId = _templateIdGenerator.Generate(dto.TestType, dto.TemplateName);
 
@@ -71,10 +72,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
                 return Result.Fail($"无效的 Site: {dto.Site}");
             }
 
-            // 将 dto.FileType (string) 解析为 TemplateFileType 枚举
-            var fileType = MapFileExtensionToType(dto.FileType);
-
-            var template = Template.Create(templateId, dto.TemplateName, site, fileType, host, dto.Category, null, null, null);
+            Template template;
+            try
+            {
+                template = Template.Create(
+                    templateId, dto.TemplateName, site, fileType.Value, dto.Category, null, null, null);
+            }
+            catch (ArgumentException ex)
+            {
+                // 模板名 / 业务分类会被拼进 URL 路径, 净化失败是调用方输入问题,
+                // 回可读的 Fail 而不是让异常直穿成 500
+                return Result.Fail(ex.Message);
+            }
 
             var url = template.GetTemplateUrl();
 
@@ -87,14 +96,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.TemplateConte
             return Result.Ok();
         }
 
-        // 将文件扩展名映射到 TemplateFileType 枚举
-        private TemplateFileType MapFileExtensionToType(string fileExtension)
+        /// <summary>
+        /// 将文件扩展名映射到 TemplateFileType 枚举。不支持的扩展名返回 null (调用方回可读的失败)。
+        /// 只认 .docx / .xlsx —— 生成的文件名会按 FileType 硬编码这两个扩展名。
+        /// </summary>
+        private static TemplateFileType? MapFileExtensionToType(string? fileExtension)
         {
-            return fileExtension?.ToLower() switch
+            return fileExtension?.ToLowerInvariant() switch
             {
-                ".docx" or ".doc" => TemplateFileType.Docx,
-                ".xlsx" or ".xls" or ".xlsm" => TemplateFileType.Excel,
-                _ => throw new ArgumentException($"Unsupported file type: {fileExtension}")
+                ".docx" => TemplateFileType.Docx,
+                ".xlsx" => TemplateFileType.Excel,
+                _ => null
             };
         }
     }
