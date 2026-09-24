@@ -26,6 +26,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         /// </summary>
         public List<CompositeCondition> CompositeMatches { get; init; } = new();
 
+        /// <summary>
+        /// 赋值匹配集合（新增）
+        /// 每个 AssignMatch 表示：从条件池取一个字段的值，作为本规则的 Result
+        /// 多个 AssignMatch 之间的关系是逻辑与（都需要成功取值）
+        /// </summary>
+        public List<AssignMatch> AssignMatches { get; init; } = new();
+
         // 例如：{ "FiberDominantType": "Synthetic", "BuyerSpecified": false }
         public ConditionPattern() { }
 
@@ -52,6 +59,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         {
             if (composite == null) throw new ArgumentNullException(nameof(composite));
             CompositeMatches.Add(composite);
+        }
+
+        public void AddAssign(string sourceFieldPath, bool isRequired = true, object? defaultValue = null)
+        {
+            if (string.IsNullOrWhiteSpace(sourceFieldPath)) throw new ArgumentException(nameof(sourceFieldPath));
+            AssignMatches.Add(new AssignMatch(sourceFieldPath, isRequired, defaultValue));
         }
 
         /// <summary>
@@ -83,6 +96,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
                         if (!string.IsNullOrWhiteSpace(sc.FieldPath)) set.Add(sc.FieldPath);
                     }
                 }
+            }
+
+            foreach (var assign in AssignMatches)
+            {
+                if (!string.IsNullOrWhiteSpace(assign.SourceFieldPath))
+                    set.Add(assign.SourceFieldPath);
             }
 
             return set;

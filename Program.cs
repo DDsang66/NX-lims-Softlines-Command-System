@@ -21,6 +21,8 @@ using NX_lims_Softlines_Command_System.src.Application.Interface.WashLabel;
 using NX_lims_Softlines_Command_System.src.Application.Service.DataSheetContext;
 using NX_lims_Softlines_Command_System.src.Application.Service.FieldHandlerResolverContext;
 using NX_lims_Softlines_Command_System.src.Domain;
+using NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine;
+using NX_lims_Softlines_Command_System.src.Domain.Services;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
@@ -77,6 +79,9 @@ namespace NX_lims_Softlines_Command_System
             builder.Services.AddHttpClient<IWashLabelAnalysisService, WashLabelAnalysisService>();
             builder.Services.AddScoped<RenderRepos>();
             builder.Services.AddHttpContextAccessor();
+
+            builder.Services.AddTransient<Func<IConditionPatternBuilder>>(sp =>
+            () => sp.GetRequiredService<IConditionPatternBuilder>());
 
             builder.Services.AddHostedService<DataSheetGenerateWorker>();
             builder.Services.AddHostedService<DataSheetProgressPollingService>();

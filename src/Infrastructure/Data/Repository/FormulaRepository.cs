@@ -358,26 +358,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                             FormulaId = formulaPo.FormulaId,
                             BuyerId = buyerId!.Value
                         }, ct);
+                        }
                     }
                 }
             }
-            }
-
-            //foreach (var paramId in formula.ParamSturctureIds.Where(id => id != null))
-            //{
-            //    if (!await _context.ParamstructureFormulas
-            //        .AnyAsync(af =>
-            //            af.FormulaId == formulaPo.FormulaId &&
-            //            af.ParamStructureId == paramId.Value,
-            //            ct))
-            //    {
-            //        await _context.AddAsync(new ParamstructureFormula
-            //        {
-            //            FormulaId = formulaPo.FormulaId,
-            //            ParamStructureId = paramId!.Value
-            //        }, ct);
-            //    }
-            //}
         }
 
         /// <summary>

@@ -70,7 +70,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             var tplName = new TemplateSelector(TemplateSheetNames, TemplateSheetNamesNormal).GetTemplateName(itemName, dto.sampleDescription!);
             var template = pkg.Workbook.Worksheets[tplName];
             // 2) 计算需要几张 sheet
-            var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!);
+            var cellAddrs = CellMapper[itemName](itemName, dto.sampleDescription!,dto.Standard);
             string[]? AfterWashCellAddrs = null;
             if (itemName == "DS to Washing" || itemName == "DS to Dry-clean" 
                 || itemName == "Appearance" || itemName == "Spirality/Skewing" || (itemName== "Water Repellency-Spray Test"&& dto.sampleDescription!.Contains("After Wash")))
@@ -229,34 +229,34 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 {new[] { "Garment" },"Seam Slippage-G"},
             },
         };
-        private static readonly Dictionary<string, Func<string, string, string[]>> CellMapper = new()
+        private static readonly Dictionary<string, Func<string, string, string,string[]>> CellMapper = new()
         {
-            ["Appearance"] = (_, _) => ExcelTchiboMapper.MapAppearance(),
-            ["Weight"] = (_, _) => ExcelTchiboMapper.MapWeight(),
-            ["Yarn Count"] = (_, _) => ExcelTchiboMapper.MapYarnCount(),
-            ["Pilling Resistance"] = (_, m) => ExcelTchiboMapper.MapPilling(m),
-            ["Zipper Strength"] = (_, _) => ExcelTchiboMapper.MapZipperStrength(),
-            ["Resistance to Unsnapping of Snap Fasteners"] = (_, _) => ExcelTchiboMapper.MapUnsnapping(),
-            ["Water Resistance-Hydrostatic Pressure"] = (_, _) => ExcelTchiboMapper.MapHydrostaticPressing(),
-            ["Water Repellency-Spray Test"] = (_, m) => ExcelTchiboMapper.MapRepellency(m),
-            ["Extension and Recovery"] = (_, _) => ExcelTchiboMapper.MapExtensionAndRecovery(),
-            ["Air Permeability"] = (_, _) => ExcelTchiboMapper.MapAirPermeability(),
-            ["Absorbency"] = (_, _) => ExcelTchiboMapper.MapAbsorbency(),
-            ["Attachment Strength"] = (_, _) => ExcelTchiboMapper.MapAttachmentStrength(),
-            ["Density"] = (_, _) => ExcelTchiboMapper.MapDensity(),
-            ["CF to Washing"] = (_, _) => ExcelTchiboMapper.MapCFtoWashing(),
-            ["CF to Rubbing"] = (_, _) => ExcelTchiboMapper.MapCFtoRubbing(),
-            ["CF to Light"] = (_, _) => ExcelTchiboMapper.MapCFtoLight(),
-            ["CF to Sea Water"] = (_, _) => ExcelTchiboMapper.MapCFtoSeaWater(),
-            ["CF to Perspiration"] = (_, _) => ExcelTchiboMapper.MapCFtoPerspiration(),
-            ["CF to Water"] = (_, _) => ExcelTchiboMapper.MapCFtoWater(),
-            ["CF to Saliva"] = (_, _) => ExcelTchiboMapper.MapCFtoSalivaSweat(),
-            ["CF to Sweat"] = (_, _) => ExcelTchiboMapper.MapCFtoSalivaSweat(),
-            ["CF to Sublimation in Storage"] = (_, _) => ExcelTchiboMapper.MapCFtoSublimation(),
-            ["CF to Hot Pressing"] = (_, _) => ExcelTchiboMapper.MapCFtoHotPressing(),
-            ["CF to Chlorinated Water"] = (_, _) => ExcelTchiboMapper.MapCFtoCl(),
-            ["DS to Washing"] = (_, m) => ExcelTchiboMapper.MapDStoWashing(m),
-            ["Seam Slippage"] = (_, m) => ExcelTchiboMapper.MapSeamSlippage(m)
+            ["Appearance"] = (n, m,l) => ExcelTchiboMapper.MapAppearance(),
+            ["Weight"] = (n, m, l) => ExcelTchiboMapper.MapWeight(),
+            ["Yarn Count"] = (n, m, l) => ExcelTchiboMapper.MapYarnCount(),
+            ["Pilling Resistance"] = (n, m, l) => ExcelTchiboMapper.MapPilling(l),
+            ["Zipper Strength"] = (n, m, l) => ExcelTchiboMapper.MapZipperStrength(),
+            ["Resistance to Unsnapping of Snap Fasteners"] = (n, m, l) => ExcelTchiboMapper.MapUnsnapping(),
+            ["Water Resistance-Hydrostatic Pressure"] = (n, m, l) => ExcelTchiboMapper.MapHydrostaticPressing(),
+            ["Water Repellency-Spray Test"] = (n, m, l) => ExcelTchiboMapper.MapRepellency(m),
+            ["Extension and Recovery"] = (n, m, l) => ExcelTchiboMapper.MapExtensionAndRecovery(),
+            ["Air Permeability"] = (n, m, l) => ExcelTchiboMapper.MapAirPermeability(),
+            ["Absorbency"] = (n, m, l) => ExcelTchiboMapper.MapAbsorbency(),
+            ["Attachment Strength"] = (n, m, l) => ExcelTchiboMapper.MapAttachmentStrength(),
+            ["Density"] = (n, m, l) => ExcelTchiboMapper.MapDensity(),
+            ["CF to Washing"] = (n, m, l) => ExcelTchiboMapper.MapCFtoWashing(),
+            ["CF to Rubbing"] = (n, m, l) => ExcelTchiboMapper.MapCFtoRubbing(),
+            ["CF to Light"] = (n, m, l) => ExcelTchiboMapper.MapCFtoLight(),
+            ["CF to Sea Water"] = (n, m, l) => ExcelTchiboMapper.MapCFtoSeaWater(),
+            ["CF to Perspiration"] = (n, m, l) => ExcelTchiboMapper.MapCFtoPerspiration(),
+            ["CF to Water"] = (n, m, l) => ExcelTchiboMapper.MapCFtoWater(),
+            ["CF to Saliva"] = (n, m, l) => ExcelTchiboMapper.MapCFtoSalivaSweat(),
+            ["CF to Sweat"] = (n, m, l) => ExcelTchiboMapper.MapCFtoSalivaSweat(),
+            ["CF to Sublimation in Storage"] = (n, m, l) => ExcelTchiboMapper.MapCFtoSublimation(),
+            ["CF to Hot Pressing"] = (n, m, l) => ExcelTchiboMapper.MapCFtoHotPressing(),
+            ["CF to Chlorinated Water"] = (n, m, l ) => ExcelTchiboMapper.MapCFtoCl(),
+            ["DS to Washing"] = (n, m, l) => ExcelTchiboMapper.MapDStoWashing(m),
+            ["Seam Slippage"] = (n, m, l) => ExcelTchiboMapper.MapSeamSlippage(m)
         };
         //取洗涤遍数映射地址的函数
         private static readonly Dictionary<string, Func<string, string, string[]>> AfterWashCellMapper = new()

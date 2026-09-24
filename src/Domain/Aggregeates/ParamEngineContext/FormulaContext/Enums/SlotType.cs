@@ -20,6 +20,11 @@
         /// <summary>
         /// 复合
         /// </summary>
-        Composite
+        Composite,
+
+        /// <summary>
+        /// 赋值
+        /// </summary>
+        Assign
     }
 }

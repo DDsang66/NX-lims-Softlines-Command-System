@@ -139,10 +139,10 @@
                 "D10"
             };
         }
-        public static string[] MapPilling(string sampleDescription)
+        public static string[] MapPilling(string standard)
         {
             List<string> stringMap = null;
-            if (sampleDescription.Contains("Knit"))
+            if (standard.Contains("12945-1"))
             {
                 stringMap = new List<string> { "A8", "A9","A10" };
             }

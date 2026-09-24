@@ -72,6 +72,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
             var equals = new List<(string field, object? value)>();
             var comparisons = new List<(string fieldPath, ComparisonOperator op, object? value)>();
             var ins = new List<(string field, IEnumerable<object?> values)>();
+            var assignments = new List<(string sourceFieldPath, bool isRequired, object? defaultValue)>();
             var composites = new List<CompositeCondition>();
 
             // ==================== 步骤5：根据语法类型构建条件 ====================
@@ -88,7 +89,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
                     throw new Exception($"范式要求 {parsedSlots.Count} 个槽位，实际有 {slotValues.Count} 个");
 
                 // 按槽解析每个槽内的值并按字段名填充 Equal 条目
-                BuildConditionsFromSlots(slotValues, parsedSlots, equals, comparisons, ins, composites);
+                BuildConditionsFromSlots(slotValues, parsedSlots, equals, comparisons, ins, composites, assignments);
             }
             else
             {
@@ -98,39 +99,89 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
                 equals = BuildEqualConditions(slotValues, formula.ConditionFields);
             }
 
-            // ==================== 步骤6：组装 Pattern JSON ====================
-            // 使用序列化器将条件集合转换为 JSON 格式
-            var patternJson = _serializer.BuildPattern(
-                equals: equals,
-                comparisons: comparisons,
-                ins: ins.Any() ? ins : null,
-                composites: composites.Any() ? composites : null);
+            //// ==================== 步骤6：组装 Pattern JSON ====================
+            //// 使用序列化器将条件集合转换为 JSON 格式
+            //var patternJson = _serializer.BuildPattern(
+            //    equals: equals,
+            //    comparisons: comparisons,
+            //    ins: ins.Any() ? ins : null,
+            //    composites: composites.Any() ? composites : null);
+
+            //// ==================== 步骤7：构建结果 ====================
+            //// 将右侧 Token 拼接为结果值
+            //string resultValue;
+
+            //var firstRightToken = rightTokens.FirstOrDefault();
+            //var lastRightToken = rightTokens.LastOrDefault();
+
+            //if (firstRightToken != null && lastRightToken != null)
+            //{
+            //    // 【核心修复】：直接从原始文本中截取右侧结果
+            //    // 这样无论词法分析器怎么丢弃空格，都不会影响最终拼接的格式
+            //    int startIndex = firstRightToken.Position;
+            //    int endIndex = lastRightToken.Position + lastRightToken.Value.Length;
+
+            //    resultValue = rawText.Substring(startIndex, endIndex - startIndex).Trim();
+            //}
+            //else
+            //{
+            //    resultValue = string.Empty; // 右侧无内容
+            //}
+
+            //return new ParsedRule
+            //{
+            //    ConditionPatternJson = patternJson,
+            //    ResultValue = resultValue,
+            //    SourceText = string.Join("", tokens.Select(t => t.Value))
+            //};
+            // ==================== 步骤6：组装 ConditionPattern（强类型） ====================
+            var pattern = new ConditionPattern();
+
+            foreach (var (field, value) in equals)
+            {
+                pattern.AddEqual(field, value);
+            }
+
+            foreach (var (fieldPath, op, value) in comparisons)
+            {
+                pattern.AddComparison(fieldPath, op, value);
+            }
+
+            foreach (var (field, values) in ins)
+            {
+                pattern.AddIn(field, values);
+            }
+
+            foreach (var composite in composites)
+            {
+                pattern.AddComposite(composite);
+            }
+            foreach (var (sourceFieldPath, isRequired, defaultValue) in assignments)
+            {
+                pattern.AddAssign(sourceFieldPath, isRequired, defaultValue);
+            }
 
             // ==================== 步骤7：构建结果 ====================
-            // 将右侧 Token 拼接为结果值
             string resultValue;
-
             var firstRightToken = rightTokens.FirstOrDefault();
             var lastRightToken = rightTokens.LastOrDefault();
 
             if (firstRightToken != null && lastRightToken != null)
             {
-                // 【核心修复】：直接从原始文本中截取右侧结果
-                // 这样无论词法分析器怎么丢弃空格，都不会影响最终拼接的格式
                 int startIndex = firstRightToken.Position;
                 int endIndex = lastRightToken.Position + lastRightToken.Value.Length;
-
                 resultValue = rawText.Substring(startIndex, endIndex - startIndex).Trim();
             }
             else
             {
-                resultValue = string.Empty; // 右侧无内容
+                resultValue = string.Empty;
             }
 
+            // ==================== 步骤8：返回强类型结果 ====================
             return new ParsedRule
             {
-                ConditionPatternJson = patternJson,
-                ResultValue = resultValue,
+                Pattern = pattern,
+                Result = new ParamValue(resultValue),
                 SourceText = string.Join("", tokens.Select(t => t.Value))
             };
         }
@@ -281,7 +332,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
             List<(string field, object? value)> equals,
             List<(string fieldPath, ComparisonOperator op, object? value)> comparisons,
             List<(string field, IEnumerable<object?> values)> ins,
-            List<CompositeCondition> composites)
+            List<CompositeCondition> composites,
+            List<(string sourceFieldPath, bool isRequired, object? defaultValue)> assignments)
         {
             for (int i = 0; i < parsedSlots.Count; i++)
             {
@@ -365,6 +417,31 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
                                                 .ToList<object?>();
                                 ins.Add((fieldNames[j], values));
                             }
+                        }
+                        break;
+
+                    case SlotType.Assign:
+                        // ---------- Assign 槽：赋值条件 ----------
+                        // 每个字段对应一个"从条件池取值"的赋值
+                        // 语法：Assign{BuyerBallastValue} → Ballast
+                        //       Assign{Temperature,Weight} → SomeParam
+                        //
+                        // 注意：
+                        // - Assign 槽不参与"判断"，只参与"取值"
+                        // - 如果模板是 "Equal{...} + Assign{...}"，Equal 作为门禁，Assign 作为取值
+                        for (int j = 0; j < fieldNames.Count; j++)
+                        {
+                            var raw = JoinAndNormalizeTokenGroup(tokenGroups[j]);
+
+                            // Assign 槽的字段名就是源字段路径
+                            // 例如 Assign{BuyerBallastValue} 中，fieldNames[j] = "BuyerBallastValue"
+                            var sourceFieldPath = fieldNames[j];
+
+                            // 可选：支持 "sourceFieldPath" 或 "sourceFieldPath -> targetName" 形式
+                            // 如果用户写了 "BuyerBallastValue"，直接用它
+                            // 如果用户写了 "BuyerBallastValue as Ballast"，则解析出目标名
+                            // 这里先支持最简单的形式：字段名 = 源字段路径
+                            assignments.Add((sourceFieldPath, isRequired: true, defaultValue: null));
                         }
                         break;
 

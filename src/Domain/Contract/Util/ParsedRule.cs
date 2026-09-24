@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
+using System.Text.Json.Nodes;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Util
 {
@@ -10,12 +11,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Util
         /// <summary>
         /// 条件模式 JSON（符合 ConditionPattern 格式）
         /// </summary>
-        public JsonObject ConditionPatternJson { get; set; }
+        public ConditionPattern Pattern { get; set; } =new ConditionPattern();
 
         /// <summary>
         /// 推导符右边的结果值
         /// </summary>
-        public string ResultValue { get; set; } = string.Empty;
+        public ParamValue? Result { get; set; } = new ParamValue();
 
         /// <summary>
         /// 原始规则文本（用于追溯）

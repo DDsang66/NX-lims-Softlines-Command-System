@@ -51,6 +51,11 @@
         public List<CompositeConditionDto> CompositeMatches { get; set; } = new();
 
         /// <summary>
+        /// 赋值匹配条件（可更新）
+        /// </summary>
+        public List<AssignMatchDto>? AssignMatches { get; set; }
+
+        /// <summary>
         /// 结果值（可更新）
         /// </summary>
         public object? ResultValue { get; set; }

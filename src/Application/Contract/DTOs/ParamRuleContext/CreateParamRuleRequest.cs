@@ -46,6 +46,7 @@
         public List<ComparisonMatchDto> ComparisonMatches { get; set; } = new();
         public List<InMatchDto> InMatches { get; set; } = new();
         public List<CompositeConditionDto> CompositeMatches { get; set; } = new();
+        public List<AssignMatchDto>? AssignMatches { get; set; }  // 新增
     }
 
     /// <summary>
@@ -85,5 +86,27 @@
         public List<string> FieldNames { get; set; } = new();
         public List<ComparisonMatchDto> SubConditions { get; set; } = new();
         public List<CompositeConditionDto> Children { get; set; } = new();
+    }
+
+
+    /// <summary>
+    /// 赋值匹配 DTO（新增）
+    /// </summary>
+    public class AssignMatchDto
+    {
+        /// <summary>
+        /// 源字段路径（从条件池中取值）
+        /// </summary>
+        public string SourceFieldPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// 是否必填
+        /// </summary>
+        public bool IsRequired { get; set; } = true;
+
+        /// <summary>
+        /// 默认值（IsRequired=false 且取不到值时使用）
+        /// </summary>
+        public object? DefaultValue { get; set; }
     }
 }

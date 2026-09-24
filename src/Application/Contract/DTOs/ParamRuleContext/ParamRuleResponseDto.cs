@@ -61,6 +61,11 @@
         public List<CompositeConditionDto> CompositeMatches { get; set; } = new();
 
         /// <summary>
+        /// 赋值匹配条件
+        /// </summary>
+        public List<AssignMatchDto>? AssignMatches { get; set; }
+
+        /// <summary>
         /// 结果值
         /// </summary>
         public object? ResultValue { get; set; }

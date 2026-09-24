@@ -200,56 +200,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.CheckListCont
         /// <returns></returns>
         public async Task<Result> CalculateParamAsync(Guid id, CancellationToken ct) 
         {
-            /*  abandoned
-            //var checkListId = new CheckListId(id);
-
-            //var checkList = await _checkListRepository.GetByIdAsync(checkListId, ct);
-
-            //var checkListItems = checkList.GetTestItem(); // 通过聚合根获取内部实体
-            //if (checkListItems == null)
-            //    return Result.Fail("未能找到测试项目");
-
-            //// 2. 获取与该检查项关联的所有条件池（假设已经分组完毕）
-            //var existingPools = await _conditionPoolRepository.GetByCheckListIdAsync(checkListId, ct);
-
-            ////对existingPools中的FiberCondition进行预拓展，如果没有Fiber Condition的Key可以直接跳过
-
-            //// 3. 为每个测试项生成参数
-            //foreach (var item in checkListItems)
-            //{
-            //    // 创建新的参数字典
-            //    var TestPointParams = new Dictionary<string, ParamSet?>();
-
-            //    // 遍历每个测点
-            //    foreach (var testPoint in item.Samples)
-            //    {
-            //        // 找到该测点对应的条件池
-            //        var pool = existingPools.FirstOrDefault(p => p.TestPoints.Contains(testPoint));
-
-            //        // 使用单个条件池生成参数
-            //        var result = await _paramGenerationUseCaseService.GenerateForCheckListItemAsync( item, pool, ct);
-
-            //        if (!result.IsSuccess)
-            //            return Result.Fail($"生成测试项 {item.Id} 的测点 {testPoint} 参数时发生错误: {result.Error}");
-                   
-            //        // 将生成的参数添加到新字典中
-            //        TestPointParams.Add(testPoint, result.Value);
-            //    }
-
-            //    // 更新测试项的参数
-            //    item.TestPointParams = TestPointParams;
-            //}
-
-            //// 4. 保存更改
-            //checkList.Update();
-
-            //await _checkListRepository.UpdateAsync(checkList, ct);
-
-            //await _unitOfWork.SaveChangesAsync(ct);
-
-            //return Result.Ok();
-
-            */
             var checkListId = new CheckListId(id);
 
             // 1. 获取聚合根

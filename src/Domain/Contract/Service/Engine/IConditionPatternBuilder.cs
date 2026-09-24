@@ -7,12 +7,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Service.Engine
     /// <summary>
     /// 用于构建条件模式的接口
     /// </summary>
-    public interface IConditionPatternBuilder:IScopedDependency
+    public interface IConditionPatternBuilder: ITransientDependency
     {
         IConditionPatternBuilder AddEqual(string field, object? value);
         IConditionPatternBuilder AddComparison(string fieldPath, ComparisonOperator op, object? value);
         IConditionPatternBuilder AddIn(string field, IEnumerable<object?> values);
         IConditionPatternBuilder AddComposite(CompositeCondition composite);
+        IConditionPatternBuilder AddAssign(string sourceFieldPath, bool isRequired, object? defaultValue);
         ConditionPattern Build();
     }
 }

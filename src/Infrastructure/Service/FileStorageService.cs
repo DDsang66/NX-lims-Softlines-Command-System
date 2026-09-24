@@ -23,7 +23,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
         /// <returns></returns>
         public string CopyTemplate(string templateRelativePath, string outputDir, string fileName)
         {
-            string sourcePath = Path.Combine(_env.WebRootPath, templateRelativePath);
+            var relative = templateRelativePath.TrimStart('/', '\\');
+
+            string sourcePath = Path.Combine(_env.WebRootPath, relative);
 
             string targetDir = Path.Combine(_env.WebRootPath, outputDir);
 

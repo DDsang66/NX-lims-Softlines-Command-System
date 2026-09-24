@@ -4,6 +4,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
+using System.Text.Json;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Services
 {
@@ -43,7 +44,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
 
             // 3. 内存完整匹配
             var matched = candidates
-                .Where(t => t.Status == Status.Active)
+                //.Where(t => t.Status == Status.Active)
                 .Where(t => t.TemplateIndex != null)
                 .Where(t => MatchesAll(t.TemplateIndex, conditions))
                 .ToList();
@@ -97,19 +98,37 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
         /// </summary>
         private static bool AreEqual(object? a, object? b)
         {
+            // ★ 先归一化 JsonElement
+            a = NormalizeJsonElement(a);
+            b = NormalizeJsonElement(b);
+
             if (a == null && b == null) return true;
             if (a == null || b == null) return false;
 
-            // 字符串比较忽略大小写和首尾空格
             if (a is string sa && b is string sb)
                 return string.Equals(sa.Trim(), sb.Trim(), StringComparison.OrdinalIgnoreCase);
 
-            // 数字比较
             if (IsNumeric(a) && IsNumeric(b))
                 return Convert.ToDecimal(a) == Convert.ToDecimal(b);
 
-            // 其他类型直接比较
             return a.Equals(b);
+        }
+
+        private static object? NormalizeJsonElement(object? value)
+        {
+            if (value is JsonElement je)
+            {
+                return je.ValueKind switch
+                {
+                    JsonValueKind.String => je.GetString(),
+                    JsonValueKind.Number => je.TryGetInt64(out var l) ? l : je.GetDecimal(),
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Null => null,
+                    _ => je.GetRawText()
+                };
+            }
+            return value;
         }
 
         private static bool IsNumeric(object value)

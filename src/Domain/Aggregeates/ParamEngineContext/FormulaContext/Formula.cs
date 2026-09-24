@@ -3,6 +3,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.BuyerContext.Value
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ConditionPoolContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.FormulaContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
@@ -293,6 +294,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
         public void Deactivate() => IsActive = false;
 
         /// <summary>
+        /// 创建公式解析上下文，用于解析公式表达式并生成计算引擎所需的计算上下文。
+        /// </summary>
+        /// <returns></returns>
+        public FormulaParseContext CreateParseContext()
+        {
+            return new FormulaParseContext(
+                ExpressionTemplate,
+                ConditionFields.AsReadOnly(),
+                Name);
+        }
+
+        /// <summary>
         /// 激活公式，使其参与计算。
         /// 通常在创建或修改公式后需要调用此方法来启用公式的计算功能。
         /// </summary>
@@ -359,7 +372,62 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             return Result.Ok();
         }
 
+        /// <summary>
+        /// 校验 Parser 解析出的 ConditionPattern 是否符合本公式的约束
+        /// 
+        /// 校验内容：
+        /// 1. Pattern 中出现的所有字段，必须属于 ConditionFields
+        /// 2. Pattern 中不能出现 Formula 未声明的字段
+        /// 
+        /// 与 ValidateExpressionTokens 的区别：
+        /// - ValidateExpressionTokens：校验 Token 列表（模板层面）
+        /// - ValidateParseResult：校验 ConditionPattern（解析结果层面）
+        /// </summary>
+        public Result ValidateParseResult(ConditionPattern pattern)
+        {
+            if (pattern == null)
+                return Result.Fail("ConditionPattern is null");
 
+            // 1. 收集 Pattern 中实际使用的所有字段
+            var usedFields = pattern.RequiredConditions()
+                .Where(f => !string.IsNullOrWhiteSpace(f))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            // 2. 检查是否有字段不在 ConditionFields 中
+            var declaredFields = ConditionFields
+                .Where(f => !string.IsNullOrWhiteSpace(f))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var unknownFields = usedFields
+                .Where(f => !declaredFields.Contains(f))
+                .ToList();
+
+            if (unknownFields.Any())
+            {
+                return Result.Fail(
+                    $"Pattern 包含公式 '{Name}' 未声明的字段",
+                    details: unknownFields);
+            }
+
+            // 3. 可选：检查是否所有 ConditionFields 都被使用（取决于业务是否要求"必须全部使用"）
+            //    如果 Formula 声明了 3 个字段，但 Pattern 只用了 1 个，
+            //    是否算错？取决于你的业务语义。
+            //    如果需要"必须全部使用"，加上这段：
+            /*
+            var missingFields = declaredFields
+                .Where(f => !usedFields.Contains(f))
+                .ToList();
+
+            if (missingFields.Any())
+            {
+                return Result.Fail(
+                    $"Pattern 未使用公式 '{Name}' 声明的所有字段",
+                    details: missingFields);
+            }
+            */
+
+            return Result.Ok();
+        }
 
         /// <summary>
         /// 校验表达式模板语法（支持两种左侧语法）：

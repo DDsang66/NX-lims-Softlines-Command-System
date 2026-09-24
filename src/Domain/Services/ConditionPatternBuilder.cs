@@ -73,6 +73,21 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
             return this;
         }
 
+        /// <summary>
+        /// 添加赋值规则
+        /// </summary>
+        /// <param name="sourceFieldPath"></param>
+        /// <param name="isRequired"></param>
+        /// <param name="defaultValue"></param>
+        public IConditionPatternBuilder AddAssign(string sourceFieldPath, bool isRequired, object? defaultValue)
+        {
+            if (string.IsNullOrWhiteSpace(sourceFieldPath))
+                throw new ArgumentException(nameof(sourceFieldPath));
+
+            _pattern.AddAssign(sourceFieldPath, isRequired, defaultValue);
+            return this;
+        }
+
         public ConditionPattern Build()
         {
             // 验证构建结果
