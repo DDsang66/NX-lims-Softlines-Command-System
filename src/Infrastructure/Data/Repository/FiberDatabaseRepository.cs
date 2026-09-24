@@ -89,20 +89,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .Where(f => f.IsActive == null || f.IsActive == true)
                 .ToListAsync();
 
-            var s = standard?.Trim() ?? string.Empty;
-            Func<FiberDatabase, decimal?> selector = s switch
-            {
-                var x when x.Contains("Korea")   => f => f.MoistureRegainKor,
-                var x when x.StartsWith("AATCC") => f => f.MoistureRegainAatcc,
-                var x when x.StartsWith("CAN")    => f => f.MoistureRegainCan,
-                var x when x.StartsWith("FZ/T")   => f => f.MoistureRegainGb,
-                var x when x.StartsWith("CNS")    => f => f.MoistureRegainCns,
-                var x when x.StartsWith("JIS")    => f => f.MoistureRegainJis,
-                _ => f => f.MoistureRegainIso
-            };
+            // 候选列链: 首选列取不到时按序回退, 而不是把这只纤维整行丢掉。
+            // 顺序与理由见 MoistureRegainResolver —— 关键是 AATCC 在 Korea 之前。
+            var chain = MoistureRegainResolver.Resolve(standard);
 
             return fibers
-                .Select(f => new { f.FiberNameEn, mr = selector(f) })
+                .Select(f => new { f.FiberNameEn, mr = MoistureRegainResolver.Pick(f, chain) })
                 .Where(f => f.mr != null)
                 .GroupBy(f => f.FiberNameEn)
                 .ToDictionary(g => g.Key, g => g.First().mr ?? 0m);

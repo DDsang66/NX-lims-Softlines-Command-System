@@ -13,6 +13,44 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public string ReportNo { get; private set; } = string.Empty;//报告流水号
         public string Buyer { get; private set; } = string.Empty;//买家
         public List<string> Methods { get; private set; } = new();
+
+        /// <summary>
+        /// **只算一份**时用的那个标准 = <see cref="Methods"/> 的第一个。
+        ///
+        /// **它的含义比"本次采用的标准"窄**：多标准记录由 <see cref="CalculatePerStandard"/> 按
+        /// <see cref="StandardsToRender"/> 逐份计算。这个属性只服务"只出一份"的场合 ——
+        /// <see cref="Calculate"/> 的默认路径、<see cref="Result"/>（= 第 1 份），
+        /// 以及 CalculateAsync / CalculateByReportAsync 两条重算路径。
+        ///
+        /// 仍然**只在这一处推导**：Methods.FirstOrDefault() ?? string.Empty 全类仅此一份。
+        /// 服务层不用它去查回潮率列 —— 回潮率是**按各自的标准**逐个查的。
+        /// </summary>
+        public string SelectedStandard => Methods.FirstOrDefault() ?? string.Empty;
+
+        /// <summary>Methods 为空时的退化形态，复用同一个实例，避免每次访问都分配。</summary>
+        private static readonly IReadOnlyList<string> EmptyStandard = new[] { string.Empty };
+
+        /// <summary>
+        /// 本次要出几份、各按哪个标准。
+        ///
+        /// <see cref="Methods"/> 非空时就是它本身 —— **顺序 = 前端勾选顺序，刻意保留**
+        /// （勾选顺序是分析员的显式选择，不做规范化）。
+        ///
+        /// 为空时**退化成单个空标准**，而不是空列表：今天"method 为空的记录仍会去查一次 Iso 回潮率列"
+        /// 这个行为要保住，空列表会把整条路径短路掉，那是回归。
+        /// </summary>
+        public IReadOnlyList<string> StandardsToRender =>
+            Methods.Count > 0 ? Methods : EmptyStandard;
+
+        /// <summary>
+        /// 每个标准各算一份的结果，顺序与 <see cref="StandardsToRender"/> 一致。
+        ///
+        /// 只由 <see cref="CalculatePerStandard"/> 填充。<see cref="Calculate"/>（单份路径）
+        /// **不碰它** —— 单标准记录走的仍是原来那条只算一份的代码路径。
+        /// </summary>
+        public IReadOnlyList<AnalysisResult> StandardResults { get; private set; }
+            = Array.Empty<AnalysisResult>();
+
         public IReadOnlyList<FiberComponent> Components => _components.AsReadOnly();
         public RemarkLabel RemarkGroup { get; private set; } = new();
         public AnalysisType Type { get; private set; } // 枚举：单组分/多组分
@@ -61,9 +99,56 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /*------------------------------------------计算逻辑------------------------------------------------------------------------------*/
 
         /// <summary>
-        /// 计算逻辑
+        /// 只算一份（= <see cref="SelectedStandard"/> 那一份）。
         /// </summary>
+        /// <remarks>
+        /// 正文抽到 <see cref="CalculateForStandard"/> 之后，这里只剩一行委托。
+        /// **签名与行为逐字不变** —— 服务层两条重算路径与既有契约测试原样通过。
+        /// </remarks>
         public AnalysisResult Calculate(IReadOnlyDictionary<string, decimal>? moistureRegainMap = null)
+        {
+            Result = CalculateForStandard(SelectedStandard, moistureRegainMap);
+            return Result;
+        }
+
+        /// <summary>
+        /// 逐标准各算一份。顺序 = <see cref="StandardsToRender"/>，每个标准取**它自己的**回潮率 map。
+        /// </summary>
+        /// <param name="mrByStandard">标准串 → 该标准的回潮率 map。</param>
+        /// <remarks>
+        /// 结果写进 <see cref="StandardResults"/>，<see cref="Result"/> 取第 1 份 ——
+        /// 两条重算路径读的就是 <see cref="Result"/>，所以它们**只回第 1 个标准**
+        /// （这两条路径不产 docx、没有可合并的产物，故不去补第 2..N 份）。
+        /// **不做去重**：同一记录里两个完全相同的标准串会各出一份。前端 el-select multiple
+        /// 不允许选重复值，生产走不到，不为它发明规则。
+        /// 某标准在 <paramref name="mrByStandard"/> 里查不到时按**空 map** 算（回潮率 0），
+        /// 与 <see cref="Calculate"/> 的既有默认值同口径。服务层是按 <see cref="StandardsToRender"/>
+        /// 逐个查的，正常不会缺项。
+        /// </remarks>
+        public IReadOnlyList<AnalysisResult> CalculatePerStandard(
+            IReadOnlyDictionary<string, IReadOnlyDictionary<string, decimal>> mrByStandard)
+        {
+            var list = StandardsToRender
+                .Select(std => CalculateForStandard(
+                    std,
+                    mrByStandard != null && mrByStandard.TryGetValue(std, out var m) ? m : null))
+                .ToList();
+
+            StandardResults = list;
+            Result = list[0];
+            return list;
+        }
+
+        /// <summary>
+        /// 单个标准的计算正文 —— 从 <see cref="Calculate"/> 原样抽出的那一段。
+        /// </summary>
+        /// <remarks>
+        /// **与抽出前的唯一差别**：方法链那一处把 <see cref="SelectedStandard"/> 换成了入参
+        /// <paramref name="standard"/>，且不再写 <see cref="Result"/>（由调用方决定写不写）。其余逐字未动。
+        /// </remarks>
+        private AnalysisResult CalculateForStandard(
+            string standard,
+            IReadOnlyDictionary<string, decimal>? moistureRegainMap)
         {
             _moistureRegainMap = moistureRegainMap ?? new Dictionary<string, decimal>();
 
@@ -109,21 +194,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             result = result.WithEquipment(equipment);
 
             // 3.6) 自动拼接 Methods（对应 Excel L4 公式）
-            var selectedStandard = Methods.FirstOrDefault() ?? string.Empty;
-            var methodString = BuildMethodString(selectedStandard, orderedFiberNames);
+            // 配对另走**槽位通道**（第三条通道），GetOrderedFiberNames() 一字不动 —— 它继续喂
+            // 上面的设备选型、上面的显微镜追加、以及规则表里的三处 `*cellulosic fibre` 字面量判定。
+            // 三条通道职责不同，不合并：扁平列表管"报告上印什么"，槽位管"拿哪些名字去查表"。
+            var methodString = FiberStandardChainBuilder.BuildMethodString(
+                standard, orderedFiberNames, GetOrderedFiberSlots());
             result = result.WithMethods(methodString);
 
             // 3.7) 燃烧法分类（对应 ISO 11827 Table A.1）
             result = result.WithBurningTest(orderedFiberNames);
 
             // 4) 计算标签/备注
-            var calculatedRemarkResult = GenerateRecommendedLabel(RemarkGroup, calculatedFiberResult);
+            var calculatedRemarkResult = GenerateRecommendedLabel(RemarkGroup, calculatedFiberResult, standard);
 
             result = result.WithRemarkLabelResult(calculatedRemarkResult);
 
-            // 5) 保存聚合根状态
-            Result = result;
-
+            // 5) 不再写 Result —— 由调用方决定（Calculate 写、CalculatePerStandard 取第 1 份写）。
             return result;
         }
 
@@ -415,10 +501,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </summary>
         /// <param name="remarkLabel"></param>
         /// <param name="calculatedFiberResult"></param>
+        /// <param name="standard">
+        /// 本次这一份用的标准。**必须是入参、不能读 <see cref="Methods"/>** ——
+        /// 多标准记录里两份共用同一个 <see cref="Methods"/> 列表，读它会让第 2 份沿用第 1 份的口径。
+        /// </param>
         /// <returns></returns>
-        private CalculatedRemarkResult GenerateRecommendedLabel(RemarkLabel remarkLabel, List<CalculatedFiberResult> calculatedFiberResult)
+        private CalculatedRemarkResult GenerateRecommendedLabel(
+            RemarkLabel remarkLabel, List<CalculatedFiberResult> calculatedFiberResult, string standard)
         {
-            var isAatcc = Methods.FirstOrDefault()?.StartsWith("AATCC", StringComparison.OrdinalIgnoreCase) == true;
+            // AATCC 美标：原始 Rate < 5% 且不在豁免名单里的纤维 → 合并为 "other fiber(s)"
+            // （规则与豁免见 CalculateFormattedResults 与 IsNamedBelowFivePercent）。
+            // 必须按**这一份自己的**标准判：读 Methods[0] 的话，单标准下与入参同值、行为不变，
+            // 多标准下却会让 ISO 段拿到 AATCC 的合并口径（或反过来）。
+            var isAatcc = standard?.StartsWith("AATCC", StringComparison.OrdinalIgnoreCase) == true;
 
             var result = new CalculatedRemarkResult {
                 RecommendedLabel = new List<string>(remarkLabel.RecommendedLabel),
@@ -445,6 +540,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             return result;
         }
 
+        /// <summary>亚 5% 聚合行的单数写法。</summary>
+        private const string OtherFiber = "other fiber";
+
+        /// <summary>亚 5% 聚合行的复数写法（聚合了 2 项及以上时用，见 <see cref="CalculateFormattedResults"/> 第 1.5 步）。</summary>
+        private const string OtherFibers = "other fibers";
+
         /// <summary>
         /// 通用计算方法：提取成分、四舍五入、调整最大项、格式化
         /// </summary>
@@ -465,24 +566,32 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 1. 提取原始成分数据
             var rawComponents = ExtractComponents(calculatedFiberResult);
 
-            // 1.5 AATCC 美标：原始 Rate < 5% 且非弹性纤维 → 合并为 "other fiber"
+            // 1.5 AATCC 美标（16 CFR § 303.3(a)）：原始 Rate < 5% 的纤维**不得写通用名**，一律并成一行。
+            //     两类豁免见 IsNamedBelowFivePercent。
             if (isAatcc)
             {
                 var normal = new List<(string Name, decimal Rate)>();
                 decimal otherSum = 0m;
+                int otherCount = 0;
 
                 foreach (var c in rawComponents)
                 {
-                    bool isElastic = c.Name.Equals("Spandex", StringComparison.OrdinalIgnoreCase)
-                                  || c.Name.Equals("Elastane", StringComparison.OrdinalIgnoreCase);
-                    if (c.Rate < 5m && !isElastic)
+                    if (c.Rate < 5m && !IsNamedBelowFivePercent(c.Name))
+                    {
                         otherSum += c.Rate;
+                        otherCount++;
+                    }
                     else
+                    {
                         normal.Add(c);
+                    }
                 }
 
+                // 法规原文：只有 1 个 → "other fiber"；多个 → **聚合**为 "other fibers"。
+                // 判据用 otherCount（聚合了几项）而不是 otherSum（合计百分比）—— 单复数是"几项"的问题。
+                // 外层的 otherSum > 0 守卫沿用改动前：全是 0% 时不产生这一行。
                 if (otherSum > 0)
-                    normal.Add(("other fiber", otherSum));
+                    normal.Add((otherCount > 1 ? OtherFibers : OtherFiber, otherSum));
 
                 rawComponents = normal;
             }
@@ -533,13 +642,34 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 }
             }
 
-            // 5. 格式化输出（other fiber 始终第一，其余按 Rate 从大到小排序）
+            // 5. 格式化输出（亚 5% 的聚合行排**最后**，其余按 Rate 从大到小排序）
+            //    16 CFR § 303.16(a)(1)（羊毛制品见 § 300.3(b)）：通用名按占比由多到少排列，
+            //    "other fiber" / "other fibers" 必须出现在末尾。
             return rounded
-                .OrderBy(r => r.Name == "other fiber" ? 0 : 1)
+                .OrderBy(r => IsOtherFiberLine(r.Name) ? 1 : 0)
                 .ThenByDescending(r => r.RoundedRate)
                 .Select(r => $"{r.RoundedRate.ToString(format)}% {r.Name}")
                 .ToList();
         }
+
+        /// <summary>
+        /// 亚 5% 却**仍然点名**的两类纤维 —— 16 CFR § 303.3(a) 给了两个豁免，这里各用其一：
+        ///
+        /// · **功能性**：原文举的例子就是 4% spandex（"96 percent acetate, 4 percent spandex"）。
+        ///   代码只认这一例（<see cref="FiberTokens.IsElastane"/>），不外推。原文另一例是
+        ///   2% nylon，但"某项小比例纤维有没有明确功能"要实验室逐单判，程序替它断言不如老实合并。
+        /// · **羊毛**：§ 300.3(b)（羊毛法）—— 羊毛/回收羊毛**无论多少都得点名带百分比**。
+        ///   名单见 <see cref="FiberTokens.IsWoolFamily"/>，比"动物纤维"窄得多。
+        ///
+        /// 只管**点不点名**，不管排序 —— 排序见 <see cref="CalculateFormattedResults"/> 第 5 步。
+        /// </summary>
+        private static bool IsNamedBelowFivePercent(string name)
+            => FiberTokens.IsElastane(name) || FiberTokens.IsWoolFamily(name);
+
+        /// <summary>是不是亚 5% 的聚合行 —— § 303.16(a)(1) 要求它排在最后，两种写法都算。</summary>
+        private static bool IsOtherFiberLine(string name)
+            => name.Equals(OtherFiber, StringComparison.OrdinalIgnoreCase)
+            || name.Equals(OtherFibers, StringComparison.OrdinalIgnoreCase);
 
         /// <summary>
         /// 从计算结果中提取成分名称和原始Rate
@@ -621,6 +751,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </summary>
         private static string GetFiberAbbreviation(string fiberName)
         {
+            // 空名守卫。下面 `_ => fiberName[..1]` 对空串会抛 ArgumentOutOfRangeException，
+            // 而这个方法是**在 Calculate 内部**被调用的（溶解组缩写拼接）——一抛就是整条记录算不出来。
+            // 空名另由 adapter 的空行跳过挡在更外层，这里再兜一层：
+            // 两条防线各自独立，谁先生效都不影响另一条。
+            if (string.IsNullOrWhiteSpace(fiberName))
+                return string.Empty;
+
             // 简单实现：取首字母
             // 需要从配置或数据库查询标准缩写
             return fiberName switch
@@ -688,220 +825,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 .Distinct();
 
             return string.Join("/", dissolvedNames.Concat(splittingNames));
-        }
-
-        /*------------------------------------------Method 自动拼接------------------------------------------------------------------------*/
-
-        private const string ISO_QUALITATIVE = "ISO/TR 11827:2012";
-        private const string DIN_QUALITATIVE = "DIN CEN ISO/TR 11827:2019";
-        private const string ISO1833_1 = "ISO1833-1:2020";
-        private const string ISO1833_2 = "ISO1833-2:2020";
-        private const string ISO1833_3 = "ISO1833-3:2020";
-        private const string ISO1833_4 = "ISO1833-4:2023";
-        private const string ISO1833_6 = "ISO1833-6:2018";
-        private const string ISO1833_7 = "ISO1833-7:2017";
-        private const string ISO1833_11 = "ISO1833-11:2017";
-        private const string ISO1833_12 = "ISO1833-12:2020";
-        private const string ISO1833_18 = "ISO1833-18:2020";
-        private const string ISO1833_22 = "ISO1833-22:2020";
-        private const string ISO1833_20 = "ISO1833-20:2020";
-        // GB/T 2910.x 子标准常量（对应 fdb B 列）
-        private const string GB2910_1 = "GB/T 2910.1–2009";
-        private const string GB2910_2 = "GB/T 2910.2–2009";
-        private const string GB2910_3 = "GB/T 2910.3–2009";
-        private const string GB2910_4 = "GB/T 2910.4–2022";
-        private const string GB2910_6 = "GB/T 2910.6–2009";
-        private const string GB2910_7 = "GB/T 2910.7–2009";
-        private const string GB2910_11 = "GB/T 2910.11–2024";
-        private const string GB2910_12 = "GB/T 2910.12–2023";
-        private const string GB2910_18 = "GB/T 2910.18–2009";
-        private const string GB2910_22 = "GB/T 2910.22–2009";
-        private const string GB2910_24 = "GB/T 2910.24–2009";
-        private const string FZ01026 = "FZ/T 01026–2017";
-
-        private static readonly HashSet<string> DIN1833_D5x = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "ISO1833-1:2020", "ISO1833-2:2020", "ISO1833-3:2020", "ISO1833-4:2023",
-            "ISO1833-6:2018", "ISO1833-7:2017", "ISO1833-11:2017", "ISO1833-12:2020",
-            "ISO1833-18:2020", "ISO1833-22:2020", "ISO1833-20:2020"
-        };
-
-        /// <summary>Excel L4+L6: 根据标准体系和成分对自动拼接方法标准链</summary>
-        private static string BuildMethodString(string standard, List<string> fibers)
-        {
-            if (string.IsNullOrWhiteSpace(standard)) return string.Empty;
-
-            var isIso = standard.Equals("ISO1833", StringComparison.OrdinalIgnoreCase);
-            var isDin = standard.Equals("DIN EN ISO 1833", StringComparison.OrdinalIgnoreCase);
-            var isGb = standard.StartsWith("FZ/T", StringComparison.OrdinalIgnoreCase)
-                    || standard.StartsWith("GB/T", StringComparison.OrdinalIgnoreCase);
-
-            // 非 ISO/DIN/GB：直接返回原值
-            if (!isIso && !isDin && !isGb) return standard;
-
-            var parts = new List<string>();
-
-            // ========== ISO/DIN ==========
-            if (isIso || isDin)
-            {
-                // 3 组分 → -2
-                if (fibers.Count == 3)
-                    return isIso
-                        ? $"{ISO_QUALITATIVE} {ISO1833_2}"
-                        : $"{DIN_QUALITATIVE} DIN EN ISO 1833-2:2020";
-
-                parts.Add(isIso ? ISO_QUALITATIVE : DIN_QUALITATIVE);
-
-                var subStandards = new List<string>();
-                for (int i = 0; i < fibers.Count - 1; i++)
-                {
-                    var s = LookupSubStandard(fibers[i], fibers[i + 1]);
-                    if (!string.IsNullOrEmpty(s) && !subStandards.Contains(s))
-                        subStandards.Add(s);
-                }
-                parts.AddRange(subStandards);
-
-                if (isDin)
-                    parts = parts.Select(p => DIN1833_D5x.Contains(p) ? "DIN EN " + p : p).ToList();
-
-                if (fibers.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
-                    parts.Add("ISO 20705:2019");
-            }
-
-            // ========== GB (FZ/T / GB/T) ==========
-            if (isGb)
-            {
-                parts.Add(standard);
-
-                // T129: 有拆分列且无 elastane → GB/T 2910.1
-                var hasElastane = fibers.Any(f =>
-                    f.Equals("elastane", StringComparison.OrdinalIgnoreCase)
-                 || f.Equals("spandex", StringComparison.OrdinalIgnoreCase));
-                if (!hasElastane)
-                    parts.Add(GB2910_1);
-
-                // T130: GB 成分对 → GB 子标准
-                var gbSubs = new HashSet<string>();
-                for (int i = 0; i < fibers.Count - 1; i++)
-                {
-                    var g = LookupGbSubStandard(fibers[i], fibers[i + 1]);
-                    if (!string.IsNullOrEmpty(g))
-                        gbSubs.Add(g);
-                }
-                parts.AddRange(gbSubs);
-
-                // T131: 3组分 → GB/T 2910.2 / >3组分 → FZ/T 01026
-                if (fibers.Count == 3)
-                    parts.Add(GB2910_2);
-                else if (fibers.Count > 3)
-                    parts.Add(FZ01026);
-
-                // cellulosic
-                if (fibers.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
-                    parts.Add("FZ/T 01057.3–2007 / FZ/T 30003-2009");
-            }
-
-            return string.Join(" ", parts);
-        }
-
-        /// <summary>对相邻成分对查表返回 ISO1833 子标准编号</summary>
-        private static string LookupSubStandard(string first, string second)
-        {
-            var f = first.ToLowerInvariant();
-            var s = second.ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
-
-            // rayon/modal/lyocell/cotton/cupro + elastane → -1
-            if (IsCellulosic(f) && (s == "elastane" || s == "spandex"))
-                return ISO1833_1;
-
-            // Silk + wool/cashmere → -18
-            if (f == "silk" && (s == "wool" || s == "cashmere"))
-                return ISO1833_18;
-
-            // wool/animal + any → -4
-            if (IsAnimal(f))
-                return ISO1833_4;
-
-            // polyester + elastane（涤氨，任意顺序）→ -20（DMAc 法）
-            if ((f == "polyester" && IsElastane(s)) || (IsElastane(f) && s == "polyester"))
-                return ISO1833_20;
-
-            // elastane + any → -12（DMF 法）
-            if (IsElastane(f))
-                return ISO1833_12;
-
-            // polyamide/nylon + any → -7
-            if (f == "polyamide" || f == "nylon")
-                return ISO1833_7;
-
-            // acrylic + any → -12
-            if (f == "acrylic")
-                return ISO1833_12;
-
-            // cellulosic + cotton/cellulosic → -6
-            if (IsCellulosic(f) && IsCellulosicOrCotton(s))
-                return ISO1833_6;
-
-            // cellulosic/cotton + elastomultiester/polyester → -11
-            if (IsCellulosicOrCotton(f) && (s == "elastomultiester" || s == "polyester"))
-                return ISO1833_11;
-
-            // cellulosic + linen/ramie → -22
-            if (IsRayonType(f) && s == "linen")
-                return ISO1833_22;
-
-            // acetate alone → -3
-            if (f == "acetate")
-                return ISO1833_3;
-
-            return string.Empty;
-        }
-
-        /// <summary>GB版成分对→子标准号映射（数据库B列，Excel N129-N132）</summary>
-        private static string LookupGbSubStandard(string first, string second)
-        {
-            var f = first.ToLowerInvariant();
-            var s = second.ToLowerInvariant();
-            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
-
-            // Silk + wool → GB/T 2910.18
-            if (f == "silk" && s == "wool")
-                return GB2910_18;
-
-            // wool/Silk + 非spandex/elastane → GB/T 2910.4
-            if (IsAnimal(f) && s != "spandex" && s != "elastane")
-                return GB2910_4;
-
-            // polyamide/nylon + 非spandex/elastane → GB/T 2910.7
-            if ((f == "polyamide" || f == "nylon") && s != "spandex" && s != "elastane")
-                return GB2910_7;
-
-            // acrylic + any → GB/T 2910.12
-            if (f == "acrylic")
-                return GB2910_12;
-
-            // rayon系 + cotton → GB/T 2910.6
-            if (IsRayonType(f) && s == "cotton")
-                return GB2910_6;
-
-            // cellulosic/cotton/acetate/linen/ramie + polyester → GB/T 2910.11
-            if ((IsCellulosicOrCotton(f) || f == "acetate" || f == "linen" || f == "ramie") && s == "polyester")
-                return GB2910_11;
-
-            // rayon系 + linen/ramie → GB/T 2910.22
-            if (IsRayonType(f) && (s == "linen" || s == "ramie"))
-                return GB2910_22;
-
-            // polyester + any → GB/T 2910.24
-            if (f == "polyester")
-                return GB2910_24;
-
-            // acetate → GB/T 2910.3
-            if (f == "acetate")
-                return GB2910_3;
-
-            return string.Empty;
         }
 
         private static bool IsBicomponentFiber(string name) =>
@@ -972,11 +895,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             return results;
         }
-        private static bool IsAnimal(string f) => f == "wool" || f == "alpaca" || f == "cashmere" || f == "mohair" || f == "*animal" || f == "rabbit hair" || f == "silk";
-        private static bool IsElastane(string f) => f == "elastane" || f == "spandex";
-        private static bool IsCellulosic(string f) => f == "rayon" || f == "*re cellulose" || f == "viscose" || f == "modal" || f == "lyocell" || f == "cupro" || f == "cotton";
-        private static bool IsCellulosicOrCotton(string f) => f == "cotton" || f == "hemp" || f == "paper" || IsCellulosic(f) || f == "linen" || f == "ramie" || f == "*cellulosic fiber";
-        private static bool IsRayonType(string f) => f == "rayon" || f == "*re cellulose" || f == "viscose" || f == "modal" || f == "cupro" || f == "lyocell";
 
         /// <summary>
         /// 溶剂计算逻辑
@@ -1018,8 +936,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /*------------------------------------------设备选型逻辑--------------------------------------------------------------------------*/
 
         // 设备编码常量（对应 Excel L23/O23/R23/L24/O24）
-        private const string MICROSCOPE = "Microscope:SFL-NGB-EQP-056";
-        private const string MICROSCOPE_CELLULOSIC = "Microscope: SFL_NGB_EQP_268";
+        // 显微镜设备串统一为 `Microscope: SFL-NGB-EQP-XXX`（冒号后带空格 + 设备号用连字符）。
+        // 原先这两处格式不一致（一处无空格、一处用下划线）。纯报告外观一致性，不涉及模板匹配
+        // —— 模板与已生成 docx 里 `SFL` 均 0 命中，设备串是整串写进 Equipment 书签。
+        private const string MICROSCOPE = "Microscope: SFL-NGB-EQP-056";
+        private const string MICROSCOPE_CELLULOSIC = "Microscope: SFL-NGB-EQP-268";
         private const string OVEN = "Oven:SFL-NGB-EQP-164";
         private const string BALANCE = "Balance:SFL-NGB-EQP-061";
         private const string WATER_BATH = "Water bath:SFL-NGB-EQP-046";
@@ -1073,10 +994,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 }
             }
 
-            // P131: 任何相邻对中前者为 acrylic 且后者存在 → 水浴（回退）
+            // P131: 任何相邻对中前者为丙烯腈类且后者存在 → 水浴（回退）
+            // 这里原先是第三处裸字面量 `f == "acrylic"`，与 ISO -12 / GB .12 两处本属同一语义。
+            // 不收编的话，Modacrylic 的方法栏会印 DMF 法（该分部试剂就是 DMF、需要水浴），
+            // 设备栏却不给水浴 —— 方法栏与设备栏自相矛盾。三处一起改。
             for (int i = 1; i < fibers.Count; i++)
             {
-                if (fibers[i - 1].Equals("acrylic", StringComparison.OrdinalIgnoreCase)
+                if (FiberTokens.IsAcrylicType(fibers[i - 1])
                     && !string.IsNullOrWhiteSpace(fibers[i]))
                 {
                     return WATER_BATH;
@@ -1129,6 +1053,86 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             }
 
             return names;
+        }
+
+        /// <summary>
+        /// 槽位通道。**名字与顺序的唯一真源仍是 <see cref="GetOrderedFiberNames"/>**，
+        /// 这里只按同样的序遍历第二遍、把每个槽的 CellulosicSubFibers 取出来。
+        ///
+        /// 这样切分是为了把分歧面压到最小：名字和顺序不可能是"两份各自算的"，
+        /// 只可能是"子纤维挂错了槽"。长度对不上会**抛**（见下面的守卫），不会静默错配
+        /// —— 错配的表现是亚麻配到了别的纤维上，报告上看不出来。
+        ///
+        /// **只展开 cellulosic 子纤维，不展开 bicomponent 子纤维**（刻意，别顺手加）。
+        /// Bicomponent Fiber 在报告上是**一个成分行**、百分比在行内拆
+        /// （见 PostProcessBicomponent）：它的两个子纤维是同一根物理纤维的两个组成部分，
+        /// 不是两个并列成分。展开会让成分数从 1 变 2，凭空翻掉一批记录的三元法分支，
+        /// 而槽位通道的实测动机（亚麻 18 条）与它无关。
+        ///
+        /// 展开还有一层前提：**父槽必须是分组父槽**（见 <see cref="BuildSlot"/>）。
+        /// </summary>
+        private List<FiberSlot> GetOrderedFiberSlots()
+        {
+            var names = GetOrderedFiberNames();
+
+            // 单组分没有拆分/溶解列，也就没有子纤维
+            if (Type == AnalysisType.Single)
+                return names.Select(FiberSlot.Leaf).ToList();
+
+            var slots = new List<FiberSlot>();
+
+            // 拆分列先、溶解列后 —— 与 GetOrderedFiberNames 用**同一组 OrderBy 键**
+            foreach (var s in Components.OfType<SplittingFiberComponent>().OrderBy(s => s.SplittingOrder))
+            {
+                slots.Add(BuildSlot(s.FiberName, s.CellulosicSubFibers));
+            }
+
+            foreach (var d in Components.OfType<DissolvedFiberComponent>())
+            {
+                foreach (var unit in d.DissolutionUnits.OrderBy(u => u.DissolutionStep))
+                {
+                    slots.Add(BuildSlot(unit.FiberName, unit.CellulosicSubFibers));
+                }
+            }
+
+            // 守卫：两个序列同源同长。不等只可能是有人改了 GetOrderedFiberNames 的遍历而没同步这里
+            // —— 直接抛，不要带着错位的子纤维继续算。
+            if (slots.Count != names.Count)
+            {
+                throw new InvalidOperationException(
+                    $"槽位通道与 GetOrderedFiberNames() 长度不一致（{slots.Count} vs {names.Count}）：" +
+                    "两处遍历必须同步维护，见 GetOrderedFiberSlots 的注释。");
+            }
+
+            return slots;
+        }
+
+        /// <summary>
+        /// 子纤维名取全的槽；没有（或全是空白）就退化成叶子槽。
+        ///
+        /// 空白过滤与 <see cref="GetMultipleFiberNames"/> 同一口径（前端会提交空行）。
+        /// 这里**不做 Trim** —— 规则表的谓词自带 Trim()，多一层反而让"配对用的名字"
+        /// 与"报告上印的名字"不一致。
+        ///
+        /// **只有分组父槽才展开**（计数口径：父槽不单列、被其子纤维 1 换 N）。
+        /// 别的槽挂子纤维是录入错位 —— 实测 87.405.26.46546.01 把 cotton/linen
+        /// 挂在 Polyamide 行上，展开它等于凭空造出两个成分、把成分数抬到 3 触发三元法早退，
+        /// 挤掉真实的 ISO1833-7:2017。修法是**不展开** —— 这条记录的输出就此回到与展开前逐字同值。
+        ///
+        /// **刻意不抛异常**：那条记录今天算得出来、报告能出；抛出去会让它在生产里直接报错，
+        /// 而它的问题（子纤维挂错槽）该由前端的录入侧去修，不该在这里拦住整张单。
+        /// </summary>
+        private static FiberSlot BuildSlot(string name, List<CellulosicSubFiber> subFibers)
+        {
+            if (!FiberTokens.IsCellulosicGroupParent(name))
+                return FiberSlot.Leaf(name);
+
+            var subs = subFibers
+                .Where(x => !string.IsNullOrWhiteSpace(x.FiberName))
+                .Select(x => x.FiberName)
+                .ToList();
+
+            return subs.Count > 0 ? new FiberSlot(name, subs) : FiberSlot.Leaf(name);
         }
 
         /*------------------------------------------计算逻辑------------------------------------------------------------------------------*/

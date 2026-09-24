@@ -18,6 +18,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var redBookmarks = new HashSet<string>();
             var removeWhenEmpty = new HashSet<string>();
 
+            // 本报告里所有"随机"占位值的共同种子。取一次、下面各 random 各用各的实例 ——
+            // 实例是独立的，消费节奏也各不相同，不会互相干扰。
+            int seed = StableSeed(analysisResult.ReportNumber);
+
             // 基础字段（直接映射）
             flatData["ReportNumber"] = analysisResult.ReportNumber;
             flatData["Buyer"] = analysisResult.Buyer;
@@ -64,7 +68,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }
             // flatData["CalculatedFiberResult"] = ?;  // 复杂对象列表，需逐行展开
             var fiberData = ExpandCalculatedFiberResult(
-                analysisResult.CalculatedFiberResult, redBookmarks);
+                analysisResult.CalculatedFiberResult, redBookmarks, seed);
             foreach (var kv in fiberData)
             {
                 flatData[kv.Key] = kv.Value;
@@ -115,8 +119,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// <summary>
         /// 展开 CalculatedFiberResult 到扁平字典
         /// </summary>
+        /// <param name="seed">由报告号派生的随机种子，透传给瓶号/称量瓶两处占位值。</param>
         private Dictionary<string, string> ExpandCalculatedFiberResult(
-            List<CalculatedFiberResult> calculatedFiberResult, HashSet<string> redBookmarks)
+            List<CalculatedFiberResult> calculatedFiberResult, HashSet<string> redBookmarks, int seed)
         {
             var flatData = new Dictionary<string, string>();
 
@@ -200,7 +205,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                             int totalNeeded = yarnNames.Count + crucibleCounts.Sum();
                             if (totalNeeded > 0)
                             {
-                                var rng = new Random();
+                                // 种子由**报告号**派生，不是无种子 Random。
+                                // 无种子的话：① 同一份合并稿里两段报告各跑一次 Adapt，
+                                // 同一批物理瓶子会印出两组不同的编号（同一份文件里自相矛盾）；
+                                // ② 同一条记录重新生成一次，瓶子号也会变，重印件与归档件对不上。
+                                var rng = new Random(seed);
                                 var numbers = Enumerable.Range(1, 99)
                                     .OrderBy(_ => rng.Next())
                                     .Take(totalNeeded)
@@ -214,7 +223,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                             }
 
                             // Weighing Bottle 表
-                            var weighingData = ExpandWeighingBottleData(multi.MultiFiberRowUnits);
+                            var weighingData = ExpandWeighingBottleData(multi.MultiFiberRowUnits, seed);
                             foreach (var kv in weighingData)
                                 flatData[kv.Key] = kv.Value;
                         }
@@ -281,14 +290,46 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
+        /// 由报告号派生一个**跨进程稳定**的随机种子。
+        /// </summary>
+        /// <remarks>
+        /// 不能用 string.GetHashCode()：.NET Core 起它对每个进程随机加盐，
+        /// 同一个报告号在服务重启后会得到完全不同的瓶号 —— 那"重印件与归档件对得上"这条就没修掉。
+        /// 这里用 FNV-1a（UTF-16 按两个字节展开），纯算术、与运行时无关。
+        /// </remarks>
+        private static int StableSeed(string? text)
+        {
+            unchecked
+            {
+                const uint offsetBasis = 2166136261;
+                const uint prime = 16777619;
+
+                uint hash = offsetBasis;
+                foreach (char c in text ?? string.Empty)
+                {
+                    // 一个 char 拆两个字节喂进去 —— 光用 code unit 的高位在小字符集上几乎不动，散不开
+                    uint code = c;
+                    hash = (hash ^ (code & 0xFFu)) * prime;
+                    hash = (hash ^ (code >> 8)) * prime;
+                }
+
+                return (int)hash;
+            }
+        }
+
+        /// <summary>
         /// 展开 Weighing Bottle 表数据。
-        /// 规则：一个溶解组（相同 Section）共用一个称量瓶，A/B 两平行试验独立随机。
+        /// 规则：一个溶解组（相同 Section）共用一个称量瓶，A/B 两平行试验各自一组值。
         /// WeighingA/WeighingB 只在 Section 首行填值，TotalA/TotalB 每行都填。
         /// </summary>
-        private static Dictionary<string, string> ExpandWeighingBottleData(List<MultiFiberRowUnit> units)
+        /// <param name="seed">
+        /// 由报告号派生的种子。原先是无种子 Random，于是同一份合并稿里
+        /// 两段报告会给**同一个物理称量瓶**印出两组不同的 A/B 空瓶重 —— 与瓶号/坩埚号是同一个毛病。
+        /// </param>
+        private static Dictionary<string, string> ExpandWeighingBottleData(List<MultiFiberRowUnit> units, int seed)
         {
             var result = new Dictionary<string, string>();
-            var rng = new Random();
+            var rng = new Random(seed);
             string lastSection = "";
             decimal weighingA = 0m;
             decimal weighingB = 0m;

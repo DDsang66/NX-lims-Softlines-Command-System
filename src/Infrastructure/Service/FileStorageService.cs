@@ -48,6 +48,26 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         /// <exception cref="IOException"></exception>
+        /// <summary>
+        /// 复制模板到绝对路径（供多标准报告的合并中间产物用）。
+        ///
+        /// 与 <see cref="CopyTemplate"/> 的差别只在**目标**：那个把源和目标都钉死在
+        /// WebRootPath 下；这个允许写到任意绝对路径 —— 合并的中间产物要落 %TEMP%，
+        /// **不能落 wwwroot/DocxModel/SaveDocx/**（那是可下载目录）。
+        /// </summary>
+        /// <param name="templateRelativePath">相对 WebRootPath 的模板路径。</param>
+        /// <param name="absoluteTargetPath">目标的绝对路径，父目录不存在时自动创建。</param>
+        public void CopyTemplateTo(string templateRelativePath, string absoluteTargetPath)
+        {
+            string sourcePath = Path.Combine(_env.WebRootPath, templateRelativePath);
+
+            string targetDir = Path.GetDirectoryName(absoluteTargetPath);
+            if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
+                Directory.CreateDirectory(targetDir);
+
+            File.Copy(sourcePath, absoluteTargetPath, true);
+        }
+
         public async Task<string> SaveFileFromStreamAsync(Stream fileStream, string targetPath, string fileUrl)
         {
             // 1. 参数校验

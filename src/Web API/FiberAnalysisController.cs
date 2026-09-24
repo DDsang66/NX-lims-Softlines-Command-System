@@ -34,6 +34,14 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         public async Task<IActionResult> GetLabelOptions(CancellationToken ct)
             => Ok(await _worksheetService.GetLabelOptionsAsync(ct));
 
+        /// <summary>
+        /// 录入界面的分组候选：cellulosicSub / regeneratedSub / bicomponentSub / methodOptions。
+        /// 原先这几组散在前端内联，且 cellulosic 那份是全小写、两个父槽共用一份。
+        /// </summary>
+        [HttpGet("fiber-options")]
+        public async Task<IActionResult> GetFiberOptions()
+            => Ok(await _worksheetService.GetFiberOptionsAsync());
+
         [HttpPost("database")]
         public async Task<IActionResult> AddFiber([FromBody] FiberDatabaseCreateDto dto)
             => Ok(await _worksheetService.AddFiberAsync(dto));
