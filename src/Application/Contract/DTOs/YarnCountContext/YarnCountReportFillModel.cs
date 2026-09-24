@@ -22,7 +22,10 @@ public class YarnCountReportFillModel
     /// <summary>表0 Weft (Tex) = 纬向各试样 Tex 的算术平均。为 null 则该格留空</summary>
     public decimal? WeftTex { get; set; }
 
-    /// <summary>表0 Knit (Tex) — 页面手工输入, 为 null 则该格留空</summary>
+    /// <summary>
+    /// 表0 Knit (Tex) = 针织各试样 Tex 的算术平均(与 Warp/Weft 同口径)。
+    /// 2026-09 模板改版前这是页面手工输入的值, 现在由服务端按试样算出; 为 null 则该格留空。
+    /// </summary>
     public decimal? KnitTex { get; set; }
 
     /// <summary>
@@ -38,7 +41,7 @@ public class YarnCountReportFillModel
 /// </summary>
 public class YarnCountColumnModel
 {
-    /// <summary>方向: "Warp" | "Weft"(服务端白名单校验过)</summary>
+    /// <summary>方向: "Warp" | "Weft" | "Knit"(服务端白名单校验过)</summary>
     public string Direction { get; set; } = string.Empty;
 
     /// <summary>试样号(1-based), 已按方向校验过范围</summary>

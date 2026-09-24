@@ -53,7 +53,8 @@ public class YarnCountReportService : IYarnCountReportService, IScopedDependency
             string? direction = NormalizeDirection(dir?.Direction);
             if (direction == null)
                 return Result<DocxUrlResponseDto>.Fail(
-                    $"方向取值非法: 「{dir?.Direction}」(只接受 {YarnCountReportRequestDto.DirectionWarp} / {YarnCountReportRequestDto.DirectionWeft})");
+                    $"方向取值非法: 「{dir?.Direction}」(只接受 {YarnCountReportRequestDto.DirectionWarp} / " +
+                    $"{YarnCountReportRequestDto.DirectionWeft} / {YarnCountReportRequestDto.DirectionKnit})");
 
             int maxIndex = SpecimenCountOf(direction);
             foreach (var sp in dir!.Specimens ?? new List<YarnCountSpecimenDto>())
@@ -95,9 +96,9 @@ public class YarnCountReportService : IYarnCountReportService, IScopedDependency
             ReportNumber = dto.ReportNumber.Trim(),
             EnvironmentTemperature = dto.EnvironmentTemperature,
             EnvironmentHumidity = dto.EnvironmentHumidity,
-            KnitTex = YarnCountMath.Round(dto.KnitTex, YarnCountReportRequestDto.TexDecimals),
             WarpTex = YarnCountMath.MeanTex(columns.Where(c => c.Direction == YarnCountReportRequestDto.DirectionWarp).Select(c => c.Tex)),
             WeftTex = YarnCountMath.MeanTex(columns.Where(c => c.Direction == YarnCountReportRequestDto.DirectionWeft).Select(c => c.Tex)),
+            KnitTex = YarnCountMath.MeanTex(columns.Where(c => c.Direction == YarnCountReportRequestDto.DirectionKnit).Select(c => c.Tex)),
             Columns = columns,
         };
 
@@ -126,7 +127,7 @@ public class YarnCountReportService : IYarnCountReportService, IScopedDependency
         });
     }
 
-    /// <summary>方向白名单归一化: 只认 Warp / Weft(大小写不敏感), 其余返回 null 由调用方拒绝</summary>
+    /// <summary>方向白名单归一化: 只认 Warp / Weft / Knit(大小写不敏感), 其余返回 null 由调用方拒绝</summary>
     private static string? NormalizeDirection(string? direction)
     {
         if (string.IsNullOrWhiteSpace(direction)) return null;
@@ -135,13 +136,24 @@ public class YarnCountReportService : IYarnCountReportService, IScopedDependency
         {
             "WARP" => YarnCountReportRequestDto.DirectionWarp,
             "WEFT" => YarnCountReportRequestDto.DirectionWeft,
+            "KNIT" => YarnCountReportRequestDto.DirectionKnit,
             _ => null
         };
     }
 
-    /// <summary>该方向模板里有几列试样 —— 经 2、纬 5, 见 YarnCountReportRequestDto 的常量注释</summary>
-    private static int SpecimenCountOf(string direction)
-        => direction == YarnCountReportRequestDto.DirectionWarp
-            ? YarnCountReportRequestDto.WarpSpecimenCount
-            : YarnCountReportRequestDto.WeftSpecimenCount;
+    /// <summary>
+    /// 该方向模板里有几列试样 —— 三方向各 2 列, 见 YarnCountReportRequestDto 的常量注释。
+    ///
+    /// 刻意不写 `_ => 纬向` 那种兜底: 漏掉一个分支就会被**静默**当成另一个方向处理,
+    /// 试样号范围校验跟着一起错, 最终是报告上数字落在错误的列里 —— 比抛异常难查得多。
+    /// (与引擎 YarnCountDocxLayout.ColumnOf 同一原则。)
+    /// </summary>
+    private static int SpecimenCountOf(string direction) => direction switch
+    {
+        YarnCountReportRequestDto.DirectionWarp => YarnCountReportRequestDto.WarpSpecimenCount,
+        YarnCountReportRequestDto.DirectionWeft => YarnCountReportRequestDto.WeftSpecimenCount,
+        YarnCountReportRequestDto.DirectionKnit => YarnCountReportRequestDto.KnitSpecimenCount,
+        _ => throw new InvalidOperationException(
+            $"未知方向「{direction}」—— 调用方应已过 NormalizeDirection 白名单, 说明白名单漏了它")
+    };
 }

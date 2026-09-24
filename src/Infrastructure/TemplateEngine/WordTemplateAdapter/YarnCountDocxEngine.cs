@@ -12,11 +12,16 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     ///
     /// 模板 PHY_YarnCount.docx 正文两张表 + 一个页脚:
     ///   表0(摘要, 按 "Test Report Number" 定位): 报告号、Warp/Weft/Knit (Tex) 三个汇总格;
-    ///   表1(数据, 按 "#1" 定位): 10 个长度读数行 + Average(cm) / Mass(g/50) / Tex 三行, 每行 8 格
-    ///        —— 格0 是行标签, 格1~7 是数据列: Warp#1 | Warp#2 | Weft#1 | Weft#2 | Weft#3 | Weft#4 | Weft#5;
+    ///   表1(数据, 按 "#1" 定位): 10 个长度读数行 + Average(cm) / Mass(g/50) / Tex 三行, 每行 7 格
+    ///        —— 格0 是行标签, 格1~6 是数据列: Warp#1 | Warp#2 | Weft#1 | Weft#2 | Knit#1 | Knit#2;
     ///   页脚: 按 "%RH" 标记定位, R1 的 格2=温度 / 格3=湿度(带下划线, 模拟"写在横线上")。
     ///
-    /// 经 2 列、纬 5 列是模板**刻意**的不对称(表1 表头就是 Warp(#1 #2) + Weft(#1..#5)), 不是漏列。
+    /// 方向顺序与各方向列数只有**一处**事实来源: YarnCountDocxLayout.DirectionColumns
+    /// (与契约层的 WarpSpecimenCount / WeftSpecimenCount / KnitSpecimenCount 同源)。
+    ///
+    /// 2026-09 模板改版: 原为 Warp 2 + Weft 5 的刻意不对称, 现为三方向各 2 列。
+    /// 注意改版后**方向顺序只能靠数据表 R0 的跨列标题识别** —— R1 的三组表头都是 "#1 #2",
+    /// 长得一模一样, 已经把"哪一组属于哪个方向"这条信息丢掉了(见 ValidateDirectionHeaderRow)。
     ///
     /// 所有坐标集中在底部 YarnCountDocxLayout; 配套 ValidateTemplate 做结构校验 ——
     /// 结构一旦与坐标假设不符立即抛异常, 宁可生成失败, 也不产出"能打开、实则整块错位"的报告。
@@ -142,11 +147,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 模板只要被人改过(增删一行/一列/改表头文字), 坐标就可能整体错位 —— 那种情况下继续填,
         /// 会产出"长度读数填进 Average 行、纬向数据写进经向列"这种表面上能打开、实则全错的 docx, 最难以发现。
         ///
-        /// 三类断言, 缺一不可:
+        /// 四类断言, 缺一不可:
         ///   ① 行**存在性**(缺行 → 后面 ElementAtOrDefault 静默 null);
         ///   ② 行**标签文字**逐行核对 —— 只查"行存在"是发现不了"中间插图了一行"的, 而那正是最常见的误改;
-        ///   ③ 格**数量** —— SetCellText 遇到不存在的格是静默 return, 少一格就是一整列数据凭空消失。
-        /// 表1 的表头那 8 个格(#1 #2 | #1..#5)一次钉死列序, 也就同时钉死了经 2 纬 5 这个不对称。
+        ///   ③ 格**数量** —— SetCellText 遇到不存在的格是静默 return, 少一格就是一整列数据凭空消失;
+        ///   ④ 表1 **R0 的方向顺序与跨列数** —— 方向只写在 R0 里, 是"哪一列属于哪个方向"的唯一依据。
         /// </summary>
         private (Table Summary, Table Data) ValidateTemplate(WordprocessingDocument doc)
         {
@@ -163,9 +168,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowKnitTex, "Knit");
 
             var t1 = LocateTable(doc, YarnCountDocxLayout.DataTableMarker)
-                ?? throw new InvalidOperationException("PHY_YarnCount 模板缺少数据表(#1~#5 那行)");
+                ?? throw new InvalidOperationException("PHY_YarnCount 模板缺少数据表(#1 #2 那行)");
 
-            // 表头行: 8 个格的文字逐个核对 —— 这一条同时钉死列序与"经 2 纬 5"
+            // R0 方向行: 先钉死"哪一列属于哪个方向"(R1 三组表头一样, 已经分不出来)
+            ValidateDirectionHeaderRow(t1);
+
+            // 表头行: 逐格核对 "Length:" + 各方向的 "#1..#N"
             var header = Row(t1, YarnCountDocxLayout.DataHeaderRow)
                 ?? throw new InvalidOperationException($"PHY_YarnCount 模板数据表行数不足(缺 R{YarnCountDocxLayout.DataHeaderRow} 表头行)");
             var headerCells = header.Elements<TableCell>().ToList();
@@ -181,19 +189,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                         $"PHY_YarnCount 模板数据表头第 {c} 格应为「{expected}」, 实际为「{actual}」—— 列序已变, 停止填充");
             }
 
-            // 长度行: 逐个核对 "1." ~ "10." 标签, 并确保每行都够 MaxDataColumn+1 格
+            // 长度行: 逐个核对行标签开头的序号 == 1..10, 并确保每行都够 MaxDataColumn+1 格
             for (int i = 0; i < YarnCountDocxLayout.LengthReadingCount; i++)
             {
                 int rowIndex = YarnCountDocxLayout.LengthRowStart + i;
-                var row = Row(t1, rowIndex)
-                    ?? throw new InvalidOperationException($"PHY_YarnCount 模板数据表行数不足(缺 R{rowIndex} 第 {i + 1} 个长度行)");
-                ValidateDataRowLabel(row, rowIndex, $"{i + 1}.", exact: true);
+                ValidateLengthRowLabel(Row(t1, rowIndex), rowIndex, i + 1);
             }
 
             // Average / Mass / Tex 三行 —— 标签带单位后缀("Average(cm)" / "Mass(g/50)"), 用包含匹配
-            ValidateDataRowLabel(Row(t1, YarnCountDocxLayout.AverageRow), YarnCountDocxLayout.AverageRow, "Average", exact: false);
-            ValidateDataRowLabel(Row(t1, YarnCountDocxLayout.MassRow), YarnCountDocxLayout.MassRow, "Mass", exact: false);
-            ValidateDataRowLabel(Row(t1, YarnCountDocxLayout.TexRow), YarnCountDocxLayout.TexRow, "Tex", exact: false);
+            ValidateDataRowLabel(Row(t1, YarnCountDocxLayout.AverageRow), YarnCountDocxLayout.AverageRow, "Average");
+            ValidateDataRowLabel(Row(t1, YarnCountDocxLayout.MassRow), YarnCountDocxLayout.MassRow, "Mass");
+            ValidateDataRowLabel(Row(t1, YarnCountDocxLayout.TexRow), YarnCountDocxLayout.TexRow, "Tex");
 
             return (t0, t1);
         }
@@ -212,27 +218,109 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
-        /// 数据表某行: 格0 的标签文字必须符合预期, 且格数够写到 MaxDataColumn。
-        /// exact=true 用于长度行("1." ~ "10." —— 精确相等才能挡住"插了一行"这种最常见的误改;
-        /// 这里必须精确, 因为 "1." 是 "10." 的子串, 用包含匹配会把错位的一行放过去)。
-        /// exact=false 用于带单位后缀的三行(标签是 "Average(cm)" 这类)。
+        /// 校验数据表 R0(方向行): 首格为空, 其后每组的文字与**跨列数**必须与
+        /// YarnCountDocxLayout.DirectionColumns 按序一致。
+        ///
+        /// 为什么非要查 R0: 2026-09 改版后 R1 是 "#1 #2 | #1 #2 | #1 #2", 三组长得一模一样,
+        /// R1 自己已经分不出 Warp|Weft|Knit 还是 Knit|Weft|Warp —— **方向顺序只写在 R0 里**。
+        /// 不查 R0 的话, 把模板的 Weft 与 Knit 两组对调(各组列数不变)将完全不被发现,
+        /// 报告会把纬向数据印进针织列, 正是本引擎最怕的"能打开、数字全错"。
+        /// 顺带: 跨列数与列数比对, 把"SpecimenCount 常量写错但自洽"这类错也挡住了。
         /// </summary>
-        private static void ValidateDataRowLabel(TableRow? row, int rowIndex, string label, bool exact)
+        private static void ValidateDirectionHeaderRow(Table t1)
+        {
+            int rowIndex = YarnCountDocxLayout.DirectionHeaderRow;
+            var row = Row(t1, rowIndex)
+                ?? throw new InvalidOperationException($"PHY_YarnCount 模板数据表行数不足(缺 R{rowIndex} 方向行)");
+            var cells = row.Elements<TableCell>().ToList();
+            var expected = YarnCountDocxLayout.DirectionColumns;
+
+            if (cells.Count != expected.Length + 1)
+                throw new InvalidOperationException(
+                    $"PHY_YarnCount 模板数据表 R{rowIndex} 应有 {expected.Length + 1} 格" +
+                    $"(1 个空角格 + {expected.Length} 个方向), 实际 {cells.Count} 格");
+
+            if (!string.IsNullOrWhiteSpace(cells[0].InnerText))
+                throw new InvalidOperationException(
+                    $"PHY_YarnCount 模板数据表 R{rowIndex} 首格应为空, 实际为「{cells[0].InnerText.Trim()}」");
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                var (direction, count) = expected[i];
+                var cell = cells[i + 1];
+
+                var actual = cell.InnerText.Trim();
+                if (actual != direction)
+                    throw new InvalidOperationException(
+                        $"PHY_YarnCount 模板数据表方向行第 {i + 1} 组应为「{direction}」, 实际为「{actual}」" +
+                        " —— 方向顺序已变, 停止填充");
+
+                int span = cell.TableCellProperties?.GridSpan?.Val?.Value ?? 1;
+                if (span != count)
+                    throw new InvalidOperationException(
+                        $"PHY_YarnCount 模板数据表「{direction}」组跨 {span} 列, 但程序认为它有 {count} 列" +
+                        " —— 列数已变, 停止填充");
+            }
+        }
+
+        /// <summary>
+        /// 取数据表某行的标签文字(格0), 顺带断言行存在、格数够写到 MaxDataColumn。
+        /// 格数必须每行都查: SetCellText 遇到不存在的格是静默 return, 少一格就是一整列数据凭空消失。
+        /// </summary>
+        private static string RowLabelOrThrow(TableRow? row, int rowIndex)
         {
             if (row == null)
                 throw new InvalidOperationException($"PHY_YarnCount 模板数据表行数不足(缺 R{rowIndex} 行)");
 
             var cells = row.Elements<TableCell>().ToList();
-            var actual = cells.Count > YarnCountDocxLayout.LabelColumn
-                ? cells[YarnCountDocxLayout.LabelColumn].InnerText.Trim()
-                : "";
-            bool matched = exact ? actual == label : actual.Contains(label);
-            if (!matched)
-                throw new InvalidOperationException(
-                    $"PHY_YarnCount 模板数据表 R{rowIndex} 行标签应为「{label}」, 实际为「{actual}」—— 行序已变, 停止填充");
             if (cells.Count <= YarnCountDocxLayout.MaxDataColumn)
                 throw new InvalidOperationException(
                     $"PHY_YarnCount 模板数据表 R{rowIndex} 格数不足(需能写第 {YarnCountDocxLayout.MaxDataColumn} 格)");
+
+            return cells.Count > YarnCountDocxLayout.LabelColumn
+                ? cells[YarnCountDocxLayout.LabelColumn].InnerText.Trim()
+                : "";
+        }
+
+        /// <summary>
+        /// 带单位后缀的三行(Average(cm) / Mass(g/50) / Tex): 标签**包含** label 即可 ——
+        /// 单位怎么写不该影响坐标, 而这三行的名称彼此不互为子串, 包含匹配不会误放行。
+        /// </summary>
+        private static void ValidateDataRowLabel(TableRow? row, int rowIndex, string label)
+        {
+            var actual = RowLabelOrThrow(row, rowIndex);
+            if (!actual.Contains(label))
+                throw new InvalidOperationException(
+                    $"PHY_YarnCount 模板数据表 R{rowIndex} 行标签应为「{label}」, 实际为「{actual}」—— 行序已变, 停止填充");
+        }
+
+        /// <summary>
+        /// 长度行: 标签**开头连续的 ASCII 数字**必须等于该行序号。
+        ///
+        /// 为什么不再精确相等: 2026-09 模板给长度行加了单位后缀("1." → "1. (cm)"),
+        /// 精确相等会全线失败; 而单位从 (cm) 改成 (mm) 本来也不该让坐标失效。
+        /// 为什么不用包含匹配: "1." 是 "10." 的子串, 包含匹配会把错位一行整个放过去。
+        /// 取开头数字两头都占: 对后缀免疫, 又拦得住插行/删行/改号(配合 RowLabelOrThrow 的格数校验)。
+        /// </summary>
+        private static void ValidateLengthRowLabel(TableRow? row, int rowIndex, int expectedNumber)
+        {
+            var actual = RowLabelOrThrow(row, rowIndex);
+            if (LeadingNumber(actual) != expectedNumber)
+                throw new InvalidOperationException(
+                    $"PHY_YarnCount 模板数据表 R{rowIndex} 行标签应以「{expectedNumber}.」开头, " +
+                    $"实际为「{actual}」—— 行序已变, 停止填充");
+        }
+
+        /// <summary>取字符串开头连续的 ASCII 数字; 没有数字则返回 -1</summary>
+        private static int LeadingNumber(string text)
+        {
+            int i = 0;
+            while (i < text.Length && text[i] >= '0' && text[i] <= '9') i++;
+            if (i == 0) return -1;
+
+            return int.TryParse(text.AsSpan(0, i), NumberStyles.None, CultureInfo.InvariantCulture, out int n)
+                ? n
+                : -1;
         }
 
         /// <summary>
@@ -270,28 +358,74 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             public const int DataHeaderRow = 1;
 
-            /// <summary>表头 8 格的文字(0..7) —— 逐格核对, 一次钉死列序与"经 2 纬 5"</summary>
-            public static readonly string[] DataHeaderLabels =
-                { "Length:", "#1", "#2", "#1", "#2", "#3", "#4", "#5" };
+            /// <summary>方向行 —— 每组方向一个跨列标题格, 是本引擎识别"哪一列属于哪个方向"的唯一依据</summary>
+            public const int DirectionHeaderRow = 0;
 
-            public const int LengthRowStart = 2;   // "1." ~ "10." → R2..R11
+            /// <summary>
+            /// 数据列的方向顺序与各方向列数 —— 与模板 R0 的三组跨列标题(Warp | Weft | Knit)**按序**对应。
+            ///
+            /// 这是本引擎唯一的"方向 → 列"事实来源: 表头期望文字、列偏移、最右列号全部由它推导。
+            /// 调整方向或列数只改这里(连同契约层的三个 SpecimenCount 常量), 不再有第二处手写坐标 ——
+            /// 之前"手写表头数组 + 逐个算列起点"的写法, 漏改一处不会报错, 只会静默错列。
+            /// </summary>
+            public static readonly (string Direction, int Count)[] DirectionColumns =
+            {
+                (YarnCountReportRequestDto.DirectionWarp, YarnCountReportRequestDto.WarpSpecimenCount),
+                (YarnCountReportRequestDto.DirectionWeft, YarnCountReportRequestDto.WeftSpecimenCount),
+                (YarnCountReportRequestDto.DirectionKnit, YarnCountReportRequestDto.KnitSpecimenCount),
+            };
+
+            /// <summary>
+            /// 数据列从第几格开始(格0 恒为行标签)
+            /// </summary>
+            public const int FirstDataColumn = 1;
+
+            /// <summary>
+            /// 表头每格的期望文字: "Length:" + 各方向的 "#1..#N", 由 DirectionColumns 生成。
+            /// 为什么可以生成而不是手写: 这份数组只编码"数字长什么样", 从来编码不了"哪一组属于哪个方向" ——
+            /// 方向顺序由 R0 校验负责(见 ValidateDirectionHeaderRow), 两者合起来才钉死列序。
+            /// </summary>
+            public static readonly string[] DataHeaderLabels = BuildDataHeaderLabels();
+
+            private static string[] BuildDataHeaderLabels()
+            {
+                var labels = new List<string> { "Length:" };
+                foreach (var (_, count) in DirectionColumns)
+                    for (int i = 1; i <= count; i++)
+                        labels.Add("#" + i);
+
+                return labels.ToArray();
+            }
+
+            public const int LengthRowStart = 2;   // "1. (cm)" ~ "10. (cm)" → R2..R11
             public const int AverageRow = 12;
             public const int MassRow = 13;
             public const int TexRow = 14;
 
-            /// <summary>经向第 1 列(#1)</summary>
-            public const int WarpColumnStart = 1;
+            /// <summary>数据列的最大列号(Tex 行要写到的最右一格) —— 各方向列数之和</summary>
+            public static readonly int MaxDataColumn =
+                FirstDataColumn + DirectionColumns.Sum(d => d.Count) - 1;
 
-            /// <summary>纬向第 1 列(#1) —— 紧跟经向 2 列之后</summary>
-            public const int WeftColumnStart = WarpColumnStart + YarnCountReportRequestDto.WarpSpecimenCount;
-
-            /// <summary>数据列的最大列号(Tex 行要写到的最右一格)</summary>
-            public const int MaxDataColumn = WeftColumnStart + YarnCountReportRequestDto.WeftSpecimenCount - 1;
-
-            /// <summary>试样号(1-based) → 模板数据列号。方向已由服务端白名单校验过</summary>
+            /// <summary>
+            /// 试样号(1-based) → 模板数据列号。
+            ///
+            /// 服务端已做过方向白名单校验, 这里查不到**必须抛异常, 绝不能留 else 兜底**:
+            /// 上一版是 `direction == Warp ? 经向起点 : 纬向起点`, 方向只要不是 Warp 就掉进 else,
+            /// 于是 "Knit" 会被**静默**写进 Weft 的列 —— 报告能打开、数字全错, 最难发现的那种。
+            /// </summary>
             public static int ColumnOf(string direction, int specimenIndex)
-                => (direction == YarnCountReportRequestDto.DirectionWarp ? WarpColumnStart : WeftColumnStart)
-                   + (specimenIndex - 1);
+            {
+                int offset = FirstDataColumn;
+                foreach (var (dir, count) in DirectionColumns)
+                {
+                    if (dir == direction) return offset + (specimenIndex - 1);
+                    offset += count;
+                }
+
+                throw new InvalidOperationException(
+                    $"纱支数据表没有方向「{direction}」对应的列 —— 停止填充" +
+                    $"(合法方向: {string.Join(" / ", DirectionColumns.Select(d => d.Direction))})");
+            }
 
             // ---------- 页脚(按 "%RH" 定位) ----------
             public const int FooterValueRow = 1;
@@ -339,7 +473,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 写单元格文字; 目标格若没有任何带样式 run(模板空白格), 先从同行样式源格(通常取格0 的行标签)
         /// 克隆 RunProperties 注入, 再走 SetCellText, 保证新写的数字与整行同字体字号。
         ///
-        /// 为什么需要: 本模板所有待填格(报告号格、三个 Tex 汇总格、表1 的格1~7)都是空的、一个 run 都没有,
+        /// 为什么需要: 本模板所有待填格(报告号格、三个 Tex 汇总格、表1 的格1~6)都是空的、一个 run 都没有,
         /// 直接 SetCellText 只能拿到 new RunProperties() → 吃文档默认字体, 与旁边的标签不一致, 报告看着"串版"。
         /// </summary>
         private void SetCellTextSeeded(TableRow? row, int cellIndex, int styleSourceCellIndex, string text)

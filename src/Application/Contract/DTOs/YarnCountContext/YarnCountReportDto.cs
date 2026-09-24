@@ -12,15 +12,28 @@ public class YarnCountReportRequestDto
     /// <summary>纬向</summary>
     public const string DirectionWeft = "Weft";
 
+    /// <summary>针织</summary>
+    public const string DirectionKnit = "Knit";
+
     /// <summary>
-    /// 经向试样列数。模板数据表 R1 表头是 Warp(#1 #2) + Weft(#1..#5) —— 经 2 列、纬 5 列
-    /// 是模板**刻意**的不对称(经向试样少), 不是漏了一列, 别"修正"成 5+5。
-    /// 服务端拿它校验试样号, 引擎拿它算列偏移。
+    /// 经向试样列数。
+    ///
+    /// 三个方向的列数必须与模板数据表 R0 的三组标题(Warp | Weft | Knit)**按序**一一对应 ——
+    /// R0 每组的 gridSpan 就是这里的列数, 引擎拿这条关系校验模板(见 YarnCountDocxEngine 的 R0 校验)。
+    /// 不按序/数目不符都会在生成前抛异常, 不会静默错列。
+    /// 服务端拿它校验试样号范围, 引擎拿它算列偏移。
+    ///
+    /// 2026-09 模板改版: 原为 Warp 2 + Weft 5, 现为 Warp 2 + Weft 2 + Knit 2;
+    /// Knit 也从"页面手工输入的单个汇总值"改为**与经纬向同口径按试样测**。
+    /// 数据列号(0-based): Warp 1~2 / Weft 3~4 / Knit 5~6。
     /// </summary>
     public const int WarpSpecimenCount = 2;
 
-    /// <summary>纬向试样列数(见 WarpSpecimenCount 注释)</summary>
-    public const int WeftSpecimenCount = 5;
+    /// <summary>纬向试样列数(见 WarpSpecimenCount 注释; 2026-09 模板由 5 列改为 2 列)</summary>
+    public const int WeftSpecimenCount = 2;
+
+    /// <summary>针织试样列数(见 WarpSpecimenCount 注释)</summary>
+    public const int KnitSpecimenCount = 2;
 
     /// <summary>模板 Length 行的读数个数(数据表 R2..R11 的 "1." ~ "10.")</summary>
     public const int LengthReadingCount = 10;
@@ -50,20 +63,14 @@ public class YarnCountReportRequestDto
     /// <summary>环境湿度 %RH(写入页脚湿度格)</summary>
     public decimal? EnvironmentHumidity { get; set; }
 
-    /// <summary>经向/纬向的试样数据(各方向一条)</summary>
+    /// <summary>经向/纬向/针织的试样数据(每个方向一条, 没测的方向不传)</summary>
     public List<YarnCountDirectionDto> Directions { get; set; } = new();
-
-    /// <summary>
-    /// Knit (Tex) — 页面手工输入。
-    /// 针织纱支不由本测试算出, 所以没有对应的试样数据, 不填则模板该格留空。
-    /// </summary>
-    public decimal? KnitTex { get; set; }
 }
 
-/// <summary>一个方向(Warp / Weft)下的全部试样</summary>
+/// <summary>一个方向(Warp / Weft / Knit)下的全部试样</summary>
 public class YarnCountDirectionDto
 {
-    /// <summary>方向: "Warp" | "Weft"(只接受这两个, 服务端白名单校验)</summary>
+    /// <summary>方向: "Warp" | "Weft" | "Knit"(只接受这三个, 服务端白名单校验)</summary>
     public string Direction { get; set; } = YarnCountReportRequestDto.DirectionWarp;
 
     /// <summary>该方向的试样列表</summary>
@@ -75,7 +82,8 @@ public class YarnCountSpecimenDto
 {
     /// <summary>
     /// 试样号(1-based) → 模板该方向第几列。
-    /// Warp 只能 1~2, Weft 只能 1~5 —— 越界会写到不存在的格, 服务端直接拒绝。
+    /// 三个方向都是 1~2(见 YarnCountReportRequestDto 的三个 SpecimenCount 常量)——
+    /// 越界会写到不存在的格, 服务端直接拒绝。
     /// </summary>
     public int Index { get; set; }
 
