@@ -181,7 +181,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 {
                     Sample = GetStringProperty(row, "sample"),
                     FiberName = GetStringProperty(row, "fiberName")
-                    // 老草稿 JSON 里可能还留着 "gsmTrail1"（B13 前的字段）——默认选项忽略未映射成员，不用兼容代码。
+                    // 老草稿 JSON 里可能还留着 "gsmTrail1"（退役前的字段）——默认选项忽略未映射成员，不用兼容代码。
                 });
             }
 

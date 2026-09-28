@@ -101,10 +101,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// 这条记录是不是**单组分**（聚合根的 <c>AnalysisType.Single</c>）。
         ///
         /// <para>
-        /// <b>B14 起它是整条链的分流开关</b>：单组分走
+        /// <b>它是整条链的分流开关</b>：单组分走
         /// <see cref="BuildSingleComponentChain"/> —— **一律不派生定量子标准**，
         /// 只出勾选的标准本身 + 鉴别法（ISO/DIN 侧 <c>ISO/TR 11827</c>，
-        /// GB 侧 B11 补的 <c>FZ/T 01057.3-2007</c>）。
+        /// GB 侧 <c>FZ/T 01057.3-2007</c>）。
         /// 默认 <c>false</c> = 多组分 = **改动前的行为**，所以既有调用点与全部测试
         /// 不传这个参数时输出逐字不变。
         /// </para>
@@ -166,7 +166,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 非 ISO/DIN/GB：直接返回原值（Regulation / CAN / CNS / JIS 一律逐字透传）
             if (!isIso && !isDin && !isGb) return standard;
 
-            // ★ B14：单组分**一律不派生**。
+            // ★ 单组分**一律不派生**。
             // 单组分表里每行是**不同测点下的各一种组分**（每行一种纤维、各 100%），
             // 不是多组分那种"同一测点下的多种组分（一份混纺）"—— 按纤维列表查表的定量
             // 子标准（GB/T 2910.x、ISO 1833-x）前提是"一份混纺要拆"，对它不成立。
@@ -296,7 +296,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 // 追加在**队尾**，与上一行的 FZ/T 30003 同序 —— GB 侧的惯例是"定量法在前、
                 // 显微法收尾"（ISO 侧相反，是鉴别法领队，那是它自己的惯例，不互相统一）。
                 //
-                // ⚠️ **B14 起 B11 这一整段在单组分路径上走不到了** —— 单组分在方法入口就分流去了
+                // ⚠️ **这一整段在单组分路径上走不到了** —— 单组分在方法入口就分流去了
                 // BuildSingleComponentChain（那里有一份等价的 .3 补链）。这段代码保留是因为
                 // 它就是多组分路径的完整形状，且 `isSingleComponent` 恒为 false 时逐字不变。
                 if (isSingleComponent && !hasIdentificationStd && !parts.Contains(FZ01057_3))
@@ -346,8 +346,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             else
                 parts.Add(standard);
 
-            // B11 保留：勾的是**纯定量**标准（GB/T 2910.x）时，链里一个显微法都不会有
-            // （FZ/T 30003 那支要 cellulosic 父槽，而那支 B14 起不对单组分生效），
+            // 勾的是**纯定量**标准（GB/T 2910.x）时，链里一个显微法都不会有
+            // （FZ/T 30003 那支要 cellulosic 父槽，而它不对单组分生效），
             // 故补 .3 这条定性显微法。
             //
             // 两道守卫与多组分路径里那份同义，缺一不可：

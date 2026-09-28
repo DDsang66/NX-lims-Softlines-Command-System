@@ -199,7 +199,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 上面的设备选型、上面的显微镜追加、以及规则表里的三处 `*cellulosic fibre` 字面量判定。
             // 三条通道职责不同，不合并：扁平列表管"报告上印什么"，槽位管"拿哪些名字去查表"。
             //
-            // 末位那个 `Type == Single` 是**整条链的分流开关**（B14）：单组分走
+            // 末位那个 `Type == Single` 是**整条链的分流开关**：单组分走
             // BuildSingleComponentChain —— 一律不派生定量子标准，只出勾选的标准本身 + 鉴别法。
             // 详见 BuildMethodString 的 isSingleComponent 说明。
             // ⚠️ **不能**按纤维条数代传 —— 单组分记录也可以有多条单纤维
@@ -299,7 +299,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             foreach (var s in splittings.OrderBy(x => x.SplittingOrder))
             {
-                // B16：双组分父行的总重取**父行自己的称量值**。
+                // 双组分父行的总重取**父行自己的称量值**。
                 // 原先取的是子行一（"父 GSM 取子行第一个的数据"），于是"父重 = 两子之和"那
                 // 11 条记录的父行被算成了其中一份，外层百分比偏小。见 ResolveBicomponentParentGsm。
                 var (actualGsm1, actualGsm2) = ResolveBicomponentParentGsm(
@@ -389,7 +389,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     var isLast = i == componentCount - 1;
 
                     decimal ownGsm1, ownGsm2, curGsm1, curGsm2;
-                    // B16：同 CalculateSplittingUnits —— 双组分父行取父行自己的称量值。
+                    // 同 CalculateSplittingUnits —— 双组分父行取父行自己的称量值。
                     (curGsm1, curGsm2) = ResolveBicomponentParentGsm(
                         current.GSMTrail1, current.GSMTrail2, current.BicomponentSubFibers);
 
@@ -962,16 +962,21 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 var s1Name = p1.FiberName;
                 var s2Name = p2.FiberName;
 
-                // B16：父行**拆开**算 —— 子行最后一个是残留、被溶解 = 父行总重 − 残留，
-                // 各按自己名字的回潮率折干（父行总重见 ResolveBicomponentParentGsm）。
-                // 改之前这里拿 s1 当聚酰胺的质量、分母只除 s1、再拿 100 去减，算出来其实是
-                // 「残留/父重」；s1 一旦换成真正的聚酰胺质量，那个式子会翻成 508% / −408%。
+                // 父行**拆开**算 —— 括号里的比例 = 残留 / (残留 + 被溶解)。拆法见
+                // ResidueGsm 与 DecomposeBicomponent，这里只说为什么不能只改一半。
+                //
+                // 改之前是「子行二折干 ÷ 子行一折干 ×100，再拿 100 去减」，结构上就是
+                // 「子行二/子行一」—— 在"子行一 = 父重、子行二 = 残留"那种录法下**碰巧**等于「残留/父重」，所以能一直活着。
+                // ⚠️ 只把分子换成真正的"被溶解"质量、分母留着不动，同一份 13233 会翻成
+                // 0.5478/0.1077 = 508.4% 与 100−508.4 = −408.4% —— 分子分母必须一起换。
                 var (residueDry, dissolvedDry) = DecomposeBicomponent(
                     row.GSMTrail1, row.GSMTrail2, subs);
                 var dryTotal = residueDry + dissolvedDry;
                 if (dryTotal == 0) continue;
 
-                // 残留是**子行最后一个**，所以它的比例落在 s2Pct 上 —— 名字与顺序一字不改。
+                // 残留是**子行最后一个**（按位置定的，不认纤维名：13233 的残留是 Polyester，
+                // 95955 那几条 Polyester 排前面的记录里残留反而是 Polyamide）。
+                // 它在下面那串里占的一直是 s2 那一格 —— 变量名是历史包袱，名字与顺序一字不改。
                 var residueShare = residueDry / dryTotal * 100m;
 
                 string s1Pct, s2Pct;
@@ -1067,7 +1072,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// —— 后四项都服务于"拆分、溶解、烘干后称量"，单组分不称量故不给。
         /// </para>
         /// <para>
-        /// ⚠️ B12 之前这里传的是 <c>orderedFiberNames.Count</c>，形参名还叫 <c>componentCount</c>
+        /// ⚠️ 原先这里传的是 <c>orderedFiberNames.Count</c>，形参名还叫 <c>componentCount</c>
         /// —— 名字本身就是错的，已连同该参数一起删除。**别再按"条数"重新引入**：
         /// 单组分记录也可以列多条单纤维（真实记录 87.405.26.12312.01 = Modal + Silk 两条），
         /// 多组分记录也可能只列一条 —— 条数区分不出分析类型，两个方向都会判错。

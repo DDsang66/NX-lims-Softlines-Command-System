@@ -127,7 +127,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     Sample = dict.TryGetValue("Sample", out var s) ? s?.ToString() ?? string.Empty : string.Empty,
                     Qualitative = dict.TryGetValue("Qualitative", out var q) ? q?.ToString() ?? string.Empty : string.Empty,
                     Reagent = dict.TryGetValue("Reagent", out var r) ? r?.ToString() ?? string.Empty : string.Empty,
-                    // 单组分没有 GSMTrail1（B13 退役）。存量字典里若还带这个键，忽略即可。
+                    // 单组分没有 GSMTrail1（已退役）。存量字典里若还带这个键，忽略即可。
                     Rate = dict.TryGetValue("Rate", out var rate) ? ToDecimal(rate) : 0m
                 };
             }

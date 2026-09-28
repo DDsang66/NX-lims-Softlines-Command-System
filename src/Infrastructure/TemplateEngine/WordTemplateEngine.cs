@@ -396,7 +396,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 {
                     if (string.IsNullOrWhiteSpace(fiberName)) continue;
 
-                    // B15：图库文件名走别名表（Spandex→Elastane 等）。
+                    // 图库文件名走别名表（Spandex→Elastane 等，见 MicroscopeImageName）。
                     // 只用别名**找文件** —— 下面图注那行仍用录入名 fiberName，一字未改。
                     var imagePath = Path.Combine(imageFolder, $"{MicroscopeImageName.Resolve(fiberName)}.png");
                     if (!File.Exists(imagePath)) continue;
