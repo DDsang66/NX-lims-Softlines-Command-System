@@ -55,11 +55,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public string LabelRemark => Get<string>("LabelRemark") ?? string.Empty;
         public string JudgmentLabelRemark => Get<string>("JudgmentLabelRemark") ?? string.Empty;
         public string LanguageLabelRemark => Get<string>("LanguageLabelRemark") ?? string.Empty;
-        public string DurabilityLabel => Get<string>("DurabilityLabel") ?? string.Empty;
-        public string OtherLabel => Get<string>("OtherLabel") ?? string.Empty;
-        public string Comprehensive => Get<string>("Comprehensive") ?? string.Empty;
+
+        /// <summary>conclusion 段唯一字段。2026-09-28 起 DurabilityLabel/OtherLabel/Comprehensive/FinalResult 已下线。</summary>
         public string VerifyResult => Get<string>("VerifyResult") ?? string.Empty;
-        public string FinalResult => Get<string>("FinalResult") ?? string.Empty;
         public string BurningTest => Get<string>("BurningTest") ?? string.Empty;
         public List<string> Results => Get<List<string>>("Results") ?? new List<string>();
         public List<string> Recommendation => Get<List<string>>("Recommendation") ?? new List<string>();
@@ -129,7 +127,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     Sample = dict.TryGetValue("Sample", out var s) ? s?.ToString() ?? string.Empty : string.Empty,
                     Qualitative = dict.TryGetValue("Qualitative", out var q) ? q?.ToString() ?? string.Empty : string.Empty,
                     Reagent = dict.TryGetValue("Reagent", out var r) ? r?.ToString() ?? string.Empty : string.Empty,
-                    GSMTrail1 = dict.TryGetValue("GSMTrail1", out var g1) ? ToDecimal(g1) : 0m,
+                    // 单组分没有 GSMTrail1（B13 退役）。存量字典里若还带这个键，忽略即可。
                     Rate = dict.TryGetValue("Rate", out var rate) ? ToDecimal(rate) : 0m
                 };
             }
@@ -198,11 +196,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             copy["LabelRemark"] = remarkLabel.LabelRemark;
             copy["JudgmentLabelRemark"] = remarkLabel.JudgmentLabelRemark;
             copy["LanguageLabelRemark"] = remarkLabel.LanguageLabelRemark;
-            copy["DurabilityLabel"] = remarkLabel.DurabilityLabel;
-            copy["OtherLabel"] = remarkLabel.OtherLabel;
-            copy["Comprehensive"] = remarkLabel.Comprehensive;
             copy["VerifyResult"] = remarkLabel.VerifyResult;
-            copy["FinalResult"] = remarkLabel.FinalResult;
             copy["Results"] = remarkLabel.Results;
             copy["Recommendation"] = remarkLabel.Recommendation;
             return new AnalysisResult(copy);
@@ -243,11 +237,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             if (!string.IsNullOrWhiteSpace(LabelRemark)) copy["LabelRemark"] = LabelRemark;
             if (!string.IsNullOrWhiteSpace(JudgmentLabelRemark)) copy["JudgmentLabelRemark"] = JudgmentLabelRemark;
             if (!string.IsNullOrWhiteSpace(LanguageLabelRemark)) copy["LanguageLabelRemark"] = LanguageLabelRemark;
-            if (!string.IsNullOrWhiteSpace(DurabilityLabel)) copy["DurabilityLabel"] = DurabilityLabel;
-            if (!string.IsNullOrWhiteSpace(OtherLabel)) copy["OtherLabel"] = OtherLabel;
-            if (!string.IsNullOrWhiteSpace(Comprehensive)) copy["Comprehensive"] = Comprehensive;
             if (!string.IsNullOrWhiteSpace(VerifyResult)) copy["VerifyResult"] = VerifyResult;
-            if (!string.IsNullOrWhiteSpace(FinalResult)) copy["FinalResult"] = FinalResult;
             if (Results?.Any() == true) copy["Results"] = Results;
             if (Recommendation?.Any() == true) copy["Recommendation"] = Recommendation;
 

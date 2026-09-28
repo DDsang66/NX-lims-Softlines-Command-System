@@ -18,7 +18,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     {
         public override AnalysisType Type => AnalysisType.Single;
         public string Sample { get; init; } = string.Empty;
-        public float GSMTrail1 { get; init; }
+        // 单组分**不称量**（B13，2026-09-28）：GSMTrail1 已随前端的 Gradient GSM 列一并退役。
+        // 它从来没进过任何模板书签（单分支写的 GSMTrail1_{idx} 两份模板都没有），
+        // 单组分的 Rate 也是硬编码 100%。**别按"和多组分对齐"再加回来。**
     }
 
     /// <summary>

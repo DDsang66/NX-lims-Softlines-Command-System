@@ -100,11 +100,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     LabelRemark = GetStringProperty(root, "labelRemark"),
                     JudgmentLabelRemark = GetStringProperty(root, "judgmentLabelRemark"),
                     LanguageLabelRemark = GetStringProperty(root, "languageLabelRemark"),
-                    DurabilityLabel = GetStringProperty(root, "durabilityLabel"),
-                    OtherLabel = GetStringProperty(root, "otherLabel"),
-                    Comprehensive = GetStringProperty(root, "comprehensive"),
-                    VerifyResult = GetStringProperty(root, "verifyResult"),
-                    FinalResult = GetStringProperty(root, "finalResult")
+                    // 老记录里可能还有 durabilityLabel/otherLabel/comprehensive/finalResult 四个键，
+                    // 2026-09-28 随模板 conclusion 段删行一起下线，此处不再读取（键留在库里不动）
+                    VerifyResult = GetStringProperty(root, "verifyResult")
                 };
             }
             catch (JsonException)
@@ -182,8 +180,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 components.Add(new SingleFiberComponent
                 {
                     Sample = GetStringProperty(row, "sample"),
-                    FiberName = GetStringProperty(row, "fiberName"),
-                    GSMTrail1 = GetFloatProperty(row, "gsmTrail1")
+                    FiberName = GetStringProperty(row, "fiberName")
+                    // 老草稿 JSON 里可能还留着 "gsmTrail1"（B13 前的字段）——默认选项忽略未映射成员，不用兼容代码。
                 });
             }
 

@@ -184,8 +184,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             result = result.WithAnalysisItems(calculatedFiberResult, actualComponentCount);
 
             // 3.5) 设备选型（对应 Excel L23/O23/R23/L24/O24）
+            // 闸门是**分析类型**，不是纤维条数 —— 见 SelectEquipment 的说明。
             var orderedFiberNames = GetOrderedFiberNames();
-            var equipment = SelectEquipment(orderedFiberNames.Count, orderedFiberNames);
+            var equipment = SelectEquipment(Type, orderedFiberNames);
             // cellulosic fibre 追加额外显微镜
             if (orderedFiberNames.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
                 equipment = equipment with { Microscope = string.IsNullOrEmpty(equipment.Microscope)
@@ -197,8 +198,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 配对另走**槽位通道**（第三条通道），GetOrderedFiberNames() 一字不动 —— 它继续喂
             // 上面的设备选型、上面的显微镜追加、以及规则表里的三处 `*cellulosic fibre` 字面量判定。
             // 三条通道职责不同，不合并：扁平列表管"报告上印什么"，槽位管"拿哪些名字去查表"。
+            //
+            // 末位那个 `Type == Single` 是**整条链的分流开关**（B14）：单组分走
+            // BuildSingleComponentChain —— 一律不派生定量子标准，只出勾选的标准本身 + 鉴别法。
+            // 详见 BuildMethodString 的 isSingleComponent 说明。
+            // ⚠️ **不能**按纤维条数代传 —— 单组分记录也可以有多条单纤维
+            // （真实记录 87.405.26.12312.01 就是 Modal + Silk），条数区分不出这个开关。
             var methodString = FiberStandardChainBuilder.BuildMethodString(
-                standard, orderedFiberNames, GetOrderedFiberSlots());
+                standard, orderedFiberNames, GetOrderedFiberSlots(), Type == AnalysisType.Single);
             result = result.WithMethods(methodString);
 
             // 3.7) 燃烧法分类（对应 ISO 11827 Table A.1）
@@ -228,7 +235,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 Reagent = ReagentCalculateMethod(qualitative),
                 FiberName = component.FiberName,
                 Sample = component.Sample,
-                GSMTrail1 = Convert.ToDecimal(component.GSMTrail1),
                 Rate = 100m    // 单组分固定为100%
             }).Cast<CalculatedFiberResult>().ToList();
         }
@@ -293,13 +299,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             foreach (var s in splittings.OrderBy(x => x.SplittingOrder))
             {
-                // Bicomponent: 父 GSM 取子行第一个的数据
-                var actualGsm1 = s.BicomponentSubFibers.Count > 0
-                    ? s.BicomponentSubFibers[0].GSMTrail1
-                    : (decimal)s.GSMTrail1;
-                var actualGsm2 = s.BicomponentSubFibers.Count > 0
-                    ? s.BicomponentSubFibers[0].GSMTrail2
-                    : (decimal)s.GSMTrail2;
+                // B16：双组分父行的总重取**父行自己的称量值**。
+                // 原先取的是子行一（"父 GSM 取子行第一个的数据"），于是"父重 = 两子之和"那
+                // 11 条记录的父行被算成了其中一份，外层百分比偏小。见 ResolveBicomponentParentGsm。
+                var (actualGsm1, actualGsm2) = ResolveBicomponentParentGsm(
+                    s.GSMTrail1, s.GSMTrail2, s.BicomponentSubFibers);
 
                 var rateTrail1 = totalGSMTrail1 == 0 ? 0 : actualGsm1 / totalGSMTrail1 * 100;
                 var rateTrail2 = totalGSMTrail2 == 0 ? 0 : actualGsm2 / totalGSMTrail2 * 100;
@@ -385,12 +389,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     var isLast = i == componentCount - 1;
 
                     decimal ownGsm1, ownGsm2, curGsm1, curGsm2;
-                    curGsm1 = current.BicomponentSubFibers.Count > 0
-                        ? current.BicomponentSubFibers[0].GSMTrail1
-                        : (decimal)current.GSMTrail1;
-                    curGsm2 = current.BicomponentSubFibers.Count > 0
-                        ? current.BicomponentSubFibers[0].GSMTrail2
-                        : (decimal)current.GSMTrail2;
+                    // B16：同 CalculateSplittingUnits —— 双组分父行取父行自己的称量值。
+                    (curGsm1, curGsm2) = ResolveBicomponentParentGsm(
+                        current.GSMTrail1, current.GSMTrail2, current.BicomponentSubFibers);
 
                     // own = 当前行 - 下一行（差值 = 被溶解掉的量）
                     // 最后一行 own = 当前行自身
@@ -448,8 +449,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 .Where(r => !r.Sum.Contains('/'))  // 排除起始行的缩写（如 E/T）
                 .Select(r =>
                 {
-                    // 从 MoistureRegainMap 查回潮率
-                    var mr = LookupMoistureRegain(r.Sum);
+                    // 从 MoistureRegainMap 查回潮率（双组分父行走 EffectiveMoistureRegain）
+                    var mr = EffectiveMoistureRegain(r);
                     return r with { MoistureRegain = mr };
                 })
                 .ToList();
@@ -476,8 +477,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         return row;
                     }
 
-                    // 查回潮率
-                    var mr = LookupMoistureRegain(row.Sum);
+                    // 查回潮率：**算**用 Effective，**印**用 Displayed —— 双组分父行两者刻意不同
+                    // （2026-09-28 用户裁定：那个加权回潮率只用来算，不上报告）。
+                    var mr = EffectiveMoistureRegain(row);
 
                     // 计算分子
                     var numerator = (1m + mr / 100m) * row.Correct / 100m * row.Avg;
@@ -485,7 +487,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     // 计算Rate（不取整，保留全精度，最终格式化时统一取整）
                     var rate = numerator / denominator * 100m;
 
-                    return row with { MoistureRegain = mr, Rate = rate };
+                    return row with { MoistureRegain = DisplayedMoistureRegain(row), Rate = rate };
 
                 }).ToList();
 
@@ -521,11 +523,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 LabelRemark = remarkLabel.LabelRemark,
                 JudgmentLabelRemark = remarkLabel.JudgmentLabelRemark,
                 LanguageLabelRemark = remarkLabel.LanguageLabelRemark,
-                DurabilityLabel = remarkLabel.DurabilityLabel,
-                OtherLabel = remarkLabel.OtherLabel,
-                Comprehensive = remarkLabel.Comprehensive,
                 VerifyResult = remarkLabel.VerifyResult,
-                FinalResult = remarkLabel.FinalResult,
                 Results = CalculateFormattedResults(calculatedFiberResult, 1, "F1"),
                 Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0", isAatcc)
             };
@@ -738,6 +736,40 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         }
 
         /// <summary>
+        /// 某个成分行**用来算**的回潮率。
+        ///
+        /// 双组分父行不能按名字查：`Bicomponent Fiber` / `Biconstituent Fiber` 这两行**不在
+        /// `fiber_database` 里**（实测精确命中 0 行），查出来是 0 —— 等于"父行不回潮"，会把
+        /// 父行的百分比压低。正确做法是把它按两个子成分拆开、各按自己的回潮率折干后相加，
+        /// 再折成一个**加权回潮率**：干重/湿重 − 1（见 <see cref="DecomposeBicomponent"/>）。
+        ///
+        /// 非双组分行、子行不足两条、或拆不出质量时，一律退回按名字查表 —— 逐字是改动前的行为。
+        /// </summary>
+        private decimal EffectiveMoistureRegain(MultiFiberRowUnit row)
+        {
+            if (!IsBicomponentFiber(row.Sum) || row.BicomponentSubFibers.Count < 2)
+                return LookupMoistureRegain(row.Sum);
+
+            var parentWet = row.GSMTrail1 + row.GSMTrail2;
+            var (residueDry, dissolvedDry) = DecomposeBicomponent(
+                row.GSMTrail1, row.GSMTrail2, row.BicomponentSubFibers);
+            if (parentWet == 0 || residueDry + dissolvedDry == 0)
+                return LookupMoistureRegain(row.Sum);
+
+            return (residueDry + dissolvedDry) / parentWet * 100m - 100m;
+        }
+
+        /// <summary>
+        /// 某个成分行**印到报告上**的回潮率（MR 栏 / 页脚汇总）。
+        ///
+        /// 双组分父行恒为 0，**刻意与 <see cref="EffectiveMoistureRegain"/> 不同** ——
+        /// 那个加权值只用来算，不上报告（MR 栏保持空白、页脚不多一条）。
+        /// 别为了"一致"把这里改回 Effective：要让报告显示它，是产品决定，不是修 bug。
+        /// </summary>
+        private decimal DisplayedMoistureRegain(MultiFiberRowUnit row)
+            => IsBicomponentFiber(row.Sum) ? 0m : EffectiveMoistureRegain(row);
+
+        /// <summary>
         /// 安全除法：除数为0时返回0，避免异常
         /// </summary>
         private static decimal SafeDivide(decimal numerator, decimal denominator)
@@ -831,6 +863,74 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             name is "Bicomponent Fiber" or "Biconstituent Fiber";
 
         /// <summary>
+        /// 双组分父行的**总重**（逐试次）。
+        ///
+        /// 优先取**父行自己的称量值**。存量数据里父行有两种录法，这一个定义同时吃得下：
+        ///   · 父重 = 两子之和（11 条，多为 07-20 那轮连测）—— 父行就是这份双组分的称样量；
+        ///   · 父重 = 子行一（2 条，含真实记录 87.405.26.13233.01）—— 子行一是父重的副本。
+        /// 原先一律取"子行一"，把第一种录法的父行算成了其中一份，外层百分比偏小。
+        ///
+        /// 父行为 0（3 条）或**小于残留**（数据错）时退化成两子行之和 —— 那是唯一还能自洽的取值。
+        /// 非双组分行（子行数为 0）**原值返回**，逐字是改动前的行为。
+        ///
+        /// ⚠️ 这个值同时喂三处：外层百分比、括号内比例、母行的 MR 加权。改它 = 改这三处，
+        /// 别再引入第二套"父行总重"的定义。
+        /// </summary>
+        private static (decimal Trail1, decimal Trail2) ResolveBicomponentParentGsm(
+            float parentGsm1, float parentGsm2, IReadOnlyList<BicomponentSubFiber>? subs)
+        {
+            var trail1 = (decimal)parentGsm1;
+            var trail2 = (decimal)parentGsm2;
+            if (subs == null || subs.Count == 0) return (trail1, trail2);
+
+            var (residueGsm1, residueGsm2) = ResidueGsm(subs);
+
+            if (trail1 <= 0 || trail1 < residueGsm1) trail1 = subs.Sum(s => s.GSMTrail1);
+            if (trail2 <= 0 || trail2 < residueGsm2) trail2 = subs.Sum(s => s.GSMTrail2);
+
+            return (trail1, trail2);
+        }
+
+        /// <summary>
+        /// 残留那一份的湿重（逐试次）= **子行最后一个**。
+        /// <see cref="ResolveBicomponentParentGsm"/> 与 <see cref="DecomposeBicomponent"/> 共用，
+        /// 口径只此一处：与 <see cref="CalculateDissolvedUnits"/> 的"最后一行 own = 当前行自身，
+        /// 前面的都是差值"同源。要换成"第一个是残留"是口径变更，不是修 bug。
+        /// </summary>
+        private static (decimal Trail1, decimal Trail2) ResidueGsm(IReadOnlyList<BicomponentSubFiber> subs)
+            => (subs[^1].GSMTrail1, subs[^1].GSMTrail2);
+
+        /// <summary>
+        /// 把双组分父行拆成「残留 / 被溶解」两份，返回各自**折干后**的克重（两次称量已合并）。
+        ///
+        /// **残留 = 子行最后一个** —— 与 <see cref="CalculateDissolvedUnits"/> 的
+        /// "最后一行 own = 当前行自身，前面的都是差值"是同一套口径；
+        /// 被溶解 = 父行总重 − 残留（父行总重见 <see cref="ResolveBicomponentParentGsm"/>）。
+        /// 各按**自己名字**的回潮率折干：干重 = 湿重 × (1 + MR/100)，与
+        /// <see cref="CalculateRates"/> 的 `(1+MR)*Correct/100` 同源。
+        ///
+        /// 拆不出来时返回 (0, 0) 让调用方各自跳过 —— 绝不在数据错（父重小于残留）时硬猜一个比例。
+        /// </summary>
+        private (decimal ResidueDry, decimal DissolvedDry) DecomposeBicomponent(
+            decimal parent1, decimal parent2, IReadOnlyList<BicomponentSubFiber>? subs)
+        {
+            if (subs == null || subs.Count < 2) return (0m, 0m);
+
+            var residue = subs[^1];
+            var (residueGsm1, residueGsm2) = ResidueGsm(subs);
+            var dissolvedGsm1 = parent1 - residueGsm1;
+            var dissolvedGsm2 = parent2 - residueGsm2;
+            if (dissolvedGsm1 < 0 || dissolvedGsm2 < 0) return (0m, 0m);
+
+            var residueMr = LookupMoistureRegain(residue.FiberName);
+            var dissolvedMr = LookupMoistureRegain(subs[0].FiberName);
+
+            var residueDry = (residueGsm1 + residueGsm2) * (1m + residueMr / 100m);
+            var dissolvedDry = (dissolvedGsm1 + dissolvedGsm2) * (1m + dissolvedMr / 100m);
+            return (residueDry, dissolvedDry);
+        }
+
+        /// <summary>
         /// Bicomponent/Biconstituent 格式化：
         /// TestResult: "X% Polyester/Polyamide bicomponent (Y%Polyester Z%Polyamide)"
         /// Recommendation: "X% Bicomponent Fiber (Y%Polyester Z%Polyamide)"
@@ -851,9 +951,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 if (row == null || row.BicomponentSubFibers.Count != 2) continue;
 
                 var subs = row.BicomponentSubFibers;
-                var subGsmTotal = subs.Sum(s => s.GSMTrail1 + s.GSMTrail2);
-                if (subGsmTotal == 0) continue;
-
                 var parentPct = line.Split('%')[0].Trim();
                 var fullName = line.Contains("Bicomponent Fiber")
                     ? "Bicomponent Fiber" : "Biconstituent Fiber";
@@ -864,27 +961,30 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 var p2 = subs[1];
                 var s1Name = p1.FiberName;
                 var s2Name = p2.FiberName;
-                var s1Gsm = p1.GSMTrail1 + p1.GSMTrail2;
-                var s2Gsm = p2.GSMTrail1 + p2.GSMTrail2;
-                var mr1 = LookupMoistureRegain(s1Name);
-                var mr2 = LookupMoistureRegain(s2Name);
-                var correctedS1 = s1Gsm * (1 + mr1 / 100m);
-                var correctedS2 = s2Gsm * (1 + mr2 / 100m);
-                var denominator = correctedS1;
-                if (denominator == 0) continue;
+
+                // B16：父行**拆开**算 —— 子行最后一个是残留、被溶解 = 父行总重 − 残留，
+                // 各按自己名字的回潮率折干（父行总重见 ResolveBicomponentParentGsm）。
+                // 改之前这里拿 s1 当聚酰胺的质量、分母只除 s1、再拿 100 去减，算出来其实是
+                // 「残留/父重」；s1 一旦换成真正的聚酰胺质量，那个式子会翻成 508% / −408%。
+                var (residueDry, dissolvedDry) = DecomposeBicomponent(
+                    row.GSMTrail1, row.GSMTrail2, subs);
+                var dryTotal = residueDry + dissolvedDry;
+                if (dryTotal == 0) continue;
+
+                // 残留是**子行最后一个**，所以它的比例落在 s2Pct 上 —— 名字与顺序一字不改。
+                var residueShare = residueDry / dryTotal * 100m;
 
                 string s1Pct, s2Pct;
                 if (format == "F0")
                 {
-                    var s2Raw = (correctedS2 / denominator) * 100m;
-                    var s2Rounded = Math.Round(s2Raw, MidpointRounding.AwayFromZero);
+                    var s2Rounded = Math.Round(residueShare, MidpointRounding.AwayFromZero);
                     s2Pct = s2Rounded.ToString("F0");
                     s1Pct = (100m - s2Rounded).ToString("F0");
                 }
                 else
                 {
-                    s2Pct = ((correctedS2 / denominator) * 100m).ToString("F1");
-                    s1Pct = ((1m - correctedS2 / denominator) * 100m).ToString("F1");
+                    s2Pct = residueShare.ToString("F1");
+                    s1Pct = (100m - residueShare).ToString("F1");
                 }
 
                 if (line.Contains("Biconstituent Fiber"))
@@ -959,24 +1059,35 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         };
 
         /// <summary>
-        /// 设备选型主入口（对应 Excel L23/O23/R23/L24/O24）
+        /// 设备选型主入口（对应 Excel L23/O23/R23/L24/O24）。
+        ///
+        /// <para>
+        /// 判据是**分析类型**，不是纤维条数：单组分是定性鉴别报告，只给鉴别设备（显微镜）；
+        /// 多组分是定量报告，才给烘箱（O23）/天平（R23）/水浴（L24）/摇床（O24）
+        /// —— 后四项都服务于"拆分、溶解、烘干后称量"，单组分不称量故不给。
+        /// </para>
+        /// <para>
+        /// ⚠️ B12 之前这里传的是 <c>orderedFiberNames.Count</c>，形参名还叫 <c>componentCount</c>
+        /// —— 名字本身就是错的，已连同该参数一起删除。**别再按"条数"重新引入**：
+        /// 单组分记录也可以列多条单纤维（真实记录 87.405.26.12312.01 = Modal + Silk 两条），
+        /// 多组分记录也可能只列一条 —— 条数区分不出分析类型，两个方向都会判错。
+        /// </para>
         /// </summary>
-        private EquipmentSelection SelectEquipment(int componentCount, List<string> orderedFiberNames)
+        private EquipmentSelection SelectEquipment(AnalysisType analysisType, List<string> orderedFiberNames)
         {
+            var isMultiple = analysisType == AnalysisType.Multiple;
+
             return new EquipmentSelection
             {
-                Microscope = SelectMandatory(componentCount, MICROSCOPE),       // L23
-                Oven = SelectMandatory(componentCount, OVEN),                   // O23
-                Balance = SelectMandatory(componentCount, BALANCE),             // R23
-                WaterBath = SelectWaterBath(orderedFiberNames),                 // L24
-                Shaker = SelectShaker(orderedFiberNames)                        // O24
+                // L23 显微镜是**定性鉴别**必用设备 —— 单组分报告同样是一份鉴别报告
+                // （FZ/T 01057.3 显微法、ISO/TR 11827 §7.1.1、AATCC TM20 都以显微法为起点），
+                // 所以门槛是"有纤维"，**不是**"多组分"。与下面四项刻意不同闸。
+                Microscope = orderedFiberNames.Count > 0 ? MICROSCOPE : string.Empty,        // L23
+                Oven = isMultiple ? OVEN : string.Empty,                                     // O23
+                Balance = isMultiple ? BALANCE : string.Empty,                               // R23
+                WaterBath = isMultiple ? SelectWaterBath(orderedFiberNames) : string.Empty,  // L24
+                Shaker = isMultiple ? SelectShaker(orderedFiberNames) : string.Empty         // O24
             };
-        }
-
-        /// <summary>L23/O23/R23 — 多组分必用设备</summary>
-        private static string SelectMandatory(int componentCount, string deviceCode)
-        {
-            return componentCount > 1 ? deviceCode : string.Empty;
         }
 
         /// <summary>L24 — 水浴设备选择（P130/P131 规则）</summary>

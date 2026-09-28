@@ -18,7 +18,6 @@
         public string FiberName { get; init; } = string.Empty;
         public string Sample { get; init; } = string.Empty;
         public decimal MoistureRegain { get; init; }
-        public decimal GSMTrail1 { get; init; }
         public decimal Rate { get; init; }
     }
     /// <summary>

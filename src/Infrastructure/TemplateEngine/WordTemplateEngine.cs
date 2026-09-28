@@ -6,6 +6,7 @@ using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Application.Interface.FiberTeamContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
 {
@@ -395,7 +396,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 {
                     if (string.IsNullOrWhiteSpace(fiberName)) continue;
 
-                    var imagePath = Path.Combine(imageFolder, $"{fiberName}.png");
+                    // B15：图库文件名走别名表（Spandex→Elastane 等）。
+                    // 只用别名**找文件** —— 下面图注那行仍用录入名 fiberName，一字未改。
+                    var imagePath = Path.Combine(imageFolder, $"{MicroscopeImageName.Resolve(fiberName)}.png");
                     if (!File.Exists(imagePath)) continue;
 
                     if (slotIndex >= bookmarks.Count) break;

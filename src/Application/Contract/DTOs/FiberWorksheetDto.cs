@@ -36,10 +36,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
     {
         public Guid Id { get; set; }
         public string? VerifyResult { get; set; }
-        public string? FinalResult { get; set; }
-        public string? DurabilityLabel { get; set; }
-        public string? OtherLabel { get; set; }
-        public string? Comprehensive { get; set; }
         public string? RecommendedLabel { get; set; }
         public string? ResultRemark { get; set; }
         public string? LabelRemark { get; set; }
@@ -73,10 +69,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
     public class FiberWorksheetResultCreateDto
     {
         public string? VerifyResult { get; set; }
-        public string? FinalResult { get; set; }
-        public string? DurabilityLabel { get; set; }
-        public string? OtherLabel { get; set; }
-        public string? Comprehensive { get; set; }
         public string? RecommendedLabel { get; set; }
         public string? ResultRemark { get; set; }
         public string? LabelRemark { get; set; }

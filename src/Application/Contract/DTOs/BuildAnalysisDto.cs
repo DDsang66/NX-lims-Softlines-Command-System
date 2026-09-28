@@ -31,11 +31,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
         public string LabelRemark { get; set; } = string.Empty;
         public string JudgmentLabelRemark { get; set; } = string.Empty;
         public string LanguageLabelRemark { get; set; } = string.Empty;
-        public string DurabilityLabel { get; set; } = string.Empty;
-        public string OtherLabel { get; set; } = string.Empty;
-        public string Comprehensive { get; set; } = string.Empty;
+
+        /// <summary>conclusion 段唯一字段。2026-09-28 起 DurabilityLabel/OtherLabel/Comprehensive/FinalResult 已随模板删行下线。</summary>
         public string VerifyResult { get; set; } = string.Empty;
-        public string FinalResult { get; set; } = string.Empty;
     }
 
     /// <summary>
@@ -124,6 +122,5 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
     {
         public string Sample { get; set; } = string.Empty;
         public string FiberName { get; set; } = string.Empty;
-        public float GSMTrail1 { get; set; } = 0;
     }
 }

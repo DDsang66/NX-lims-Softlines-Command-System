@@ -41,11 +41,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             flatData["LabelRemark"] = analysisResult.LabelRemark;
             flatData["JudgmentLabelRemark"] = analysisResult.JudgmentLabelRemark;
             flatData["LanguageLabelRemark"] = analysisResult.LanguageLabelRemark;
-            flatData["DurabilityLabel"] = analysisResult.DurabilityLabel;
-            flatData["OtherLabel"] = analysisResult.OtherLabel;
-            flatData["Comprehensive"] = analysisResult.Comprehensive;
             flatData["VertifyResult"] = analysisResult.VerifyResult;  // 模板书签名为 VertifyResult
-            flatData["FinalResult"] = analysisResult.FinalResult;
+            // 2026-09-28：模板 conclusion 段删行后，DurabilityLabel/OtherLabel/Comprehensive/FinalResult
+            // 四个书签已不存在，对应的 flatData 一并去掉（无书签的值本来也会被 ReplaceText 静默跳过）
             flatData["BurningTest"] = analysisResult.BurningTest;
 
             // 数组/嵌套结构：留空，后续单独处理
@@ -136,7 +134,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                         flatData[$"Qualitative_{idx}"] = single.Qualitative;
                         flatData[$"Reagent_{idx}"] = single.Reagent;
                         flatData[$"Sample_{idx}"] = "-";
-                        flatData[$"GSMTrail1_{idx}"] = single.GSMTrail1.ToString("F4");
                         flatData[$"Rate_{idx}"] = single.Rate.ToString("F2")+"%";
                         itemIndex++;
                         break;

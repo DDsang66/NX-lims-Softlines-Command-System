@@ -10,7 +10,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     /// 这一层改的都是**规则与常量**，不改结构：
     ///   · ISO1833_20 年份 2020 → **2018**（2020 只是各国采标年份，不存在这个标准号）；
     ///     DIN1833_D5x 同时改成由常量拼装，消掉"复制了一份字面量"的隐患
-    ///   · 显微镜法串 FZ/T 30003-2009 → **2024**（FZ/T 01057.3 仍是 2007，2025 版 2027 才实施）
+    ///   · 显微镜法串 FZ/T 30003-2009 → **2024**；2026-09 又去掉其中的 "FZ/T 01057.3–2007 / "
+    ///     前缀 —— .3 已改由 FZ/T 01057 系列名展开落到链首（见 FZ01057_* 常量），留着就重复了。
+    ///     四个分部一律 **2007 版**：.2/.3 的 2025 版 2027-05-01 才实施，届时才换。
     ///   · ISO 侧：-1（试验通则，不是纤维对的定量方法）改 -20；-22 上移到 -6 之前；
     ///     -6 按官方范围收紧；补 flax（不补 ramie，1833-22:2020 只有 flax）
     ///   · GB 侧：删除"聚酯在前一律给 2910.24"的兜底，换成涤氨双向 2910.20；补纤维素 × 弹性纤维 2910.20
@@ -51,10 +53,32 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private const string GB2910_22 = "GB/T 2910.22–2009";
         private const string FZ01026 = "FZ/T 01026–2017";
 
-        /// <summary>显微镜法串。FZ/T 30003 原文就是连字符，与旁边的 FZ/T 01057.3–2007 不同，照抄不"统一"。</summary>
-        private const string MICROSCOPE_GB_CHAIN = "FZ/T 01057.3–2007 / FZ/T 30003-2024";
+        // ── FZ/T 01057 系列（纺织纤维鉴别试验方法）────────────────────────────
+        // 下拉里**只有系列名一条**（见 FiberWorksheetService.MethodOptions），报告上落的却是
+        // .1~.4 四个分部 —— 由下面 BuildSingleStdChain 的 GB 分支展开，系列名本身不上报告。
+        // 与 ISO1833 / DIN EN ISO 1833 只写体系名、分部由链构造器补全是同一个约定。
+        //
+        // .2 与 .3 的 2025 版是 2025-04-10 发布、**2027-05-01 才实施**，代替 2007 版。
+        // 到 2026-09 为止，这两个分部的**现行有效版本仍是 2007**。
+        // 2027-05-01 之后要换，只需动下面 FZ01057_2 / FZ01057_3 两行。
+        //
+        // 写法逐字照抄官方标准号：年份前一律 ASCII 连字符 —— 与相邻 FZ01026 的 –(U+2013) 不同，
+        // 是两套清单的原始写法不同，别顺手统一。
+        private const string FZ01057 = "FZ/T 01057";
+        private const string FZ01057_1 = "FZ/T 01057.1-2007";  // 通用说明
+        private const string FZ01057_2 = "FZ/T 01057.2-2007";  // 燃烧法
+        private const string FZ01057_3 = "FZ/T 01057.3-2007";  // 显微镜法
+        private const string FZ01057_4 = "FZ/T 01057.4-2007";  // 溶解法
 
-        /// <summary>ISO 1833 各分部常量的集合 —— 由常量拼装，避免"改了常量忘了这里"。</summary>
+        /// <summary>
+        /// 纤维素类父槽存在时追加的显微镜法串。
+        /// 原为 "FZ/T 01057.3–2007 / FZ/T 30003-2024" —— .3 已移进链首的系列展开，
+        /// 留在这里就是同一份报告里写两次 .3，故只留定量用的 FZ/T 30003。
+        /// （FZ/T 30003 原文就是连字符，照抄不"统一"。）
+        /// </summary>
+        private const string MICROSCOPE_GB_CHAIN = "FZ/T 30003-2024";
+
+        /// <summary>ISO 1833 各分部常量的集合 —— 由常量拼装。</summary>
         private static readonly HashSet<string> DIN1833_D5x = new(StringComparer.OrdinalIgnoreCase)
         {
             ISO1833_1, ISO1833_2, ISO1833_3, ISO1833_4, ISO1833_6, ISO1833_7,
@@ -73,6 +97,29 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             => BuildMethodString(standard, fibers, fibers.Select(FiberSlot.Leaf).ToList());
 
         /// <summary>Excel L4+L6: 根据标准体系和成分对自动拼接方法标准链（含子纤维槽位）。</summary>
+        /// <param name="isSingleComponent">
+        /// 这条记录是不是**单组分**（聚合根的 <c>AnalysisType.Single</c>）。
+        ///
+        /// <para>
+        /// <b>B14 起它是整条链的分流开关</b>：单组分走
+        /// <see cref="BuildSingleComponentChain"/> —— **一律不派生定量子标准**，
+        /// 只出勾选的标准本身 + 鉴别法（ISO/DIN 侧 <c>ISO/TR 11827</c>，
+        /// GB 侧 B11 补的 <c>FZ/T 01057.3-2007</c>）。
+        /// 默认 <c>false</c> = 多组分 = **改动前的行为**，所以既有调用点与全部测试
+        /// 不传这个参数时输出逐字不变。
+        /// </para>
+        ///
+        /// <para>
+        /// <b>刻意是 bool 而不是 <c>AnalysisType</c></b>：本模块只看"是不是定性报告"这一个比特，
+        /// 收枚举会让默认值无从选择（默认 <c>Single</c> 就把所有既有调用点的输出改了）。
+        /// </para>
+        ///
+        /// <para>
+        /// <b>纤维条数区分不出它</b>：单组分记录可以有 1 条也可以有多条单纤维
+        /// （如 <c>87.405.26.12312.01</c> 的 Modal + Silk），所以只能由调用方按聚合根的
+        /// <c>Type</c> 传进来，不能在这里从 <paramref name="fibers"/> 猜。
+        /// </para>
+        /// </param>
         /// <remarks>
         /// **这里原先有一段"按逗号切分 → 逐段建链 → 空格合并"的分支，已整段删除。**
         /// 它**从生产路径不可达** —— 适配器的 ParseMethods 早已把多值 method 切成 Methods
@@ -83,22 +130,26 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <see cref="IngredientAnalysisCalculation.StandardsToRender"/> 在 Methods 为空时退化成
         /// **单个空标准**，走到这里就该返回空串，不是抛异常。
         /// </remarks>
-        internal static string BuildMethodString(string standard, List<string> fibers, IReadOnlyList<FiberSlot> slots)
+        internal static string BuildMethodString(
+            string standard, List<string> fibers, IReadOnlyList<FiberSlot> slots,
+            bool isSingleComponent = false)
         {
             if (string.IsNullOrWhiteSpace(standard)) return string.Empty;
 
-            return BuildSingleStdChain(standard, fibers, slots);
+            return BuildSingleStdChain(standard, fibers, slots, isSingleComponent);
         }
 
         /// <summary>
         /// 单个标准的链 —— 这是**唯一**路径，不再有"多值拆链"那种调用形态。
         ///
-        /// 两个刻意的边界（别顺手"修"）：
-        ///   · **不按空格切分** —— AATCC TM20-2021  AATCC TM20A-2021e（双空格，27 条真实记录）
+        /// 两个刻意的边界：
+        ///   · **不按空格切分** —— AATCC TM20-2021  AATCC TM20A-2021e（双空格）
         ///     是 AATCC 的**复合方法名**（TM20 + TM20A 是一套），不是两个标准，必须整串透传。
         ///   · **顺序由 Methods 决定** —— 多标准的先后就是分析员的勾选顺序，不做规范化。
         /// </summary>
-        private static string BuildSingleStdChain(string standard, List<string> fibers, IReadOnlyList<FiberSlot> slots)
+        private static string BuildSingleStdChain(
+            string standard, List<string> fibers, IReadOnlyList<FiberSlot> slots,
+            bool isSingleComponent)
         {
             if (string.IsNullOrWhiteSpace(standard)) return string.Empty;
 
@@ -107,8 +158,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             var isGb = standard.StartsWith("FZ/T", StringComparison.OrdinalIgnoreCase)
                     || standard.StartsWith("GB/T", StringComparison.OrdinalIgnoreCase);
 
+            // 分析员勾的是不是 FZ/T 01057 系列（**鉴别**标准，自带显微法 .3）。
+            // 用 StartsWith 而不是 Equals：真实库里既有系列名 `FZ/T 01057`，
+            // 也有老记录的合并写法 `FZ/T 01057.1-4–2007`，两者都已含 .3。
+            var hasIdentificationStd = standard.StartsWith(FZ01057, StringComparison.OrdinalIgnoreCase);
+
             // 非 ISO/DIN/GB：直接返回原值（Regulation / CAN / CNS / JIS 一律逐字透传）
             if (!isIso && !isDin && !isGb) return standard;
+
+            // ★ B14：单组分**一律不派生**。
+            // 单组分表里每行是**不同测点下的各一种组分**（每行一种纤维、各 100%），
+            // 不是多组分那种"同一测点下的多种组分（一份混纺）"—— 按纤维列表查表的定量
+            // 子标准（GB/T 2910.x、ISO 1833-x）前提是"一份混纺要拆"，对它不成立。
+            // 分流点刻意放在上面那条透传守卫**之后**，Regulation / CAN / CNS / JIS
+            // 两种类型都仍然是逐字透传。
+            if (isSingleComponent) return BuildSingleComponentChain(standard, isIso, isDin);
+
+            // ── 以下全部是多组分路径，逐字未动 ──
 
             // 丙烯腈守卫要看到**整条列表**，不是当前这一对 —— 在此算一次，传给两个查表函数
             var hasAcrylic = fibers.Any(FiberTokens.IsAcrylicType);
@@ -182,7 +248,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // ========== GB (FZ/T / GB/T) ==========
             if (isGb)
             {
-                parts.Add(standard);
+                // FZ/T 01057 是**系列名** —— 报告上要落 .1~.4 四个分部，不是这一个系列名。
+                // 其余 FZ/T / GB/T 串一律原样透传；**包括老记录的 "FZ/T 01057.1-4–2007"**：
+                if (standard.Equals(FZ01057, StringComparison.OrdinalIgnoreCase))
+                    parts.AddRange(new[] { FZ01057_1, FZ01057_2, FZ01057_3, FZ01057_4 });
+                else
+                    parts.Add(standard);
 
                 // T129: 有拆分列且无 elastane → GB/T 2910.1
                 var hasElastane = fibers.Any(FiberTokens.IsElastane);
@@ -208,7 +279,83 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 // cellulosic
                 if (hasCellulosicParent)
                     parts.Add(MICROSCOPE_GB_CHAIN);
+
+                // 单组分 = 定性鉴别报告，链里必须有显微法。
+                // 勾 GB/T 2910.x 时上面一条显微法都不会产生（FZ/T 30003 那支要 cellulosic 父槽，
+                // GB/T 2910.x 全是化学溶解定量法），故补 .3 这条定性显微法。
+                //
+                // 两道守卫，缺一不可：
+                //   · hasIdentificationStd —— 分析员勾的**本身就是** FZ/T 01057 系列。
+                //     除了系列名 `FZ/T 01057`（上面展开成 .1~.4），真实库里还有**合并写法**
+                //     `FZ/T 01057.1-4–2007`（老记录，逐字透传），它同样已含 .3 ——
+                //     只看 parts.Contains 挡不住它，会补成 `.1-4–2007 … .3-2007` 写两次。
+                //   · parts.Contains(FZ01057_3) —— 系列展开那支落下的 .3，防重复。
+                //
+                // **只有单组分补**：多组分的显微法由 cellulosic 那支的 FZ/T 30003-2024 负责（麻棉混纺光学显微镜法定量）。
+                //
+                // 追加在**队尾**，与上一行的 FZ/T 30003 同序 —— GB 侧的惯例是"定量法在前、
+                // 显微法收尾"（ISO 侧相反，是鉴别法领队，那是它自己的惯例，不互相统一）。
+                //
+                // ⚠️ **B14 起 B11 这一整段在单组分路径上走不到了** —— 单组分在方法入口就分流去了
+                // BuildSingleComponentChain（那里有一份等价的 .3 补链）。这段代码保留是因为
+                // 它就是多组分路径的完整形状，且 `isSingleComponent` 恒为 false 时逐字不变。
+                if (isSingleComponent && !hasIdentificationStd && !parts.Contains(FZ01057_3))
+                    parts.Add(FZ01057_3);
             }
+
+            return string.Join(" ", parts);
+        }
+
+        /// <summary>
+        /// **单组分**（<see cref="AnalysisType.Single"/>）的标准链 —— 只出「勾选的标准本身 + 鉴别法」。
+        ///
+        /// <para>
+        /// 单组分表里每行是**不同测点下的各一种组分**（每行一种纤维、各 100%），
+        /// 不是多组分那种"同一测点下的多种组分（一份混纺）"。GB/T 2910.x、ISO 1833-x
+        /// 这些**定量**标准的前提是"一份混纺要拆"，对单组分不成立 ——
+        /// 所以**凡是"按纤维列表/纤维对查表"的派生一律不做**：
+        /// T129 补 GB/T 2910.1、T130 按纤维对查 GB 子标准、T131 三元/四元（2910.2 / FZ/T 01026）、
+        /// cellulosic 父槽的 ISO 20705 / FZ/T 30003、以及 ISO 侧的 subStandards 与三元早退，
+        /// 全部只在多组分路径生效。
+        /// </para>
+        ///
+        /// <para>
+        /// 单组分的 `Type == Single` 只是这个 bit，**不是**"纤维只有一条"：
+        /// 单组分记录可以有 1 条也可以有多条单纤维（如 <c>87.405.26.12312.01</c> 的 Modal + Silk），
+        /// 所以不能按条数代传。真实影响见 <c>87.405.26.23432.01</c>：勾的是 <c>FZ/T 01057</c>，
+        /// 改前却多出 <c>GB/T 2910.1–2009</c> 与 <c>GB/T 2910.11–2024</c> 两条化学溶解定量法。
+        /// </para>
+        ///
+        /// <para>
+        /// <b>鉴别法保留</b>：单组分报告本来就是定性鉴别报告。
+        /// </para>
+        /// </summary>
+        /// <param name="standard">已由调用方判定为 ISO / DIN / GB（FZ/T、GB/T）三者之一。</param>
+        private static string BuildSingleComponentChain(string standard, bool isIso, bool isDin)
+        {
+            // ISO / DIN：只有鉴别标准 —— 没有 subStandards、没有三元早退、没有 cellulosic 那串。
+            if (isIso || isDin) return isIso ? ISO_QUALITATIVE : DIN_QUALITATIVE;
+
+            var parts = new List<string>();
+
+            // FZ/T 01057 是**系列名** —— 报告上落 .1~.4 四个分部。
+            // 其余 FZ/T / GB/T 串逐字透传，**含老记录的合并写法 `FZ/T 01057.1-4–2007`**
+            // （它本身就含 .3）。这一条与多组分路径同构，是"勾选的标准本身"那一半。
+            if (standard.Equals(FZ01057, StringComparison.OrdinalIgnoreCase))
+                parts.AddRange(new[] { FZ01057_1, FZ01057_2, FZ01057_3, FZ01057_4 });
+            else
+                parts.Add(standard);
+
+            // B11 保留：勾的是**纯定量**标准（GB/T 2910.x）时，链里一个显微法都不会有
+            // （FZ/T 30003 那支要 cellulosic 父槽，而那支 B14 起不对单组分生效），
+            // 故补 .3 这条定性显微法。
+            //
+            // 两道守卫与多组分路径里那份同义，缺一不可：
+            //   · hasIdentificationStd —— 勾的本身就是 FZ/T 01057 系列（含合并写法），已含 .3；
+            //   · parts.Contains —— 系列展开那支已落下的 .3，防重复。
+            var hasIdentificationStd = standard.StartsWith(FZ01057, StringComparison.OrdinalIgnoreCase);
+            if (!hasIdentificationStd && !parts.Contains(FZ01057_3))
+                parts.Add(FZ01057_3);
 
             return string.Join(" ", parts);
         }

@@ -30,11 +30,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.LabelRemark, src => GetRemarkValue(src.Remark, "LabelRemark"))
                 .Map(dest => dest.JudgmentLabelRemark, src => GetRemarkValue(src.Remark, "JudgmentLabelRemark"))
                 .Map(dest => dest.LanguageLabelRemark, src => GetRemarkValue(src.Remark, "LanguageLabelRemark"))
-                .Map(dest => dest.DurabilityLabel, src => GetRemarkValue(src.Remark, "DurabilityLabel"))
-                .Map(dest => dest.OtherLabel, src => GetRemarkValue(src.Remark, "OtherLabel"))
-                .Map(dest => dest.Comprehensive, src => GetRemarkValue(src.Remark, "Comprehensive"))
-                .Map(dest => dest.VerifyResult, src => GetRemarkValue(src.Remark, "VerifyResult"))
-                .Map(dest => dest.FinalResult, src => GetRemarkValue(src.Remark, "FinalResult"));
+                .Map(dest => dest.VerifyResult, src => GetRemarkValue(src.Remark, "VerifyResult"));
         }
 
         // ========== 序列化方法 ==========
@@ -79,11 +75,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 dto.LabelRemark,
                 dto.JudgmentLabelRemark,
                 dto.LanguageLabelRemark,
-                dto.DurabilityLabel,
-                dto.OtherLabel,
-                dto.Comprehensive,
-                dto.VerifyResult,
-                dto.FinalResult
+                dto.VerifyResult
             };
 
             return JsonSerializer.Serialize(remarks, new JsonSerializerOptions

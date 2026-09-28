@@ -29,6 +29,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// 每条 **value 与 label 相同**（前端就按这个约定渲染），故这里是纯字符串列表。
         /// 两条 AATCC **复合方法名**照原样保留（TM20与 TM20A是一套），
         /// 空格数也照抄 —— 后端多值拆链只按逗号切、不按空格切，正是为了不切坏它们。
+        ///
+        /// **FZ/T 01057 只列系列名、不列分部号**（原先是并不存在的捆绑号 "FZ/T 01057.1-4–2007"）：
+        /// 该标准是系列标准，报告上要落的是 .1/.2/.3/.4 四个分部，
+        /// 由 <see cref="FiberStandardChainBuilder"/> 在拼链时自动展开 —— 与上面
+        /// <c>ISO1833</c>、<c>DIN EN ISO 1833</c> 只写体系名、分部由链构造器补全是同一个约定。
+        /// 故这里改了串**不必**同步改链构造器，反之亦然。
         /// </summary>
         private static readonly IReadOnlyList<string> MethodOptions = new[]
         {
@@ -37,7 +43,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             "AATCC TM20-2021  AATCC TM20A-2025",
             "ISO1833",
             "DIN EN ISO 1833",
-            "FZ/T 01057.1-4–2007",
+            "FZ/T 01057",
             "AATCC TM20-2021 AATCC TM20A-2025 (Korea)",
             "CAN/CGSB-4.2 No.14-2005",
             "CNS 2339-1:2013 CNS 2339-2:2013",
@@ -69,6 +75,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             _labelOptionRepo = labelOptionRepo;
             _docxMerger = docxMerger;
         }
+
+        /// <summary>月度子目录名 —— 与 FiberAnalysisController.ResolveReportFile 共用, 防两边写岔</summary>
+        public static string MonthlyFolder() => "FiberAnalysis" + DateTime.Now.ToString("yyyyMM");
 
         public async Task<object> GetLabelOptionsAsync(CancellationToken ct)
         {
@@ -165,6 +174,35 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         }
 
         /// <summary>
+        /// 组分类型 → 模板在 DocxModel 下的 [目录, 文件名]。2026-09-28 起单/多组分各用一份模板，
+        /// 两份都在 <c>DocxModel/Common_FIBER/</c>（原先是根目录下唯一那份 FIBER_ANALYSIS_DATA_SHEET.docx）。
+        /// </summary>
+        /// <remarks>
+        /// ⚠️ **必须写成白名单，不能拼字符串。** 文件名是 <c>_Multi</c>，而枚举值是
+        /// <see cref="AnalysisType.Multiple"/> —— <c>$"..._{type}.docx"</c> 会拼出**不存在**的
+        /// <c>_Multiple.docx</c>。这处不对称是刻意的（模板是给人看的，按界面上的 Multi 命名），
+        /// 别"顺手"改成拼接。测试里有 <c>File.Exists</c> 断言盯着这条。
+        ///
+        /// 判据用聚合根的 <see cref="IngredientAnalysisCalculation.Type"/>（来自列
+        /// <c>fiber_analysis.type</c>，NULL 时由适配器的 JSON 探针兜底）——
+        /// **不是** DTO 上的 ComponentType：那个字段前端发了、DTO 收了，但后端没有一处读它。
+        /// </remarks>
+        internal static (string Dir, string File) TemplateOf(AnalysisType type) => type switch
+        {
+            AnalysisType.Single => ("Common_FIBER", "FIBER_ANALYSIS_DATA_SHEET_Single.docx"),
+            _                   => ("Common_FIBER", "FIBER_ANALYSIS_DATA_SHEET_Multi.docx"),
+        };
+
+        /// <summary>
+        /// 模板相对 WebRootPath 的完整相对路径。见 <see cref="TemplateOf"/>。
+        /// </summary>
+        internal static string TemplatePathOf(AnalysisType type)
+        {
+            var (dir, file) = TemplateOf(type);
+            return Path.Combine("DocxModel", dir, file);
+        }
+
+        /// <summary>
         /// 构建成分分析报告服务
         /// </summary>
         /// <returns></returns>0
@@ -200,10 +238,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 //计算失败触发补偿机制
 
                 //执行生成word
+                // 报告按月归档: SaveDocx/{FiberAnalysis+yyyyMM}/ —— 单月报告多了以后 SaveDocx
+                // 根目录会被塞爆, 按月分便于清理/查找(照克重 Weight{yyyyMM}、纱支 YarnCount{yyyyMM})。
+                // 目录不存在时 CopyTemplate 会自建; 下载侧(FiberAnalysisController)按
+                // 当月目录 → 根目录顺序找回, 所以改动前平铺的老文件仍取得到。
                 string targetFileName = $"{ingredientsAnalysis.ReportNo}_{DateTime.Now:yyMMddHHmmss}_FiberAnalysis.docx";
+
+                // 单/多组分各一份模板（见 TemplateOf）。解析**一次**，下面合并各段必须复用同一个 ——
+                // 若各段另按各自的类型取，一份合并稿里两段版式会不一致。
+                string template = TemplatePathOf(ingredientsAnalysis.Type);
+
                 targetPath = _fileStorage.CopyTemplate(
-                    Path.Combine("DocxModel", "FIBER_ANALYSIS_DATA_SHEET.docx"),
-                    Path.Combine("DocxModel", "SaveDocx"),
+                    template,
+                    Path.Combine("DocxModel", "SaveDocx", MonthlyFolder()),
                     targetFileName);
 
                 // 显微镜图片的纤维名单与标准无关（Components 在构造时就定了，
@@ -216,7 +263,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 // 多标准 → 第 2..N 份各渲一份中间产物，再并进上面那一份。
                 // 零回归保证：StandardResults.Count == 1 时**不经过合并器**。
                 if (ingredientsAnalysis.StandardResults.Count > 1)
-                    MergeStandardReports(targetPath, ingredientsAnalysis.StandardResults.Skip(1).ToList(), microscopeFibers);
+                    MergeStandardReports(targetPath, template, ingredientsAnalysis.StandardResults.Skip(1).ToList(), microscopeFibers);
 
                 //ingredientsAnalysis.WorkSheetGenerator(filePath);
                 //执行保存
@@ -228,7 +275,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             catch (Exception ex)
             {
                 // 半成品不能留在可下载目录里。合并是**原地改写**，中途抛异常会留下半份文件，
-                // 而它在 wwwroot/DocxModel/SaveDocx/ 下、按文件名是取得到的。
+                // 而它在 wwwroot/DocxModel/SaveDocx/{月度子目录}/ 下、按文件名是取得到的。
                 // （顺带也覆盖了改动前就有的情形：ReplaceText 抛异常时同样会剩一份没填完的模板副本。）
                 TryDelete(targetPath);
 
@@ -276,8 +323,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// 后者把源与目标都钉死在 WebRootPath 下。
         /// 目录名带 guid：并发请求各用各的，不会互相覆盖 / 互删。
         /// </remarks>
+        /// <param name="template">
+        /// 与基底**同一个**模板的相对路径（调用方解析一次后传进来）。
+        /// 不在这里按 rest[i] 的类型另取：一份合并稿的所有段必须同版式。
+        /// </param>
         private void MergeStandardReports(
-            string basePath, IReadOnlyList<AnalysisResult> rest, IReadOnlyList<string> microscopeFibers)
+            string basePath, string template, IReadOnlyList<AnalysisResult> rest, IReadOnlyList<string> microscopeFibers)
         {
             string tempDir = Path.Combine(Path.GetTempPath(), "nxlims-docx-merge", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
@@ -288,8 +339,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 for (int i = 0; i < rest.Count; i++)
                 {
                     string path = Path.Combine(tempDir, $"section{i + 2}.docx");
-                    _fileStorage.CopyTemplateTo(
-                        Path.Combine("DocxModel", "FIBER_ANALYSIS_DATA_SHEET.docx"), path);
+                    _fileStorage.CopyTemplateTo(template, path);
                     RenderOne(path, rest[i], microscopeFibers);
                     sources.Add(path);
                 }
