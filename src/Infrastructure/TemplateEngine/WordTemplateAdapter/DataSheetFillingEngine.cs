@@ -25,7 +25,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         public string FillDataSheet(DataSheetModel model)
         {
             var templatePath = model.TemplateUrl;
-            string docxFileName = $"{model.ReportNumber}_{DateTime.Now:yyMMddHHmmss}_DStoWashing.docx";
+            string docxFileName = $"{model.ReportNumber}_{DateTime.Now:yyMMddHHmmss}_{model.TestItem}.docx";
             string targetDocxPath = _fileStorage.CopyTemplate(
                 templatePath,
                 Path.Combine("DocxModel", "SaveDocx"),

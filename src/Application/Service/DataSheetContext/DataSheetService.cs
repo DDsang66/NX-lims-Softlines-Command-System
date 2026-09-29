@@ -1,21 +1,15 @@
-﻿using NX_lims_Softlines_Command_System.Domain;
-using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.DataSheetConetxt;
+﻿using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.DataSheetConetxt;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetBatchContext;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository.ParamEngineContext;
-using NX_lims_Softlines_Command_System.src.Domain.Contract.Util;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
-using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter;
-using System.Security.Policy;
 using DataSheet = NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.DataSheet;
 using DataSheetBatch = NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetBatchContext.DataSheetBatch;
 
@@ -245,7 +239,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
         /// 接收回调
         /// </summary>
         /// <returns></returns>
-        public async Task SaveFromOnlyOffice(string datasheetId,string url,CancellationToken ct) 
+        public async Task SaveFromOnlyOffice(string datasheetId, string url, CancellationToken ct)
         {
             if (string.IsNullOrWhiteSpace(datasheetId))
                 throw new ArgumentException("datasheetId 不能为空", nameof(datasheetId));
@@ -253,14 +247,25 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             if (string.IsNullOrWhiteSpace(url))
                 throw new ArgumentException("ONLYOFFICE url 不能为空", nameof(url));
 
-            // 1. 查 datasheet 记录，拿到原始文件相对路径
+            // 1. 查 datasheet 记录
             var datasheet = await _dataSheetRepository.GetByIdAsync(new DataSheetId(Guid.Parse(datasheetId)), ct)
                 ?? throw new InvalidOperationException($"Datasheet {datasheetId} 不存在");
 
             if (string.IsNullOrWhiteSpace(datasheet.Url))
                 throw new InvalidOperationException($"Datasheet {datasheetId} 没有 Url 字段");
 
-            // 2. 从 ONLYOFFICE 下载最新 docx
+            //报错代码：后续用其他方式幂等
+            //// ★ 2. 幂等：同一个 callback url 重复推送直接跳过
+            //if (!string.IsNullOrEmpty(datasheet.LastCallbackUrl)
+            //    && datasheet.LastCallbackUrl == url)
+            //{
+            //    _logger.LogInformation(
+            //        "重复的 ONLYOFFICE 回调，跳过。datasheetId={DatasheetId}, url={Url}",
+            //        datasheetId, url);
+            //    return;
+            //}
+
+            // 3. 从 ONLYOFFICE 下载最新 docx
             using var httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromMinutes(2);
 
@@ -278,13 +283,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             if (fileBytes == null || fileBytes.Length == 0)
                 throw new InvalidOperationException("下载的文件为空");
 
-            // 3. 拼出原文件的物理路径（与 Download 接口保持一致的规则）
-            //    原字段形如：\DocxModel\SaveDocx\xxx.docx 或 /DocxModel/SaveDocx/xxx.docx
+            // 4. 拼出原文件物理路径
             var relativePath = datasheet.Url
                 .Replace('\\', '/')
                 .TrimStart('/');
 
-            // 防路径穿越
             if (relativePath.Contains(".."))
                 throw new InvalidOperationException("非法的文件路径");
 
@@ -293,7 +296,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                 relativePath.Replace('/', Path.DirectorySeparatorChar)
             );
 
-            // 4. 覆盖写入原文件
+            // 5. 覆盖写入原文件
             var directory = Path.GetDirectoryName(physicalPath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
@@ -302,19 +305,16 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
 
             await File.WriteAllBytesAsync(physicalPath, fileBytes, ct);
 
-            // 5. 更新数据库元数据
-            datasheet.MarkSaved();
-            //datasheet.UpdateTime = DateTime.UtcNow;
-            // 如果 Url 会随保存变化，可以在这里更新
-            // datasheet.Url = ...;
+            // ★ 6. 写盘成功后才更新元数据（顺序不能颠倒）
+            datasheet.MarkSaved(url);   // 保留你原有的领域方法
+
             await _dataSheetRepository.UpdateAsync(datasheet, ct);
 
             await _unitOfWork.SaveChangesAsync(ct);
 
             _logger.LogInformation(
-                "ONLYOFFICE 保存成功: datasheetId={DatasheetId}, 路径={Path}, 大小={Size} bytes",
-                datasheetId, physicalPath, fileBytes.Length);
+                "ONLYOFFICE 保存成功: datasheetId={DatasheetId}, 路径={Path}, 大小={Size} bytes, 版本={Version}, 时间={Time}",
+                datasheetId, physicalPath, fileBytes.Length, datasheet.EditorVersion, datasheet.UpdateTime);
         }
-
     }
 }

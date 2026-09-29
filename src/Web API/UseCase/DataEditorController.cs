@@ -39,6 +39,12 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
             return result;
         }
 
+
+        /// <summary>
+        /// 下载地址
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         [HttpGet("datasheet/download/{*url}")]
         public IActionResult Download(string url)
         {

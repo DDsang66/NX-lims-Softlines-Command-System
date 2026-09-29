@@ -600,9 +600,14 @@ public partial class dbContext : DbContext
                 .HasMaxLength(512)
                 .HasColumnName("contact_template_url");
             entity.Property(e => e.CreateTime).HasColumnName("create_time");
+            entity.Property(e => e.EditorVersion).HasColumnName("editor_version");
             entity.Property(e => e.ErrorMessage)
                 .HasMaxLength(2000)
                 .HasColumnName("error_message");
+            entity.Property(e => e.LastCallbackUrl)
+                .HasMaxLength(200)
+                .IsUnicode(false)
+                .HasColumnName("last_callback_url");
             entity.Property(e => e.ModelIndex).HasColumnName("model_index");
             entity.Property(e => e.ModelKey)
                 .HasMaxLength(128)

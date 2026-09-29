@@ -57,9 +57,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             existing.ModelSnapshot = aggregateRoot.ModelSnapshot;
             existing.ErrorMessage = aggregateRoot.ErrorMessage;
             existing.RetryCount = aggregateRoot.RetryCount;
+            existing.EditorVersion = aggregateRoot.EditorVersion;
+            existing.LastCallbackUrl = aggregateRoot.LastCallbackUrl;
             existing.Version = aggregateRoot.Version;
             existing.UpdateTime = aggregateRoot.UpdateTime;
             // CreateTime 不覆盖
+
+
         }
 
         /* ============================================================
@@ -180,6 +184,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 ErrorMessage = ds.ErrorMessage,
                 RetryCount = ds.RetryCount,
                 Version = ds.Version,
+                EditorVersion = ds.EditorVersion,
+                LastCallbackUrl = ds.LastCallbackUrl,
                 CreateTime = ds.CreateTime,
                 UpdateTime = ds.UpdateTime
             };
@@ -201,6 +207,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 modelSnapshot: po.ModelSnapshot,
                 errorMessage: po.ErrorMessage,
                 retryCount: po.RetryCount,
+                editorVersion: po.EditorVersion,
+                lastCallbackUrl: po.LastCallbackUrl,
                 version: po.Version,
                 createTime: po.CreateTime,
                 updateTime: po.UpdateTime);

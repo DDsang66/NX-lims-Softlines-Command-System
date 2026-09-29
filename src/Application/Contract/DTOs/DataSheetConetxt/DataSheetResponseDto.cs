@@ -32,5 +32,10 @@
         /// 更新时间
         /// </summary>
         public DateTime UpdateTime { get; set; }
+
+        /// <summary>
+        /// 编辑器版本
+        /// </summary>
+        public int EditorVersion { get; set; }
     }
 }

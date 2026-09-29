@@ -14,6 +14,11 @@
         public string ReportNumber { get; set; } = string.Empty;
 
         /// <summary>
+        /// 测试项目
+        /// </summary>
+        public string TestItem { get; set; } = string.Empty;
+
+        /// <summary>
         /// 测试方法
         /// </summary>
         public string TestMethod { get; set; } = string.Empty;

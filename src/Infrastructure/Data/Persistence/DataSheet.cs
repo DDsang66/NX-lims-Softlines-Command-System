@@ -37,6 +37,10 @@ public partial class DataSheet
 
     public DateTime? UpdateTime { get; set; }
 
+    public int EditorVersion { get; set; }
+
+    public string? LastCallbackUrl { get; set; }
+
     public virtual DataSheetBatch Batch { get; set; } = null!;
 
     public virtual CheckList CheckList { get; set; } = null!;

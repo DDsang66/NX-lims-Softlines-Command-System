@@ -6,6 +6,8 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.E
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+using System.Security.Policy;
 using System.Threading.Tasks.Dataflow;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext
@@ -61,6 +63,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
         // ★ 领域概念：生成该文件所用的 model 快照（JSON），
         //   用于避免重复调用 modelGenerator；不参与展示
         public string? ModelSnapshot { get; private set; }
+
+        // ★ 新增：编辑器版本号，每次保存成功 +1
+        public int EditorVersion { get; private set; }
+
+        // ★ 新增：最后一次 callback 的临时 URL，用于幂等
+        public string LastCallbackUrl { get; private set; } = string.Empty;
 
         /// <summary>
         /// 测试项目
@@ -120,7 +128,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
                 ModelKey = null,
                 ModelSnapshot = null,
                 BatchId = batchId,
-                Version = "v1.0"
+                Version = "v1.0",
+                EditorVersion = 1
             };
 
             if (!string.IsNullOrEmpty(url))
@@ -149,6 +158,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
             string? errorMessage,
             int retryCount,
             string version,
+            int editorVersion,
+            string? lastCallbackUrl,
             DateTime createTime,
             DateTime? updateTime)
         {
@@ -167,9 +178,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
                 ModelSnapshot = modelSnapshot,
                 ErrorMessage = errorMessage,
                 RetryCount = retryCount,
+                EditorVersion = editorVersion,
+                LastCallbackUrl = lastCallbackUrl ?? string.Empty,
                 Version = version,
                 CreateTime = createTime,
-                UpdateTime = updateTime
+                UpdateTime = updateTime,
+
             };
         }
 
@@ -239,10 +253,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
         /// <summary>
         /// 标记为已保存
         /// </summary>
-        public void MarkSaved() 
+        public void MarkSaved(string url) 
         {
             Status = DataSheetStatus.InProccess;
-            UpdateTime = DateTime.Now;
+
+            var now = DateTime.UtcNow;
+
+            // ★ UpdateTime 是 DateTime?，null 时直接赋值
+            if (UpdateTime.HasValue && now <= UpdateTime.Value)
+                now = UpdateTime.Value.AddTicks(1);
+
+            UpdateTime = now;
+            EditorVersion += 1;
+            LastCallbackUrl = url;
         }
     }
 }

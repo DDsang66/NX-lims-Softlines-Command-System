@@ -46,13 +46,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
 
             foreach (var package in packages)
             {
+                var target = package.TestPointIds.ToHashSet();
+
                 var pool = pools.FirstOrDefault(p =>
                     p.TestPoints != null &&
-                    p.TestPoints.SequenceEqual(package.TestPointIds));
+                    target.All(x => p.TestPoints.Contains(x)));
 
                 if (pool == null) continue; // 防御性编程，避免后续空引用
 
                 //-----------------------------------------------------------------
+                //用运行时克隆字典避免并发安全
+                var runtimeConditions = new Dictionary<string, object?>(pool.Conditions);
 
                 var options = new JsonSerializerOptions { Converters = { new TypeConverter() } };
                
@@ -73,21 +77,23 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                     ? string.Join(";", standards.Select(s => s.StandardCode ?? s.StandardCodeNameEn ?? s.Id.Value))
                     : string.Join(";", item.StandardIds.Select(id => id?.Value ?? string.Empty));
 
-                var paramCondition = package.ParamSet!.Values.ToDictionary();
-
-                pool.Merge(package.ParamSet!.Values.ToDictionary()); // 临时全量condition,不进入数据库
-                pool.Merge(new Dictionary<string, object?>
+                // 合并 package.ParamSet
+                if (package.ParamSet?.Values != null)
                 {
-                    { "TestItemId", item.TestItemId!.Value },
-                    { "TestMethod", testMethod }
-                });
+                    foreach (var kv in package.ParamSet.Values.ToDictionary())
+                    {
+                        runtimeConditions[kv.Key] = kv.Value;
+                    }
+                }
+
+                // 追加 TestItemId / TestMethod
+                runtimeConditions["TestItemId"] = item.TestItemId!.Value;
+                runtimeConditions["TestMethod"] = testMethod;
 
                 //-----------------------------------------------------------------
 
                 //显示指定初筛key，要求condition把testitem、method、state等其他传入保存
-                var template = _templateSelectService.FindByIndex(pool.Conditions, preFilterKey: "TestItemId");
-
-                //var mockText = "Procedure No: {WashProcedure}; Using horizontal axis, front-loading type machie: Machine wash at {WashingTemperature} degree C with {WashLoad} kg total dry mass( {BallastType} + specimen) and {ReferenceDetergentsComposition}, {DryProcedure}, / Iron.";
+                var template = _templateSelectService.FindByIndex(runtimeConditions, preFilterKey: "TestItemId");
 
                 // 需根据 DataSheetModel 的实际构造函数或初始化方式进行调整
                 var model = new DataSheetModel
@@ -102,9 +108,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
 
                     DataAreaCount = CalculateDataAreaCount(item,package),
 
-                    //TemplateUrl = "DocxModel/Common_WET/WET_Dimensional_Change_Wasing_Fabric.docx",
-
                     TemplateUrl = template.GetTemplateUrl(),
+
+                    TestItem = item.TestItemId,
 
                     TestMethod = testMethod,
 

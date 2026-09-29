@@ -29,6 +29,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
 
                     Url = src.Url,
 
+                    EditorVersion = src.EditorVersion,
+
                     // 处理可空字符串
                     ModelKey = src.ModelKey ?? string.Empty,
 
