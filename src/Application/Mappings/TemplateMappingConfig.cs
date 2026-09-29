@@ -14,39 +14,30 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             // 1. 聚合根 -> PO (用于持久化到数据库)
             // ==========================================
             config.NewConfig<Template, src.Infrastructure.Data.Persistence.Template>()
-                // 映射主键：聚合根的 Id (TemplateId) -> PO 的 TemplateId (string)
-                .Map(dest => dest.Id, src => src.Id.Value)
+                 // 主键：TemplateId -> string
+                 .Map(dest => dest.Id, src => src.Id.Value)
 
-                // 映射枚举到 byte
-                .Map(dest => dest.Site, src => (byte)src.Site)
-                .Map(dest => dest.Status, src => (byte)src.Status)
-                .Map(dest => dest.FileType, src => (byte)src.FileType);
+                 // 枚举 -> byte（PO 里是 byte，不是 int）
+                 .Map(dest => dest.Site, src => (byte)src.Site)
+                 .Map(dest => dest.Status, src => (byte)src.Status)
+                 .Map(dest => dest.FileType, src => (byte)src.FileType)
 
+                 // ★ 关键：TemplateIndex 值对象 -> JSON 字符串
+                 .Map(dest => dest.TemplateIndex,
+                      src => src.TemplateIndex != null ? src.TemplateIndex.ToJson() : "{}")
 
-            //config.NewConfig<src.Infrastructure.Data.Persistence.Template, Template>()
-            //    .ConstructUsing(src => Template.Rebuild(
-            //        new TemplateId(src.Id),                 // 1. id
-            //        src.TemplateName,                       // 2. templateName   
-            //        src.TemplateUrl,                        // 3. templateUrl
-            //        (Site)src.Site,                         // 4. site
-            //        (Status)src.Status,                     // 5. status 
-            //        (TemplateFileType)src.FileType,         // 6. fileType
-            //        src.BusinessCategory,                   // 7. string (如 BusinessCategory)
-            //        src.TemplateIndex,                      // 8. templateIndex  
-            //        src.TemplateStructure,                  // 9. templateStructure
-            //        src.Version,                            // 10. version 
-            //        src.UpdateAt,                           // 11. updateAt
-            //        src.TestConditionTextTemplates ))
-            //    // 忽略自动映射，因为 ConstructUsing 已经完整构建了对象
-            //    .Ignore(dest => dest.Id)
-            //    .Ignore(dest => dest.TemplateName)
-            //    .Ignore(dest => dest.TemplateUrl)
-            //    .Ignore(dest => dest.Site)
-            //    .Ignore(dest => dest.Status)
-            //    .Ignore(dest => dest.Version)
-            //    .Ignore(dest => dest.UpdateAt)
-            //    .Ignore(dest => dest.FileType)
-            //    .Ignore(dest => dest.BusinessCategory);
+                 // 普通字段
+                 .Map(dest => dest.TemplateName, src => src.TemplateName)
+                 .Map(dest => dest.TemplateUrl, src => src.TemplateUrl)
+                 .Map(dest => dest.BusinessCategory, src => src.BusinessCategory)
+                 .Map(dest => dest.Version, src => src.Version)
+                 .Map(dest => dest.UpdateAt, src => src.UpdateAt)
+
+                 // ★ 忽略导航属性：关联表由 Repository 手动处理
+                 // 否则 Adapt 会把 TestConditionTextTemplates / TemplateStructure 也映射过去，
+                 // 而它们的 Id 在 Rebuild 时没恢复，会导致 UPDATE 撞 0 行
+                 .Ignore(dest => dest.TestConditionTextTemplates)
+                 .Ignore(dest => dest.TemplateStructures);
 
             TypeAdapterConfig<Template, TemplateResponseDto>
                 .NewConfig()

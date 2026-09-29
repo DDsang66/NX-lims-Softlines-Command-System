@@ -28,18 +28,6 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         /// <summary>
         /// Start Generate DataSheet
         /// </summary>
-        /// <param name="dto"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        [HttpPost("generate")]
-        public async Task<Result> GenerateDataSheet(DataSheetGenerateDto dto,CancellationToken ct) 
-        {
-            return await _dataSheetService.GenerateTaskStart1(dto,ct);
-        }
-
-        /// <summary>
-        /// Start Generate DataSheet
-        /// </summary>
         /// <param name="checkListId"></param>
         /// <param name="dto"></param>
         /// <param name="ct"></param>
@@ -51,6 +39,19 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
 
             return result;
         }
+
+        [HttpPost("retry/{dataSheetId}")]
+        public async Task<Result> RetryDatasheet(Guid dataSheetId, CancellationToken ct)
+        {
+            return await _dataSheetService.RetryAsync(dataSheetId, ct);
+        }
+
+        [HttpPost("retry-batch/{checkListId}")]
+        public async Task<Result> RetryBatch(Guid checkListId, CancellationToken ct)
+        {
+            return await _dataSheetService.RetryBatchAsync(new CheckListId(checkListId), ct);
+        }
+
 
         /// <summary>
         /// 工作单生成进度

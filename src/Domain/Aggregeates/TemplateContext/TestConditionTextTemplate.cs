@@ -53,6 +53,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         /// 创建测试条件文本模板
         /// </summary>
         public static TestConditionTextTemplate Rebuild(
+            Guid id,
             TemplateIndex templateIndex,
             string text)
         {
@@ -65,7 +66,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             if (string.IsNullOrWhiteSpace(text))
                 throw new ArgumentException("文本模板不能为空", nameof(text));
 
-            return new TestConditionTextTemplate(templateIndex, text.Trim());
+            return new TestConditionTextTemplate
+            {
+                Id = id,           // ★ 恢复
+                TemplateIndex = templateIndex,
+                Text = text
+            };
         }
 
         /// <summary>

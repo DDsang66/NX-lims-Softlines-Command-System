@@ -33,6 +33,28 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return result;
         }
 
+        [HttpPut("update")]
+        public async Task<Result> UpdateTemplate([FromForm] UpdateTemplateDto dto, CancellationToken ct)
+        {
+            var result = await _templateAppService.UpdateTemplateAsync(dto, ct);
+
+            return result;
+        }
+
+        /// <summary>
+        /// 发布模板
+        /// </summary>
+        /// <param name="templateId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        [HttpPut("publish/{templateId}")]
+        public async Task<Result> PublishTemplate(string templateId, CancellationToken ct) 
+        {
+            var result = await _templateAppService.TemplatePublishAsync(templateId, ct);
+
+            return result;
+        }
+
         [HttpGet("getall")]
         public async Task<Result<List<TemplateResponseDto>>> GetAllTemplateAsync(CancellationToken ct) 
         {

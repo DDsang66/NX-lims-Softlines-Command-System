@@ -191,6 +191,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
         }
 
         /// <summary>
+        /// 标记datasheet为待处理
+        /// </summary>
+        public void MarkPending()
+        {
+            Status = DataSheetStatus.Pending;
+            UpdateTime = DateTime.Now;
+            // ErrorMessage 可以清掉，也可以保留
+            ErrorMessage = null;
+        }
+
+        /// <summary>
         /// 标记datasheet为生成中
         /// </summary>
         public void MarkGenerating()
@@ -223,6 +234,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
             ErrorMessage = error;
             if (retryable) RetryCount++;
             UpdateTime = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// 标记为已保存
+        /// </summary>
+        public void MarkSaved() 
+        {
+            Status = DataSheetStatus.InProccess;
+            UpdateTime = DateTime.Now;
         }
     }
 }

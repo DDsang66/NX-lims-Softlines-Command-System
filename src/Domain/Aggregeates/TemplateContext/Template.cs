@@ -1,8 +1,9 @@
-﻿using System.Text;
-using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.Enums;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.Enums;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
+using System.Text;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext
 {
@@ -24,9 +25,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         public Site Site { get; private set; } = Site.NB; // 假设NB是默认值，请根据实际枚举调整
 
         /// <summary>
-        /// 当前datasheet状态
+        /// 当前Template状态
         /// </summary>
-        public Status Status { get; private set; } = Status.Draft;
+        public TemplateStatus Status { get; private set; } = TemplateStatus.Draft;
 
         // Template 聚合根内部新增属性
         /// <summary>
@@ -102,7 +103,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
                 Id = id,
                 TemplateName = templateName.Trim(),
                 Site = site,
-                Status = Status.Draft,
+                Status = TemplateStatus.Draft,
                 Version = 1,
                 FileType = fileType,
                 // 分类会进 URL 路径, 与 TemplateName 走同一套净化, 挡住路径穿越
@@ -134,7 +135,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             string templateName,
             string templateUrl,
             Site site,
-            Status status,
+            TemplateStatus status,
             TemplateFileType fileType,
             string businessCategory,
             TemplateIndex templateIndex,
@@ -206,6 +207,78 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
             EnsureDraftStatus("修改模板结构");
 
             TemplateStructure = structure;
+            UpdateAt = DateTime.Now;
+        }
+
+
+        /// <summary>
+        /// 只更新元数据，版本和 URL 不变
+        /// </summary>
+        public void UpdateMetadata(
+            string templateName,
+            Site site,
+            string businessCategory,
+            TemplateIndex templateIndex,
+            TemplateStructure templateStructure,
+            IEnumerable<TestConditionTextTemplate> testConditionTextTemplates)
+        {
+            EnsureDraftStatus("修改模板");
+
+            if (string.IsNullOrWhiteSpace(templateName))
+                throw new ArgumentException("模板名称不能为空", nameof(templateName));
+
+            if (string.IsNullOrWhiteSpace(businessCategory))
+                throw new ArgumentException("业务分类不能为空", nameof(businessCategory));
+
+            if (templateIndex == null || templateIndex.Values.Count == 0)
+                throw new ArgumentException("模板索引不能为空", nameof(templateIndex));
+
+            if (templateStructure == null)
+                throw new ArgumentException("模板结构不能为空", nameof(templateStructure));
+
+            TemplateName = templateName.Trim();
+            Site = site;
+            BusinessCategory = businessCategory.Trim();
+            TemplateIndex = templateIndex;
+            TemplateStructure = templateStructure;
+            UpdateAt = DateTime.Now;
+
+            // 替换文本模板
+            _testConditionTextTemplates.Clear();
+            if (testConditionTextTemplates != null)
+            {
+                foreach (var t in testConditionTextTemplates)
+                    _testConditionTextTemplates.Add(t);
+            }
+
+            Status = TemplateStatus.Draft;
+            //在应用层重新触发检查
+        }
+
+        /// <summary>
+        /// 换文件：版本 +1，URL 重生
+        /// </summary>
+        public void UpdateWithNewFile(
+            string templateName,
+            Site site,
+            TemplateFileType fileType,
+            string businessCategory,
+            TemplateIndex templateIndex,
+            TemplateStructure templateStructure,
+            IEnumerable<TestConditionTextTemplate> testConditionTextTemplates,
+            string? host = null)
+        {
+            EnsureDraftStatus("修改模板");
+
+            // 先更新元数据
+            UpdateMetadata(templateName, site, businessCategory, templateIndex, templateStructure, testConditionTextTemplates);
+
+            // 版本 +1
+            Version += 1;
+            FileType = fileType;
+
+            // URL 重生
+            TemplateUrl = GenerateTemplateUrl(DateTime.Now);
             UpdateAt = DateTime.Now;
         }
 
@@ -288,12 +361,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         }
 
         /// <summary>
-        /// 发布模板（版本号 +1，并按新版本重新生成文件名）。
+        /// 发布模板（版本号 不变）。
         /// URL 会变 —— 调用方必须把盘上文件另存为新版本路径后，才能提交本次变更。
         /// </summary>
         public void Publish(DateTime? now = null)
         {
-            if (Status != Status.Draft)
+            if (Status != TemplateStatus.Draft)
                 throw new InvalidOperationException("只有草稿状态的模板才能发布");
 
             if (TemplateStructure == null)
@@ -304,13 +377,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
 
             var publishedAt = now ?? DateTime.Now;
 
-            Status = Status.Active;
-            Version += 1;
-            // 这里不能走 RegenerateUrl: 它带 EnsureDraftStatus, 而状态刚被置为 Active
-            TemplateUrl = GenerateTemplateUrl(publishedAt);
+
+            Status = TemplateStatus.Published;
+            // 这里不能走 RegenerateUrl: 它带 EnsureDraftStatus, 而状态刚被置为 Published
+            //TemplateUrl = GenerateTemplateUrl(publishedAt);
             UpdateAt = publishedAt;
 
             // AddDomainEvent(new TemplatePublishedEvent(Id, Version));
+
         }
 
         /// <summary>
@@ -329,7 +403,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
 
             var rolledBackAt = now ?? DateTime.Now;
 
-            Status = Status.Draft;
+            Status = TemplateStatus.Draft;
             // 版本号必须真的退回去, 否则 URL 里的 _v{n}_ 会与实体版本长期不一致
             Version = expectedVersion;
             TemplateUrl = GenerateTemplateUrl(rolledBackAt);
@@ -344,10 +418,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
         /// </summary>
         public void Archive()
         {
-            if (Status == Status.Archived)
+            if (Status == TemplateStatus.Archived)
                 throw new InvalidOperationException("模板已归档");
 
-            Status = Status.Archived;
+            Status = TemplateStatus.Archived;
             UpdateAt = DateTime.Now;
 
             // AddDomainEvent(new TemplateArchivedEvent(Id));
@@ -355,7 +429,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContex
 
         private void EnsureDraftStatus(string operation)
         {
-            if (Status != Status.Draft)
+            if (Status != TemplateStatus.Draft)
                 throw new InvalidOperationException($"只有草稿状态的模板才允许{operation}");
         }
 

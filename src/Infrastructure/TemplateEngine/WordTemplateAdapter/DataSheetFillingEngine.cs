@@ -42,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             mainPart.Document.Save();
 
-            return docxFileName;
+            return targetDocxPath;
         }
 
         /// <summary>

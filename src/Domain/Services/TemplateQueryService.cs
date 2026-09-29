@@ -1,4 +1,5 @@
 ﻿using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Service;
@@ -44,7 +45,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Services
 
             // 3. 内存完整匹配
             var matched = candidates
-                //.Where(t => t.Status == Status.Active)
+                .Where(t => t.Status == TemplateStatus.Published)
                 .Where(t => t.TemplateIndex != null)
                 .Where(t => MatchesAll(t.TemplateIndex, conditions))
                 .ToList();

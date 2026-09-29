@@ -65,6 +65,23 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         /* ============================================================
          * 读
          * ============================================================ */
+        /// <summary>
+        /// 根据批次号获取所有数据表
+        /// </summary>
+        /// <param name="checkListId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<List<src.Domain.Aggregeates.DataSheetContext.DataSheet>> GetFailedByCheckListIdAsync(CheckListId checkListId, CancellationToken ct)
+        {
+            var pos = await _context.Set<Persistence.DataSheet>()
+                .AsNoTracking()
+                .Where(x => x.CheckListId == checkListId.Value
+                         && x.Status == (int)DataSheetStatus.Failed)
+                .OrderBy(x => x.CreateTime)
+                .ToListAsync(ct);
+
+            return pos.Select(ToDomain).ToList();
+        }
 
         public async Task<src.Domain.Aggregeates.DataSheetContext.DataSheet?> GetByIdAsync(DataSheetId aggregateRootId, CancellationToken ct)
         {
@@ -125,6 +142,20 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                                        && x.ModelIndex == modelIndex, ct);
 
             return po == null ? null : ToDomain(po);
+        }
+
+        public async Task<int> BulkMarkPendingAsync(CheckListId checkListId, CancellationToken ct)
+        {
+            var now = DateTime.Now;
+
+            return await _context.Set<Persistence.DataSheet>()
+                .Where(x => x.CheckListId == checkListId.Value
+                         && x.Status == (int)DataSheetStatus.Failed)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(x => x.Status, (int)DataSheetStatus.Pending)
+                    .SetProperty(x => x.ErrorMessage, (string?)null)
+                    .SetProperty(x => x.UpdateTime, now)
+                , ct);
         }
 
         /* ============================================================

@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.V
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
 {
@@ -49,6 +50,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         Task<List<DataSheet>> GetByCheckListIdAsync(CheckListId checkListId, CancellationToken ct);
 
         /// <summary>
+        /// Get failed data sheets by check list id
+        /// </summary>
+        /// <param name="checkListId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<List<DataSheet>> GetFailedByCheckListIdAsync(CheckListId checkListId, CancellationToken ct);
+
+        /// <summary>
         /// 根据checkListId, testItemId, modelIndex查询是否存在
         /// </summary>
         /// <param name="checkListId"></param>
@@ -67,5 +76,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Contract.Repository
         /// <param name="ct"></param>
         /// <returns></returns>
         Task<DataSheet?> GetByIndexAsync(CheckListId checkListId, string testItemId, int modelIndex, CancellationToken ct);
+
+        /// <summary>
+        /// 批量标记为待处理
+        /// </summary>
+        /// <param name="checkListId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        Task<int> BulkMarkPendingAsync(CheckListId checkListId, CancellationToken ct);
     }
 }

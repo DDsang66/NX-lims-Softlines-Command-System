@@ -1,5 +1,7 @@
-﻿using Mapster;
+﻿using DocumentFormat.OpenXml.Office2010.Excel;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TemplateContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Contract.Repository;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
@@ -87,46 +89,45 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
 
             _context.Set<src.Infrastructure.Data.Persistence.Template>().Update(po);
 
-            // 关联结构：先删后加（简单可靠）
-            var existingStructure = await _context.Set<src.Infrastructure.Data.Persistence.TemplateStructure>()
+            // ==================== 2. TemplateStructure：一对一，直接更新 ====================
+            var existingStructure = await _context.Set<Persistence.TemplateStructure>()
                 .FirstOrDefaultAsync(s => s.TemplateId == po.Id, ct);
-            if (existingStructure != null)
-                _context.Set<src.Infrastructure.Data.Persistence.TemplateStructure>().Remove(existingStructure);
 
             if (aggregateRoot.TemplateStructure != null)
             {
-                var structurePo = new src.Infrastructure.Data.Persistence.TemplateStructure
+                if (existingStructure != null)
                 {
-                    // 需要 Id、TemplateId、五个 count
-                    Id = Guid.NewGuid(),
-                    TemplateId = po.Id,
-                    TestConditionCount = aggregateRoot.TemplateStructure.TestConditionCount,
-                    TestMethodCount = aggregateRoot.TemplateStructure.TestMethodCount,
-                    SampleDataAreaCount = aggregateRoot.TemplateStructure.SampleDataAreaCount,
-                    SampleResultAreaCount = aggregateRoot.TemplateStructure.SampleResultAreaCount,
-                    AfterWashDataCount = aggregateRoot.TemplateStructure.AfterWashDataCount
-                };
-                await _context.Set<src.Infrastructure.Data.Persistence.TemplateStructure>().AddAsync(structurePo, ct);
+                    // 更新已有
+                    existingStructure.TestConditionCount = aggregateRoot.TemplateStructure.TestConditionCount;
+                    existingStructure.TestMethodCount = aggregateRoot.TemplateStructure.TestMethodCount;
+                    existingStructure.SampleDataAreaCount = aggregateRoot.TemplateStructure.SampleDataAreaCount;
+                    existingStructure.SampleResultAreaCount = aggregateRoot.TemplateStructure.SampleResultAreaCount;
+                    existingStructure.AfterWashDataCount = aggregateRoot.TemplateStructure.AfterWashDataCount;
+                }
+                else
+                {
+                    // 新建
+                    var structurePo = new Persistence.TemplateStructure
+                    {
+                        Id = Guid.NewGuid(),
+                        TemplateId = po.Id,
+                        TestConditionCount = aggregateRoot.TemplateStructure.TestConditionCount,
+                        TestMethodCount = aggregateRoot.TemplateStructure.TestMethodCount,
+                        SampleDataAreaCount = aggregateRoot.TemplateStructure.SampleDataAreaCount,
+                        SampleResultAreaCount = aggregateRoot.TemplateStructure.SampleResultAreaCount,
+                        AfterWashDataCount = aggregateRoot.TemplateStructure.AfterWashDataCount
+                    };
+                    await _context.Set<Persistence.TemplateStructure>().AddAsync(structurePo, ct);
+                }
             }
-
-            // 文本模板：先删后加
-            var existingTexts = await _context.Set<src.Infrastructure.Data.Persistence.TestConditionTextTemplate>()
-                .Where(t => t.TemplateId == po.Id)
-                .ToListAsync(ct);
-            foreach (var t in existingTexts)
-                _context.Set<src.Infrastructure.Data.Persistence.TestConditionTextTemplate>().Remove(t);
-
-            foreach (var text in aggregateRoot.TestConditionTextTemplates)
+            else if (existingStructure != null)
             {
-                var textPo = new src.Infrastructure.Data.Persistence.TestConditionTextTemplate
-                {
-                    Id = Guid.NewGuid(),
-                    TemplateId = po.Id,
-                    TemplateIndex = text.TemplateIndex.ToJson(),
-                    Text = text.Text
-                };
-                await _context.Set<src.Infrastructure.Data.Persistence.TestConditionTextTemplate>().AddAsync(textPo, ct);
+                // 新的没有 structure，删掉旧的
+                _context.Set<Persistence.TemplateStructure>().Remove(existingStructure);
             }
+
+            // ==================== 3. TestConditionTextTemplates：一对多，按 TemplateIndex 对比 ====================
+            await SyncTextTemplatesAsync(po.Id, aggregateRoot.TestConditionTextTemplates, ct);
         }
 
         /// <summary>
@@ -271,6 +272,81 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 同步文本模板：按 TemplateIndex 的 JSON 做键，做增/删/改
+        /// </summary>
+        private async Task SyncTextTemplatesAsync(
+            string templateId,
+            IEnumerable<Domain.Aggregeates.TemplateContext.TestConditionTextTemplate> newTexts,
+            CancellationToken ct)
+        {
+            // 1. 一次性查出所有旧记录
+            var existingList = await _context.Set<Persistence.TestConditionTextTemplate>()
+                .Where(t => t.TemplateId == templateId)
+                .ToListAsync(ct);
+
+            // 2. 用 TemplateIndex JSON 做键，构建字典
+            //    注意：如果同一个 TemplateIndex 有多条（数据异常），用 GroupBy 取第一条
+            var existingDict = existingList
+                .GroupBy(t => t.TemplateIndex ?? "")
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+
+            // 3. 新集合转 List，一次遍历
+            var newList = newTexts?.ToList() ?? new List<Domain.Aggregeates.TemplateContext.TestConditionTextTemplate>();
+
+            // 4. 新键集合，用于快速判断「旧的要删哪些」
+            var newKeys = new HashSet<string>(
+                newList.Select(t => t.TemplateIndex.ToJson()),
+                StringComparer.Ordinal);
+
+            // 5. 删除：旧的键不在新的里
+            foreach (var existing in existingList)
+            {
+                var key = existing.TemplateIndex ?? "";
+                if (!newKeys.Contains(key))
+                {
+                    _context.Set<Persistence.TestConditionTextTemplate>().Remove(existing);
+                }
+            }
+
+            // 6. 新增/更新：遍历新的
+            foreach (var newText in newList)
+            {
+                var key = newText.TemplateIndex.ToJson();
+
+                if (existingDict.TryGetValue(key, out var existing))
+                {
+                    // 存在则更新 Text（Index 相同，只有 Text 可能变）
+                    if (!string.Equals(existing.Text, newText.Text, StringComparison.Ordinal))
+                    {
+                        existing.Text = newText.Text;
+                    }
+                    // 从字典移除，剩下的就是「已处理」的
+                    existingDict.Remove(key);
+                }
+                else
+                {
+                    // 新增
+                    var textPo = new Persistence.TestConditionTextTemplate
+                    {
+                        Id = Guid.NewGuid(),
+                        TemplateId = templateId,
+                        TemplateIndex = key,
+                        Text = newText.Text
+                    };
+                    await _context.Set<Persistence.TestConditionTextTemplate>().AddAsync(textPo, ct);
+                }
+            }
+
+            // 7. 此时 existingDict 里剩下的，就是「旧的里没被新的匹配到的」——
+            //    但第 5 步已经按 newKeys 删过了，这里应该是空的。
+            //    如果 TemplateIndex 有重复导致分组只取第一条，剩下的要兜底删掉。
+            foreach (var leftover in existingDict.Values)
+            {
+                _context.Set<Persistence.TestConditionTextTemplate>().Remove(leftover);
+            }
+        }
+
+        /// <summary>
         /// 从 PO 重建领域聚合根（含结构 + 文本模板）
         /// </summary>
         private static Template RebuildTemplate(
@@ -293,6 +369,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
             var texts = textTemplatePos != null && textTemplatePos.Count > 0
                 ? textTemplatePos.Select(t =>
                     src.Domain.Aggregeates.TemplateContext.TestConditionTextTemplate.Rebuild(
+                        t.Id,
                         TemplateIndex.FromJson(t.TemplateIndex),
                         t.Text)).ToList()
                 : new List<src.Domain.Aggregeates.TemplateContext.TestConditionTextTemplate>();
@@ -302,7 +379,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 templateName: po.TemplateName,
                 templateUrl: po.TemplateUrl,
                 site: (Site)po.Site,
-                status: (Status)po.Status,
+                status: (TemplateStatus)po.Status,
                 fileType: (TemplateFileType)po.FileType,
                 businessCategory: po.BusinessCategory,
                 templateIndex: TemplateIndex.FromJson(po.TemplateIndex),
