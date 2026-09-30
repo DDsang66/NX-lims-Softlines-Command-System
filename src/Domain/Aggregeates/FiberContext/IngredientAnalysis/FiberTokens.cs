@@ -115,16 +115,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         };
 
         /// <summary>
-        /// ISO 1833-12:2020（DMF 法）适用范围内的纤维名 —— 对象纤维 ∪ "某些其他纤维"，
+        /// ISO 1833-12:2020（DMF 法）里的**"某些其他纤维"** —— 留在残渣里的那一方，
         /// 供判定配对里的**后位**纤维用（弹性纤维与丙烯腈类两条兜底都靠它）。
         ///
-        /// 对象纤维是 acrylic / certain modacrylics / certain chlorofibres / certain elastanes
-        /// （前三者由 <see cref="IsAcrylicType"/>、<see cref="IsElastane"/> 覆盖，这里只补含氯纤维）；
-        /// "certain other fibres" 是 cotton / viscose / cupro / modal / lyocell / polyamide / polyester /
-        /// polypropylene / elastomultiester / elastolefin / melamine / polypropylene-polyamide bicomponent /
-        /// polyacrylate / glass，再加上 wool 与动物毛、丝（由 <see cref="IsAnimal"/> 覆盖）。
-        ///
-        /// **收法只有一条准则：只收官方范围里逐字列到的名字。** 故刻意不收：
+        /// **与对象纤维两栏互斥。** 官方范围是"对象纤维 × 其他纤维"的二元混合物，而对象纤维
+        /// （acrylic / certain modacrylics / certain chlorofibres / certain elastanes）**不能
+        /// 同时充当合作纤维** —— 它们都能被 DMF 溶掉，两样一起溶就分不出比例。
+        /// 故 chlorofibre 虽是对象纤维、却不在此表；含氯纤维的前位规则本表也没有，待实验室裁定。
+        /// 
         /// 分组父槽字面量（它们不是纤维名）、通用占位名 Bicomponent Fiber
         /// （-12 列的是 polypropylene/polyamide bicomponent 这一种具体组合，
         /// 占位名并不指明组成，写进去等于替实验室断言）、以及范围外的真实纤维
@@ -134,10 +132,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// rayon 与 nylon 是 viscose / polyamide 在 fiber_database 里的
         /// 同义行，照 <see cref="RayonType"/> 的既有口径一并收。
         /// </summary>
-        private static readonly HashSet<string> Iso1833_12Others = new(StringComparer.OrdinalIgnoreCase)
+        private static readonly HashSet<string> Iso1833_12OtherFibres = new(StringComparer.OrdinalIgnoreCase)
         {
-            "chlorofibre",
-
             "cotton", "viscose", "rayon", "cupro", "modal", "lyocell",
             "polyamide", "nylon", "polyester", "polypropylene",
             "elastomultiester", "elastolefin", "melamine", "polyacrylate", "glass",
@@ -155,16 +151,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         internal static bool IsCellulosicGroupParent(string f) => CellulosicGroupParent.Contains(Clean(f));
 
         /// <summary>
-        /// 这个名字是不是出现在 ISO 1833-12:2020 的适用范围里 —— 对象纤维 ∪ "某些其他纤维"
-        /// （见 <see cref="Iso1833_12Others"/> 的注释）。
+        /// 后位纤维够不够格跟 -12 的**对象纤维**配一对 —— 即它是不是"某些其他纤维"
+        /// （见 <see cref="Iso1833_12OtherFibres"/> 的注释；`IsAnimal` 那一支是并进来的
+        /// 羊毛 / 动物毛 / 丝）。**问的是"合作方"，不是"范围里有没有这个名字"** ——
+        /// 对象纤维本身不在此列，它只能当对象。
         ///
-        /// 三个消费者，都是"后位纤维够不够格跟 -12 的对象纤维配一对"这同一个问题：
-        /// LookupSubStandard 的弹性纤维兜底与丙烯腈类兜底，
-        /// 以及 LookupGbSubStandard 的丙烯腈类兜底（GB/T 2910.12–2023 的
-        /// 第二组分列表与 ISO 侧逐项一致，故共用这一条而不是另建一份 GB 集合）。
+        /// 三个消费者是同一个问题：LookupSubStandard 的弹性纤维兜底与丙烯腈类兜底、
+        /// LookupGbSubStandard 的丙烯腈类兜底（GB/T 2910.12–2023 的第二组分列表与 ISO 侧
+        /// 逐项一致，故共用这一条而不是另建一份 GB 集合），以及设备栏 SelectWaterBath 的 P131。
         /// </summary>
-        internal static bool IsInIso1833_12Scope(string f)
-            => IsAcrylicType(f) || IsElastane(f) || IsAnimal(f) || Iso1833_12Others.Contains(Clean(f));
+        internal static bool IsIso1833_12OtherFibre(string f)
+            => IsAnimal(f) || Iso1833_12OtherFibres.Contains(Clean(f));
 
         /// <summary>null 视为空串；首尾空白在此统一剥掉，调用方无须预处理大小写。</summary>
         private static string Clean(string f) => f?.Trim() ?? string.Empty;

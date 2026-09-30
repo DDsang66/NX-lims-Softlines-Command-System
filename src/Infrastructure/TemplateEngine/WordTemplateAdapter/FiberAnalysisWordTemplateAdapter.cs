@@ -1,4 +1,5 @@
 ﻿using NX_lims_Softlines_Command_System.src.Application.Interface.FiberTeamContext;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 
@@ -11,12 +12,13 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 拍平为模板可直接使用的 Dictionary<string, string>
         /// 数组/嵌套结构留空，后续单独处理
         /// </summary>
-        public (Dictionary<string, string> Values, HashSet<string> RedBookmarks, HashSet<string> RemoveWhenEmpty) Adapt(AnalysisResult analysisResult)
+        public (Dictionary<string, string> Values, HashSet<string> RedBookmarks, HashSet<string> RemoveWhenEmpty, HashSet<string> RemoveBlockWhenEmpty) Adapt(AnalysisResult analysisResult)
         {
             var flatData = new Dictionary<string, string>();
             var Data = new Dictionary<string, string>();
             var redBookmarks = new HashSet<string>();
             var removeWhenEmpty = new HashSet<string>();
+            var removeBlockWhenEmpty = new HashSet<string>();
 
             // 本报告里所有"随机"占位值的共同种子。取一次、下面各 random 各用各的实例 ——
             // 实例是独立的，消费节奏也各不相同，不会互相干扰。
@@ -42,7 +44,34 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             flatData["JudgmentLabelRemark"] = analysisResult.JudgmentLabelRemark;
             flatData["LanguageLabelRemark"] = analysisResult.LanguageLabelRemark;
             flatData["VertifyResult"] = analysisResult.VerifyResult;  // 模板书签名为 VertifyResult
-            // 2026-09-28：模板 conclusion 段删行后，DurabilityLabel/OtherLabel/Comprehensive/FinalResult
+
+            // Conclusion / Remark 两块没内容就整块不显示。
+            //
+            // 这两块在模板里各是一张无边框的表，标签 "Conclusion:" / "Remark:" 是表里的
+            // 普通文字、不是书签 —— 只清空书签值或只删标签都会剩一张空表占版面。
+            // 所以交给引擎的 removeBlockWhenEmpty：值为空时把**整张表**连表带间距一起摘掉。
+            //
+            // 判据按"这块到底有没有东西"来：
+            //   Conclusion ← VerifyResult（结论表里就这一个值）
+            //   Remark     ← 四个备注字段任一非空就算有用（Remark 表有三行，任一行有字都要留整表）
+            //
+            // 有内容时**一个字都不碰** —— 不进 removeBlockWhenEmpty 也不动 flatData，
+            // 表格因此逐字节不变（报告开头那段的排版不会因为这次改动漂移）。
+            if (string.IsNullOrWhiteSpace(analysisResult.VerifyResult))
+            {
+                flatData["Conclusion"] = "";
+                removeBlockWhenEmpty.Add("Conclusion");
+            }
+
+            if (string.IsNullOrWhiteSpace(analysisResult.ResultRemark)
+                && string.IsNullOrWhiteSpace(analysisResult.LabelRemark)
+                && string.IsNullOrWhiteSpace(analysisResult.JudgmentLabelRemark)
+                && string.IsNullOrWhiteSpace(analysisResult.LanguageLabelRemark))
+            {
+                flatData["Remark"] = "";
+                removeBlockWhenEmpty.Add("Remark");
+            }
+            // 模板 conclusion 段删行后，DurabilityLabel/OtherLabel/Comprehensive/FinalResult
             // 四个书签已不存在，对应的 flatData 一并去掉（无书签的值本来也会被 ReplaceText 静默跳过）
             flatData["BurningTest"] = analysisResult.BurningTest;
 
@@ -72,12 +101,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 flatData[kv.Key] = kv.Value;
             }
 
-            // ResultRemark 或 LabelRemark 非空时 Sample 后加 *
-            if (!string.IsNullOrWhiteSpace(analysisResult.ResultRemark) ||
-                !string.IsNullOrWhiteSpace(analysisResult.LabelRemark))
-            {
-                flatData["Sample"] = (flatData.GetValueOrDefault("Sample") ?? "") + "*";
-            }
 
             // 设备选型字段 — 拼接所有非空设备值
             var equipmentParts = new[]
@@ -90,13 +113,26 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }.Where(e => !string.IsNullOrWhiteSpace(e));
             flatData["Equipment"] = string.Join("    ", equipmentParts);
 
-            // 页脚 MR 汇总
+            // 页脚 MR 汇总。
+            // 判据与 MR 栏那一列同一套（MoistureRegainKnown，不是 > 0）—— 免得出现
+            // "表里印了 0.00%、页脚却不列这一条"的自相矛盾。
+            // 模板侧只有 **Multi** 那份有 MR 书签（footer1.xml 的 `Moisture regain :` 之后），
+            // Single 那份的 footer 里没有，所以这句只在多组分报告上印得出来。
+            //
+            // 同名只留第一条。
+            // 去重不会改到值：能走到这里行的回潮率都是按名字查表来的（双组分父行已被上面
+            // 那道 MoistureRegainKnown 排除），同名必然同值。
+            // 国标（FZ/T 01057）时纤维名带中文，与 Test Result 那一列同一套取名口。
+            // 去重仍在**英文原名**上做（DistinctBy 排在取名之前）—— 反过来的话，
+            // 同一只纤维在表里出现两种写法就会重复列一条。
+            var useChinese = analysisResult.UseChineseNames;
             var mrItems = analysisResult.CalculatedFiberResult
                 .OfType<MultiCalculatedFiberItem>()
                 .SelectMany(m => m.MultiFiberRowUnits ?? new List<MultiFiberRowUnit>())
                 .Where(r => !string.IsNullOrWhiteSpace(r.Sum) && !r.Sum.Contains('/'))
-                .Where(r => r.MoistureRegain > 0)
-                .Select(r => $"{r.Sum} {r.MoistureRegain:F2}%");
+                .Where(r => r.MoistureRegainKnown)
+                .DistinctBy(r => r.Sum)
+                .Select(r => $"{FiberChineseName.Localize(r.Sum, useChinese ? analysisResult.ChineseFiberNames : null)} {r.MoistureRegain:F2}%");
             flatData["MR"] = string.Join("  ", mrItems);
 
             // 计数字段
@@ -111,7 +147,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             var values = Data.ToDictionary(
                 kv => kv.Key,
                 kv => kv.Value?.ToString() ?? string.Empty);
-            return (values, redBookmarks, removeWhenEmpty);
+            return (values, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty);
         }
 
         /// <summary>
@@ -277,7 +313,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 result[$"RateTrail2_{rowIndex}"] = unit.RateTrail2 == 0 ? "" : unit.RateTrail2.ToString("F2") + "%";
                 result[$"Avg_{rowIndex}"] = unit.Avg == 0 ? "" : unit.Avg.ToString("F2") + "%";
                 result[$"Correct_{rowIndex}"] = unit.Correct == 0 ? "" : unit.Correct.ToString("F2");
-                result[$"MoistureRegain_{rowIndex}"] = unit.MoistureRegain == 0 ? "" : unit.MoistureRegain.ToString("F2") + "%";
+                // 判据是"表里有没有这个数"，**不是**"是不是 0" —— 真值 0（如 Polyurethane 的
+                // ISO 回潮率）要印 0.00%，查不到的（组头行缩写串、表里没有的纤维名）才留空。
+                result[$"MoistureRegain_{rowIndex}"] = unit.MoistureRegainKnown
+                    ? unit.MoistureRegain.ToString("F2") + "%"
+                    : "";
                 result[$"Rate_{rowIndex}"] = unit.Rate == 0 ? "" : unit.Rate.ToString("F2") + "%";
 
                 rowIndex++;

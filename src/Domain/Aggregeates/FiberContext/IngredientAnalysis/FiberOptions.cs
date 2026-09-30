@@ -53,10 +53,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// Bicomponent Fiber / Biconstituent Fiber 两个占位行下的子纤维候选。
         /// 这两个子纤维名是**双组分复合纤维的组成**，与上面的分组父槽不同：
         /// 它们不是"某一类纤维的成员"，只是这两个占位行内部拆百分比用。
+        ///
+        /// **Nylon 与 Polyamide 并列**：两者是 fiber_database 里
+        /// 同一个锦纶的两行，各列数值逐项相同（ISO 5.75 / AATCC 4.50 / GB 4.50，均已启用），
+        /// 差别只在叫法 —— AATCC 口径下分析员录 Nylon，ISO/FZ 口径下录 Polyamide。
+        /// 两个父行共用这一份清单，所以四个组合都能选到。
+        ///
+        /// **加它对计算是零漂移**：<c>LookupMoistureRegain</c> 两行同值（无论按哪个标准的列）、
+        /// <c>BurningCategory</c> 同为 Black Smoke、显微镜取图本就有 Nylon→Polyamide 的别名
+        /// （见 <see cref="MicroscopeImageName"/>）。会变的只是报告上印出来的名字。
         /// </summary>
         internal static readonly IReadOnlyList<string> BicomponentSub = new[]
         {
-            "Polyester", "Polyamide",
+            "Polyester", "Polyamide", "Nylon",
         };
     }
 }

@@ -28,29 +28,102 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// </summary>
         /// <param name="filePath">Word文档路径</param>
         /// <param name="bookmarkValues">书签名-值字典</param>
-        public void ReplaceText(string filePath, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks = null, HashSet<string>? removeWhenEmpty = null)
+        /// <param name="redBookmarks">标红的书签名</param>
+        /// <param name="removeWhenEmpty">值为空时**删掉书签前的文字**（标签类的书签用；所在表格保留）</param>
+        /// <param name="removeBlockWhenEmpty">
+        /// 值为空时**把书签所在的整张表删掉**（整块类的书签用，如 Conclusion / Remark）。
+        /// 与 <paramref name="removeWhenEmpty"/> 是两件事，别合并 —— 后者的典型用户 Recommend
+        /// 就住在结果表里，那张表**删不得**。见 <see cref="RemoveTableForBookmark"/>。
+        /// </param>
+        /// <param name="replaceParagraphText">
+        /// 整段文字改写表（段落的完整文字 → 新文字）。给模板里那些**连书签都没有的固定标签**
+        /// 用 —— 它们换不了"值"，只能整段换掉。传 null（缺省）则一个段落都不动。
+        /// 见 <see cref="ReplaceParagraphTexts"/>。
+        /// </param>
+        public void ReplaceText(string filePath, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks = null, HashSet<string>? removeWhenEmpty = null, HashSet<string>? removeBlockWhenEmpty = null, IReadOnlyDictionary<string, string>? replaceParagraphText = null)
         {
             if (bookmarkValues == null || !bookmarkValues.Any()) return;
 
             using (WordprocessingDocument doc = WordprocessingDocument.Open(filePath, true))
             {
+                // 整段改写**必须**排在书签处理之前：Recommendation 的标签与 Recommend 书签同段，
+                // 推荐标签为空时 RemoveTextBeforeBookmark 会把标签一起删掉 —— 先改后删，
+                // 与"英文标签跟着消失"的既有行为逐字一致；反过来先删改不到，就会留下一行中文空标签。
+                if (replaceParagraphText != null && replaceParagraphText.Count > 0)
+                {
+                    ReplaceParagraphTexts(doc.MainDocumentPart!, replaceParagraphText);
+                    doc.MainDocumentPart.Document!.Save();
+
+                    foreach (var headerPart in doc.MainDocumentPart.HeaderParts)
+                    {
+                        ReplaceParagraphTexts(headerPart, replaceParagraphText);
+                        headerPart.Header?.Save();
+                    }
+
+                    foreach (var footerPart in doc.MainDocumentPart.FooterParts)
+                    {
+                        ReplaceParagraphTexts(footerPart, replaceParagraphText);
+                        footerPart.Footer?.Save();
+                    }
+                }
+
                 // 正文部件
-                ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues, redBookmarks, removeWhenEmpty);
+                ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty);
                 doc.MainDocumentPart.Document!.Save();
 
                 // 页眉
                 foreach (var headerPart in doc.MainDocumentPart!.HeaderParts)
                 {
-                    ReplaceBookmarksInPart(headerPart, bookmarkValues, redBookmarks, removeWhenEmpty);
+                    ReplaceBookmarksInPart(headerPart, bookmarkValues, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty);
                     headerPart.Header?.Save();
                 }
 
                 // 页脚
                 foreach (var footerPart in doc.MainDocumentPart.FooterParts)
                 {
-                    ReplaceBookmarksInPart(footerPart, bookmarkValues, redBookmarks, removeWhenEmpty);
+                    ReplaceBookmarksInPart(footerPart, bookmarkValues, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty);
                     footerPart.Footer?.Save();
                 }
+            }
+        }
+
+        /// <summary>
+        /// 按**整段文字**改写固定标签。给那些在模板里是纯文本、连书签都没有的常量用
+        /// （成分报告上的 `Test Result:` / `Recommendation:` 等五个）。
+        /// </summary>
+        /// <remarks>
+        /// **匹配的是"段内全部文字串起来后 trim"**，不是"某个 `<w:t>` 等于" ——
+        /// 同一个标签在模板里可能被拆成好几个 run（`Based on moisture regain weight:`
+        /// 就是 `"Based on "` / `"moisture"` / `" regain weight:"` 三个），
+        /// 只比单个 `<w:t>` 永远匹配不上。
+        ///
+        /// 改写**就地**进行：第一个 `<w:t>` 换成新文字，同段其余 `<w:t>` 清空。
+        /// 样式（粗体、字号、对齐）挂在 `<w:rPr>` 上、不在 `<w:t>` 上，保留原 Run 即保留版式；
+        /// 而**清空 Text 而不是删 Run**，是因为同段还可能有书签、域、制表位等非文字元素，
+        /// 删 Run 会把它们一并带走。
+        /// </remarks>
+        private static void ReplaceParagraphTexts(OpenXmlPart part, IReadOnlyDictionary<string, string> replaceParagraphText)
+        {
+            var paragraphs = part.RootElement?.Descendants<Paragraph>().ToList();
+            if (paragraphs == null) return;
+
+            foreach (var paragraph in paragraphs)
+            {
+                // 段内所有 <w:t>
+                var texts = paragraph.Descendants<Text>().ToList();
+                if (texts.Count == 0) continue;
+
+                // 串起来
+                var paragraphText = string.Concat(texts.Select(t => t.Text));
+                if (!replaceParagraphText.TryGetValue(paragraphText.Trim(), out var replacement)) continue;
+
+                // 就地改第一个
+                texts[0].Text = replacement;
+                texts[0].Space = SpaceProcessingModeValues.Preserve;
+
+                // 其余清空
+                for (int i = 1; i < texts.Count; i++)
+                    texts[i].Text = string.Empty;
             }
         }
 
@@ -58,7 +131,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// 在指定部件中替换书签
         /// 优先在原有 Run/Text 上就地替换以保留样式；若不存在则寻找局部最近的 RunProperties 并克隆；最后才插入无样式 Run。
         /// </summary>
-        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks, HashSet<string>? removeWhenEmpty)
+        private void ReplaceBookmarksInPart(OpenXmlPart part, Dictionary<string, string> bookmarkValues, HashSet<string>? redBookmarks, HashSet<string>? removeWhenEmpty, HashSet<string>? removeBlockWhenEmpty)
         {
             var bookmarks = part.RootElement!.Descendants<BookmarkStart>()
                 .Where(b => bookmarkValues.ContainsKey(b.Name!))
@@ -71,6 +144,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                     .FirstOrDefault(be => be.Id?.Value == bookmark.Id?.Value);
 
                 if (bookmarkEnd == null) continue;
+
+                // 整块删：书签值为空且被点名 → 把书签所在的**整张表**拿掉（Conclusion / Remark 这类整块）。
+                // 必须 continue —— 表都摘掉了，后面的"就地替换 / 找最近 RunProperties"就没有意义了。
+                if (removeBlockWhenEmpty != null && removeBlockWhenEmpty.Contains(bookmark.Name!)
+                    && string.IsNullOrEmpty(bookmarkValues[bookmark.Name]))
+                {
+                    RemoveTableForBookmark(bookmark);
+                    continue;
+                }
 
                 // 若书签在 removeWhenEmpty 中且替换值为空，删除书签前的文本
                 if (removeWhenEmpty != null && removeWhenEmpty.Contains(bookmark.Name!)
@@ -300,6 +382,55 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             foreach (var run in runsBefore)
                 run.Remove();
         }
+
+        /// <summary>
+        /// 把书签所在的**整张表**删掉 —— 用于 removeBlockWhenEmpty。
+        ///
+        /// <para>
+        /// 为什么非删表不可：Conclusion / Remark 这两块在模板里就是两张**无边框**的表
+        /// （`tblBorders` 全 none），标签 "Conclusion:" / "Remark:" 是表里的**普通文字**，
+        /// 不是书签。所以只把书签值清空、或者只按 <see cref="RemoveTextBeforeBookmark"/>
+        /// 删掉标签，都会剩下一张空表占着版面 —— 看起来就是报告里凭空多一块空白。
+        /// </para>
+        ///
+        /// <para>
+        /// 连带的空段落：两张表前后各有一个 9pt 的空段落当间距。表没了、段落还留着，
+        /// 就是 ~18pt 的空白。所以表被删掉时，把它**后面**紧邻的空段落一起收掉，
+        /// 收到最后一个非空段落为止。判据见 <see cref="IsTrulyEmpty"/>（从严）。
+        /// </para>
+        ///
+        /// <para>
+        /// ⚠️ 收空段落**只在表前面也是空段落时才做**：这样保证收完至少还剩一个空段落，
+        /// 相邻两张表不会因此贴到一起 —— Word 会把紧挨着的两张表合并成一张，那是另一个 bug。
+        /// </para>
+        /// </summary>
+        private void RemoveTableForBookmark(BookmarkStart bookmark)
+        {
+            var table = bookmark.Ancestors<Table>().FirstOrDefault();
+            if (table == null) return;   // 书签不在表里：什么都不做，绝不误删正文
+
+            if (table.PreviousSibling() is Paragraph prev && IsTrulyEmpty(prev))
+            {
+                var next = table.NextSibling();
+                while (next is Paragraph p && IsTrulyEmpty(p))
+                {
+                    var after = p.NextSibling();
+                    p.Remove();
+                    next = after;
+                }
+            }
+
+            table.Remove();
+        }
+
+        /// <summary>
+        /// 真空段落：没有非空白文字、没有书签、没有图/对象/换行/分页。
+        /// 判据从严 —— 拿不准就当作"非空"，宁可不收段落，也不误删内容。
+        /// </summary>
+        private static bool IsTrulyEmpty(Paragraph p)
+            => !p.Descendants<Text>().Any(t => !string.IsNullOrWhiteSpace(t.Text))
+            && !p.Descendants<BookmarkStart>().Any()
+            && !p.Descendants().Any(e => e.LocalName is "drawing" or "pict" or "object" or "br");
 
         /// <summary>
         /// 获取两个元素之间的所有元素（仅处理在同一父级内的情况）

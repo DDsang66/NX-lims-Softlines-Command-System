@@ -49,6 +49,20 @@
         public decimal Avg { get; init; }
         public decimal Correct { get; init; }
         public decimal MoistureRegain { get; init; }
+
+        /// <summary>
+        /// <see cref="MoistureRegain"/> 是不是**纤维表里真有这个数** —— 真值 0 也算有。
+        ///
+        /// 单开这个标记，是因为报告上「表里就是 0」（如 `Polyurethane` 的 ISO 回潮率 0.00）
+        /// 与「根本查不到」（组头行的缩写串 `M/E/S`、表里没有的纤维名、没选标准）
+        /// **必须印成两样**：前者印 `0.00%`，后者留空。
+        /// 这两件事在 <see cref="MoistureRegain"/> 里都是 `0m`，分不出来。
+        ///
+        /// 双组分父行恒 false —— 它的加权回潮率只用来算、不上报告，
+        /// 别为了"统一"把它改成 true。
+        /// </summary>
+        public bool MoistureRegainKnown { get; init; }
+
         public decimal Rate { get; init; }
         public List<CellulosicSubFiber> CellulosicSubFibers { get; init; } = new();
         public List<BicomponentSubFiber> BicomponentSubFibers { get; init; } = new();

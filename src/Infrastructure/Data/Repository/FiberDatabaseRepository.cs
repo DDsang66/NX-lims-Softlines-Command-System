@@ -100,5 +100,20 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .ToDictionary(g => g.Key, g => g.First().mr ?? 0m);
         }
 
+        public async Task<Dictionary<string, string>> GetChineseNameMapAsync()
+        {
+            var fibers = await _context.FiberDatabases
+                .AsNoTracking()
+                .Where(f => f.IsActive == null || f.IsActive == true)
+                .ToListAsync();
+
+            // 中文名为空的整行丢掉 —— 报告侧查不到就只印英文名，与"没这条"同效，
+            // 留着空串反而要在消费端再判一次。
+            return fibers
+                .Where(f => !string.IsNullOrWhiteSpace(f.FiberNameEn) && !string.IsNullOrWhiteSpace(f.FiberNameCn))
+                .GroupBy(f => f.FiberNameEn)
+                .ToDictionary(g => g.Key, g => g.First().FiberNameCn!.Trim(), StringComparer.OrdinalIgnoreCase);
+        }
+
     }
 }

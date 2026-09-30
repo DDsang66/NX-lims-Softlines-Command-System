@@ -8,7 +8,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     ///   · 含分组父槽字面量（"*cellulosic fibre" / "*Regenerated cellulose fibre"）
     ///     —— 喂 SelectEquipment 的显微镜追加（MICROSCOPE_CELLULOSIC）、以及规则表里两处
     ///     显微镜标准追加，都是**报告内容**
-    ///   · 不下钻子层 —— 下钻会打断设备选型（SelectShaker 取 fibers[0]、SelectWaterBath 看相邻对）
+    ///   · 不下钻子层 —— 下钻会打断设备选型（SelectShaker 只看父槽名、SelectWaterBath 看相邻对）
     ///     与三元法短路
     ///
     /// 结果是亚麻在业务上只作为 cellulosicSubFibers 录入，**永远走不到配对循环里**，

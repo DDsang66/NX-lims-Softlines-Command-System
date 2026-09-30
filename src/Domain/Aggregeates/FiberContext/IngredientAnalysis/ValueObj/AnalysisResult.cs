@@ -202,6 +202,31 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             return new AnalysisResult(copy);
         }
 
+        /// <summary>
+        /// 本份是否出中文（国标）。闸门在 <c>IngredientAnalysisCalculation.CalculateForStandard</c>，
+        /// **按段判定** —— 多标准记录里两份各带各的。
+        /// </summary>
+        public bool UseChineseNames => Get<bool>("UseChineseNames");
+
+        /// <summary>
+        /// 纤维英文名 → 中文名。与标准无关，一份实例的各段共用同一张表，缺省是空表。
+        /// </summary>
+        public IReadOnlyDictionary<string, string> ChineseFiberNames
+            => Get<IReadOnlyDictionary<string, string>>("ChineseFiberNames")
+               ?? new Dictionary<string, string>();
+
+        /// <summary>
+        /// 挂上中文化所需的两个字段。表与布尔一并写入 —— 两者永远同时被读，分两次写会出现
+        /// 「有表但开关没打开」的中间态。
+        /// </summary>
+        public AnalysisResult WithChineseNames(IReadOnlyDictionary<string, string> fiberNames, bool useChinese)
+        {
+            var copy = new Dictionary<string, object>(Data);
+            copy["ChineseFiberNames"] = fiberNames ?? new Dictionary<string, string>();
+            copy["UseChineseNames"] = useChinese;
+            return new AnalysisResult(copy);
+        }
+
         public AnalysisResult WithEquipment(EquipmentSelection equipment)
         {
             var copy = new Dictionary<string, object>(Data);

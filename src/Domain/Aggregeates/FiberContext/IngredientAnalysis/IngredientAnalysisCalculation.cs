@@ -58,6 +58,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private IReadOnlyDictionary<string, decimal> _moistureRegainMap = new Dictionary<string, decimal>();
 
         /// <summary>
+        /// 纤维英文名 → 中文名。**与标准无关**，一份实例的各段共用同一张表。
+        /// 表本身的取舍（读哪张库表、空值怎么丢）见 <c>IFiberDatabaseRepository.GetChineseNameMapAsync</c>。
+        /// </summary>
+        private IReadOnlyDictionary<string, string> _fiberChineseNames = EmptyChineseNames;
+
+        private static readonly IReadOnlyDictionary<string, string> EmptyChineseNames
+            = new Dictionary<string, string>();
+
+        /// <summary>
         /// 实体创建工厂方法，包含领域验证逻辑
         /// </summary>
         /// <param name="id"></param>
@@ -105,9 +114,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// 正文抽到 <see cref="CalculateForStandard"/> 之后，这里只剩一行委托。
         /// **签名与行为逐字不变** —— 服务层两条重算路径与既有契约测试原样通过。
         /// </remarks>
-        public AnalysisResult Calculate(IReadOnlyDictionary<string, decimal>? moistureRegainMap = null)
+        public AnalysisResult Calculate(
+            IReadOnlyDictionary<string, decimal>? moistureRegainMap = null,
+            IReadOnlyDictionary<string, string>? fiberChineseNames = null)
         {
-            Result = CalculateForStandard(SelectedStandard, moistureRegainMap);
+            Result = CalculateForStandard(SelectedStandard, moistureRegainMap, fiberChineseNames);
             return Result;
         }
 
@@ -126,12 +137,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// 逐个查的，正常不会缺项。
         /// </remarks>
         public IReadOnlyList<AnalysisResult> CalculatePerStandard(
-            IReadOnlyDictionary<string, IReadOnlyDictionary<string, decimal>> mrByStandard)
+            IReadOnlyDictionary<string, IReadOnlyDictionary<string, decimal>> mrByStandard,
+            IReadOnlyDictionary<string, string>? fiberChineseNames = null)
         {
             var list = StandardsToRender
                 .Select(std => CalculateForStandard(
                     std,
-                    mrByStandard != null && mrByStandard.TryGetValue(std, out var m) ? m : null))
+                    mrByStandard != null && mrByStandard.TryGetValue(std, out var m) ? m : null,
+                    fiberChineseNames))
                 .ToList();
 
             StandardResults = list;
@@ -148,9 +161,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </remarks>
         private AnalysisResult CalculateForStandard(
             string standard,
-            IReadOnlyDictionary<string, decimal>? moistureRegainMap)
+            IReadOnlyDictionary<string, decimal>? moistureRegainMap,
+            IReadOnlyDictionary<string, string>? fiberChineseNames = null)
         {
             _moistureRegainMap = moistureRegainMap ?? new Dictionary<string, decimal>();
+            _fiberChineseNames = fiberChineseNames ?? EmptyChineseNames;
 
             // 1) 基础参数
             var result = AnalysisResult.Empty()
@@ -185,13 +200,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             // 3.5) 设备选型（对应 Excel L23/O23/R23/L24/O24）
             // 闸门是**分析类型**，不是纤维条数 —— 见 SelectEquipment 的说明。
+            // 显微镜**只有一台**，父槽记录与普通记录同口径：原先"含 cellulosic 父槽就追加。
             var orderedFiberNames = GetOrderedFiberNames();
             var equipment = SelectEquipment(Type, orderedFiberNames);
-            // cellulosic fibre 追加额外显微镜
-            if (orderedFiberNames.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre"))
-                equipment = equipment with { Microscope = string.IsNullOrEmpty(equipment.Microscope)
-                    ? MICROSCOPE_CELLULOSIC
-                    : equipment.Microscope + " / " + MICROSCOPE_CELLULOSIC };
             result = result.WithEquipment(equipment);
 
             // 3.6) 自动拼接 Methods（对应 Excel L4 公式）
@@ -207,6 +218,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             var methodString = FiberStandardChainBuilder.BuildMethodString(
                 standard, orderedFiberNames, GetOrderedFiberSlots(), Type == AnalysisType.Single);
             result = result.WithMethods(methodString);
+
+            // 3.6.1) 国标中文化 —— **按段**判定，读的是本份的标准（与上面那条同源）。
+            // 闸门只有这一个出处：报告侧的五个标签、Test Result/Recommendation 的纤维名、
+            // 页脚 MR 汇总，全都从 UseChineseNames 这一个布尔分流，不各判各的。
+            result = result.WithChineseNames(_fiberChineseNames, FiberChineseName.IsChineseReport(standard));
 
             // 3.7) 燃烧法分类（对应 ISO 11827 Table A.1）
             result = result.WithBurningTest(orderedFiberNames);
@@ -307,7 +323,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
                 var rateTrail1 = totalGSMTrail1 == 0 ? 0 : actualGsm1 / totalGSMTrail1 * 100;
                 var rateTrail2 = totalGSMTrail2 == 0 ? 0 : actualGsm2 / totalGSMTrail2 * 100;
-                var avg = (rateTrail1 + rateTrail2) / 2;
+                var avg = (rateTrail1 + rateTrail2) / TrialDivisor(actualGsm1, actualGsm2);
 
                 units.Add(new MultiFiberRowUnit
                 {
@@ -376,8 +392,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         GSMTrail2 = startGsm2,
                         RateTrail1 = SafeDivide(startGsm1, totalGSMTrail1),
                         RateTrail2 = SafeDivide(startGsm2, totalGSMTrail2),
-                        Avg = (SafeDivide(startGsm1, totalGSMTrail1) + SafeDivide(startGsm2, totalGSMTrail2)) / 2,
-                        Correct = 1,
+                        Avg = (SafeDivide(startGsm1, totalGSMTrail1) + SafeDivide(startGsm2, totalGSMTrail2))
+                              / TrialDivisor(startGsm1, startGsm2),
+                        // 组头行不是纤维，没有损伤系数 —— 与下面 MoistureRegain 留空同源，
+                        // 适配器据此印空白。原工作簿的组头行也没有 Correct 这一格。
+                        // 该行被 allComponentRows 的两道 Where 挡在 Rate 分母外，故这里填 0 不动任何算术。
+                        Correct = 0,
                         MoistureRegain = 0,
                         Rate = 0
                     });
@@ -416,8 +436,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         GSMTrail2 = curGsm2,
                         RateTrail1 = rateTrail1,
                         RateTrail2 = rateTrail2,
-                        Avg = (rateTrail1 + rateTrail2) / 2,
-                        Correct = 1,
+                        Avg = (rateTrail1 + rateTrail2) / TrialDivisor(curGsm1, curGsm2),
+                        // 损伤系数挂在"前一个成分被溶掉、本行是残留"这一对上，所以组内第一个成员恒 1。
+                        // 见 FiberDamageFactor 的类注释。
+                        Correct = i == 0 ? 1m : FiberDamageFactor.Resolve(groupUnits[i - 1].FiberName, current.FiberName),
                         MoistureRegain = 0,
                         Rate = 0,
                         CellulosicSubFibers = current.CellulosicSubFibers ?? new(),
@@ -487,7 +509,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     // 计算Rate（不取整，保留全精度，最终格式化时统一取整）
                     var rate = numerator / denominator * 100m;
 
-                    return row with { MoistureRegain = DisplayedMoistureRegain(row), Rate = rate };
+                    return row with
+                    {
+                        MoistureRegain = DisplayedMoistureRegain(row),
+                        // "印不印"与"值是多少"是两件事：真值 0 要印 0.00%，查不到才留空。
+                        MoistureRegainKnown = IsMoistureRegainKnown(row),
+                        Rate = rate
+                    };
 
                 }).ToList();
 
@@ -517,6 +545,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 多标准下却会让 ISO 段拿到 AATCC 的合并口径（或反过来）。
             var isAatcc = standard?.StartsWith("AATCC", StringComparison.OrdinalIgnoreCase) == true;
 
+            // 国标（FZ/T 01057）：结果行里的纤维名印成 `中文English`。
+            // 判据同样读**入参**、不读 Methods，理由与上面 isAatcc 一字不差。
+            // 与 AATCC 天然互斥 —— 一个标准串不可能既是 FZ/T 又是 AATCC。
+            var isGb = FiberChineseName.IsChineseReport(standard);
+
             var result = new CalculatedRemarkResult {
                 RecommendedLabel = new List<string>(remarkLabel.RecommendedLabel),
                 ResultRemark = remarkLabel.ResultRemark,
@@ -524,8 +557,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 JudgmentLabelRemark = remarkLabel.JudgmentLabelRemark,
                 LanguageLabelRemark = remarkLabel.LanguageLabelRemark,
                 VerifyResult = remarkLabel.VerifyResult,
-                Results = CalculateFormattedResults(calculatedFiberResult, 1, "F1"),
-                Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0", isAatcc)
+                Results = CalculateFormattedResults(calculatedFiberResult, 1, "F1", isAatcc, isGb),
+                Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0", isAatcc, isGb)
             };
 
             // Bicomponent/Biconstituent 格式化后处理
@@ -533,6 +566,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             {
                 Results = PostProcessBicomponent(result.Results, calculatedFiberResult, "F1"),
                 Recommendation = PostProcessBicomponent(result.Recommendation, calculatedFiberResult, "F0")
+            };
+
+            // 最后一步：百分比右对齐补齐，让两列的名称落在同一竖列。
+            // 位置是硬的 —— 必须在 PostProcessBicomponent **之后**，理由见 AlignResultLines。
+            result = result with
+            {
+                Results = AlignResultLines(result.Results),
+                Recommendation = AlignResultLines(result.Recommendation)
             };
 
             return result;
@@ -550,14 +591,23 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <param name="calculatedFiberResult">计算结果</param>
         /// <param name="decimalPlaces">保留小数位（0=整数, 1=1位小数）</param>
         /// <param name="format">格式化字符串（F0 或 F1）</param>
-        private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format, bool isAatcc = false)
+        /// <param name="isAatcc">本份是否 AATCC（亚 5% 聚合行）。</param>
+        /// <param name="useChineseNames">
+        /// 本份是否国标 —— 纤维名印成 `中文English`。
+        /// **只加在名字位置**（第一个 `%` 之后），所以下游两处解析都取不到它：
+        /// <see cref="AlignResultLines"/> 只认 `%` 之前，<see cref="PostProcessBicomponent"/> 整行重写。
+        /// 双组分父行因此天然保持英文，无需在这里特判。
+        /// </param>
+        private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format, bool isAatcc = false, bool useChineseNames = false)
         {
-            // 单组分：每个纤维固定 100%，不求和
+            // 单组分：每个纤维固定 100%，不求和。
+            // 单组分**不走** AlignResultLines 的对齐：LeadingPercentNumber 见到 `{Sample}:`
+            // 里的冒号就返回 null，这行永远不参与补齐 —— 去掉 `\n` 前后都是这样。
             if (calculatedFiberResult.All(c => c is SingleCalculatedFiberItem))
             {
                 return calculatedFiberResult
                     .OfType<SingleCalculatedFiberItem>()
-                    .Select(s => $"{s.Sample}:\n100% {s.FiberName}")
+                    .Select(s => $"{s.Sample}:  100% {ResultFiberName(s.FiberName, useChineseNames)}")
                     .ToList();
             }
 
@@ -599,6 +649,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 .Select(c => new
                 {
                     c.Name,
+                    // 原始值一路带着走：**排序键是它，不是 RoundedRate**（理由见第 5 步）。
+                    c.Rate,
                     RoundedRate = Math.Round(c.Rate, decimalPlaces, MidpointRounding.AwayFromZero)
                 })
                 .ToList();
@@ -608,11 +660,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             {
                 if (rounded[i].RoundedRate == 0m)
                 {
-                    rounded[i] = new { rounded[i].Name, RoundedRate = 1m };
+                    rounded[i] = new { rounded[i].Name, rounded[i].Rate, RoundedRate = 1m };
                     var maxIdx = 0;
                     for (int j = 1; j < rounded.Count; j++)
                         if (rounded[j].RoundedRate > rounded[maxIdx].RoundedRate) maxIdx = j;
-                    rounded[maxIdx] = new { rounded[maxIdx].Name,
+                    rounded[maxIdx] = new { rounded[maxIdx].Name, rounded[maxIdx].Rate,
                         RoundedRate = rounded[maxIdx].RoundedRate - 1m };
                 }
             }
@@ -633,6 +685,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         rounded[i] = new
                         {
                             rounded[i].Name,
+                            rounded[i].Rate,
                             RoundedRate = rounded[i].RoundedRate + diff  // 加或减差值
                         };
                         break;
@@ -643,11 +696,80 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 5. 格式化输出（亚 5% 的聚合行排**最后**，其余按 Rate 从大到小排序）
             //    16 CFR § 303.16(a)(1)（羊毛制品见 § 300.3(b)）：通用名按占比由多到少排列，
             //    "other fiber" / "other fibers" 必须出现在末尾。
+            //
+            //  ⚠️ 排序键必须是**原始 Rate，不能是 RoundedRate**（2026-09-29 用户裁定）：
+            //  本方法被同一个记录调两次，取位不同（Test Result 1 位 / Recommendation 0 位），
+            //  用取整值排就会出现"一边还分得出大小、另一边已经全平"的情况 ——
+            //  全平那边退化成输入顺序，于是两列顺序对不上。实测 87.405.26.61074.01：
+            //  Wool 0.57 / Polyamide 1.20 / Acrylic 1.19 → 1 位是 0.6/1.2/1.2（排得出序），
+            //  0 位是 1/1/1（全平，退成表里的行序 Wool→Polyamide→Acrylic）。
+            //  改用原始值后两列的输入与键都相同，顺序必然一致；
+            //  只有原始值**恰好相等**时才退到输入顺序 —— 那时两列仍然是同一个顺序。
             return rounded
                 .OrderBy(r => IsOtherFiberLine(r.Name) ? 1 : 0)
-                .ThenByDescending(r => r.RoundedRate)
-                .Select(r => $"{r.RoundedRate.ToString(format)}% {r.Name}")
+                .ThenByDescending(r => r.Rate)
+                .Select(r => $"{r.RoundedRate.ToString(format)}% {ResultFiberName(r.Name, useChineseNames)}")
                 .ToList();
+        }
+
+        /// <summary>
+        /// 报告上印的纤维名：国标且查得到中文 → `中文English`，否则原样。
+        ///
+        /// 这里是**唯一的**取名口，单组分与多组分两条格式化分支都走它 ——
+        /// 排序、去重、亚 5% 聚合一律仍用英文原名做键，中文化只发生在最后拼串那一步。
+        /// </summary>
+        private string ResultFiberName(string name, bool useChineseNames)
+            => useChineseNames ? FiberChineseName.Localize(name, _fiberChineseNames) : name;
+
+        /// <summary>
+        /// 把 `<数字>% <名称>` 这类结果行按**本块内最长的数字**补空格，让名称落在同一竖列。
+        ///
+        /// **每缺一位补两个空格，不是补一个** —— 结果行的字体是 Arial（比例字体）：
+        /// 数字宽 0.556em、空格只有 0.278em，**恰好一半**。补一个空格只把名称推半格，
+        /// 看着就是"好像没对齐"。
+        /// ⚠️ **必须排在 <see cref="PostProcessBicomponent"/> 之后**：双组分那条会**整行重写**
+        /// （父行百分比取的是 `line.Split('%')[0].Trim()`），`Trim()` 会把先补的空格吃掉，先补等于白补。
+        ///
+        /// 认不出的行原样返回 —— 单组分那种 `Sample:  100% Name`（全是 100%，补了也是空操作）走这条路。
+        /// </summary>
+        private static List<string> AlignResultLines(List<string> lines)
+        {
+            int width = 0;
+            foreach (var line in lines)
+            {
+                if (LeadingPercentNumber(line) is { } n)
+                    width = Math.Max(width, n.Length);
+            }
+
+            if (width == 0) return lines;
+
+            var aligned = new List<string>(lines.Count);
+            foreach (var line in lines)
+            {
+                var n = LeadingPercentNumber(line);
+                // 前置补空格，每缺一位补两个 —— Arial 下 2 个空格才等于 1 个数字宽（见方法注释）。
+                aligned.Add(n is null ? line : line.PadLeft(line.Length + (width - n.Length) * 2));
+            }
+            return aligned;
+        }
+
+        /// <summary>
+        /// 取 `<数字>% ...` 里那个数字串；不是这个形状就返回 null（该行不参与对齐）。
+        /// 只认**第一个** `%` 之前的内容 —— 双组分行后面括号里的 `16.4%Polyamide` 因此不会被误取。
+        /// </summary>
+        private static string? LeadingPercentNumber(string line)
+        {
+            // 带换行的行一律不参与对齐：多行值补行首空格会补进第一行里，越补越乱。
+            // 现在**已经没有这种行了**（单组分原先那条 `{Sample}:\n100% {Name}` 已改单行），
+            // 留着是防日后又出多行格式被静默补坏 —— 别当死代码删。
+            if (line.Contains('\n')) return null;
+
+            var pct = line.IndexOf('%');
+            if (pct <= 0) return null;
+
+            // 单组分 `{Sample}:  100% {Name}` 走这里会因为冒号（或样品号里的字母）落进上面那条 all-digit 判定 → null。
+            var head = line[..pct];
+            return head.All(ch => char.IsAsciiDigit(ch) || ch == '.') ? head : null;
         }
 
         /// <summary>
@@ -722,18 +844,45 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             return components;
         }
 
-        private decimal LookupMoistureRegain(string fiberName)
+        /// <summary>按名字查回潮率，**查不到折成 0** —— 算术路径要的就是这个，别改。</summary>
+        private decimal LookupMoistureRegain(string fiberName) => FindMoistureRegain(fiberName) ?? 0m;
+
+        /// <summary>
+        /// 按名字查回潮率；**查不到返回 null**。
+        ///
+        /// 与 <see cref="LookupMoistureRegain"/> 唯一的区别就是"查不到"这个返回值：
+        /// 那个折成 0 喂算术，这个留着 null，好让报告分得清
+        /// 「表里就是 0」和「没有这个数」（见 <see cref="IsMoistureRegainKnown"/>）。
+        /// </summary>
+        private decimal? FindMoistureRegain(string fiberName)
         {
             if (string.IsNullOrWhiteSpace(fiberName) || _moistureRegainMap.Count == 0)
-                return 0m;
+                return null;
 
             if (_moistureRegainMap.TryGetValue(fiberName, out var exact))
                 return exact;
 
-            var match = _moistureRegainMap
-                .FirstOrDefault(kv => string.Equals(kv.Key, fiberName, StringComparison.OrdinalIgnoreCase));
-            return match.Value;
+            // 大小写不敏感兜底。用显式循环而不是 FirstOrDefault ——
+            // 后者没匹配上时返回 default，Key 是 null，得靠"字典不允许 null 键"来判，太绕。
+            foreach (var kv in _moistureRegainMap)
+            {
+                if (string.Equals(kv.Key, fiberName, StringComparison.OrdinalIgnoreCase))
+                    return kv.Value;
+            }
+            return null;
         }
+
+        /// <summary>
+        /// 这个成分行的回潮率**该不该印到报告上**。
+        ///
+        /// 两道闸，缺一不可：
+        /// ① 纤维表里真有这个数 —— **真值 0 也算有**，这正是本次要修的（2026-09-29 用户裁定）；
+        /// ② 不是双组分父行 —— 父行那个加权值只用来算，不上报告（2026-09-28 裁定）。
+        ///
+        /// 两道都不满足时 MR 栏留空。组头行（`Sum` 是 `M/E/S` 这种缩写串）走①就被挡下了。
+        /// </summary>
+        private bool IsMoistureRegainKnown(MultiFiberRowUnit row)
+            => !IsBicomponentFiber(row.Sum) && FindMoistureRegain(row.Sum) is not null;
 
         /// <summary>
         /// 某个成分行**用来算**的回潮率。
@@ -776,6 +925,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         {
             return denominator == 0 ? 0 : numerator / denominator * 100;  // 返回百分比
         }
+
+        /// <summary>
+        /// Average 列的**除数** —— 这一行实际有几组试次（Trial#2 的称量 > 0 才算有第二组）。
+        ///
+        /// 原先三处恒 `/ 2`，于是"只称了一次"的行 Average 印出来正好是 Trial#1 的一半
+        ///
+        /// ⚠️ 会连带改变最终 Rate：Avg 同时是 Rate 的分子与分母（见 <see cref="CalculateRates"/>），
+        /// 全体行同系数时约掉，只有除数不齐的记录会动。这是应有结果，不是副作用。
+        /// </summary>
+        private static decimal TrialDivisor(decimal gsmTrail1, decimal gsmTrail2)
+            => gsmTrail1 > 0 && gsmTrail2 > 0 ? 2m : 1m;
 
         /// <summary>
         /// 获取纤维名称的缩写
@@ -835,6 +995,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <summary>
         /// 多组分：从 _components 中提取所有纤维名称。cellulosic fibre 展开为子纤维名。
         /// </summary>
+        /// <remarks>
+        /// 定性名是一根纤维一次。去重必须放在两列合并之后。
+        ///
+        /// 比较器是 ordinal（<c>Distinct</c> 默认），与正文 <c>ExtractComponents</c> 的
+        /// <c>GroupBy(Name)</c>、页脚 MR 汇总的 <c>DistinctBy</c> 同一套 —— **别改成大小写折叠**：
+        /// 单这一处折叠会让"定性列把两条并了、正文却没并"。
+        ///
+        /// 顺序保持不变：溶解列在前、拆分列在后，去重保留首现。
+        /// </remarks>
         private string GetMultipleFiberNames()
         {
             var dissolvedNames = _components
@@ -844,8 +1013,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     ? u.BicomponentSubFibers.Where(b => !string.IsNullOrWhiteSpace(b.FiberName)).Select(b => b.FiberName)
                     : (u.FiberName == "*cellulosic fibre" || u.FiberName == "*Regenerated cellulose fibre") && u.CellulosicSubFibers.Count > 0
                         ? u.CellulosicSubFibers.Where(s => !string.IsNullOrWhiteSpace(s.FiberName)).Select(s => s.FiberName)
-                        : new[] { u.FiberName })
-                .Distinct();
+                        : new[] { u.FiberName });
 
             var splittingNames = _components
                 .OfType<SplittingFiberComponent>()
@@ -853,10 +1021,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     ? s.BicomponentSubFibers.Where(b => !string.IsNullOrWhiteSpace(b.FiberName)).Select(b => b.FiberName)
                     : (s.FiberName == "*cellulosic fibre" || s.FiberName == "*Regenerated cellulose fibre") && s.CellulosicSubFibers.Count > 0
                         ? s.CellulosicSubFibers.Where(c => !string.IsNullOrWhiteSpace(c.FiberName)).Select(c => c.FiberName)
-                        : new[] { s.FiberName })
-                .Distinct();
+                        : new[] { s.FiberName });
 
-            return string.Join("/", dissolvedNames.Concat(splittingNames));
+            return string.Join("/", dissolvedNames.Concat(splittingNames).Distinct());
         }
 
         private static bool IsBicomponentFiber(string name) =>
@@ -1040,19 +1207,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
         /*------------------------------------------设备选型逻辑--------------------------------------------------------------------------*/
 
-        // 设备编码常量（对应 Excel L23/O23/R23/L24/O24）
+        // 设备编码常量（对应 Excel L23/O23/R23/L24/O24 —— 五格对五台）
         // 显微镜设备串统一为 `Microscope: SFL-NGB-EQP-XXX`（冒号后带空格 + 设备号用连字符）。
-        // 原先这两处格式不一致（一处无空格、一处用下划线）。纯报告外观一致性，不涉及模板匹配
-        // —— 模板与已生成 docx 里 `SFL` 均 0 命中，设备串是整串写进 Equipment 书签。
-        private const string MICROSCOPE = "Microscope: SFL-NGB-EQP-056";
-        private const string MICROSCOPE_CELLULOSIC = "Microscope: SFL-NGB-EQP-268";
+        // 原先两处格式不一致（一处无空格、一处用下划线），2026-09-29 起只剩这一处。
+        // 纯报告外观一致性，不涉及模板匹配 —— 模板与已生成 docx 里 `SFL` 均 0 命中。
+        //
+        // ⚠️ 显微镜**只有一台**，别再按 cellulosic 父槽追加第二台。
+        private const string MICROSCOPE = "Microscope: SFL-NGB-EQP-280";
         private const string OVEN = "Oven:SFL-NGB-EQP-164";
         private const string BALANCE = "Balance:SFL-NGB-EQP-061";
         private const string WATER_BATH = "Water bath:SFL-NGB-EQP-046";
         private const string SHAKER = "Shaker:SFL-NGB-EQP-052";
 
-        // Shaker 触发纤维（首成分为这些时需化学溶解）
-        private static readonly HashSet<string> ShakerFirstFibers = new(StringComparer.OrdinalIgnoreCase)
+        // Shaker 触发纤维（**含有**其中任一时需化学溶解）
+        private static readonly HashSet<string> ShakerTriggerFibers = new(StringComparer.OrdinalIgnoreCase)
         {
             "nylon", "polyamide", "wool"
         };
@@ -1110,14 +1278,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 }
             }
 
-            // P131: 任何相邻对中前者为丙烯腈类且后者存在 → 水浴（回退）
+            // P131: 任何相邻对中前者为丙烯腈类、后者够格当它的合作方 → 水浴（回退）
             // 这里原先是第三处裸字面量 `f == "acrylic"`，与 ISO -12 / GB .12 两处本属同一语义。
             // 不收编的话，Modacrylic 的方法栏会印 DMF 法（该分部试剂就是 DMF、需要水浴），
             // 设备栏却不给水浴 —— 方法栏与设备栏自相矛盾。三处一起改。
+            //
+            // 后位判据与那两处**同一条**：方法栏拿不到 -12 时设备栏就不该给水浴（谓词自带 Trim、
+            // 空串落空，原先的 IsNullOrWhiteSpace 守卫被它吸收）。
             for (int i = 1; i < fibers.Count; i++)
             {
                 if (FiberTokens.IsAcrylicType(fibers[i - 1])
-                    && !string.IsNullOrWhiteSpace(fibers[i]))
+                    && FiberTokens.IsIso1833_12OtherFibre(fibers[i]))
                 {
                     return WATER_BATH;
                 }
@@ -1129,10 +1300,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <summary>O24 — 振荡器/化学溶解设备选择</summary>
         private string SelectShaker(List<string> fibers)
         {
+            // 只有一种纤维就没有可溶解掉的对象 —— 这道守卫是规则本身需要的，
+            // 与拆掉的那道"条数闸"不是一回事（那道管单组分 vs 多组分），别一起删。
             if (fibers.Count < 2) return string.Empty;
 
-            // 首成分为 nylon/polyamide/wool 且有 ≥2 成分 → Shaker
-            if (ShakerFirstFibers.Contains(fibers[0]))
+            // 含 nylon/polyamide/wool **任一**、且有 ≥2 成分 → Shaker。
+            // ⚠️ 只在**父槽层**的扁平列表里找，不下钻子纤维（CellulosicSub / BicomponentSub）。
+            // 一条 `Biconstituent Fiber` 就算子纤维里有 Nylon 也不算触发 —— 与
+            // GetOrderedFiberSlots「不下钻子层」的既有权衡一致（下钻会同时打乱水浴的相邻对判定）。
+            if (fibers.Any(f => ShakerTriggerFibers.Contains(f)))
                 return SHAKER;
 
             return string.Empty;

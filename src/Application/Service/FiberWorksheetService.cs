@@ -294,9 +294,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// </remarks>
         private void RenderOne(string targetPath, AnalysisResult result, IReadOnlyList<string> microscopeFibers)
         {
-            var (values, redBookmarks, removeWhenEmpty) = _wordTemplateAdapter.Adapt(result);
+            var (values, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty) = _wordTemplateAdapter.Adapt(result);
 
-            _wordTemplateEngine.ReplaceText(targetPath, values, redBookmarks, removeWhenEmpty);
+            // 模板里那五个标签是**纯文本**、连书签都没有，所以只能整段改写。
+            // 由 result 自己说了算（按段判定），非国标传 null → 引擎一个段落都不动。
+            var paragraphText = result.UseChineseNames ? FiberChineseName.ReportLabels : null;
+
+            _wordTemplateEngine.ReplaceText(
+                targetPath, values, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty, paragraphText);
 
             var imageFolder = Path.Combine("wwwroot", "MicroscopeImages");
             _wordTemplateEngine.InsertMicroscopeImages(targetPath, microscopeFibers, imageFolder);
@@ -403,7 +408,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 mrByStandard[standard] = await _fiberDatabaseRepo.GetMoistureRegainMapAsync(standard);
             }
 
-            ingredientsAnalysis.CalculatePerStandard(mrByStandard);
+            // 中文名表与标准无关，**在循环外查一次**（回潮率那张表是按标准选列的，这张不是）。
+            // 只有国标段真的会用到它，但这里无从判断是哪一个段 —— 由域里按段闸门决定用不用。
+            var chineseNames = await _fiberDatabaseRepo.GetChineseNameMapAsync();
+
+            ingredientsAnalysis.CalculatePerStandard(mrByStandard, chineseNames);
             return ingredientsAnalysis;
         }
 

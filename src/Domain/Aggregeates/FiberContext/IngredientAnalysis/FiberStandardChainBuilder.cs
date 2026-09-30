@@ -17,12 +17,18 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     ///     -6 按官方范围收紧；补 flax（不补 ramie，1833-22:2020 只有 flax）
     ///   · GB 侧：删除"聚酯在前一律给 2910.24"的兜底，换成涤氨双向 2910.20；补纤维素 × 弹性纤维 2910.20
     ///   · 丙烯腈三处裸字面量（ISO -12、GB .12、设备选型）统一走 <see cref="FiberTokens.IsAcrylicType"/>
+    ///   · -12 / .12 三条兜底的后位判据由"在 1833-12 范围内"（对象 ∪ 其他，并集）收紧成
+    ///     <see cref="FiberTokens.IsIso1833_12OtherFibre"/>（**只有"其他纤维"**）：两栏本就互斥，
+    ///     对象纤维（腈纶 / 弹性纤维）不能互相配对，DMF 会把两样一起溶掉。
     ///
     /// **丙烯腈守卫**：ISO 1833-20 / GB/T 2910.20 官方都声明"不适用于聚丙烯腈纤维同时存在的情况"，
     /// 所以这两条规则必须看到**整条纤维列表**，不能只看当前这一对——故两个查表函数都收 hasAcrylic。
     /// 守卫生效时退回 -12（1833-20 官方注列出的备选方法），而不是落空：否则
     /// (Elastane, 纤维素) 在含丙烯腈时会落空、(纤维素, Elastane) 却不会，又变回
     /// "同一对因录入顺序给不同结果"——凡成对的判定，两个方向必须一致。
+    ///
+    /// 守卫回退**不会发出范围外的 -12**：三条 .20 规则的合作方只可能是纤维素类、聚酯、聚酰胺，
+    /// 三者全部落在 <see cref="FiberTokens.IsIso1833_12OtherFibre"/> 里，故退回去的 -12 后位仍够格。
     /// </summary>
     internal static class FiberStandardChainBuilder
     {
@@ -58,23 +64,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         // .1~.4 四个分部 —— 由下面 BuildSingleStdChain 的 GB 分支展开，系列名本身不上报告。
         // 与 ISO1833 / DIN EN ISO 1833 只写体系名、分部由链构造器补全是同一个约定。
         //
-        // .2 与 .3 的 2025 版是 2025-04-10 发布、**2027-05-01 才实施**，代替 2007 版。
-        // 到 2026-09 为止，这两个分部的**现行有效版本仍是 2007**。
-        // 2027-05-01 之后要换，只需动下面 FZ01057_2 / FZ01057_3 两行。
-        //
         // 写法逐字照抄官方标准号：年份前一律 ASCII 连字符 —— 与相邻 FZ01026 的 –(U+2013) 不同，
         // 是两套清单的原始写法不同，别顺手统一。
         private const string FZ01057 = "FZ/T 01057";
         private const string FZ01057_1 = "FZ/T 01057.1-2007";  // 通用说明
-        private const string FZ01057_2 = "FZ/T 01057.2-2007";  // 燃烧法
-        private const string FZ01057_3 = "FZ/T 01057.3-2007";  // 显微镜法
+        private const string FZ01057_2 = "FZ/T 01057.2-2025";  // 燃烧法（2027-05-01 才实施，提前采用）
+        private const string FZ01057_3 = "FZ/T 01057.3-2025";  // 显微镜法（2027-05-01 才实施，提前采用）
         private const string FZ01057_4 = "FZ/T 01057.4-2007";  // 溶解法
 
         /// <summary>
         /// 纤维素类父槽存在时追加的显微镜法串。
-        /// 原为 "FZ/T 01057.3–2007 / FZ/T 30003-2024" —— .3 已移进链首的系列展开，
-        /// 留在这里就是同一份报告里写两次 .3，故只留定量用的 FZ/T 30003。
-        /// （FZ/T 30003 原文就是连字符，照抄不"统一"。）
         /// </summary>
         private const string MICROSCOPE_GB_CHAIN = "FZ/T 30003-2024";
 
@@ -104,7 +103,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <b>它是整条链的分流开关</b>：单组分走
         /// <see cref="BuildSingleComponentChain"/> —— **一律不派生定量子标准**，
         /// 只出勾选的标准本身 + 鉴别法（ISO/DIN 侧 <c>ISO/TR 11827</c>，
-        /// GB 侧 <c>FZ/T 01057.3-2007</c>）。
+        /// GB 侧 <c>FZ/T 01057.3-2025</c>）。
         /// 默认 <c>false</c> = 多组分 = **改动前的行为**，所以既有调用点与全部测试
         /// 不传这个参数时输出逐字不变。
         /// </para>
@@ -115,9 +114,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </para>
         ///
         /// <para>
-        /// <b>纤维条数区分不出它</b>：单组分记录可以有 1 条也可以有多条单纤维
-        /// （如 <c>87.405.26.12312.01</c> 的 Modal + Silk），所以只能由调用方按聚合根的
-        /// <c>Type</c> 传进来，不能在这里从 <paramref name="fibers"/> 猜。
+        /// <b>纤维条数区分不出它</b>：单组分记录可以有 1 条也可以有多条单纤维.
         /// </para>
         /// </param>
         /// <remarks>
@@ -189,6 +186,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 无子纤维时它恒等于 slots.Count == fibers.Count，所以那 256 条输出逐字不变。
             var count = EffectiveComponentCount(slots);
 
+            // 这 3 个成分是不是**分组父槽展开**得来的（计数口径见 EffectiveComponentCount）。
+            // ISO 侧决定 count == 3 时只给 -2 还是分部同给，GB 侧决定成分对分部列不列 —— 同一判据。
+            var expanded = slots.Any(s => s.SubFibers.Count > 0);
+
             var parts = new List<string>();
 
             // ========== ISO/DIN ==========
@@ -196,10 +197,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             {
                 var qualitative = isIso ? ISO_QUALITATIVE : DIN_QUALITATIVE;
                 var ternary = isIso ? ISO1833_2 : "DIN EN ISO 1833-2:2020";
-
-                // 这 3 个成分是不是**分组父槽展开**得来的（计数口径见 EffectiveComponentCount）。
-                // 它决定 count == 3 时走"只给 -2"还是"分部与 -2 同时给"，见下面的短路。
-                var expanded = slots.Any(s => s.SubFibers.Count > 0);
 
                 parts.Add(qualitative);
 
@@ -219,9 +216,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 //
                 //   · **3 是分组父槽展开得来的**（父槽 + N 子纤维 + 别的槽）→ 分部与 `-2` 同时给。
                 //     实测 `87.405.26.79566.01`（同一纤维组成的 GB 记录）给的是
-                //     `GB/T 2910.20–2009` + `GB/T 2910.2–2009` + 显微镜串**三样俱全** ——
-                //     GB 侧是累加式，ISO 侧的独占 `return` 是全模块唯一"三元就把分部全扔"的地方。
-                //     "两侧行为一致"这个印象是错的（GB 从来都给分部），这里对齐到信息更全的那一侧。
+                //     `GB/T 2910.20–2009` + `GB/T 2910.2–2009` + 显微镜串**三样俱全**。
+                //
+                // GB 侧的三元短路（见下面 T130）用的**就是 `count == 3 && !expanded` 这条**，
+                // 两侧口径一致；差别只在 GB 还多给 `2910.2` 与 >3 组分的 `FZ/T 01026`。
                 //
                 // 显微镜串不能在早退里被吞掉 —— 上面两支都成立：独占返回的那支自己带上它，
                 // 累加的那支在末尾追加。
@@ -255,20 +253,25 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 else
                     parts.Add(standard);
 
-                // T129: 有拆分列且无 elastane → GB/T 2910.1
+                // T129: 无 elastane → GB/T 2910.1（通则）。
+                // >3 组分且无槽展开时改引 FZ/T 01026 那条线，2910 系列（通则也算）一条都不引。
                 var hasElastane = fibers.Any(FiberTokens.IsElastane);
-                if (!hasElastane)
+                if (!hasElastane && !(count > 3 && !expanded))
                     parts.Add(GB2910_1);
 
                 // T130: GB 成分对 → GB 子标准
-                var gbSubs = new HashSet<string>();
-                foreach (var (first, second) in EnumeratePairs(slots))
+                // 三元及以上且无槽展开时不列 —— 与 ISO 侧的三元早退同口径（判据是槽展开，不是成分数）。
+                if (!(count >= 3 && !expanded))
                 {
-                    var g = LookupGbSubStandard(first, second, hasAcrylic);
-                    if (!string.IsNullOrEmpty(g))
-                        gbSubs.Add(g);
+                    var gbSubs = new HashSet<string>();
+                    foreach (var (first, second) in EnumeratePairs(slots))
+                    {
+                        var g = LookupGbSubStandard(first, second, hasAcrylic);
+                        if (!string.IsNullOrEmpty(g))
+                            gbSubs.Add(g);
+                    }
+                    parts.AddRange(gbSubs);
                 }
-                parts.AddRange(gbSubs);
 
                 // T131: 3组分 → GB/T 2910.2 / >3组分 → FZ/T 01026
                 if (count == 3)
@@ -288,7 +291,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 //   · hasIdentificationStd —— 分析员勾的**本身就是** FZ/T 01057 系列。
                 //     除了系列名 `FZ/T 01057`（上面展开成 .1~.4），真实库里还有**合并写法**
                 //     `FZ/T 01057.1-4–2007`（老记录，逐字透传），它同样已含 .3 ——
-                //     只看 parts.Contains 挡不住它，会补成 `.1-4–2007 … .3-2007` 写两次。
+                //     只看 parts.Contains 挡不住它，会补成 `.1-4–2007 … .3-2025` 写两次。
                 //   · parts.Contains(FZ01057_3) —— 系列展开那支落下的 .3，防重复。
                 //
                 // **只有单组分补**：多组分的显微法由 cellulosic 那支的 FZ/T 30003-2024 负责（麻棉混纺光学显微镜法定量）。
@@ -442,18 +445,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
              || (FiberTokens.IsElastane(f) && s == "polyester"))
                 return hasAcrylic ? ISO1833_12 : ISO1833_20;
 
-            // 弹性纤维在前 → -12（DMF 法），**但后位纤维必须落在 -12 的适用范围内**（按官方范围收紧）。
+            // polyamide/nylon + elastane（锦氨，任意顺序）→ -20（DMAc 法）
+            if (((f == "polyamide" || f == "nylon") && FiberTokens.IsElastane(s))
+             || (FiberTokens.IsElastane(f) && (s == "polyamide" || s == "nylon")))
+                return hasAcrylic ? ISO1833_12 : ISO1833_20;
+
+            // 弹性纤维在前 → -12（DMF 法），**但后位必须是"某些其他纤维"**（按官方范围收紧）。
             //
-            // 原先是 `if (IsElastane(f)) return ISO1833_12;` —— 一个不看后位的兜底，
-            // 于是 (Spandex, Linen) 也拿到 -12，而 linen 在 **-12 与 -20 的官方范围里都不存在**；
-            // 反序 (Linen, Spandex) 却落空 —— 同一对因录入顺序给不同答案，正是要消灭的那类。
-            //
-            // 收紧后两向都落空，与标准一致。范围外的名字由 FiberTokens.IsInIso1833_12Scope 判定，
+            // 收紧后两向都落空，与标准一致。够不够格由 FiberTokens.IsIso1833_12OtherFibre 判定，
             // 收法见那个集合的注释（只收官方逐字列到的名字）。
             //
             // 注意与前几条的分工：(Elastane, 纤维素) 与 (Elastane, Polyester) 走上面的 -20，
-            // 根本到不了这里；(Elastane, Acrylic/Modacrylic) 是 -12 的对象纤维、留在 -12。
-            if (FiberTokens.IsElastane(f) && FiberTokens.IsInIso1833_12Scope(s))
+            // 根本到不了这里。(Elastane, Acrylic/Modacrylic) **落空** —— 弹性纤维与腈纶都是
+            // -12 的**对象**纤维、都能被 DMF 溶掉，这一对分不出比例，-12 与 -20 都不适用。
+            if (FiberTokens.IsElastane(f) && FiberTokens.IsIso1833_12OtherFibre(s))
                 return ISO1833_12;
 
             // polyamide/nylon + any → -7
@@ -462,13 +467,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             // 丙烯腈类在前 → -12（DMF 法）。谓词含 Modacrylic（1833-12 适用范围含 "certain modacrylics"）。
             //
-            // **后位同样要落在 -12 的适用范围内**（与上面弹性纤维兜底同族）。原先是 `+ any`，
-            // 于是 (Modacrylic, Elastodiene) 也拿到 -12，而 elastodiene 既不是 -12 的对象纤维、
-            // 也不在 "certain other fibres" 里；反序 (Elastodiene, Modacrylic) 却落空 ——
-            // 同一对因录入顺序给不同答案。收紧后两向都落空，与标准一致。
+            // **后位同样必须是"某些其他纤维"**（与上面弹性纤维兜底同族）。收紧后两向都落空，与标准一致。
             //
-            // 范围外的名字由 FiberTokens.IsInIso1833_12Scope 判定（与弹性纤维兜底共用同一条，收法见那个集合的注释）。
-            if (FiberTokens.IsAcrylicType(f) && FiberTokens.IsInIso1833_12Scope(s))
+            // 够不够格由 FiberTokens.IsIso1833_12OtherFibre 判定（与弹性纤维兜底共用同一条，收法见那个集合的注释）。
+            if (FiberTokens.IsAcrylicType(f) && FiberTokens.IsIso1833_12OtherFibre(s))
                 return ISO1833_12;
 
             // 再生纤维素 + linen/flax → -22（甲酸法）
@@ -481,8 +483,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 再生纤维素 + cotton 等 → -6（甲酸/氯化锌法）
             // 按官方适用范围收紧：对象纤维是 viscose/certain cupro/modal/lyocell（= IsRayonType），
             // 合作纤维是 cotton（该分部正是为它制定的）+ polypropylene / elastolefin / melamine。
-            // **不含** linen / ramie / hemp / paper；而且 cotton 在这里是**合作方**、不是对象纤维，
-            // 所以 (Cotton, Modal) 这类反序输入从今天起落空（按标准是对的，属"输出变少"，见第 3 层导出）。
+            // **不含** linen / ramie / hemp / paper；而且 cotton 在这里是**合作方**、不是对象纤维。
             if (FiberTokens.IsRayonType(f) && (s == "cotton" || s == "polypropylene" || s == "elastolefin" || s == "melamine"))
                 return ISO1833_6;
 
@@ -515,18 +516,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             if (FiberTokens.IsAnimal(f) && s != "spandex" && s != "elastane")
                 return GB2910_4;
 
+            // polyamide/nylon + elastane（锦氨，任意顺序）→ GB/T 2910.20
+            if (((f == "polyamide" || f == "nylon") && FiberTokens.IsElastane(s))
+             || (FiberTokens.IsElastane(f) && (s == "polyamide" || s == "nylon")))
+                return hasAcrylic ? string.Empty : GB2910_20;
+
             // polyamide/nylon + 非spandex/elastane → GB/T 2910.7
             if ((f == "polyamide" || f == "nylon") && s != "spandex" && s != "elastane")
                 return GB2910_7;
 
-            // 丙烯腈类在前 → GB/T 2910.12（谓词含 Modacrylic），后位同样按范围收紧
+            // 丙烯腈类在前 → GB/T 2910.12（谓词含 Modacrylic），后位同样必须是"某些其他纤维"
             //
-            // **与 ISO 侧共用同一条范围判定**：GB/T 2910.12–2023 是 MOD ISO 1833-12:2020
-            // （2023-08-06 发布 / 2024-03-01 实施，代替 2009 版），其第二组分列表逐项一致 ——
+            // **与 ISO 侧共用同一条判定**：GB/T 2910.12–2023 是 MOD ISO 1833-12:2020，其第二组分列表逐项一致 ——
             // 绵羊毛、其他动物毛、桑蚕丝、棉、粘胶、铜氨、莫代尔、莱赛尔、聚酰胺、聚酯、聚丙烯、
             // 聚酯复合弹性纤维、聚烯烃弹性纤维、三聚氰胺、聚丙烯/聚酰胺复合纤维、聚丙烯酸酯、玻璃。
-            // 故不另建一份 GB 专用集合（两份迟早会漂）。
-            if (FiberTokens.IsAcrylicType(f) && FiberTokens.IsInIso1833_12Scope(s))
+            // 故不另建一份 GB 专用集合。
+            if (FiberTokens.IsAcrylicType(f) && FiberTokens.IsIso1833_12OtherFibre(s))
                 return GB2910_12;
 
             // rayon系 + cotton → GB/T 2910.6
