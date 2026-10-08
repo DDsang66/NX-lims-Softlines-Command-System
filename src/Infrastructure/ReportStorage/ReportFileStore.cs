@@ -100,13 +100,15 @@ public class ReportFileStore : IReportFileStore, IScopedDependency
 
         string normMode = NormalizeMode(mode);
         var result = new List<ReportFileMeta>();
+        //扫描整个目录
         foreach (string file in Directory.EnumerateFiles(dir, "*.docx"))
         {
             string fileName = Path.GetFileName(file);
+            //把名字反解回来（反解规则在168-174）
             if (TryParseMeta(fileName, file, out var meta) && meta.Mode == normMode)
             {
                 if (!string.IsNullOrWhiteSpace(keyword) &&
-                    !meta.ReportNumber.Contains(keyword.Trim(), StringComparison.OrdinalIgnoreCase))
+                    !meta.ReportNumber.Contains(keyword.Trim(), StringComparison.OrdinalIgnoreCase))   //子串匹配，不是索引查找
                 {
                     continue;
                 }

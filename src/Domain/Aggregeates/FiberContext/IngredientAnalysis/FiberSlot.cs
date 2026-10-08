@@ -18,7 +18,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     ///
     /// 计数的口径：父槽**不单列**，被它的子纤维**替换**（1 换 N）。
     /// 故 [Polyester, *cellulosic fibre(Linen/Cotton)] 的成分数是 3（1 + 2），
-    /// 既不是只数顶层槽的 2，也不是父子都算的 4。这个数是 <see cref="PairingNames"/> 的长度之和，
+    /// 既不是只数顶层槽的 2，也不是父子都算的 4。这个数是 <see cref="PairingNames"/> 摊平后
+    /// **去重**的个数（同名纤维只算一个，与正文、定性串同口径），
     /// 只喂 <see cref="FiberStandardChainBuilder.EffectiveComponentCount"/> 的三元法短路
     /// —— **不是报告上显示的组分数**（报告本来就不显示，那段是死写入）。
     /// </summary>

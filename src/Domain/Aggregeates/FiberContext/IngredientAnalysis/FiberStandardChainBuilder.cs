@@ -117,12 +117,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <b>纤维条数区分不出它</b>：单组分记录可以有 1 条也可以有多条单纤维.
         /// </para>
         /// </param>
-        /// <remarks>
-        /// **这里原先有一段"按逗号切分 → 逐段建链 → 空格合并"的分支，已整段删除。**
-        /// 它**从生产路径不可达** —— 适配器的 ParseMethods 早已把多值 method 切成 Methods
-        /// 列表，传进来的永远是单值；只有若干部测试绕过适配器直接递逗号串才走得到。
-        /// 改成"一个标准一份、最后合并 docx"之后逗号串根本不存在了
-        /// （那条路的用例已改写为在聚合根层断言 StandardResults）。
         /// 那句 IsNullOrWhiteSpace 守卫要留着：
         /// <see cref="IngredientAnalysisCalculation.StandardsToRender"/> 在 Methods 为空时退化成
         /// **单个空标准**，走到这里就该返回空串，不是抛异常。
@@ -182,8 +176,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 这两条判定因此逐字未动。
             var hasCellulosicParent = fibers.Any(f => f == "*cellulosic fibre" || f == "*Regenerated cellulose fibre");
 
-            // 三元法短路用的是**成分数**，父槽被其子纤维替换（1 换 N），不是顶层槽数。
-            // 无子纤维时它恒等于 slots.Count == fibers.Count，所以那 256 条输出逐字不变。
+            // 三元法短路用的是**成分数**，父槽被其子纤维替换（1 换 N）、同名纤维只算一个，
+            // 不是顶层槽数。无子纤维**且无重名**时它恒等于 slots.Count == fibers.Count，
+            // 所以那 256 条输出逐字不变；重名的槽（同一根纤维录进两列）会因此少算一个，
+            // 跨过 3 那道坎时输出会变 —— 见 EffectiveComponentCount 的注释。
             var count = EffectiveComponentCount(slots);
 
             // 这 3 个成分是不是**分组父槽展开**得来的（计数口径见 EffectiveComponentCount）。
@@ -215,8 +211,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 //     输出逐字不变"这条槽位通道契约的落点。`subStandards` 在这里算出来但不输出。
                 //
                 //   · **3 是分组父槽展开得来的**（父槽 + N 子纤维 + 别的槽）→ 分部与 `-2` 同时给。
-                //     实测 `87.405.26.79566.01`（同一纤维组成的 GB 记录）给的是
-                //     `GB/T 2910.20–2009` + `GB/T 2910.2–2009` + 显微镜串**三样俱全**。
                 //
                 // GB 侧的三元短路（见下面 T130）用的**就是 `count == 3 && !expanded` 这条**，
                 // 两侧口径一致；差别只在 GB 还多给 `2910.2` 与 >3 组分的 `FZ/T 01026`。
@@ -324,9 +318,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         ///
         /// <para>
         /// 单组分的 `Type == Single` 只是这个 bit，**不是**"纤维只有一条"：
-        /// 单组分记录可以有 1 条也可以有多条单纤维（如 <c>87.405.26.12312.01</c> 的 Modal + Silk），
-        /// 所以不能按条数代传。真实影响见 <c>87.405.26.23432.01</c>：勾的是 <c>FZ/T 01057</c>，
-        /// 改前却多出 <c>GB/T 2910.1–2009</c> 与 <c>GB/T 2910.11–2024</c> 两条化学溶解定量法。
+        /// 单组分记录可以有 1 条也可以有多条单纤维。
         /// </para>
         ///
         /// <para>
@@ -364,16 +356,17 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         }
 
         /// <summary>
-        /// 成分数 —— **父槽被其子纤维替换（1 换 N）**，不是顶层槽数、也不是父子都算。
-        /// 只喂三元法短路（ISO 三组分早退 / GB 的 2910.2 与 FZ/T 01026）。
+        /// 成分数 —— **父槽被其子纤维替换（1 换 N）**，不是顶层槽数、也不是父子都算；
+        /// 且**同名纤维只算一个**。
         ///
-        /// [Polyester, *cellulosic fibre(Linen/Cotton)] → **3**（既不是 2 也不是 4）；
-        /// [Cotton, Modal, Elastane]（无子纤维）→ 3，与引入槽位通道之前同值 —— 回归铁律。
+        /// 去重走**比较器默认的 ordinal**，与上面那两处刻意一致：<c>LookupSubStandard</c> 自己会
+        /// <c>ToLowerInvariant</c>，所以这个数的口径是"**不同写法**数"，不是"不同化学纤维数"。
+        /// 别顺手改成大小写折叠 —— <c>QualitativeDedupTests</c> 钉着同一件事。
         ///
         /// **不是报告上显示的组分数**：那个数在模板里根本没有书签，是死写入。
         /// </summary>
         internal static int EffectiveComponentCount(IReadOnlyList<FiberSlot> slots)
-            => slots.Sum(s => s.PairingNames.Count);
+            => slots.SelectMany(s => s.PairingNames).Distinct().Count();
 
         /// <summary>
         /// 参与查表的**有序对**枚举 —— 两段合起来：

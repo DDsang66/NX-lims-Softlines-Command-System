@@ -1,4 +1,5 @@
-﻿using DocumentFormat.OpenXml;
+﻿using System.Text.RegularExpressions;
+using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using A = DocumentFormat.OpenXml.Drawing;
@@ -68,12 +69,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 }
 
                 // 正文部件
+                GrowIndexedRows(doc.MainDocumentPart!, bookmarkValues);
                 ReplaceBookmarksInPart(doc.MainDocumentPart!, bookmarkValues, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty);
                 doc.MainDocumentPart.Document!.Save();
 
                 // 页眉
                 foreach (var headerPart in doc.MainDocumentPart!.HeaderParts)
                 {
+                    GrowIndexedRows(headerPart, bookmarkValues);
                     ReplaceBookmarksInPart(headerPart, bookmarkValues, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty);
                     headerPart.Header?.Save();
                 }
@@ -81,6 +84,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 // 页脚
                 foreach (var footerPart in doc.MainDocumentPart.FooterParts)
                 {
+                    GrowIndexedRows(footerPart, bookmarkValues);
                     ReplaceBookmarksInPart(footerPart, bookmarkValues, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty);
                     footerPart.Footer?.Save();
                 }
@@ -125,6 +129,173 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                 for (int i = 1; i < texts.Count; i++)
                     texts[i].Text = string.Empty;
             }
+        }
+
+        /// <summary>`前缀 + 行号` 的书签名（`Section_12` / `Component14`）：前缀非空，行号取末尾连续数字。</summary>
+        private static readonly Regex IndexedBookmark = new(@"^(?<prefix>.+?)(?<n>\d+)$", RegexOptions.Compiled);
+
+        /// <summary>
+        /// 模板行数不够时，把带序号的表格行**就地克隆**到够用。
+        /// </summary>
+        /// <remarks>
+        /// 模板的行数是写死的（结果表 `Section_1..Section_12`），适配器生成的行号却**没有上限**
+        /// （见 <c>ExpandMultiFiberRowUnits</c>）。超出的行在模板里找不到书签，
+        /// 就被 <see cref="ReplaceBookmarksInPart"/> 的 `bookmarkValues.ContainsKey` 筛掉 ——
+        /// 不报错、不记日志，报告上直接少几行。所以在替换**之前**先补行。
+        ///
+        /// 只在真超了才动手：没有任何书签家族需要扩容时，这个方法一个字节都不改，
+        /// 既有报告因此逐字不变 —— 尾部那一串空行是现在的常态外观，不归这里管。
+        ///
+        /// 同一行常挂着好几个前缀（结果表最后一行的 `Section_12`/`Sum_12`/`Avg_12`…），
+        /// **一行只克隆一次**，克隆份数取该行所有前缀里 `需要 - 已有` 的最大值。
+        /// </remarks>
+        private static void GrowIndexedRows(OpenXmlPart part, Dictionary<string, string> bookmarkValues)
+        {
+            var root = part.RootElement;
+            if (root == null) return;
+
+            // 模板里现有的行号：前缀 → 已有哪几个序号
+            var present = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
+            foreach (var start in root.Descendants<BookmarkStart>())
+            {
+                if (!TrySplitIndex(start.Name?.Value, out var prefix, out var n)) continue;
+                if (!present.TryGetValue(prefix, out var set)) present[prefix] = set = new HashSet<int>();
+                set.Add(n);
+            }
+            if (present.Count == 0) return;
+
+            // 数据需要的行号：同样按前缀取最大值
+            var needed = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var key in bookmarkValues.Keys)
+            {
+                if (!TrySplitIndex(key, out var prefix, out var n)) continue;
+                if (!needed.TryGetValue(prefix, out var cur) || n > cur) needed[prefix] = n;
+            }
+
+            var rows = new Dictionary<TableRow, RowGrowth>();
+            foreach (var pair in needed)
+            {
+                var prefix = pair.Key;
+                if (!present.TryGetValue(prefix, out var have)) continue;
+
+                // 只认"从 1 起连续到 max"的家族，那才是行号书签的形状。
+                var haveMax = have.Max();
+                if (!have.Contains(1) || have.Count != haveMax) continue;
+                if (pair.Value <= haveMax) continue;
+
+                // 克隆源 = 这个家族的**最后一行**
+                var source = root.Descendants<BookmarkStart>()
+                    .FirstOrDefault(b => b.Name?.Value == prefix + haveMax);
+                var row = source?.Ancestors<TableRow>().FirstOrDefault();
+                if (row == null) continue;   // 不在表里（页眉页脚的常量书签）→ 无处可克隆
+
+                if (!rows.TryGetValue(row, out var growth)) rows[row] = growth = new RowGrowth();
+                growth.Prefixes.Add(prefix);
+                growth.HaveMax[prefix] = haveMax;
+                if (pair.Value - haveMax > growth.Extra) growth.Extra = pair.Value - haveMax;
+            }
+
+            if (rows.Count == 0) return;
+
+            var nextId = MaxBookmarkId(root);
+
+            foreach (var pair in rows)
+            {
+                var row = pair.Key;
+                var growth = pair.Value;
+
+                // 逐份插在克隆源之后（而不是表尾），行号的先后顺序才和版面一致
+                OpenXmlElement anchor = row;
+                for (int k = 1; k <= growth.Extra; k++)
+                {
+                    var clone = (TableRow)row.CloneNode(true);
+                    if (!RenumberClonedRow(clone, growth, k, ref nextId)) continue;
+                    anchor.InsertAfterSelf(clone);
+                    anchor = clone;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 给克隆出来的行重编书签。
+        /// </summary>
+        /// <remarks>
+        /// ⚠️ **Name 与 Id 必须一起改**：<see cref="ReplaceBookmarksInPart"/> 是拿 `BookmarkStart.Id`
+        /// 去找配对的 `BookmarkEnd` 的（取文档顺序第一个）。只改名字的话，克隆行里那些
+        /// **同名同 Id** 的书签会让 <see cref="GetContentBetweenBookmarks"/> 把区间配到错误的位置。
+        ///
+        /// 序号这样算：`前缀{该家族已有最大序号 + k}` —— 第 k 份克隆接着最后一行往下排。
+        /// 行内的其他书签（`_Hlk`、`GBR`、`Recommend` 之类）一个字都不动。
+        ///
+        /// 返回 false = 这一行一份都不克隆：行里有配对不上的 start/end（跨行的书签），
+        /// 克隆只会产出半拉子书签。宁可维持现状（那几行数据仍旧印不出来），也不要把书签表弄脏。
+        /// </remarks>
+        private static bool RenumberClonedRow(TableRow clone, RowGrowth growth, int offset, ref int nextId)
+        {
+            var starts = clone.Descendants<BookmarkStart>().ToList();
+            var ends = clone.Descendants<BookmarkEnd>().ToList();
+
+            var endById = new Dictionary<string, BookmarkEnd>(StringComparer.Ordinal);
+            foreach (var end in ends)
+                if (end.Id?.Value is string id) endById[id] = end;
+
+            var startIds = starts.Select(b => b.Id?.Value).Where(id => id != null).ToHashSet(StringComparer.Ordinal);
+            if (!startIds.SetEquals(endById.Keys)) return false;
+
+            foreach (var start in starts)
+            {
+                if (!TrySplitIndex(start.Name?.Value, out var prefix, out _)) continue;
+                if (!growth.Prefixes.Contains(prefix)) continue;
+                if (start.Id?.Value is not string oldId) continue;
+
+                var newName = prefix + (growth.HaveMax[prefix] + offset);
+
+                // Name 挂在 BookmarkStart 上，BookmarkEnd 只有 Id
+                start.Name = newName;
+
+                var freshId = (++nextId).ToString();
+                start.Id = freshId;
+                endById[oldId].Id = freshId;
+            }
+
+            return true;
+        }
+
+        /// <summary>部件内现有的最大书签 Id；新的从它 +1 往上发。</summary>
+        private static int MaxBookmarkId(OpenXmlElement root)
+        {
+            var max = 0;
+            foreach (var id in root.Descendants<BookmarkStart>().Select(b => b.Id?.Value)
+                .Concat(root.Descendants<BookmarkEnd>().Select(b => b.Id?.Value)))
+            {
+                if (int.TryParse(id, out var value) && value > max) max = value;
+            }
+
+            return max;
+        }
+
+        /// <summary>
+        /// 拆 `前缀 + 行号` 的书签名。拆不出来（`GBR`、`Recommend`）或行号大到 int 装不下的一律返回 false。
+        /// </summary>
+        private static bool TrySplitIndex(string? name, out string prefix, out int index)
+        {
+            prefix = string.Empty;
+            index = 0;
+            if (string.IsNullOrEmpty(name)) return false;
+
+            var match = IndexedBookmark.Match(name);
+            if (!match.Success || !int.TryParse(match.Groups["n"].Value, out index)) return false;
+
+            prefix = match.Groups["prefix"].Value;
+            return true;
+        }
+
+        /// <summary>一行要克隆几份，以及这行上挂着哪些要重编序号的家族。</summary>
+        private sealed class RowGrowth
+        {
+            public HashSet<string> Prefixes { get; } = new(StringComparer.Ordinal);
+            public Dictionary<string, int> HaveMax { get; } = new(StringComparer.Ordinal);
+            public int Extra { get; set; }
         }
 
         /// <summary>
