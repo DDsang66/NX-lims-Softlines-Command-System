@@ -26,6 +26,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         {
             var templatePath = model.TemplateUrl;
             string docxFileName = $"{model.ReportNumber}_{DateTime.Now:yyMMddHHmmss}_{model.TestItem}.docx";
+
+            string fileUrl = Path.Combine("DocxModel", "SaveDocx",docxFileName);
+
             string targetDocxPath = _fileStorage.CopyTemplate(
                 templatePath,
                 Path.Combine("DocxModel", "SaveDocx"),
@@ -42,7 +45,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             mainPart.Document.Save();
 
-            return targetDocxPath;
+            return fileUrl;
         }
 
         /// <summary>

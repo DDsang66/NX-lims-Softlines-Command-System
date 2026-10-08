@@ -605,7 +605,6 @@ public partial class dbContext : DbContext
                 .HasMaxLength(2000)
                 .HasColumnName("error_message");
             entity.Property(e => e.LastCallbackUrl)
-                .HasMaxLength(200)
                 .IsUnicode(false)
                 .HasColumnName("last_callback_url");
             entity.Property(e => e.ModelIndex).HasColumnName("model_index");

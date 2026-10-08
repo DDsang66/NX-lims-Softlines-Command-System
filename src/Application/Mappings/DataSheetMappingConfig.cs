@@ -27,7 +27,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     // 假设 TestItemId 的内部值属性为 Value
                     TestItemId = src.TestItemId.Value.ToString(),
 
-                    Url = src.Url,
+                    Url = BuildDownloadUrl(src.Url, src.EditorVersion),
 
                     EditorVersion = src.EditorVersion,
 
@@ -39,5 +39,17 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     UpdateTime = src.UpdateTime ?? default
                 }); 
         }
-     }
+        private static string BuildDownloadUrl(string? rawUrl, int editorVersion)
+        {
+            if (string.IsNullOrWhiteSpace(rawUrl)) return string.Empty;
+
+            var clean = rawUrl.Replace('\\', '/').TrimStart('/');
+
+            // 如果 rawUrl 里已经带了 ?v=，先剔除旧参数再拼新的
+            var qIdx = clean.IndexOf('?');
+            if (qIdx >= 0) clean = clean.Substring(0, qIdx);
+
+            return $"/{clean}?v={editorVersion}";
+        }
+    }
 }
