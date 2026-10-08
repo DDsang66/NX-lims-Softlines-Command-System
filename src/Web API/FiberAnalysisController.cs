@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
+using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Application.Service;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
@@ -10,14 +11,14 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
     public class FiberAnalysisController : ControllerBase
     {
         private readonly FiberWorksheetService _worksheetService;
-        private readonly IWebHostEnvironment _env;
+        private readonly IFiberReportFileStore _fiberReportStore;
 
         public FiberAnalysisController(
             FiberWorksheetService worksheetService,
-            IWebHostEnvironment env)
+            IFiberReportFileStore fiberReportStore)
         {
             _worksheetService = worksheetService;
-            _env = env;
+            _fiberReportStore = fiberReportStore;
         }
 
         #region 纤维数据库 API
@@ -82,10 +83,13 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             return Result<DocxUrlResponseDto>.Ok(docxUrl);
         }
 
+        /// <summary>
+        /// 下载报告文件(生成完当场下载走这条)。定位逻辑全在 store 里, 与历史列表共用同一把尺子。
+        /// </summary>
         [HttpGet("{fileName}/download")]
         public IActionResult Download(string fileName)
         {
-            string? filePath = ResolveReportFile(fileName);
+            string? filePath = _fiberReportStore.ResolvePath(fileName);
             if (filePath == null)
                 return NotFound(new { success = false, message = "文件不存在" });
 
@@ -98,28 +102,39 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
         }
 
         /// <summary>
-        /// 定位报告文件。新报告按月存 wwwroot/DocxModel/SaveDocx/{FiberAnalysis+yyyyMM}/(与生成侧共用
-        /// FiberWorksheetService.MonthlyFolder), 老报告可能还在 SaveDocx/ 根目录, 还要兼容
-        /// "上月底生成、本月初才点下载"的跨月情况, 所以按 当月目录 → 根目录 → 各子目录扫一遍 的顺序找。
+        /// 列历史报告文件(前端「历史报告」弹窗的数据源)。
+        /// 扫 SaveDocx 根目录 + 全部 FiberAnalysis{yyyyMM} 子目录, 只认 *_FiberAnalysis.docx,
+        /// 按生成时间倒序; keyword 非空时按报告号子串(不区分大小写)过滤。
         /// </summary>
-        private string? ResolveReportFile(string fileName)
+        [HttpGet("reports")]
+        public Result<List<FiberReportFileMeta>> ListReports([FromQuery] string? keyword)
+            => Result<List<FiberReportFileMeta>>.Ok(_fiberReportStore.ListReports(keyword));
+
+        /// <summary>
+        /// 删除指定报告文件(历史列表"删除"按钮, 物理删除不可恢复, 前端已二次确认)。
+        /// **只删文件, 不动库里 fiber_analysis 的行。**
+        /// 文件名由 ListReports 提供; 不合法 / 不是纤维报告 / 文件已不在 → Fail。
+        /// </summary>
+        [HttpDelete("reports/{fileName}")]
+        public Result<bool> DeleteReport(string fileName)
+            => _fiberReportStore.DeleteReport(fileName)
+                ? Result<bool>.Ok(true)
+                : Result<bool>.Fail("报告文件不存在或不可删除");
+
+        /// <summary>下载指定报告文件(历史列表, 文件名由 ListReports 提供)。与上面那条共用 ResolvePath。</summary>
+        [HttpGet("reports/{fileName}")]
+        public IActionResult DownloadReport(string fileName)
         {
-            // 文件名必须是纯文件名 —— 本方法直接把路由参数拼进磁盘路径, 先校验再拼, 挡住路径穿越
-            if (string.IsNullOrWhiteSpace(fileName) ||
-                !string.Equals(Path.GetFileName(fileName), fileName, StringComparison.Ordinal))
-                return null;
+            string? filePath = _fiberReportStore.ResolvePath(fileName);
+            if (filePath == null)
+                return NotFound(new { success = false, message = "报告文件不存在" });
 
-            string root = Path.Combine(_env.WebRootPath, "DocxModel", "SaveDocx");
-
-            string monthly = Path.Combine(root, FiberWorksheetService.MonthlyFolder(), fileName);
-            if (System.IO.File.Exists(monthly)) return monthly;
-
-            string legacy = Path.Combine(root, fileName);
-            if (System.IO.File.Exists(legacy)) return legacy;
-
-            return Directory.Exists(root)
-                ? Directory.EnumerateFiles(root, fileName, SearchOption.AllDirectories).FirstOrDefault()
-                : null;
+            return PhysicalFile(
+                filePath,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                fileDownloadName: fileName,
+                enableRangeProcessing: true
+            );
         }
 
         [HttpGet("worksheet/{reportNumber:regex(^.+$)}")]
