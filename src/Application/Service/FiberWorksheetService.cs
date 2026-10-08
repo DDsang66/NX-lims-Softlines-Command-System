@@ -76,7 +76,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             _docxMerger = docxMerger;
         }
 
-        /// <summary>月度子目录名 —— 与 FiberAnalysisController.ResolveReportFile 共用, 防两边写岔</summary>
+        /// <summary>月度子目录名 —— 与 FiberReportFileStore 共用, 防两边写岔</summary>
         public static string MonthlyFolder() => "FiberAnalysis" + DateTime.Now.ToString("yyyyMM");
 
         public async Task<object> GetLabelOptionsAsync(CancellationToken ct)

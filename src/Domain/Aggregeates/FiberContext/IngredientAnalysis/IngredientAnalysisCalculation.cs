@@ -213,8 +213,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 末位那个 `Type == Single` 是**整条链的分流开关**：单组分走
             // BuildSingleComponentChain —— 一律不派生定量子标准，只出勾选的标准本身 + 鉴别法。
             // 详见 BuildMethodString 的 isSingleComponent 说明。
-            // ⚠️ **不能**按纤维条数代传 —— 单组分记录也可以有多条单纤维
-            // （真实记录 87.405.26.12312.01 就是 Modal + Silk），条数区分不出这个开关。
+            // ⚠️ **不能**按纤维条数代传。
             var methodString = FiberStandardChainBuilder.BuildMethodString(
                 standard, orderedFiberNames, GetOrderedFiberSlots(), Type == AnalysisType.Single);
             result = result.WithMethods(methodString);
