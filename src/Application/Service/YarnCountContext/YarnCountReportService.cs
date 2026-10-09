@@ -90,15 +90,18 @@ public class YarnCountReportService : IYarnCountReportService, IScopedDependency
         if (columns.Count == 0)
             return Result<DocxUrlResponseDto>.Fail("纱支试样数据不能为空");
 
-        // 3. 构建填充模型 —— 方向汇总 = 该方向各试样 Tex 的算术平均
+        // 3. 构建填充模型 —— 每个方向一行: 汇总 Tex(= 该方向各试样 Tex 的算术平均) + 四个换算单位
         var model = new YarnCountReportFillModel
         {
             ReportNumber = dto.ReportNumber.Trim(),
             EnvironmentTemperature = dto.EnvironmentTemperature,
             EnvironmentHumidity = dto.EnvironmentHumidity,
-            WarpTex = YarnCountMath.MeanTex(columns.Where(c => c.Direction == YarnCountReportRequestDto.DirectionWarp).Select(c => c.Tex)),
-            WeftTex = YarnCountMath.MeanTex(columns.Where(c => c.Direction == YarnCountReportRequestDto.DirectionWeft).Select(c => c.Tex)),
-            KnitTex = YarnCountMath.MeanTex(columns.Where(c => c.Direction == YarnCountReportRequestDto.DirectionKnit).Select(c => c.Tex)),
+            Summaries = new List<YarnCountSummaryModel>
+            {
+                BuildSummary(YarnCountReportRequestDto.DirectionWarp, columns),
+                BuildSummary(YarnCountReportRequestDto.DirectionWeft, columns),
+                BuildSummary(YarnCountReportRequestDto.DirectionKnit, columns),
+            },
             Columns = columns,
         };
 
@@ -125,6 +128,26 @@ public class YarnCountReportService : IYarnCountReportService, IScopedDependency
             fileName = fileName,
             downloadUrl = $"/api/YarnCountReport/{fileName}/download"
         });
+    }
+
+    /// <summary>
+    /// 摘要表一行: 该方向的汇总 Tex + 由它换算出的四个单位值。
+    /// 没测的方向 MeanTex 返回 null → 该行五个格全部留空(引擎写空串, 不写 0)。
+    /// </summary>
+    private static YarnCountSummaryModel BuildSummary(string direction, List<YarnCountColumnModel> columns)
+    {
+        var tex = YarnCountMath.MeanTex(columns.Where(c => c.Direction == direction).Select(c => c.Tex));
+        var (dtex, denier, cc, countS) = YarnCountMath.UnitsOf(tex);
+
+        return new YarnCountSummaryModel
+        {
+            Direction = direction,
+            Tex = tex,
+            Dtex = dtex,
+            Denier = denier,
+            CottonCount = cc,
+            CountS = countS,
+        };
     }
 
     /// <summary>方向白名单归一化: 只认 Warp / Weft / Knit(大小写不敏感), 其余返回 null 由调用方拒绝</summary>
