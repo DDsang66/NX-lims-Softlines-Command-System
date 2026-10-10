@@ -7,7 +7,6 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamRuleContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.ParamStructureContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Events;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 
@@ -228,7 +227,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineCon
             }
 
             //领域事件，通知对应formula参数结构更新
-            AddDomainEvent(new ParamStructureUpdatedEvent(Id, ParamName, Schema));
         }
 
         public void CombineToFormula() 

@@ -20,6 +20,11 @@
         /// <summary>
         /// 完成
         /// </summary>
-        Completed
+        Completed,
+
+        /// <summary>
+        /// 取消/拒绝
+        /// </summary>
+        Rejected
     }
 }

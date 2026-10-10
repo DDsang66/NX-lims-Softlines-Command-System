@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.EntityFrameworkCore;
+using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.LabScheduleContext;
 using NX_lims_Softlines_Command_System.src.Application.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.Enums;
@@ -8,6 +9,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Domain.Share.Enums;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Interface;
 using System;
 
 namespace NX_lims_Softlines_Command_System.src.Application.UseCase
@@ -15,14 +17,31 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
     public class LabScheduleUseCaseService : IScopedDependency
     {
         private readonly ICheckListAppService _checkListAppService;
+        private readonly IWebHostEnvironment _env;
+        private readonly IDocxMergeService _docxMergeService;
+        private readonly IFileStorageService _fileStorageService;
         private readonly dbContext _db;
 
-        public LabScheduleUseCaseService(ICheckListAppService checkListAppService, dbContext db)
+        public LabScheduleUseCaseService(
+            ICheckListAppService checkListAppService,
+            IWebHostEnvironment env,
+            IDocxMergeService docxMergerService,
+            IFileStorageService fileStorageService,
+            dbContext db)
         {
             _db = db;
+            _env = env;
+            _docxMergeService = docxMergerService;
+            _fileStorageService = fileStorageService;
             _checkListAppService = checkListAppService;
         }
 
+        /// <summary>
+        /// 基础CURD，返回实验室日程表
+        /// </summary>
+        /// <param name="param"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
         public async Task<PagedResult<LabScheduleDto>> GetSummaryAsync(
             CheckListQueryParamDto param,CancellationToken ct)
         {
@@ -206,6 +225,36 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
                 Items = result,
                 TotalCount = total,
             };
+        }
+
+        /// <summary>
+        /// 合并选中的items的DataSheet，并返回下载链接
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public async Task<Result<DocxUrlResponseDto>> HandleDataSheetMerge(MergeLabScheduleDto dto,CancellationToken ct) 
+        {
+            var fileName = $"{dto.ReportNumber}_{dto.TestGroup}_GeneralResult_{DateTime.Now:yyyyMMddHHmmss}.docx";
+
+            var sections = dto.SelectedDataSheetUrls
+                .Select(url => new DocxMergeSection{FilePath = Path.Combine(_env.WebRootPath, url) }).ToList();
+
+            await  _docxMergeService.MergeAsync(
+                Path.Combine(_env.WebRootPath, "DocxModel", "Development", "DataSheet_Cover.docx"),
+                sections, 
+                Path.Combine(_env.WebRootPath, "DocxModel", "SaveDocx", "DataSheet", dto.ReportNumber, fileName),
+                new DocxMergeOptions(),
+                ct);
+
+            var urlResponse = new DocxUrlResponseDto
+            {
+                fileKey = Guid.NewGuid().ToString(),
+                fileName = fileName,
+                downloadUrl = $"/LabSchedule/datasheet-{fileName}/{dto.ReportNumber}/download",
+                callbackUrl = string.Empty, // 可选：如果需要回调，可以设置回调 URL
+            };
+
+            return Result<DocxUrlResponseDto>.Ok(urlResponse);
         }
     } 
 }

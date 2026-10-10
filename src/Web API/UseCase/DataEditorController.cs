@@ -39,6 +39,20 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
             return result;
         }
 
+        /// <summary>
+        /// 标记为已完成
+        /// </summary>
+        /// <param name="dataSheetId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        [HttpPost("mark-done/{datasheetId}")]
+        public async Task<Result> MarkDone(Guid datasheetId, CancellationToken ct) 
+        {
+            var result = await _dataSheetService.MarkDone(datasheetId, ct);
+
+            return result;
+        }
+
 
         /// <summary>
         /// 下载地址

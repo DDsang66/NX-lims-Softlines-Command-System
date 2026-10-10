@@ -256,7 +256,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 else if (w.WashingProcedure.Contains("Hand"))
                 {
                     map["P1"] = (w, dto, reportNo) => reportNo;
-                    map["H7"] = (w, dto, reportNo) => w.Temperature!;
+                    map["G7"] = (w, dto, reportNo) => w.Temperature!;
                     map["M7"] = (w, dto, reportNo) => w.DryProcedure!;
                     map["A8"] = (w, dto, reportNo) => string.IsNullOrEmpty(w.SpecialCareInstruction!) == true ? "-" : w.SpecialCareInstruction!;
                 }

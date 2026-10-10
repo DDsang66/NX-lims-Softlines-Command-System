@@ -38,6 +38,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Office.Interop.Word" Version="15.0.4797.1004" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.21.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -50,6 +51,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Zen.Barcode.Core.Code128" Version="3.1.0" />
+    <PackageReference Include="ZXing.Net" Version="0.16.11" />
+    <PackageReference Include="ZXing.Net.Bindings.Windows.Compatibility" Version="0.16.16" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,11 +68,17 @@
     <Folder Include="Domain\ValueObjects\" />
     <Folder Include="src\Application\Contract\ApiResult\" />
     <Folder Include="src\Domain\Aggregeates\OrderContext\" />
-    <Folder Include="src\Domain\Aggregeates\MenuContext\" />
-    <Folder Include="src\Domain\Aggregeates\Standard\Enums\" />
-    <Folder Include="src\Infrastructure\Data\Queries\" />
+    <Folder Include="src\Domain\Aggregeates\StandardContext\Enums\" />
     <Folder Include="test\Engine\ParamRuleTest\" />
     <Folder Include="wwwroot\DocxModel\SaveDocx\" />
+    <Folder Include="wwwroot\DocxModel\Common_PHY\" />
+    <Folder Include="wwwroot\DocxModel\Common_WET\" />
+    <Folder Include="wwwroot\DocxModel\Common_FIBER\" />
+    <Folder Include="wwwroot\DocxModel\Common_FLAM\" />
+    <Folder Include="wwwroot\ExcelModel\Common_FIBER\" />
+    <Folder Include="wwwroot\ExcelModel\Common_FLAM\" />
+    <Folder Include="wwwroot\ExcelModel\Common_PHY\" />
+    <Folder Include="wwwroot\ExcelModel\Common_WET\" />
   </ItemGroup>
 
   <ItemGroup>
@@ -137,6 +147,13 @@
     <None Include="wwwroot\ExcelModel\SavingExcel\38105_Mango_WET_20250806141115_Chen,Guangxv.xlsx" />
     <None Include="wwwroot\ExcelModel\SavingExcel\38105_Mango_WET_20250806172135_Chen,Guangxv.xlsx" />
     <None Include="wwwroot\ExcelModel\Washing Procedure.pdf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="office">
+      <HintPath>C:\Windows\assembly\GAC_MSIL\office\15.0.0.0__71e9bce111e9429c\office.dll</HintPath>
+      <EmbedInteropTypes>False</EmbedInteropTypes>
+    </Reference>
   </ItemGroup>
 
 </Project>

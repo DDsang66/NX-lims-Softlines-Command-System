@@ -1,7 +1,6 @@
 using NX_lims_Softlines_Command_System.Domain.Share.Interface;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
-using NX_lims_Softlines_Command_System.src.Domain.Events;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
@@ -58,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
                 Metadata = OrderMetadata.Create(orderEntryPerson, customerService, remark, DateTimeOffset.UtcNow)
             };
 
-            order.AddDomainEvent(new OrderCreatedEvent(order.Id));
+            //order.AddDomainEvent(new OrderCreatedEvent(order.Id));
 
             return order;
         }
@@ -127,7 +126,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
 
             _lines.Add(line);
 
-            AddDomainEvent(new OrderLineAddedEvent(Id, line.Id));
+            //AddDomainEvent(new OrderLineAddedEvent(Id, line.Id));
         }
 
         /* ================================================================
@@ -143,7 +142,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             line.MarkReviewComplete(reviewer, finishTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            AddDomainEvent(new ReviewCompletedEvent(Id, lineId));
+            //AddDomainEvent(new ReviewCompletedEvent(Id, lineId));
         }
 
         /// <summary>
@@ -155,7 +154,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             line.MarkLabIn(labInTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            AddDomainEvent(new LabInCompletedEvent(Id, lineId));
+            //AddDomainEvent(new LabInCompletedEvent(Id, lineId));
         }
 
         /// <summary>
@@ -167,7 +166,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             line.MarkTestDone(finishTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            AddDomainEvent(new TestDoneEvent(Id, lineId));
+            //AddDomainEvent(new TestDoneEvent(Id, lineId));
         }
 
         /// <summary>
@@ -179,7 +178,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             line.MarkReportOut(reportTime);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            AddDomainEvent(new ReportOutEvent(Id, lineId));
+            //AddDomainEvent(new ReportOutEvent(Id, lineId));
         }
 
         /// <summary>
@@ -192,7 +191,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
                 cmd.Reviewer, cmd.Remark, cmd.DelayType, cmd.DelayReason);
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            AddDomainEvent(new OrderLineUpdatedEvent(Id, lineId));
+            //AddDomainEvent(new OrderLineUpdatedEvent(Id, lineId));
         }
 
         /// <summary>
@@ -242,7 +241,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext
             line.Delete();
             Metadata = Metadata with { LastUpdateTime = DateTimeOffset.UtcNow };
 
-            AddDomainEvent(new OrderLineDeletedEvent(Id, lineId));
+            //AddDomainEvent(new OrderLineDeletedEvent(Id, lineId));
         }
 
         /* ================================================================

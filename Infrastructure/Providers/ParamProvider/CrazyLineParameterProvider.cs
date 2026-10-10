@@ -22,11 +22,11 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure,
-                Temperature = p.WashingProcedure.Contains("Cold") == true ? "88" : "105",
+                Temperature = p.WashingProcedure.Contains("Cold") == true ? "85" : "105",
                 Program = p.WashingProcedure.Contains("Cold") == true ? "1B" : "1A",
                 Detergent = "0.37",
                 SteelBallNum = 10,
-                SteelBallType = p.WashingProcedure.Contains("Cold") == true ? "Steel" : "Rubbow",
+                SteelBallType = p.WashingProcedure.Contains("Cold") == true ? "Rubbow" : "Steel",
                 AfterWash = p.AfterWash?.Any() == true ? string.Join(",", p.AfterWash) : null,
             },
             ("CF to Washing", _, _) => new WetParameterAatcc

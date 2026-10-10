@@ -1,5 +1,4 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Events;
-using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share.Interface;
 
 namespace NX_lims_Softlines_Command_System.Domain.Share.Interface
 {
@@ -12,8 +11,5 @@ namespace NX_lims_Softlines_Command_System.Domain.Share.Interface
         where TValue : notnull
     {
         TId Id { get; } 
-        IReadOnlyCollection<IDomainEvent> DomainEvents { get; }
-        void AddDomainEvent(DomainEvent<TValue> domainEvent);
-        void ClearDomainEvents();
     }
 }

@@ -1769,7 +1769,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     map["M1"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
                     if (GetDescValue(sample, "State", esDto)!.Contains("Fabric"))
                     {
-                        map["A3"] = (wp, np, row, esDto, sample) => esDto.ReportNumber!;
+                        map["A3"] = (wp, np, row, esDto, sample) => row.standards!;
                     }
                     else if (GetDescValue(sample, "State", esDto)!.Contains("Garment"))
                     {

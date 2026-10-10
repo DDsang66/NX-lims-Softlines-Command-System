@@ -1,5 +1,4 @@
-﻿using NX_lims_Softlines_Command_System.src.Domain.Events;
-using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+﻿using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Share.Interface
@@ -7,52 +6,34 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Share.Interface
     public interface IEventOutbox: IScopedDependency
     {
         /// <summary>
-        /// 将事件存储进入数据库，不保存
+        /// 将事件写入 Outbox 表（仅 Add，不 SaveChanges）。
+        /// 由 UnitOfWork 统一 SaveChanges，保证与业务变更同事务落库。
         /// </summary>
-        /// <param name="event"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
         Task StoreAsync(IDomainEvent @event, CancellationToken ct);
 
         /// <summary>
-        /// 获取未发布的事件
+        /// 获取一批未发布且未进死信的事件（按发生时间升序）。
         /// </summary>
-        /// <param name="batchSize"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
         Task<IEnumerable<IDomainEvent>> GetUnpublishedEventsAsync(int batchSize, CancellationToken ct);
-        
+
         /// <summary>
-        /// 标记事件为已发布
+        /// 标记事件为已发布（内部 SaveChanges）。
         /// </summary>
-        /// <param name="eventId"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
         Task MarkAsPublishedAsync(Guid eventId, CancellationToken ct);
 
         /// <summary>
-        /// 获取未发布的事件数量
+        /// 递增重试次数并记录错误信息（内部 SaveChanges）。
         /// </summary>
-        /// <param name="eventId"></param>
-        /// <param name="error"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task IncrementRetryAsync(Guid eventId, string error, CancellationToken ct); 
+        Task IncrementRetryAsync(Guid eventId, string error, CancellationToken ct);
 
         /// <summary>
-        /// 标记事件为死信
+        /// 标记事件为死信（内部 SaveChanges）。
         /// </summary>
-        /// <param name="eventId"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task MarkAsDeadLetterAsync(Guid eventId, CancellationToken ct);  
+        Task MarkAsDeadLetterAsync(Guid eventId, CancellationToken ct);
 
         /// <summary>
-        /// 查询所有出箱的事件
+        /// 按 EventId 查询 Outbox 条目。
         /// </summary>
-        /// <param name="eventId"></param>
-        /// <param name="ct"></param>
-        /// <returns></returns>
-        Task<OutboxEntry?> GetEntryAsync(Guid eventId, CancellationToken ct);  
+        Task<OutboxEntry?> GetEntryAsync(Guid eventId, CancellationToken ct);
     }
 }

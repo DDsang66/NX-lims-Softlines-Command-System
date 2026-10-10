@@ -3,6 +3,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.V
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext
 {
@@ -16,7 +17,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         /// <summary>
         /// 测试清单中的测试项
         /// </summary>
-        public IReadOnlyList<CheckListItem> Items { get; private set; }
+        //public IReadOnlyList<CheckListItem> Items { get; private set; }
+        private readonly List<CheckListItem> _items = new();
+        public IReadOnlyCollection<CheckListItem> Items => _items.AsReadOnly();
 
         /// <summary>
         /// 创建时间
@@ -59,11 +62,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             var c = new CheckList
              {
                  Id = id,
-                 Items = items,
                  Status = CheckListStatus.Created,
                  CreatedTime = DateTime.Now,
                  Remark = remark
              };
+
+            c._items.AddRange(items);
 
             if (orderId != null)
             {
@@ -93,16 +97,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             var c = new CheckList
             {
                 Id = id,
-                Items = items,
                 Remark = remark,
                 Status = status,
                 CreatedTime = CreatedTime,
             };
 
+            c._items.AddRange(items);
+
             if (orderId != null)
             {
                 c.OderId = orderId;
             }
+
+            
 
             return c;
         }
@@ -134,7 +141,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             {
                 item.BindToCheckList(Id); // 确保所有的测试项都归属于当前清单
             }
-            Items = newItems;
+
+            _items.Clear();
+            _items.AddRange(newItems);
 
             // 5. (可选) 如果领域事件存在，可以触发清单更新事件
             // AddDomainEvent(new CheckListUpdatedEvent(Id));
@@ -206,5 +215,27 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
             Status = CheckListStatus.Completed;
         }
 
+        /// <summary>
+        /// 将指定 TestItemId 的 item 标记为 Completed。
+        /// 状态机由聚合根自己保证。
+        /// </summary>
+        public void MarkItemCompleted(string testItemId)
+        {
+            var item = _items.FirstOrDefault(i => i.TestItemId! == testItemId);
+
+            if (item == null)
+            {
+                // ★ 不抛异常，允许 Handler 重复调用 / 时序问题
+                return;
+            }
+
+            item.MarkCompleted();
+
+            // 全部 item 完成 → CheckList 自动完成
+            if (_items.All(i => i.Status == CheckListStatus.Completed))
+            {
+                ChangeToCompleted();
+            }
+        }
     }
 }

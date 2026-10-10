@@ -5,6 +5,7 @@ using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetBatchCont
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.Enums;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Events;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 using System.Security.Policy;
@@ -267,5 +268,31 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
             EditorVersion += 1;
             LastCallbackUrl = url;
         }
+
+        /// <summary>
+        /// 标记为处理完成
+        /// </summary>
+        public void MarkDone() 
+        {
+            Status = DataSheetStatus.Completed;
+
+            var now = DateTime.UtcNow;
+
+            // ★ UpdateTime 是 DateTime?，null 时直接赋值
+            if (UpdateTime.HasValue && now <= UpdateTime.Value)
+                now = UpdateTime.Value.AddTicks(1);
+
+            UpdateTime = now;
+            EditorVersion += 1;
+            LastCallbackUrl = null;
+
+            //领域事件，通知对应的checklistItem触发检测自身状态
+            new DataSheetCompletedEvent(Id, CheckListId, TestItemId, UpdateTime!.Value, EditorVersion).Register();
+        }
+
+        /// <summary>
+        /// 标记为已审核
+        /// </summary>
+        public void MarkApproved() => Status = DataSheetStatus.Approved;
     }
 }

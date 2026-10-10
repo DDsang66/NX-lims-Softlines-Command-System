@@ -54,7 +54,7 @@ namespace NX_lims_Softlines_Command_System
                 typeof(ApplicationAssemblyMarker).Assembly,
                 typeof(InfrastructureAssemblyMarker).Assembly));
 
-            //builder.Services.AddHostedService<EventPublisherBackgroundService>();
+            builder.Services.AddHostedService<EventPublisherBackgroundService>();
 
             // Add services to the container.
             var licenseType = builder.Configuration.GetValue<string>("EPPlus:License");

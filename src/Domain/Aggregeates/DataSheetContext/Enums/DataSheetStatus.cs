@@ -45,6 +45,11 @@
         /// <summary>
         /// 生成失败
         /// </summary>
-        Failed = 8
+        Failed = 8,
+
+        /// <summary>
+        /// 已批准
+        /// </summary>
+        Approved = 9
     }
 }

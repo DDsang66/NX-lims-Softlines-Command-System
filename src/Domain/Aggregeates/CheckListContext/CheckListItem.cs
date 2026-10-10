@@ -187,5 +187,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         {
             CheckListId = checkListId;
         }
+
+        /// <summary>
+        /// 标记为完成。幂等：已是完成态直接返回。
+        /// </summary>
+        public void MarkCompleted()
+        {
+            if (Status == CheckListStatus.Completed)
+                return;
+
+            Status = CheckListStatus.Completed;
+        }
     }
 }

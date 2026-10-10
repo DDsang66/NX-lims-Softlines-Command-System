@@ -52,64 +52,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             _dataSheetBatchRepository = dataSheetBatchRepository;
         }
 
-        #region abandoned
-        ///// <summary>
-        ///// 彻底跑通新代码前先保留
-        ///// </summary>
-        ///// <param name="dto"></param>
-        ///// <param name="ct"></param>
-        ///// <returns></returns>
-        ///// <exception cref="ArgumentException"></exception>
-        //public async Task<Result> GenerateTaskStart1(DataSheetGenerateDto dto,CancellationToken ct) 
-        //{
-        //    //拿到checklistid
-
-        //    var checklist = await  _checkListRepository.GetByIdAsync(new CheckListId(dto.CheckListId),ct);
-
-        //    if (checklist.Status != CheckListStatus.InProgress)
-        //        throw new ArgumentException("CheckList is not completed yet");
-
-        //    var pools =  await  _conditionPoolRepository.GetByCheckListIdAsync(new CheckListId(dto.CheckListId),ct);
-
-        //    //幂等验证，如果已经有checklist的批次正在生成或者说该批次的ds已经生成过了，就不再重复生成;
-
-        //    foreach (var item in checklist.Items) 
-        //    {
-        //        //按照每个项目创建测试ds任务
-
-        //        //模板查询器 (领域服务) 查询到对应模板
-        //        var contactTemplateUrl = "DocxModel/Common_WET/WET_Dimensional_Change_Wasing.docx";
-
-        //        //var ds = DataSheet.Create(
-        //        //    checklist.Id,
-        //        //    null,
-        //        //    contactTemplateUrl,
-        //        //    DataSheetStatus.Pending,
-        //        //    checklist.OderId!,
-        //        //    item.TestItemId!);
-
-        //        // await _dataSheetRepository.AddAsync(ds,ct);
-        //    }
-
-        //    //暂时：手动触发processHub监听，实时将生成进度推送到前端
-
-        //    await _unitOfWork.SaveChangesAsync(ct);
-
-        //    //以下代码交由eventHandler处理，现在为了验证流程可行性先显示写在这里
-
-        //    foreach (var item in checklist.Items) 
-        //    {
-        //        //开始调用DataSheetGenerator生成model，在应用层进行用例编排
-        //        var models = await _dataSheetModelGenerator.GenerateAsync(pools.ToList(), item,ct);
-
-        //        //调用模板引擎将model数据填充进入到模板中，生成最终的ds文件
-        //       _dataSheetFillingEngine.FillDataSheet(models.First());
-        //    }
-
-        //    return Result.Ok();
-        //}
-        #endregion
-
         /// <summary>
         /// 生成任务启动
         /// </summary>
@@ -315,6 +257,48 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             _logger.LogInformation(
                 "ONLYOFFICE 保存成功: datasheetId={DatasheetId}, 路径={Path}, 大小={Size} bytes, 版本={Version}, 时间={Time}",
                 datasheetId, physicalPath, fileBytes.Length, datasheet.EditorVersion, datasheet.UpdateTime);
+        }
+
+        /// <summary>
+        /// 标记为完成
+        /// </summary>
+        /// <param name="datasheetId"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        public async Task<Result> MarkDone(Guid datasheetId,CancellationToken ct) 
+        {
+            var datasheet = await _dataSheetRepository.GetByIdAsync(new DataSheetId(datasheetId), ct)
+                ?? throw new InvalidOperationException($"Datasheet {datasheetId} 不存在");
+
+            datasheet.MarkDone();
+
+            await _dataSheetRepository.UpdateAsync(datasheet, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
+        }
+
+        /// <summary>
+        /// 标记为已审核
+        /// </summary>
+        /// <param name="datasheetId"></param>
+        /// <param name="url"></param>
+        /// <param name="ct"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public async Task<Result> MarkApproved(string datasheetId, string url, CancellationToken ct) 
+        {
+            var datasheet = await _dataSheetRepository.GetByIdAsync(new DataSheetId(Guid.Parse(datasheetId)), ct)
+                ?? throw new InvalidOperationException($"Datasheet {datasheetId} 不存在");
+
+            datasheet.MarkApproved();
+
+            await _dataSheetRepository.UpdateAsync(datasheet, ct);
+
+            await _unitOfWork.SaveChangesAsync(ct);
+
+            return Result.Ok();
         }
     }
 }
