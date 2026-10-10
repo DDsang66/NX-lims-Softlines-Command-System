@@ -16,23 +16,45 @@ public class YarnCountReportFillModel
     /// <summary>环境湿度 %RH(写入页脚湿度格)</summary>
     public decimal? EnvironmentHumidity { get; set; }
 
-    /// <summary>表0 Warp (Tex) = 经向各试样 Tex 的算术平均(各试样等权)。为 null 则该格留空</summary>
-    public decimal? WarpTex { get; set; }
-
-    /// <summary>表0 Weft (Tex) = 纬向各试样 Tex 的算术平均。为 null 则该格留空</summary>
-    public decimal? WeftTex { get; set; }
-
     /// <summary>
-    /// 表0 Knit (Tex) = 针织各试样 Tex 的算术平均(与 Warp/Weft 同口径)。
-    /// 2026-09 模板改版前这是页面手工输入的值, 现在由服务端按试样算出; 为 null 则该格留空。
+    /// 表0 三个方向汇总行(Warp / Weft / Knit), 每行 = 汇总 Tex + 由它换算出的四个单位值。
+    /// 一个方向一项, 顺序无所谓 —— 引擎按 Direction 找行(不再靠行号顺序)。
+    /// 没测的方向 Tex 为 null, 该行五个格全部留空。
     /// </summary>
-    public decimal? KnitTex { get; set; }
+    public List<YarnCountSummaryModel> Summaries { get; set; } = new();
 
     /// <summary>
     /// 表1 数据网格的列 — 每列一个试样。列序由引擎按 Direction+SpecimenIndex 映射到模板列号,
     /// 这里的顺序无所谓; 只提交了的试样才在列表里(没提交的列整列不碰)。
     /// </summary>
     public List<YarnCountColumnModel> Columns { get; set; } = new();
+}
+
+/// <summary>
+/// 表0 摘要表的一行(一个方向): 汇总 Tex 与它的四个换算单位。
+/// 五个值**全部由服务端算好并舍入**, 引擎只按坐标落格、按取位格式化成文本。
+/// null 表示该格留空(不写 0); tex 缺失或为 0 时四个换算值一起为 null ——
+/// 不能只留空算不出来的那两个, 一行里"三个有数一个空"会被读成"那一项测出来是 0"。
+/// </summary>
+public class YarnCountSummaryModel
+{
+    /// <summary>方向: "Warp" | "Weft" | "Knit"(服务端白名单校验过), 引擎按它找摘要表的行</summary>
+    public string Direction { get; set; } = string.Empty;
+
+    /// <summary>该方向各试样 Tex 的算术平均(各试样等权), 已按 TexDecimals 舍入</summary>
+    public decimal? Tex { get; set; }
+
+    /// <summary>dtex = tex × 10(见 YarnCountReportRequestDto 的换算注释)</summary>
+    public decimal? Dtex { get; set; }
+
+    /// <summary>denier = tex × 9</summary>
+    public decimal? Denier { get; set; }
+
+    /// <summary>cc = 590.5 ÷ tex(英制棉支数)</summary>
+    public decimal? CottonCount { get; set; }
+
+    /// <summary>表头 ’s 那一列 —— 与 CottonCount **同值**, 只是记法不同, 见 DTO 的换算注释</summary>
+    public decimal? CountS { get; set; }
 }
 
 /// <summary>

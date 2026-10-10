@@ -11,7 +11,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     /// 纱支(Yarn Count) docx 填充引擎 — 按坐标填格, 与克重/耐磨/干燥速率各引擎互相隔离。
     ///
     /// 模板 PHY_YarnCount.docx 正文两张表 + 一个页脚:
-    ///   表0(摘要, 按 "Test Report Number" 定位): 报告号、Warp/Weft/Knit (Tex) 三个汇总格;
+    ///   表0(摘要, 按 "Test Report Number" 定位): 报告号, 以及 Warp/Weft/Knit 三个方向行 ——
+    ///       每行 5 格: tex(跨 2 网格列) | dtex | denier | cc | ’s(换算单位, 见表0 R5 的单位表头行);
     ///   表1(数据, 按 "#1" 定位): 10 个长度读数行 + Average(cm) / Mass(g/50) / Tex 三行, 每行 7 格
     ///        —— 格0 是行标签, 格1~6 是数据列: Warp#1 | Warp#2 | Weft#1 | Weft#2 | Knit#1 | Knit#2;
     ///   页脚: 按 "%RH" 标记定位, R1 的 格2=温度 / 格3=湿度(带下划线, 模拟"写在横线上")。
@@ -41,7 +42,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// <summary>
         /// 填充纱支报告 — 流程地图:
         ///   1. 打开文件, 定位表0与表1并做结构校验(结构不符 → 抛异常);
-        ///   2. 表0: 填报告号(加粗放大) + 三个 Tex 汇总格(空值跳过留空);
+        ///   2. 表0: 填报告号(加粗放大) + 三个方向汇总行(tex 与四个换算单位, 空值留空);
         ///      "Fabric:" 格(R3)**刻意不动** —— 该格是标准清单, 本流程不产出对应信息;
         ///   3. 表1: 逐试样列填 10 个长度读数 + Average / Mass / Tex(空值跳过, 不写 0);
         ///   4. 页脚: 填温湿度;
@@ -57,13 +58,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             SetCellText(Row(t0, YarnCountDocxLayout.SummaryRowReportNumber), YarnCountDocxLayout.ValueColumn,
                 model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
 
-            // ---- 表0: 三个 Tex 汇总格(样式源取同行的标签格) ----
-            SetCellTextSeeded(Row(t0, YarnCountDocxLayout.SummaryRowWarpTex),
-                YarnCountDocxLayout.ValueColumn, YarnCountDocxLayout.LabelColumn, FormatTex(model.WarpTex));
-            SetCellTextSeeded(Row(t0, YarnCountDocxLayout.SummaryRowWeftTex),
-                YarnCountDocxLayout.ValueColumn, YarnCountDocxLayout.LabelColumn, FormatTex(model.WeftTex));
-            SetCellTextSeeded(Row(t0, YarnCountDocxLayout.SummaryRowKnitTex),
-                YarnCountDocxLayout.ValueColumn, YarnCountDocxLayout.LabelColumn, FormatTex(model.KnitTex));
+            // ---- 表0: 三个方向汇总行(样式源取同行的标签格) ----
+            foreach (var summary in model.Summaries)
+            {
+                var row = Row(t0, YarnCountDocxLayout.SummaryRowOf(summary.Direction));
+                SetCellTextSeeded(row, YarnCountDocxLayout.ValueColumn, YarnCountDocxLayout.LabelColumn,
+                    FormatOrBlank(summary.Tex, YarnCountDocxLayout.TexDecimals));
+
+                foreach (var (_, cellIndex, value) in YarnCountDocxLayout.SummaryUnitColumns)
+                    SetCellTextSeeded(row, cellIndex, YarnCountDocxLayout.LabelColumn,
+                        FormatOrBlank(value(summary), YarnCountDocxLayout.UnitDecimals));
+            }
 
             // ---- 表1: 逐试样列 ----
             foreach (var col in model.Columns)
@@ -97,9 +102,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             doc.MainDocumentPart?.Document?.Save();
         }
 
-        /// <summary>Tex 汇总格的文本: 空值返回空串(该格留空, 不是写 0)</summary>
-        private static string FormatTex(decimal? value)
-            => value.HasValue ? Format(value.Value, YarnCountDocxLayout.TexDecimals) : "";
+        /// <summary>摘要表数值格的文本: 空值返回空串(该格留空, 不是写 0)</summary>
+        private static string FormatOrBlank(decimal? value, int decimals)
+            => value.HasValue ? Format(value.Value, decimals) : "";
 
         /// <summary>
         /// 定长小数字符串。显式 InvariantCulture: 报告是给人看的固定格式,
@@ -147,11 +152,12 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 模板只要被人改过(增删一行/一列/改表头文字), 坐标就可能整体错位 —— 那种情况下继续填,
         /// 会产出"长度读数填进 Average 行、纬向数据写进经向列"这种表面上能打开、实则全错的 docx, 最难以发现。
         ///
-        /// 四类断言, 缺一不可:
+        /// 五类断言, 缺一不可:
         ///   ① 行**存在性**(缺行 → 后面 ElementAtOrDefault 静默 null);
         ///   ② 行**标签文字**逐行核对 —— 只查"行存在"是发现不了"中间插图了一行"的, 而那正是最常见的误改;
         ///   ③ 格**数量** —— SetCellText 遇到不存在的格是静默 return, 少一格就是一整列数据凭空消失;
-        ///   ④ 表1 **R0 的方向顺序与跨列数** —— 方向只写在 R0 里, 是"哪一列属于哪个方向"的唯一依据。
+        ///   ④ 表1 **R0 的方向顺序与跨列数** —— 方向只写在 R0 里, 是"哪一列属于哪个方向"的唯一依据;
+        ///   ⑤ 表0 **R5 的单位表头** —— 四个换算值按格下标写, 表头顺序就是它们的含义(见 ValidateSummaryUnitHeaderRow)。
         /// </summary>
         private (Table Summary, Table Data) ValidateTemplate(WordprocessingDocument doc)
         {
@@ -162,10 +168,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 throw new InvalidOperationException("PHY_YarnCount 模板摘要表行数不足(缺 R9 Knit (Tex) 行)");
 
             // 行标签 + 格数: 4 个要写的行逐个核对
-            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowReportNumber, "Test Report Number");
-            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowWarpTex, "Warp");
-            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowWeftTex, "Weft");
-            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowKnitTex, "Knit");
+            // 格数要求不同: 报告号行只写到格1; 三个方向行要写到最右的换算列(格5)
+            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowReportNumber, "Test Report Number",
+                YarnCountDocxLayout.ValueColumn + 1);
+            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowWarpTex, "Warp", YarnCountDocxLayout.SummaryRowCells);
+            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowWeftTex, "Weft", YarnCountDocxLayout.SummaryRowCells);
+            ValidateSummaryRow(t0, YarnCountDocxLayout.SummaryRowKnitTex, "Knit", YarnCountDocxLayout.SummaryRowCells);
+
+            // 单位表头行(R5): 四个换算值按下标落格, 所以表头文字就是这四格的"含义", 必须逐个核对
+            ValidateSummaryUnitHeaderRow(t0);
 
             var t1 = LocateTable(doc, YarnCountDocxLayout.DataTableMarker)
                 ?? throw new InvalidOperationException("PHY_YarnCount 模板缺少数据表(#1 #2 那行)");
@@ -204,18 +215,64 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             return (t0, t1);
         }
 
-        /// <summary>摘要表某个待写行: 标签文字必须含 marker, 且格数够写到 ValueColumn</summary>
-        private static void ValidateSummaryRow(Table t0, int rowIndex, string marker)
+        /// <summary>
+        /// 摘要表某个待写行: 标签文字必须含 marker, 且格数够写到最后要写的那一格(requiredCells - 1)。
+        /// 格数必须查: SetCellText 遇到不存在的格是静默 return, 少一格就是那个数凭空消失。
+        /// </summary>
+        private static void ValidateSummaryRow(Table t0, int rowIndex, string marker, int requiredCells)
         {
             var row = Row(t0, rowIndex)
                 ?? throw new InvalidOperationException($"PHY_YarnCount 模板摘要表行数不足(缺 R{rowIndex} 行)");
             if (!row.InnerText.Contains(marker))
                 throw new InvalidOperationException(
                     $"PHY_YarnCount 模板摘要表 R{rowIndex} 应含「{marker}」, 实际为「{row.InnerText.Trim()}」—— 行序已变, 停止填充");
-            if (row.Elements<TableCell>().Count() <= YarnCountDocxLayout.ValueColumn)
+            if (row.Elements<TableCell>().Count() < requiredCells)
                 throw new InvalidOperationException(
-                    $"PHY_YarnCount 模板摘要表 R{rowIndex} 格数不足(需能写第 {YarnCountDocxLayout.ValueColumn} 格)");
+                    $"PHY_YarnCount 模板摘要表 R{rowIndex} 格数不足(需 {requiredCells} 格, 实为 {row.Elements<TableCell>().Count()} 格)");
         }
+
+        /// <summary>
+        /// 校验摘要表 R5(单位表头行): 格数与每格文字必须与 YarnCountDocxLayout.SummaryUnitColumns 一致。
+        ///
+        /// 为什么非查不可: 四个换算值是**按格下标**(2..5)写进去的, 表头顺序就是这四格的含义 ——
+        /// 模板里把 cc 与 denier 两格对调(或删掉一列), 数字照样能填进去, 报告能打开、
+        /// 每个数看着都合理, 只有对着标准或手算才知道错了。这与表1 依赖 R0 方向行是同一个道理。
+        ///
+        /// 比较前把弯引号归一成 ASCII 单引号: 模板里 ’s 用的是 U+2019, 源码里写不出歧义更小的字符。
+        /// </summary>
+        private static void ValidateSummaryUnitHeaderRow(Table t0)
+        {
+            int rowIndex = YarnCountDocxLayout.SummaryUnitHeaderRow;
+            var row = Row(t0, rowIndex)
+                ?? throw new InvalidOperationException($"PHY_YarnCount 模板摘要表行数不足(缺 R{rowIndex} 单位表头行)");
+            var cells = row.Elements<TableCell>().ToList();
+            var units = YarnCountDocxLayout.SummaryUnitColumns;
+
+            int expectedCells = YarnCountDocxLayout.ValueColumn + 1 + units.Length;
+            if (cells.Count != expectedCells)
+                throw new InvalidOperationException(
+                    $"PHY_YarnCount 模板摘要表 R{rowIndex} 应有 {expectedCells} 格" +
+                    $"(标签 + tex + {units.Length} 个换算单位), 实际 {cells.Count} 格 —— 单位列已变, 停止填充");
+
+            var texActual = NormalizeHeaderText(cells[YarnCountDocxLayout.ValueColumn].InnerText);
+            if (texActual != "tex")
+                throw new InvalidOperationException(
+                    $"PHY_YarnCount 模板摘要表 R{rowIndex} 第 {YarnCountDocxLayout.ValueColumn} 格应为「tex」, " +
+                    $"实际为「{texActual}」—— 单位列已变, 停止填充");
+
+            foreach (var (label, cellIndex, _) in units)
+            {
+                var actual = NormalizeHeaderText(cells[cellIndex].InnerText);
+                if (actual != label)
+                    throw new InvalidOperationException(
+                        $"PHY_YarnCount 模板摘要表 R{rowIndex} 第 {cellIndex} 格应为「{label}」, 实际为「{actual}」" +
+                        " —— 单位列已变, 停止填充");
+            }
+        }
+
+        /// <summary>表头文字归一: 去空白 + 弯引号(U+2019/U+2018)折成 ASCII 单引号</summary>
+        private static string NormalizeHeaderText(string text)
+            => text.Replace('’', '\'').Replace('‘', '\'').Trim();
 
         /// <summary>
         /// 校验数据表 R0(方向行): 首格为空, 其后每组的文字与**跨列数**必须与
@@ -246,7 +303,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
             for (int i = 0; i < expected.Length; i++)
             {
-                var (direction, count) = expected[i];
+                var (direction, count, _) = expected[i];
                 var cell = cells[i + 1];
 
                 var actual = cell.InnerText.Trim();
@@ -339,7 +396,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // ---------- 表0: 摘要表(按 "Test Report Number" 定位) ----------
             public const string SummaryTableMarker = "Test Report Number";
 
-            /// <summary>行标签格恒为 0、值写进第 1 格(报告号 / 三个 Tex 汇总格都是这个形状)</summary>
+            /// <summary>
+            /// 行标签格恒为 0、值写进第 1 格(报告号 / 三个方向行的 tex 都是这个形状);
+            /// 方向行第 1 格右边依次是四个换算单位列(见 SummaryUnitColumns)。
+            /// </summary>
             public const int LabelColumn = 0;
             public const int ValueColumn = 1;
 
@@ -347,7 +407,39 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int SummaryRowWarpTex = 6;
             public const int SummaryRowWeftTex = 7;
             public const int SummaryRowKnitTex = 9;
-            // 注: R3 是 "Fabric:" | 标准清单 —— 刻意不填, 所以这里没有它的坐标
+            // 注: R3 是 "Fabric:" | 标准清单 —— 刻意不填, 所以这里没有它的坐标;
+            //     R8 是整行空白的间隔行, 所以 Knit 不是 R8 而是 R9。
+
+            /// <summary>摘要表换算单位列 —— 表头文字、格下标、取值三处一处定义(见 SummaryUnitColumns)</summary>
+            public const int SummaryCellDtex = 2;
+            public const int SummaryCellDenier = 3;
+            public const int SummaryCellCottonCount = 4;
+            public const int SummaryCellCountS = 5;
+
+            /// <summary>
+            /// 摘要表的四个换算单位列: 表头文字(R5 里长什么样)、格下标、从行模型取哪个值。
+            ///
+            /// 三者写在一张表里, 是因为它们必须一起改: 值在数学上属于哪个单位, 就决定它该落在哪一格 ——
+            /// 分开写就会出现"cc 的值填进了 denier 格"而没有任何报错。表头文字由
+            /// ValidateSummaryUnitHeaderRow 拿去核对模板, 所以换列(或删列)会在生成前抛异常。
+            ///
+            /// ’s 与 cc 同值: 表头 ’s 只是把同一个支数写成 "xx’s" 的记法, 不是另一个计数制。
+            /// </summary>
+            public static readonly (string Label, int CellIndex, Func<YarnCountSummaryModel, decimal?> Value)[] SummaryUnitColumns =
+            {
+                ("dtex", SummaryCellDtex, s => s.Dtex),
+                ("denier", SummaryCellDenier, s => s.Denier),
+                ("cc", SummaryCellCottonCount, s => s.CottonCount),
+                ("'s", SummaryCellCountS, s => s.CountS),
+            };
+
+            /// <summary>摘要表 R5 单位表头行</summary>
+            public const int SummaryUnitHeaderRow = 5;
+
+            public static readonly int UnitDecimals = YarnCountReportRequestDto.UnitDecimals;
+
+            /// <summary>摘要表方向行要能写到最右的换算列(’s) —— 少一格, 那个数会静默消失</summary>
+            public static readonly int SummaryRowCells = SummaryUnitColumns.Max(u => u.CellIndex) + 1;
 
             // ---------- 表1: 数据表(按 "#1" 定位) ----------
             /// <summary>
@@ -362,18 +454,31 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int DirectionHeaderRow = 0;
 
             /// <summary>
-            /// 数据列的方向顺序与各方向列数 —— 与模板 R0 的三组跨列标题(Warp | Weft | Knit)**按序**对应。
+            /// 数据列的方向顺序、各方向列数、该方向在**摘要表**的行号 —— 与模板 R0 的三组跨列标题
+            /// (Warp | Weft | Knit)**按序**对应。
             ///
-            /// 这是本引擎唯一的"方向 → 列"事实来源: 表头期望文字、列偏移、最右列号全部由它推导。
-            /// 调整方向或列数只改这里(连同契约层的三个 SpecimenCount 常量), 不再有第二处手写坐标 ——
-            /// 之前"手写表头数组 + 逐个算列起点"的写法, 漏改一处不会报错, 只会静默错列。
+            /// 这是本引擎唯一的"方向 → 坐标"事实来源: 表头期望文字、列偏移、最右列号、
+            /// 摘要表行号全部由它推导。调整方向或列数只改这里(连同契约层的三个 SpecimenCount 常量),
+            /// 不再有第二处手写坐标 —— 之前"手写表头数组 + 逐个算列起点"的写法,
+            /// 漏改一处不会报错, 只会静默错列。
             /// </summary>
-            public static readonly (string Direction, int Count)[] DirectionColumns =
+            public static readonly (string Direction, int Count, int SummaryRow)[] DirectionColumns =
             {
-                (YarnCountReportRequestDto.DirectionWarp, YarnCountReportRequestDto.WarpSpecimenCount),
-                (YarnCountReportRequestDto.DirectionWeft, YarnCountReportRequestDto.WeftSpecimenCount),
-                (YarnCountReportRequestDto.DirectionKnit, YarnCountReportRequestDto.KnitSpecimenCount),
+                (YarnCountReportRequestDto.DirectionWarp, YarnCountReportRequestDto.WarpSpecimenCount, SummaryRowWarpTex),
+                (YarnCountReportRequestDto.DirectionWeft, YarnCountReportRequestDto.WeftSpecimenCount, SummaryRowWeftTex),
+                (YarnCountReportRequestDto.DirectionKnit, YarnCountReportRequestDto.KnitSpecimenCount, SummaryRowKnitTex),
             };
+
+            /// <summary>方向 → 摘要表行号。查不到**必须抛异常, 绝不能留 else 兜底**(与 ColumnOf 同一原则)</summary>
+            public static int SummaryRowOf(string direction)
+            {
+                foreach (var (dir, _, row) in DirectionColumns)
+                    if (dir == direction) return row;
+
+                throw new InvalidOperationException(
+                    $"纱支摘要表没有方向「{direction}」对应的行 —— 停止填充" +
+                    $"(合法方向: {string.Join(" / ", DirectionColumns.Select(d => d.Direction))})");
+            }
 
             /// <summary>
             /// 数据列从第几格开始(格0 恒为行标签)
@@ -390,7 +495,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             private static string[] BuildDataHeaderLabels()
             {
                 var labels = new List<string> { "Length:" };
-                foreach (var (_, count) in DirectionColumns)
+                foreach (var (_, count, _) in DirectionColumns)
                     for (int i = 1; i <= count; i++)
                         labels.Add("#" + i);
 
@@ -416,7 +521,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public static int ColumnOf(string direction, int specimenIndex)
             {
                 int offset = FirstDataColumn;
-                foreach (var (dir, count) in DirectionColumns)
+                foreach (var (dir, count, _) in DirectionColumns)
                 {
                     if (dir == direction) return offset + (specimenIndex - 1);
                     offset += count;

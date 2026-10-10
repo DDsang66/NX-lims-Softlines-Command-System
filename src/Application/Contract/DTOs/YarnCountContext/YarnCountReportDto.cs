@@ -54,6 +54,29 @@ public class YarnCountReportRequestDto
     /// <summary>Tex 显示小数位</summary>
     public const int TexDecimals = 2;
 
+    // ==================== 摘要表的换算单位 ====================
+    // 摘要表的单位表头行(R5)是: '' | tex | dtex | denier | cc | ’s,
+    // 每个方向一行, 四个换算值都由**该方向已舍入的汇总 Tex**推出 ——
+    // 和 Tex 一样自成闭环: 审核拿报告上印的 tex 手算, 能复现印出来的 dtex/denier/cc。
+    // 口径(ASTM D2260-03(2013) / ISO 2947; dtex 与 denier 是定义式):
+    //   dtex   = tex × 10
+    //   denier = tex × 9
+    //   cc     = 590.5 ÷ tex   (英制棉支数 Ne, 840 yd/lb)
+    //   ’s     = 与 cc 同值    (表头 ’s 只是把同一个支数写成 "xx’s" 的记法, 不是另一个计数制)
+    // 只在 tex > 0 时换算; tex 缺失或为 0 → 四列全部留空(不写 0)。见 YarnCountMath.UnitsOf。
+
+    /// <summary>换算列(dtex/denier/cc/’s)显示小数位 —— 与 Tex 同取 2 位</summary>
+    public const int UnitDecimals = 2;
+
+    /// <summary>dtex = tex × 10(定义式: 10000 m 的克数)</summary>
+    public const decimal DtexFactor = 10m;
+
+    /// <summary>denier = tex × 9(定义式: 9000 m 的克数)</summary>
+    public const decimal DenierFactor = 9m;
+
+    /// <summary>英制棉支数 cc = 590.5 ÷ tex(ASTM D2260 换算表口径, 840 yd/lb)</summary>
+    public const decimal CottonCountConstant = 590.5m;
+
     /// <summary>报告号(前端用"试样编号"sid)</summary>
     public string ReportNumber { get; set; } = string.Empty;
 

@@ -56,4 +56,28 @@ public static class YarnCountMath
         if (valid.Count == 0) return null;
         return RoundValue(valid.Average(), YarnCountReportRequestDto.TexDecimals);
     }
+
+    /// <summary>
+    /// 摘要表的四个换算单位: 由**该方向已舍入的汇总 Tex**推出 dtex / denier / cc / ’s。
+    ///
+    /// 为什么从"已舍入的 tex"而不是原始测量值推: 与 Tex = Mass × 200 ÷ Average 同一原则 ——
+    /// 报告上印的数要互相能校验, 审核拿印出来的 tex 手算能得出印出来的 cc。
+    ///
+    /// 口径见 YarnCountReportRequestDto 的换算注释(ASTM D2260 / ISO 2947)。’s 与 cc 同值。
+    ///
+    /// tex 缺失或 ≤ 0 时**四个一起返回 null**(该行五个格全留空):
+    /// dtex/denier 是乘常数, 0 tex 本该算出 0, 但 cc 是除以 tex, 0 会算出"无穷支数" ——
+    /// 一行里三个空一个 0 比整行留空更容易被读成"那一项测出来是 0"。
+    /// </summary>
+    public static (decimal? Dtex, decimal? Denier, decimal? CottonCount, decimal? CountS) UnitsOf(decimal? tex)
+    {
+        if (!tex.HasValue || tex.Value <= 0m) return (null, null, null, null);
+
+        int decimals = YarnCountReportRequestDto.UnitDecimals;
+        decimal dtex = RoundValue(tex.Value * YarnCountReportRequestDto.DtexFactor, decimals);
+        decimal denier = RoundValue(tex.Value * YarnCountReportRequestDto.DenierFactor, decimals);
+        decimal cc = RoundValue(YarnCountReportRequestDto.CottonCountConstant / tex.Value, decimals);
+
+        return (dtex, denier, cc, cc);
+    }
 }
