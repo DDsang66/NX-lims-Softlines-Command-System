@@ -59,8 +59,6 @@ public partial class dbContext : DbContext
 
     public virtual DbSet<PhysicalWeightRecord> PhysicalWeightRecords { get; set; }
 
-    public virtual DbSet<ProcessedEvent> ProcessedEvents { get; set; }
-
     public virtual DbSet<SampleInfo> SampleInfos { get; set; }
 
     public virtual DbSet<Template> Templates { get; set; }
@@ -852,21 +850,6 @@ public partial class dbContext : DbContext
             entity.Property(e => e.Weight)
                 .HasColumnType("decimal(10, 4)")
                 .HasColumnName("weight");
-        });
-
-        modelBuilder.Entity<ProcessedEvent>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK__processe__3214EC07B0EC46CB");
-
-            entity.ToTable("processed_event");
-
-            entity.HasIndex(e => e.EventId, "UQ_ProcessedEvent_EventId").IsUnique();
-
-            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.EventId).HasColumnName("event_id");
-            entity.Property(e => e.ProcessedAt)
-                .HasDefaultValueSql("(getutcdate())")
-                .HasColumnName("processed_at");
         });
 
         modelBuilder.Entity<SampleInfo>(entity =>
