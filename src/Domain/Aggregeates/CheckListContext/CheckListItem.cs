@@ -198,5 +198,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
 
             Status = CheckListStatus.Completed;
         }
+
+        /// <summary>
+        /// 标记为已审核
+        /// </summary>
+        public void MarkValidated() 
+        {
+            if (Status == CheckListStatus.Validated)
+                return;
+
+            Status = CheckListStatus.Validated;
+        }
     }
 }

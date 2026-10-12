@@ -2,6 +2,7 @@
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.OrderContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.ParamEngineContext.StandardFamilyContext.ValueObj;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.TestItemContext.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share;
 using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Persistence;
 
@@ -216,6 +217,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
         }
 
         /// <summary>
+        /// 更改状态为已审核
+        /// </summary>
+        public void ChangeToValidated()
+        {
+            Status = CheckListStatus.Validated;
+        }
+
+        /// <summary>
         /// 将指定 TestItemId 的 item 标记为 Completed。
         /// 状态机由聚合根自己保证。
         /// </summary>
@@ -237,5 +246,29 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.CheckListConte
                 ChangeToCompleted();
             }
         }
+
+        /// <summary>
+        /// 审核标记
+        /// </summary>
+        /// <param name="testItemId"></param>
+        public void MarkItemValidated(string testItemId)
+        {
+            var item = _items.FirstOrDefault(i => i.TestItemId! == testItemId);
+
+            if (item == null)
+            {
+                // ★ 不抛异常，允许 Handler 重复调用 / 时序问题
+                return;
+            }
+
+            item.MarkValidated();
+
+            // 全部 item 完成 → CheckList 自动完成
+            if (_items.All(i => i.Status == CheckListStatus.Validated))
+            {
+                ChangeToValidated();
+            }
+        }
+
     }
 }
