@@ -123,6 +123,21 @@ public static class Aatcc201CalculationService
     private const int FlatTimeWindow = 200;         // flat_time_dg：滑窗点数
     private const int FlatTimeAcceptCount = 150;    // flat_time_dg：窗内温差达标点数阈值
     private const int FlatTimeLead = 140;           // flat_time_dg：前置要求点数
+
+    // ---- 平台逾期兜底（本仓新增，原软件没有）----
+    // 原软件的 flat_time_dg 没有上限：只要温度以约 0.2℃/25点（0.48℃/min）持续漂移，
+    // 200 点窗里就永远凑不满 151 对，判据永远不成立 → 测试永远不自动结束。
+    // 兜底 = 门① 已确认 且 已等够 FlatOverduePoints 点 且 温度确实基本走平（FlatOverdueTolerance）。
+    //
+    // FlatOverduePoints = 400 的来历（相对 flatStartPoint）：
+    //   判据门槛    pt ≥ flatStartPoint + 220   （SlopeContinueNo 80 + FlatTimeLead 140）
+    //   正常收尾    pt ≥ Q + 175                （Q = 温度真正走平点；175 = FlatPoint 25 + FlatTimeAcceptCount 150）
+    //   实测形态 Q ≈ flatStartPoint + 150  ⇒  正常收尾 ≈ flatStartPoint + 325
+    //   取 400 = 正常收尾 + 75 点裕量（≈1 分 15 秒）⇒ 正常跑永远不会先撞兜底。
+    //   同一个数换个锚点：相对平台走平点 Q 就是 250 点（max(140, 25+150) + 75）。
+    //   调大 = 卡死时操作员等更久；调小 = 有把"走得慢但本来会正常收尾"的测试提前砍断的风险。
+    private const int FlatOverduePoints = 400;
+    private const double FlatOverdueTolerance = 50.0;  // 0.5℃(50×0.01)，来历见 FlatOverdueDg 注释
     private const int AvgWindow = 15;               // draw_two：均值窗口点数
     private const double IntersectMinDist = 100.0;  // draw_two：终点搜索初始"最小间距"
     private const int IntersectBreakCount = 20;     // draw_two：终点搜索 break 计数（命中后双计数 → 实际只再走 10 个点）
@@ -197,7 +212,12 @@ public static class Aatcc201CalculationService
                 }
 
                 // ---- 平台确认 → 自动结束（MainForm.cs:3026-3044）----
-                if (flatDgFlg == 1 && FlatTimeDg(cal, temps, pt, flatStartPoint) == 1)
+                // 前两个条件照原样；第三个是本仓新增的逾期兜底（原软件没有，原软件这种情形永不结束）：
+                // 已等够 FlatOverduePoints 点 且 温度确实基本走平（放宽到 FlatOverdueTolerance）。
+                if (flatDgFlg == 1
+                    && (FlatTimeDg(cal, temps, pt, flatStartPoint) == 1
+                        || (pt - flatStartPoint >= FlatOverduePoints
+                            && FlatOverdueDg(cal, temps, pt, flatStartPoint) == 1)))
                 {
                     finishPt = pt;
                     break; // 原软件 test_flg=0，后续帧不再进状态机；结果用当前数据
@@ -314,6 +334,29 @@ public static class Aatcc201CalculationService
         {
             if (pt - cal.FlatPoint - i > 0
                 && Math.Abs(temps[pt - i] - temps[pt - cal.FlatPoint - i]) < CoverTempTolerance)
+                num++;
+        }
+        return num > FlatTimeAcceptCount ? 1 : 0;
+    }
+
+    /// <summary>
+    /// 逾期兜底专用的放宽版平台判据——
+    /// 前置门槛、滑窗点数、达标对数阈值都与 FlatTimeDg 完全相同，只把温差容差从 0.2℃ 放宽到
+    /// FlatOverdueTolerance（0.5℃）。含义：最近 200 点里有 151 个 25 点长的小段温差不到半度，
+    /// 即温度确实走平了，只是没平到原判据要求的 0.2℃。只由状态机的逾期分支调用；
+    /// FlatTimeDg 保持与原软件 flat_time_dg 逐行一致，一个字不改。
+    /// </summary>
+    private static int FlatOverdueDg(
+        Aatcc201CalibrationParams cal, double[] temps, int pt, int flatStartPoint)
+    {
+        if (flatStartPoint + cal.SlopeContinueNo + FlatTimeLead > pt)
+            return 0;
+
+        int num = 0;
+        for (int i = 0; i < FlatTimeWindow; i++)
+        {
+            if (pt - cal.FlatPoint - i > 0
+                && Math.Abs(temps[pt - i] - temps[pt - cal.FlatPoint - i]) < FlatOverdueTolerance)
                 num++;
         }
         return num > FlatTimeAcceptCount ? 1 : 0;
