@@ -7,6 +7,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.YarnCou
 /// </summary>
 public class YarnCountReportFillModel
 {
+    /// <summary>
+    /// 布种(规范名, 见 YarnCountFabricTypes) —— 引擎按它决定方向集与列数。
+    /// 服务端已过白名单, 引擎再查一次并**未知即抛**: 引擎是独立可测的组件,
+    /// 不能假设调用方一定校验过。
+    /// </summary>
+    public string FabricType { get; set; } = YarnCountFabricTypes.Woven;
+
     /// <summary>报告号 → 表0 R0 值格</summary>
     public string ReportNumber { get; set; } = string.Empty;
 
@@ -17,7 +24,7 @@ public class YarnCountReportFillModel
     public decimal? EnvironmentHumidity { get; set; }
 
     /// <summary>
-    /// 表0 三个方向汇总行(Warp / Weft / Knit), 每行 = 汇总 Tex + 由它换算出的四个单位值。
+    /// 表0 本布种各方向的汇总行(Woven: Warp / Weft; Knit: Knit), 每行 = 汇总 Tex + 由它换算出的四个单位值。
     /// 一个方向一项, 顺序无所谓 —— 引擎按 Direction 找行(不再靠行号顺序)。
     /// 没测的方向 Tex 为 null, 该行五个格全部留空。
     /// </summary>
@@ -32,8 +39,8 @@ public class YarnCountReportFillModel
 
 /// <summary>
 /// 表0 摘要表的一行(一个方向): 汇总 Tex 与它的四个换算单位。
-/// 五个值**全部由服务端算好并舍入**, 引擎只按坐标落格、按取位格式化成文本。
-/// null 表示该格留空(不写 0); tex 缺失或为 0 时四个换算值一起为 null ——
+/// 五个值**全部由服务端算好**, 引擎只按坐标落格; 前三个数按取位格式化成文本, ’s 直接落原文。
+/// null/空表示该格留空(不写 0); tex 缺失或为 0 时四个换算值一起为空 ——
 /// 不能只留空算不出来的那两个, 一行里"三个有数一个空"会被读成"那一项测出来是 0"。
 /// </summary>
 public class YarnCountSummaryModel
@@ -53,8 +60,12 @@ public class YarnCountSummaryModel
     /// <summary>cc = 590.5 ÷ tex(英制棉支数)</summary>
     public decimal? CottonCount { get; set; }
 
-    /// <summary>表头 ’s 那一列 —— 与 CottonCount **同值**, 只是记法不同, 见 DTO 的换算注释</summary>
-    public decimal? CountS { get; set; }
+    /// <summary>
+    /// 表头 ’s 那一列 —— 印的是**分数文本**而不是数: 分子是 cc×股数 算出来的数, 分母是股数,
+    /// 值仍等于 CottonCount, 只是让审核看得见按几股折的。空 = 该格留空(与另外三列同进退)。
+    /// 已由服务端拼好, 引擎原样落格(不再套取位格式化)。
+    /// </summary>
+    public string? CountSText { get; set; }
 }
 
 /// <summary>

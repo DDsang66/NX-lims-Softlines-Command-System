@@ -1,3 +1,4 @@
+using System.Globalization;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.YarnCountContext;
 
 namespace NX_lims_Softlines_Command_System.src.Application.Service.YarnCountContext;
@@ -63,13 +64,17 @@ public static class YarnCountMath
     /// 为什么从"已舍入的 tex"而不是原始测量值推: 与 Tex = Mass × 200 ÷ Average 同一原则 ——
     /// 报告上印的数要互相能校验, 审核拿印出来的 tex 手算能得出印出来的 cc。
     ///
-    /// 口径见 YarnCountReportRequestDto 的换算注释(ASTM D2260 / ISO 2947)。’s 与 cc 同值。
+    /// 口径见 YarnCountReportRequestDto 的换算注释(ASTM D2260 / ISO 2947)。
+    ///
+    /// 前三个是**数**, 第四个是 ’s 那一格要印的**分数文本**: 分子/股数。
+    /// 分子 = cc × 股数 **算出来的那个数**(用已舍入的 cc, 与 cc 列印的字同源), 分母就是股数本身 ——
+    /// 所以整格的**值仍等于 cc**, 只是把"这个股线按几股折的"印在纸上给审核看, 是刻意这么印的。
     ///
     /// tex 缺失或 ≤ 0 时**四个一起返回 null**(该行五个格全留空):
     /// dtex/denier 是乘常数, 0 tex 本该算出 0, 但 cc 是除以 tex, 0 会算出"无穷支数" ——
     /// 一行里三个空一个 0 比整行留空更容易被读成"那一项测出来是 0"。
     /// </summary>
-    public static (decimal? Dtex, decimal? Denier, decimal? CottonCount, decimal? CountS) UnitsOf(decimal? tex)
+    public static (decimal? Dtex, decimal? Denier, decimal? CottonCount, string? CountSText) UnitsOf(decimal? tex, int plyCount)
     {
         if (!tex.HasValue || tex.Value <= 0m) return (null, null, null, null);
 
@@ -77,7 +82,15 @@ public static class YarnCountMath
         decimal dtex = RoundValue(tex.Value * YarnCountReportRequestDto.DtexFactor, decimals);
         decimal denier = RoundValue(tex.Value * YarnCountReportRequestDto.DenierFactor, decimals);
         decimal cc = RoundValue(YarnCountReportRequestDto.CottonCountConstant / tex.Value, decimals);
+        decimal total = RoundValue(cc * plyCount, decimals);
 
-        return (dtex, denier, cc, cc);
+        return (dtex, denier, cc, $"{FormatUnit(total)}/{plyCount}");
     }
+
+    /// <summary>
+    /// 换算列的定长小数字符串 —— 与引擎落格同一口径(F + InvariantCulture):
+    /// ’s 的分子必须印得和 cc 列同一取位, 审核除以股数才回得到 cc 列那个数。
+    /// </summary>
+    private static string FormatUnit(decimal value)
+        => value.ToString("F" + YarnCountReportRequestDto.UnitDecimals, CultureInfo.InvariantCulture);
 }

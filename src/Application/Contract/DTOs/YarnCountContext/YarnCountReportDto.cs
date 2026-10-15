@@ -2,7 +2,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs.YarnCou
 
 /// <summary>
 /// 纱支(Yarn Count)报告生成请求 — 前端提交。
-/// 模板 PHY_YarnCount.docx 的两张表见 YarnCountDocxEngine 的坐标常量。
+/// 模板按布种分两份(PHY_YarnCount_woven.docx / PHY_YarnCount_knit.docx), 方向与列数见
+/// <see cref="YarnCountFabricTypes"/>; 两张表的 Word 坐标见 YarnCountDocxEngine 的坐标常量。
 /// </summary>
 public class YarnCountReportRequestDto
 {
@@ -14,26 +15,6 @@ public class YarnCountReportRequestDto
 
     /// <summary>针织</summary>
     public const string DirectionKnit = "Knit";
-
-    /// <summary>
-    /// 经向试样列数。
-    ///
-    /// 三个方向的列数必须与模板数据表 R0 的三组标题(Warp | Weft | Knit)**按序**一一对应 ——
-    /// R0 每组的 gridSpan 就是这里的列数, 引擎拿这条关系校验模板(见 YarnCountDocxEngine 的 R0 校验)。
-    /// 不按序/数目不符都会在生成前抛异常, 不会静默错列。
-    /// 服务端拿它校验试样号范围, 引擎拿它算列偏移。
-    ///
-    /// 2026-09 模板改版: 原为 Warp 2 + Weft 5, 现为 Warp 2 + Weft 2 + Knit 2;
-    /// Knit 也从"页面手工输入的单个汇总值"改为**与经纬向同口径按试样测**。
-    /// 数据列号(0-based): Warp 1~2 / Weft 3~4 / Knit 5~6。
-    /// </summary>
-    public const int WarpSpecimenCount = 2;
-
-    /// <summary>纬向试样列数(见 WarpSpecimenCount 注释; 2026-09 模板由 5 列改为 2 列)</summary>
-    public const int WeftSpecimenCount = 2;
-
-    /// <summary>针织试样列数(见 WarpSpecimenCount 注释)</summary>
-    public const int KnitSpecimenCount = 2;
 
     /// <summary>模板 Length 行的读数个数(数据表 R2..R11 的 "1." ~ "10.")</summary>
     public const int LengthReadingCount = 10;
@@ -62,7 +43,7 @@ public class YarnCountReportRequestDto
     //   dtex   = tex × 10
     //   denier = tex × 9
     //   cc     = 590.5 ÷ tex   (英制棉支数 Ne, 840 yd/lb)
-    //   ’s     = 与 cc 同值    (表头 ’s 只是把同一个支数写成 "xx’s" 的记法, 不是另一个计数制)
+    //   ’s     = 与 cc 同值, 但**印成分数**: (cc×股数算出来的数)/股数 —— 见下面 PlyCount
     // 只在 tex > 0 时换算; tex 缺失或为 0 → 四列全部留空(不写 0)。见 YarnCountMath.UnitsOf。
 
     /// <summary>换算列(dtex/denier/cc/’s)显示小数位 —— 与 Tex 同取 2 位</summary>
@@ -77,6 +58,22 @@ public class YarnCountReportRequestDto
     /// <summary>英制棉支数 cc = 590.5 ÷ tex(ASTM D2260 换算表口径, 840 yd/lb)</summary>
     public const decimal CottonCountConstant = 590.5m;
 
+    /// <summary>股数缺省值 —— 不填就是 1 股(前端输入框的默认值也是它)</summary>
+    public const int DefaultPlyCount = 1;
+
+    /// <summary>
+    /// 布种: "Woven"(梭织, 经+纬) | "Knit"(针织) —— 服务端白名单·大小写不敏感。
+    /// 决定用哪个模板、有哪些方向、每个方向几个试样(见 <see cref="YarnCountFabricTypes"/>)。
+    /// 缺省 Woven: 最早的模板就是 Warp 2 + Weft 5, 老客户端不传这个字段时按梭织走。
+    /// </summary>
+    public string FabricType { get; set; } = YarnCountFabricTypes.Woven;
+
+    /// <summary>
+    /// 股数(操作员填, 正整数) —— **只改 ’s 那一格印出来的写法**, 不参与任何换算:
+    /// 分子印 cc×股数 算出来的那个数, 分母印股数, 让审核看得见这个股线按几股折的。
+    /// </summary>
+    public int PlyCount { get; set; } = DefaultPlyCount;
+
     /// <summary>报告号(前端用"试样编号"sid)</summary>
     public string ReportNumber { get; set; } = string.Empty;
 
@@ -86,14 +83,17 @@ public class YarnCountReportRequestDto
     /// <summary>环境湿度 %RH(写入页脚湿度格)</summary>
     public decimal? EnvironmentHumidity { get; set; }
 
-    /// <summary>经向/纬向/针织的试样数据(每个方向一条, 没测的方向不传)</summary>
+    /// <summary>各方向的试样数据(每个方向一条, 没测的方向不传)。方向必须属于上面 FabricType 那个布种</summary>
     public List<YarnCountDirectionDto> Directions { get; set; } = new();
 }
 
 /// <summary>一个方向(Warp / Weft / Knit)下的全部试样</summary>
 public class YarnCountDirectionDto
 {
-    /// <summary>方向: "Warp" | "Weft" | "Knit"(只接受这三个, 服务端白名单校验)</summary>
+    /// <summary>
+    /// 方向: "Warp" | "Weft" | "Knit"(服务端白名单校验, 大小写不敏感)。
+    /// 还必须属于本次请求的布种 —— Woven 只有 Warp/Weft, Knit 只有 Knit。
+    /// </summary>
     public string Direction { get; set; } = YarnCountReportRequestDto.DirectionWarp;
 
     /// <summary>该方向的试样列表</summary>
@@ -105,7 +105,7 @@ public class YarnCountSpecimenDto
 {
     /// <summary>
     /// 试样号(1-based) → 模板该方向第几列。
-    /// 三个方向都是 1~2(见 YarnCountReportRequestDto 的三个 SpecimenCount 常量)——
+    /// 上界是该方向在本布种里的列数(Woven: 经 2 / 纬 5; Knit: 5, 见 YarnCountFabricTypes)——
     /// 越界会写到不存在的格, 服务端直接拒绝。
     /// </summary>
     public int Index { get; set; }
