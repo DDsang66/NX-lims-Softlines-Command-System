@@ -118,7 +118,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             IReadOnlyDictionary<string, decimal>? moistureRegainMap = null,
             IReadOnlyDictionary<string, string>? fiberChineseNames = null)
         {
-            Result = CalculateForStandard(SelectedStandard, moistureRegainMap, fiberChineseNames);
+            // 模式**恒为常规**：这条路径没有模式来源（调用它的是按记录重算那两条，
+            // 库里不存模式）。要看 2C 就传 Methods 只有一项、走 CalculatePerStandard。
+            Result = CalculateForStandard(SelectedStandard, moistureRegainMap, fiberChineseNames, StandardMode.Current);
             return Result;
         }
 
@@ -126,6 +128,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// 逐标准各算一份。顺序 = <see cref="StandardsToRender"/>，每个标准取**它自己的**回潮率 map。
         /// </summary>
         /// <param name="mrByStandard">标准串 → 该标准的回潮率 map。</param>
+        /// <param name="mode">
+        /// 标准取值口径（常规 / 2C），<b>整份共用同一个</b> —— 一份报告不会一半常规一半 2C。
+        /// 缺省常规，故既有调用点原样通过。
+        /// </param>
         /// <remarks>
         /// 结果写进 <see cref="StandardResults"/>，<see cref="Result"/> 取第 1 份 ——
         /// 两条重算路径读的就是 <see cref="Result"/>，所以它们**只回第 1 个标准**
@@ -138,13 +144,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </remarks>
         public IReadOnlyList<AnalysisResult> CalculatePerStandard(
             IReadOnlyDictionary<string, IReadOnlyDictionary<string, decimal>> mrByStandard,
-            IReadOnlyDictionary<string, string>? fiberChineseNames = null)
+            IReadOnlyDictionary<string, string>? fiberChineseNames = null,
+            StandardMode mode = StandardMode.Current)
         {
             var list = StandardsToRender
                 .Select(std => CalculateForStandard(
                     std,
                     mrByStandard != null && mrByStandard.TryGetValue(std, out var m) ? m : null,
-                    fiberChineseNames))
+                    fiberChineseNames,
+                    mode))
                 .ToList();
 
             StandardResults = list;
@@ -159,10 +167,16 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// **与抽出前的唯一差别**：方法链那一处把 <see cref="SelectedStandard"/> 换成了入参
         /// <paramref name="standard"/>，且不再写 <see cref="Result"/>（由调用方决定写不写）。其余逐字未动。
         /// </remarks>
+        /// <param name="mode">
+        /// 取值口径，**只喂给方法链那一处**（<see cref="SelectedStandard"/> 的取值、
+        /// 回潮率查表、中文化闸门、标签生成都与它无关）。走**参数**而不是私有字段：
+        /// 本类里没有第二处读它，存成字段就是纯冗余状态。
+        /// </param>
         private AnalysisResult CalculateForStandard(
             string standard,
             IReadOnlyDictionary<string, decimal>? moistureRegainMap,
-            IReadOnlyDictionary<string, string>? fiberChineseNames = null)
+            IReadOnlyDictionary<string, string>? fiberChineseNames,
+            StandardMode mode)
         {
             _moistureRegainMap = moistureRegainMap ?? new Dictionary<string, decimal>();
             _fiberChineseNames = fiberChineseNames ?? EmptyChineseNames;
@@ -214,8 +228,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // BuildSingleComponentChain —— 一律不派生定量子标准，只出勾选的标准本身 + 鉴别法。
             // 详见 BuildMethodString 的 isSingleComponent 说明。
             // ⚠️ **不能**按纤维条数代传。
+            // `mode` 是**第四个**维度（族 × 模式），只换分部印哪个版本，不换链路形状。
             var methodString = FiberStandardChainBuilder.BuildMethodString(
-                standard, orderedFiberNames, GetOrderedFiberSlots(), Type == AnalysisType.Single);
+                standard, orderedFiberNames, GetOrderedFiberSlots(), Type == AnalysisType.Single, mode);
             result = result.WithMethods(methodString);
 
             // 3.6.1) 国标中文化 —— **按段**判定，读的是本份的标准（与上面那条同源）。
@@ -334,6 +349,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     RateTrail2 = rateTrail2,
                     Avg = avg,
                     Correct = 1,
+                    // 拆分行恒 d=1，没有可扣的增量；把字段补齐只是让公式不必分叉。
+                    DeductedAvg = avg,
                     MoistureRegain = 0,
                     Rate = 0,
                     CellulosicSubFibers = s.CellulosicSubFibers ?? new(),
@@ -402,6 +419,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     });
                 }
 
+                // 组内成分行分两趟：先算每行的 Avg 与 d，再按下一个成员的 d 扣增量 ——
+                // U_i = Avg_i·d_i − Avg_{i+1}·(d_{i+1} − 1)，末位不扣。组内合计因此恒 100%
+                // （GB/T 2910.1 / ISO 1833-1 的 P₂ = 100 − P₁）。见 FiberDamageFactor 的类注释。
+                var rows = new List<MultiFiberRowUnit>(componentCount);
+
                 for (int i = 0; i < componentCount; i++)
                 {
                     var current = groupUnits[i];
@@ -427,7 +449,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     var rateTrail2 = totalGSMTrail2 == 0 || firstRowGsm2 == 0
                         ? 0m : ownGsm2 / firstRowGsm2 * (startGsm2 / totalGSMTrail2) * 100m;
 
-                    units.Add(new MultiFiberRowUnit
+                    rows.Add(new MultiFiberRowUnit
                     {
                         Section = section,
                         Sum = current.FiberName,
@@ -445,6 +467,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         BicomponentSubFibers = current.BicomponentSubFibers ?? new()
                     });
                 }
+
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    var deducted = rows[i].Avg * rows[i].Correct;
+
+                    // 本组**下一个**成员被 d 放大出来的那部分，从本行扣掉；末位没有下一个，不扣。
+                    // 扣减不跨组 —— 这里只在同一 groupUnits 内成对。
+                    if (i + 1 < rows.Count)
+                        deducted -= rows[i + 1].Avg * (rows[i + 1].Correct - 1m);
+
+                    rows[i] = rows[i] with { DeductedAvg = deducted };
+                }
+
+                units.AddRange(rows);
             }
 
             return units;
@@ -452,7 +488,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
         /// <summary>
         /// 统一计算多组分各成分的Rate
-        /// 公式：Rate = [(1+MR)*Correct/100]*Avg / Σ{[(1+MRi)*Correcti/100]*Avgi}
+        /// 公式：Rate = (1+MR)*DeductedAvg / Σ{(1+MRi)*DeductedAvgi}
+        /// d 已经记在 <see cref="MultiFiberRowUnit.DeductedAvg"/> 里（扣完增量），这里不再单列一项。
         /// </summary>
         private List<CalculatedFiberResult> CalculateRates(List<CalculatedFiberResult> calculatedFiberResult)
         {
@@ -476,10 +513,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 })
                 .ToList();
 
-            // 计算分母：所有成分的 [(1+MR)*Correct/100]*Avg 之和
+            // 计算分母：所有成分的 (1+MR)*DeductedAvg 之和
             var denominator = allComponentRows.Sum(r =>
             {
-                var factor = (1m + r.MoistureRegain / 100m) * r.Correct / 100m * r.Avg;
+                var factor = (1m + r.MoistureRegain / 100m) * EffectiveAvg(r);
                 return factor;
             });
 
@@ -498,12 +535,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         return row;
                     }
 
-                    // 查回潮率：**算**用 Effective，**印**用 Displayed —— 双组分父行两者刻意不同
-                    // （2026-09-28 用户裁定：那个加权回潮率只用来算，不上报告）。
+                    // 查回潮率：**算**用 Effective，**印**用 Displayed —— 双组分父行两者刻意不同。
                     var mr = EffectiveMoistureRegain(row);
 
                     // 计算分子
-                    var numerator = (1m + mr / 100m) * row.Correct / 100m * row.Avg;
+                    var numerator = (1m + mr / 100m) * EffectiveAvg(row);
 
                     // 计算Rate（不取整，保留全精度，最终格式化时统一取整）
                     var rate = numerator / denominator * 100m;
@@ -906,6 +942,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             return (residueDry + dissolvedDry) / parentWet * 100m - 100m;
         }
+
+        /// <summary>
+        /// 某个成分行**用来算**的重量份额：优先用扣完增量的 <see cref="MultiFiberRowUnit.DeductedAvg"/>；
+        /// 为空（反序列化 / 直接构造的行）时退回 <c>Avg × Correct</c> 。
+        /// </summary>
+        private static decimal EffectiveAvg(MultiFiberRowUnit row)
+            => row.DeductedAvg ?? row.Avg * row.Correct;
 
         /// <summary>
         /// 某个成分行**印到报告上**的回潮率（MR 栏 / 页脚汇总）。
@@ -1425,7 +1468,5 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             return subs.Count > 0 ? new FiberSlot(name, subs) : FiberSlot.Leaf(name);
         }
-
-        /*------------------------------------------计算逻辑------------------------------------------------------------------------------*/
     }
 }

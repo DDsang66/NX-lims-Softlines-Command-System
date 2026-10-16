@@ -7,7 +7,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     /// 国标报告的**中文化** —— 闸门、纤维名的拼法、五个标签的替换表，三件事都在这一处。
     ///
     /// **闸门只认一个值**：<c>FZ/T 01057</c>。method 下拉里没有 "GB/T …" 这个选项
-    /// （见 <c>FiberWorksheetService.MethodOptions</c>），国产项就这一个系列名，
+    /// （见 <c>FiberWorksheetService.MethodOptionsCurrent</c>），国产项就这一个系列名，
     /// 它由 <see cref="FiberStandardChainBuilder"/> 展开出 <c>.1~.4</c> 与 <c>GB/T 2910.x</c>。
     /// 刻意**不**按"链里含 GB/T"判 —— 链里同时混着 FZ/T 与 ISO/TR 11827，字符串判会误伤。
     /// 也**不**认 <c>FZ/T 01057.1-4–2007</c> 这类库里存的旧串：那是老记录，不是勾选值。

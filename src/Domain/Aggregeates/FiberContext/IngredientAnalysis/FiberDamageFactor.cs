@@ -18,11 +18,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     /// 取值：
     ///   · 再生纤维素被溶掉后残留**棉** → 1.03、残留**亚麻** → 1.07
     ///     （ISO 1833-6 / GB/T 2910.6 甲酸/氯化锌法，70℃）。苎麻、大麻官方即 1.00，故不列。
-    ///   · 丙烯腈类或弹性纤维被溶掉后残留名单内纤维 → 1.01
-    ///     （GB/T 2910.12—2023，MOD ISO 1833-12:2020）。
+    ///   · 丙烯腈类被溶掉后残留名单内纤维 → 1.01
+    ///     （GB/T 2910.12—2023，MOD ISO 1833-12:2020）。**弹性纤维 / 氨纶刻意不在此列，恒 1.00**。
     ///
-    /// <see cref="MultiFiberRowUnit.Correct"/> 进公式时 <c>Correct/100</c> 在分子分母里逐字相消，
-    /// 所以恒 1 是空操作、真值则按比例改变报告上的每一个百分比（分母跨全部成分行）。
+    /// <see cref="MultiFiberRowUnit.Correct"/> **不是**可以独立乘进百分比公式的权重：
+    /// <c>1.03</c> 表示残留方质量比称出来的重 3%，这 3% 要在**同组的溶解方**身上扣回来
+    /// （<c>IngredientAnalysisCalculation.CalculateDissolvedUnits</c> 的 <c>DeductedAvg</c>），
+    /// 组内合计恒 100%（GB/T 2910.1 / ISO 1833-1 的 <c>P₂ = 100 − P₁</c>）。
     /// </summary>
     internal static class FiberDamageFactor
     {
@@ -35,8 +37,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <summary>甲酸/氯化锌法里亚麻的 d。</summary>
         private const decimal LinenAfterRegenerated = 1.07m;
 
-        /// <summary>DMF 法（-12 / 2910.12）残留方的 d。</summary>
-        private const decimal AfterAcrylicOrElastane = 1.01m;
+        /// <summary>DMF 法（-12 / 2910.12）里丙烯腈类溶掉后残留方的 d。</summary>
+        private const decimal AfterAcrylic = 1.01m;
 
         /// <summary>
         /// 再生纤维素溶掉后、d ≠ 1 的残留纤维。
@@ -87,8 +89,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             if (FiberTokens.IsRayonType(dissolved))
                 return AfterRayonType.TryGetValue(Clean(residue), out var d) ? d : None;
 
-            if (FiberTokens.IsAcrylicType(dissolved) || FiberTokens.IsElastane(dissolved))
-                return IsDmfResidue(residue) ? AfterAcrylicOrElastane : None;
+            // 弹性纤维刻意不在这一支 —— 见类注释（涤氨按 1.00）。
+            if (FiberTokens.IsAcrylicType(dissolved))
+                return IsDmfResidue(residue) ? AfterAcrylic : None;
 
             return None;
         }

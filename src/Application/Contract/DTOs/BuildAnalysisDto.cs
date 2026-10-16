@@ -21,6 +21,22 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
 
         public string ComponentType { get; set; } = string.Empty;
 
+        /// <summary>
+        /// 标准取值口径：<c>"Current"</c>（常规 —— 各标准的当前版本，缺省）或 <c>"Dual"</c>（2C —— 只印
+        /// CNAS / CMA 双资质范围内的版本）。认不出的值一律按常规处理。
+        /// </summary>
+        /// <remarks>
+        /// **它不是库列**：`fiber_analysis` 没有这一列，落库的两段 JSON（`fiber_analysis1` / `remark`）
+        /// 也都不含它 —— 那两段是**显式匿名类型**拼出来的（见 `BuildAnalysisMappingConfig`），
+        /// 不是整个 DTO 序列化。所以这个属性进不来、也出不去库，**同一份录入数据两个模式落出来的行逐字相同**。
+        ///
+        /// 模式只活在这一趟生成里：它决定报告上印哪个版本的分部，
+        /// 2C 与否由**文件名**的 `_2C_` 段承载（历史报告列表从文件名解析）。
+        ///
+        /// 字段名与 `componentType` 同风格（Pascal 声明、JSON camel 进出），前端传 `standardMode`。
+        /// </remarks>
+        public string StandardMode { get; set; } = "Current";
+
         /// <summary>落库列 fiber_analysis.buyer = varchar(20)。</summary>
         [StringLength(20)]
         public string Buyer { get; set; } = string.Empty;

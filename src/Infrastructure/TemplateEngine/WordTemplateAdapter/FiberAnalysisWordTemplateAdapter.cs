@@ -119,6 +119,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 模板侧只有 **Multi** 那份有 MR 书签（footer1.xml 的 `Moisture regain :` 之后），
             // Single 那份的 footer 里没有，所以这句只在多组分报告上印得出来。
             //
+            // 取位与 MR **栏**那一列刻意不同：栏里恒两位（0.00 / 8.50），页脚第二位小数为 0 时只留一位
+            // （8.50 → 8.5、4.00 → 4.0），有值才印两位（5.75）—— 见 FormatFooterMoistureRegain。
+            //
             // 同名只留第一条。
             // 去重不会改到值：能走到这里行的回潮率都是按名字查表来的（双组分父行已被上面
             // 那道 MoistureRegainKnown 排除），同名必然同值。
@@ -132,7 +135,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 .Where(r => !string.IsNullOrWhiteSpace(r.Sum) && !r.Sum.Contains('/'))
                 .Where(r => r.MoistureRegainKnown)
                 .DistinctBy(r => r.Sum)
-                .Select(r => $"{FiberChineseName.Localize(r.Sum, useChinese ? analysisResult.ChineseFiberNames : null)} {r.MoistureRegain:F2}%");
+                .Select(r => $"{FiberChineseName.Localize(r.Sum, useChinese ? analysisResult.ChineseFiberNames : null)} {FormatFooterMoistureRegain(r.MoistureRegain)}%");
             flatData["MR"] = string.Join("  ", mrItems);
 
             // 计数字段
@@ -324,6 +327,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 页脚回潮率的取位：**第二位小数为 0 就只留一位**（8.50 → <c>8.5</c>、4.00 → <c>4.0</c>），
+        /// 有值才印两位（5.75 → <c>5.75</c>）。
+        /// </summary>
+        /// <remarks>
+        /// 只用于页脚那串汇总，**不动** MR 栏那一列（栏里恒两位，含真值 0 的 <c>0.00</c>）。
+        /// 判法是先取到「分」位再问它是不是 0，不用字符串去尾零 —— 那样会连 <c>4.00</c> 的整数部分一起看错。
+        /// </remarks>
+        private static string FormatFooterMoistureRegain(decimal moistureRegain)
+        {
+            var twoDecimals = decimal.Round(moistureRegain, 2);
+            return twoDecimals == decimal.Round(twoDecimals, 1)
+                ? twoDecimals.ToString("F1")
+                : twoDecimals.ToString("F2");
         }
 
         /// <summary>

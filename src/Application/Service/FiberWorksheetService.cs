@@ -21,7 +21,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
     public class FiberWorksheetService : IScopedDependency
     {
         /// <summary>
-        /// Method 下拉的候选标准。原先是 FiberWorkSheet.vue 里的 10 条硬编码。
+        /// Method 下拉的候选标准 —— **常规口径**（各标准的当前版本）。原先是 FiberWorkSheet.vue 里的硬编码。
         ///
         /// **刻意留在 Application 层、不进 <see cref="FiberOptions"/>**：那几张表是"纤维属于哪个分组"的
         /// 领域知识，这一串是"界面选哪些标准"的录入项 —— 混进 Domain 等于把展示口径写进领域规则。
@@ -35,19 +35,59 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// 由 <see cref="FiberStandardChainBuilder"/> 在拼链时自动展开 —— 与上面
         /// <c>ISO1833</c>、<c>DIN EN ISO 1833</c> 只写体系名、分部由链构造器补全是同一个约定。
         /// 故这里改了串**不必**同步改链构造器，反之亦然。
+        ///
+        /// <para>
+        /// <b>EN / BS / AS 三族两种口径都在列</b>：链构造器自 2C 那一批起认得
+        /// <c>EN ISO 1833</c> / <c>BS EN ISO 1833</c>（与 ISO 同构、只差渲染表），
+        /// 常规口径下勾它们也照样派生分部；<c>AS 2001.7-2005</c> 与 CAN/CNS/JIS 同型，
+        /// 逐字透传、不派生。
+        /// </para>
         /// </summary>
-        private static readonly IReadOnlyList<string> MethodOptions = new[]
+        private static readonly IReadOnlyList<string> MethodOptionsCurrent = new[]
         {
             "Regulation (Eu) No. 1007/2011",
             "AATCC TM20-2021",
             "AATCC TM20-2021  AATCC TM20A-2025",
             "ISO1833",
             "DIN EN ISO 1833",
+            "EN ISO 1833",
+            "BS EN ISO 1833",
             "FZ/T 01057",
             "AATCC TM20-2021 AATCC TM20A-2025 (Korea)",
             "CAN/CGSB-4.2 No.14-2005",
             "CNS 2339-1:2013 CNS 2339-2:2013",
             "JIS L1030-1:2012 JIS L1030-2:2012",
+            "AS 2001.7-2005",
+        };
+
+        /// <summary>
+        /// Method 下拉的候选标准 —— **2C 口径**（CNAS + CMA 双资质）。
+        ///
+        /// **顺序与 <see cref="MethodOptionsCurrent"/> 逐条对齐**，只有两类差别：
+        ///
+        /// <list type="number">
+        /// <item><b>换值（体系名不变、版本变）</b> —— EU 的写法；两条 AATCC 的年份 `2025` → `2021`。
+        /// 这两处**只换值、不补空格**：Korea 那条本来就是单空格，与双空格那条是两个不同的串，
+        /// 别顺手统一。</item>
+        /// <item><b>删除</b> —— CAN / CNS / JIS 三族整族不进（xlsx 里 CNAS 列写「无CNAS能力」）。
+        /// JIS 2012 → 2024 的版本问题因此不存在。</item>
+        /// </list>
+        ///
+        /// ⚠️ 前端切模式时**必须先按值重映射、再滤掉不在新清单里的** —— 那三个换值的串
+        /// 只做 filter 会把常规串原样提交给 2C 记录，派生出来的链就错口径了。
+        /// </summary>
+        private static readonly IReadOnlyList<string> MethodOptionsDual = new[]
+        {
+            "EU regulation No. 1007/2011 VIII",
+            "AATCC TM20-2021",
+            "AATCC TM20-2021  AATCC TM20A-2021",
+            "ISO1833",
+            "DIN EN ISO 1833",
+            "EN ISO 1833",
+            "BS EN ISO 1833",
+            "FZ/T 01057",
+            "AATCC TM20-2021 AATCC TM20A-2021 (Korea)",
+            "AS 2001.7-2005",
         };
 
         private readonly IFiberWorksheetRepository _worksheetRepo;
@@ -107,7 +147,12 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// 故这里只补前端原先**硬编码**的那几组。
         ///
         /// 分组清单来自 <see cref="FiberOptions"/>（Domain，与 <see cref="FiberTokens"/> 同层）；
-        /// 标准清单是本类的私有常量 —— 理由见 <see cref="MethodOptions"/>。
+        /// 标准清单是本类的私有常量 —— 理由见 <see cref="MethodOptionsCurrent"/>。
+        ///
+        /// <para>
+        /// <b>两份标准清单一次返回</b>（<c>methodOptions</c> = 常规、<c>methodOptions2C</c> = 2C）：
+        /// 于是切模式是**纯前端动作**，不用再请求一次，也不会因为网络慢而让下拉短暂空掉。
+        /// </para>
         ///
         /// 无需 await：全是常量与静态表，没有任何 I/O。返回类型保持与
         /// <see cref="GetFiberNamesAsync"/> 一致，控制器侧写法才不用分叉。
@@ -122,7 +167,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                     cellulosicSub = FiberOptions.CellulosicSub,
                     regeneratedSub = FiberOptions.RegeneratedSub,
                     bicomponentSub = FiberOptions.BicomponentSub,
-                    methodOptions = MethodOptions,
+                    methodOptions = MethodOptionsCurrent,
+                    methodOptions2C = MethodOptionsDual,
                 }
             };
             return Task.FromResult(payload);
@@ -234,7 +280,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             {
                 // Adapt（构造聚合根）原先写在 try 之外，于是"空 methods / 空 components"
                 // 这类记录会直接抛出去、走不到下面的补偿分支。现在连同回潮率取值一起放进 try。
-                var ingredientsAnalysis = await BuildAndCalculateAsync(po);
+                //
+                // 模式在这趟里要喂**两处**：计算（本行）与文件名（下面 targetFileName 那行），
+                // 所以取一次存下来，别分两处各解析一遍。
+                var mode = ParseStandardMode(dto.StandardMode);
+                var ingredientsAnalysis = await BuildAndCalculateAsync(po, mode);
                 //计算失败触发补偿机制
 
                 //执行生成word
@@ -242,7 +292,14 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 // 根目录会被塞爆, 按月分便于清理/查找(照克重 Weight{yyyyMM}、纱支 YarnCount{yyyyMM})。
                 // 目录不存在时 CopyTemplate 会自建; 下载侧(FiberAnalysisController)按
                 // 当月目录 → 根目录顺序找回, 所以改动前平铺的老文件仍取得到。
-                string targetFileName = $"{ingredientsAnalysis.ReportNo}_{DateTime.Now:yyMMddHHmmss}_FiberAnalysis.docx";
+                //
+                // 2C 记录在时间戳前多一个 `2C_` 段 —— **模式不落库，就靠这一段承载**，
+                // 历史列表从文件名解析（FiberReportFileStore.TryParseMeta）。
+                // 常规模式那个模式段是空串，文件名与改动前**逐字相同**。
+                // 末段仍是 `_FiberAnalysis.docx`，辨认/定位/删除三条路径一行不用改。
+                string modeSegment = mode == StandardMode.Dual ? TwoCModeSegment + "_" : string.Empty;
+                string targetFileName =
+                    $"{ingredientsAnalysis.ReportNo}_{modeSegment}{DateTime.Now:yyMMddHHmmss}_FiberAnalysis.docx";
 
                 // 单/多组分各一份模板（见 TemplateOf）。解析**一次**，下面合并各段必须复用同一个 ——
                 // 若各段另按各自的类型取，一份合并稿里两段版式会不一致。
@@ -376,8 +433,37 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
 
 
         /// <summary>
+        /// 文件名里表示 **2C 口径**的那个段（不含分隔下划线）。
+        ///
+        /// **生成侧写、历史列表读，两边共用这一个常量**（与 <see cref="MonthlyFolder"/> 同款做法）——
+        /// 各写一个字面量的话，哪天改成 `2C_` / `TwoC` 就会一边写一边读不到，
+        /// 而那种错**不报任何异常**：只是新报告在历史列表里永远显示成常规。
+        /// </summary>
+        internal const string TwoCModeSegment = "2C";
+
+        /// <summary>
+        /// `standardMode` 字段 → <see cref="StandardMode"/>。
+        ///
+        /// **认不出一律退回常规**（缺省 / 空串 / 拼错 / 数字），不抛异常。
+        ///
+        /// 数字形态要靠 <see cref="Enum.IsDefined(Type, object)"/> 挡：
+        /// <c>Enum.TryParse</c> 对未定义的数值**也返回 true**（"7" 会解析成 (StandardMode)7）。
+        /// </summary>
+        internal static StandardMode ParseStandardMode(string? value)
+            => Enum.TryParse<StandardMode>(value?.Trim(), ignoreCase: true, out var mode)
+               && Enum.IsDefined(typeof(StandardMode), mode)
+                ? mode
+                : StandardMode.Current;
+
+        /// <summary>
         /// 取回潮率列链 → 构造聚合根 → 执行计算。
         /// </summary>
+        /// <param name="mode">
+        /// 本趟报告的标准取值口径。**没有默认值、三个调用点各自显式给出** ——
+        /// 只有新建那条（<see cref="BuildAnalysisAsync"/>）有模式来源（表单），
+        /// 两条重算路径传 <see cref="StandardMode.Current"/> ：
+        /// 库里不存模式，2C 记录经 <c>calculate/{id}</c> 重算会按常规口径出结果。
+        /// </param>
         /// <remarks>
         /// 三条路径共用：新建（<see cref="BuildAnalysisAsync"/>）、按 ID 重算（<see cref="CalculateAsync"/>）、
         /// 按报告号重算（<see cref="CalculateByReportAsync"/>）。
@@ -387,7 +473,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// **不在此处吞异常**：三条路径的失败语义各不相同（一条返回 Fail 结果、两条让异常上抛），
         /// 由调用方各自决定。
         /// </remarks>
-        private async Task<IngredientAnalysisCalculation> BuildAndCalculateAsync(FiberAnalysis po)
+        private async Task<IngredientAnalysisCalculation> BuildAndCalculateAsync(FiberAnalysis po, StandardMode mode)
         {
             //Mapster封装映射，内部使用工厂模式构建IngredientAnalysis对象
             var ingredientsAnalysis = po.Adapt<IngredientAnalysisCalculation>();
@@ -412,7 +498,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             // 只有国标段真的会用到它，但这里无从判断是哪一个段 —— 由域里按段闸门决定用不用。
             var chineseNames = await _fiberDatabaseRepo.GetChineseNameMapAsync();
 
-            ingredientsAnalysis.CalculatePerStandard(mrByStandard, chineseNames);
+            ingredientsAnalysis.CalculatePerStandard(mrByStandard, chineseNames, mode);
             return ingredientsAnalysis;
         }
 
@@ -449,7 +535,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 return Result<AnalysisResult>.Fail("分析记录不存在", "NOT_FOUND");
 
             // 原先直接 Calculate()，回潮率 map 为空 → 回潮率恒为 0
-            var ingredientsAnalysis = await BuildAndCalculateAsync(entity);
+            // 模式恒为常规：库里不存模式（见 BuildAndCalculateAsync 的 mode 说明）。
+            var ingredientsAnalysis = await BuildAndCalculateAsync(entity, StandardMode.Current);
 
             return Result<AnalysisResult>.Ok(ingredientsAnalysis.Result);
         }
@@ -463,8 +550,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             if (entity == null)
                 return Result<FiberCalculationResultDto>.Fail("工作表不存在", "NOT_FOUND");
 
-            // 同 CalculateAsync：原先漏传回潮率 map
-            var ingredientsAnalysis = await BuildAndCalculateAsync(entity);
+            // 同 CalculateAsync：原先漏传回潮率 map；模式同样恒为常规
+            var ingredientsAnalysis = await BuildAndCalculateAsync(entity, StandardMode.Current);
             var calcResult = ingredientsAnalysis.Result;
 
             return Result<FiberCalculationResultDto>.Ok(new FiberCalculationResultDto

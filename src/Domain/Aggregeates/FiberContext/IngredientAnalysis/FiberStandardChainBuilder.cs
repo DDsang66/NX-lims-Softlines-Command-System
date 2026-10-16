@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.Enums;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis
 {
@@ -8,8 +9,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     /// 方法标准链规则表 —— 由 <see cref="IngredientAnalysisCalculation"/> 搬出，规则在此维护。
     ///
     /// 这一层改的都是**规则与常量**，不改结构：
-    ///   · ISO1833_20 年份 2020 → **2018**（2020 只是各国采标年份，不存在这个标准号）；
-    ///     DIN1833_D5x 同时改成由常量拼装，消掉"复制了一份字面量"的隐患
+    ///   · ISO1833_20 年份 2020 → **2018**（2020 只是各国采标年份，不存在这个标准号）
+    ///   · DIN 分部改用 **DIN 自己的版本表**（<see cref="DinPartOf"/>，以 `成分标准终.xlsx`
+    ///     的 DIN 表为准）：-3/-6/-12/-18/-20/-22 六个分部与 ISO 表年份不同 ——
+    ///     原先拿 ISO 常量拼 "DIN EN " 前缀，印不出 DIN 的年份
+    ///   · GB/T 2910.7 2009 → **2025**（当前版本；2C 口径下仍是 2009）
     ///   · 显微镜法串 FZ/T 30003-2009 → **2024**；2026-09 又去掉其中的 "FZ/T 01057.3–2007 / "
     ///     前缀 —— .3 已改由 FZ/T 01057 系列名展开落到链首（见 FZ01057_* 常量），留着就重复了。
     ///     四个分部一律 **2007 版**：.2/.3 的 2025 版 2027-05-01 才实施，届时才换。
@@ -29,6 +33,22 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     ///
     /// 守卫回退**不会发出范围外的 -12**：三条 .20 规则的合作方只可能是纤维素类、聚酯、聚酰胺，
     /// 三者全部落在 <see cref="FiberTokens.IsIso1833_12OtherFibre"/> 里，故退回去的 -12 后位仍够格。
+    ///
+    /// <para>
+    /// <b>规则与渲染分开</b>：查表只产出**分部号**（<see cref="ResolveIsoPart"/> /
+    /// <see cref="ResolveGbPart"/>，<c>int?</c>，<c>null</c> = 落空），串由族渲染表
+    /// （<see cref="IsoPartOf"/> / <see cref="GbPartOf"/> / <see cref="RenderIsoSub"/>）给。
+    /// 对外的 <see cref="LookupSubStandard"/> / <see cref="LookupGbSubStandard"/> 保持原签名与返回值，
+    /// 是这套拆分的薄包装 —— 所以 <c>golden/pair-coverage.csv</c> 逐字不变。
+    /// </para>
+    ///
+    /// <para>
+    /// <b>两个维度：族 × 模式</b>。族（<see cref="StandardFamily"/>）决定前缀与各自的版本表；
+    /// 模式（<see cref="StandardMode"/>）决定取**当前版本**还是**双资质版本**。
+    /// 渲染因此是四族 × 两模式的选表，规则体一处都不分叉。
+    /// 2C 表只列与常规**不同**的分部、其余转回常规表，所以"2C 改了什么"在代码里是看得见的差分；
+    /// 落空前缀 <c>string.Empty</c>，调用方负责跳过（否则会挤出多余空格）。
+    /// </para>
     /// </summary>
     internal static class FiberStandardChainBuilder
     {
@@ -45,13 +65,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private const string ISO1833_18 = "ISO1833-18:2020";
         private const string ISO1833_20 = "ISO1833-20:2018";
         private const string ISO1833_22 = "ISO1833-22:2020";
-        // GB/T 2910.x 子标准常量（对应 fdb B 列）。分隔符是 – (U+2013)，与原表一致。
+        // GB/T 2910.x 子标准常量。分隔符是 – (U+2013)，与原表一致。
         private const string GB2910_1 = "GB/T 2910.1–2009";
         private const string GB2910_2 = "GB/T 2910.2–2009";
         private const string GB2910_3 = "GB/T 2910.3–2009";
         private const string GB2910_4 = "GB/T 2910.4–2022";
         private const string GB2910_6 = "GB/T 2910.6–2009";
-        private const string GB2910_7 = "GB/T 2910.7–2009";
+        private const string GB2910_7 = "GB/T 2910.7–2025";
         private const string GB2910_11 = "GB/T 2910.11–2024";
         private const string GB2910_12 = "GB/T 2910.12–2023";
         private const string GB2910_18 = "GB/T 2910.18–2009";
@@ -60,7 +80,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         private const string FZ01026 = "FZ/T 01026–2017";
 
         // ── FZ/T 01057 系列（纺织纤维鉴别试验方法）────────────────────────────
-        // 下拉里**只有系列名一条**（见 FiberWorksheetService.MethodOptions），报告上落的却是
+        // 下拉里**只有系列名一条**（见 FiberWorksheetService.MethodOptionsCurrent），报告上落的却是
         // .1~.4 四个分部 —— 由下面 BuildSingleStdChain 的 GB 分支展开，系列名本身不上报告。
         // 与 ISO1833 / DIN EN ISO 1833 只写体系名、分部由链构造器补全是同一个约定。
         //
@@ -77,12 +97,243 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </summary>
         private const string MICROSCOPE_GB_CHAIN = "FZ/T 30003-2024";
 
-        /// <summary>ISO 1833 各分部常量的集合 —— 由常量拼装。</summary>
-        private static readonly HashSet<string> DIN1833_D5x = new(StringComparer.OrdinalIgnoreCase)
+        /// <summary>
+        /// 标准**族** —— 同一个分部号在不同族下渲染成不同的串。
+        ///
+        /// 四族共用 <see cref="ResolveIsoPart"/> 那一份组分对规则，差别只在渲染：
+        /// <see cref="IsoPartOf"/> / <see cref="DinPartOf"/> / <see cref="EnPartOf"/> /
+        /// <see cref="BsPartOf"/> 是**四张独立的版本表**（各自的采标版次自成一套，年份不能互相借）。
+        ///
+        /// EN / BS 两族与 ISO **同构**：领队串、分部号、三元短路全都一样，
+        /// 差别只有前缀与年份。唯一的族特有处是 **xlsx 里 EN / BS 两表没有 `ISO 20705` 那一行**，
+        /// 故不做 cellulosic 那串（见 <see cref="BuildSingleStdChain"/>）。
+        /// </summary>
+        private enum StandardFamily
         {
-            ISO1833_1, ISO1833_2, ISO1833_3, ISO1833_4, ISO1833_6, ISO1833_7,
-            ISO1833_11, ISO1833_12, ISO1833_18, ISO1833_20, ISO1833_22,
+            Iso,
+            Din,
+            En,
+            Bs,
+        }
+
+        /// <summary>
+        /// 分部号 → ISO 1833 标准串（**常规口径**）。
+        ///
+        /// **查表只产出编号**（见 <see cref="ResolveIsoPart"/>），串由这里给 ——
+        /// "哪一对该出哪个分部"与"这个分部怎么写"因此分成两件事，
+        /// 换年份/换写法不必碰规则体，族前缀也不必再靠字符串集合做替换。
+        /// </summary>
+        private static string IsoPartOf(int part) => part switch
+        {
+            1 => ISO1833_1,
+            2 => ISO1833_2,
+            3 => ISO1833_3,
+            4 => ISO1833_4,
+            6 => ISO1833_6,
+            7 => ISO1833_7,
+            11 => ISO1833_11,
+            12 => ISO1833_12,
+            18 => ISO1833_18,
+            20 => ISO1833_20,
+            22 => ISO1833_22,
+            _ => string.Empty,
         };
+
+        /// <summary>
+        /// 分部号 → **DIN 采标版**标准串（常规口径）。
+        ///
+        /// DIN 是自己一套版次，年份**不能从 ISO 常量借**：`-3/-6/-12/-18/-20/-22`
+        /// 六个分部与 <see cref="IsoPartOf"/> 不同（以 `成分标准终.xlsx` 的 DIN 表 A 列为准）。
+        /// 写法统一 `DIN EN ISO 1833-x:年`（**带空格**），不再靠拼前缀。
+        /// </summary>
+        private static string DinPartOf(int part) => part switch
+        {
+            1 => "DIN EN ISO 1833-1:2020",
+            2 => "DIN EN ISO 1833-2:2020",
+            3 => "DIN EN ISO 1833-3:2021",
+            4 => "DIN EN ISO 1833-4:2023",
+            6 => "DIN EN ISO 1833-6:2019",
+            7 => "DIN EN ISO 1833-7:2017",
+            11 => "DIN EN ISO 1833-11:2017",
+            12 => "DIN EN ISO 1833-12:2021",
+            18 => "DIN EN ISO 1833-18:2021",
+            20 => "DIN EN ISO 1833-20:2019",
+            22 => "DIN EN ISO 1833-22:2021",
+            _ => string.Empty,
+        };
+
+        /// <summary>分部号 → **EN 采标版**标准串（常规口径），写法 `EN ISO 1833-x:年`。</summary>
+        private static string EnPartOf(int part) => part switch
+        {
+            1 => "EN ISO 1833-1:2020",
+            2 => "EN ISO 1833-2:2020",
+            3 => "EN ISO 1833-3:2020",
+            4 => "EN ISO 1833-4:2023",
+            6 => "EN ISO 1833-6:2019",
+            7 => "EN ISO 1833-7:2017",
+            11 => "EN ISO 1833-11:2017",
+            12 => "EN ISO 1833-12:2020",
+            16 => "EN ISO 1833-16:2019",
+            18 => "EN ISO 1833-18:2020",
+            20 => "EN ISO 1833-20:2019",
+            22 => "EN ISO 1833-22:2021",
+            _ => string.Empty,
+        };
+
+        /// <summary>分部号 → **BS 采标版**标准串（常规口径），写法 `BS EN ISO 1833-x:年`。</summary>
+        private static string BsPartOf(int part) => part switch
+        {
+            1 => "BS EN ISO 1833-1:2020",
+            2 => "BS EN ISO 1833-2:2020",
+            3 => "BS EN ISO 1833-3:2020",
+            4 => "BS EN ISO 1833-4:2023",
+            6 => "BS EN ISO 1833-6:2019",
+            7 => "BS EN ISO 1833-7:2017",
+            11 => "BS EN ISO 1833-11:2017",
+            12 => "BS EN ISO 1833-12:2020",
+            16 => "BS EN ISO 1833-16:2019",
+            18 => "BS EN ISO 1833-18:2020",
+            20 => "BS EN ISO 1833-20:2019",
+            22 => "BS EN ISO 1833-22:2021",
+            _ => string.Empty,
+        };
+
+        /// <summary>分部号 → GB/T 2910 标准串（常规口径，分工同 <see cref="IsoPartOf"/>）。</summary>
+        private static string GbPartOf(int part) => part switch
+        {
+            1 => GB2910_1,
+            2 => GB2910_2,
+            3 => GB2910_3,
+            4 => GB2910_4,
+            6 => GB2910_6,
+            7 => GB2910_7,
+            11 => GB2910_11,
+            12 => GB2910_12,
+            18 => GB2910_18,
+            20 => GB2910_20,
+            22 => GB2910_22,
+            _ => string.Empty,
+        };
+
+        // ── 2C 表：只列与常规**不同**的分部，其余转回常规表 ──────────────────────
+        // 依据 `成分标准终.xlsx` 各表的 CNAS / CMA 列：两列打架取旧的，写着 `/` 的一律落空。
+
+        /// <summary>`-4` 的 CNAS 2023 / CMA **2017** → 取旧的；`-22` 两列都写 `/`。</summary>
+        private static string IsoPartOfDual(int part) => part switch
+        {
+            4 => "ISO1833-4:2017",
+            22 => string.Empty,
+            _ => IsoPartOf(part),
+        };
+
+        /// <summary>DIN 表的 CNAS 列**逐格等于常规列**，只有 `-22` 写 `/` —— 所以只有它落空。</summary>
+        private static string DinPartOfDual(int part) => part switch
+        {
+            22 => string.Empty,
+            _ => DinPartOf(part),
+        };
+
+        /// <summary>`-4`（2023 → 2020）、`-12`（2020 → 2017）落后于当前版本；`-16` / `-22` 写 `/`。</summary>
+        private static string EnPartOfDual(int part) => part switch
+        {
+            4 => "EN ISO 1833-4:2020",
+            12 => "EN ISO 1833-12:2017",
+            16 => string.Empty,
+            22 => string.Empty,
+            _ => EnPartOf(part),
+        };
+
+        /// <summary>BS 表的 CNAS 与常规版本同值，只有 `-16` / `-22` 写 `/`。</summary>
+        private static string BsPartOfDual(int part) => part switch
+        {
+            16 => string.Empty,
+            22 => string.Empty,
+            _ => BsPartOf(part),
+        };
+
+        /// <summary>
+        /// `-4` / `-11` / `-12` 的 CMA 落后到 2009（CNAS 分别是 2022 / 2024 / 2023，取旧的）；
+        /// `-7` 的 CNAS / CMA **都是 2009**；`-22` 两列都写 `/`。分隔符仍是 `–`(U+2013)，只换年份。
+        /// </summary>
+        private static string GbPartOfDual(int part) => part switch
+        {
+            4 => "GB/T 2910.4–2009",
+            7 => "GB/T 2910.7–2009",
+            11 => "GB/T 2910.11–2009",
+            12 => "GB/T 2910.12–2009",
+            22 => string.Empty,
+            _ => GbPartOf(part),
+        };
+
+        /// <summary>
+        /// 把分部号渲染成**某一族 × 某一模式**的串 —— 只是选表，规则体不在这里。
+        /// 返回空串 = 该族该模式下这个分部落空，**调用方负责跳过**（别让空串占位）。
+        /// </summary>
+        private static string RenderIsoSub(StandardFamily family, StandardMode mode, int part)
+        {
+            var dual = mode == StandardMode.Dual;
+            return family switch
+            {
+                StandardFamily.Iso => dual ? IsoPartOfDual(part) : IsoPartOf(part),
+                StandardFamily.Din => dual ? DinPartOfDual(part) : DinPartOf(part),
+                StandardFamily.En => dual ? EnPartOfDual(part) : EnPartOf(part),
+                _ => dual ? BsPartOfDual(part) : BsPartOf(part),
+            };
+        }
+
+        /// <summary>分部号 → GB/T 2910 串，按模式选表（GB 没有"族"这一维，故单独一个选表口）。</summary>
+        private static string GbPartOf(StandardMode mode, int part)
+            => mode == StandardMode.Dual ? GbPartOfDual(part) : GbPartOf(part);
+
+        /// <summary>
+        /// FZ/T 01057 系列的某一个分部 —— **2C 下 .2/.3 退回 2007 版**（双资质只到 2007），
+        /// .1/.4 两模式同值。
+        /// </summary>
+        private static string Fz01057Part(int part, StandardMode mode) => (part, mode) switch
+        {
+            (2, StandardMode.Dual) => "FZ/T 01057.2-2007",
+            (3, StandardMode.Dual) => "FZ/T 01057.3-2007",
+            (1, _) => FZ01057_1,
+            (2, _) => FZ01057_2,
+            (3, _) => FZ01057_3,
+            (4, _) => FZ01057_4,
+            _ => string.Empty,
+        };
+
+        /// <summary>FZ/T 01057 系列名在报告上展开的四个分部（.1~.4）。</summary>
+        private static string[] Fz01057Series(StandardMode mode) => new[]
+        {
+            Fz01057Part(1, mode), Fz01057Part(2, mode), Fz01057Part(3, mode), Fz01057Part(4, mode),
+        };
+
+        /// <summary>
+        /// 链首的**鉴别法**串。ISO / EN / BS 三族一律 <see cref="ISO_QUALITATIVE"/>
+        /// （xlsx 的 EN / BS 两表没有这一行，照 ISO 模式领队）；DIN 用自己的采标版。
+        ///
+        /// <para>
+        /// <b>刻意不分模式</b>：xlsx 的 DIN 表在鉴别法那一格写 `/`，但 2C 下**照样印**
+        /// —— 鉴别法是定性报告的立足点，链里不能没有它；而且它是**族**的属性，
+        /// 与"哪个版本的定量分部有双资质"不是一回事。故这里不收 <see cref="StandardMode"/>参数，是设计而不是漏传。
+        /// </para>
+        /// </summary>
+        private static string QualitativeFor(StandardFamily family)
+            => family == StandardFamily.Din ? DIN_QUALITATIVE : ISO_QUALITATIVE;
+
+        /// <summary>
+        /// ISO 侧纤维素父槽的显微镜串。2C 下 `ISO 20705` 只有 CNAS 有资质、CMA 写 `/` → 落空。
+        /// </summary>
+        private static string IsoMicroscopeChain(StandardMode mode)
+            => mode == StandardMode.Dual ? string.Empty : "ISO 20705:2019";
+
+        /// <summary>GB 侧纤维素父槽的显微镜串 —— 2C 下 CNAS / CMA 都只到 **2009**。</summary>
+        private static string MicroscopeGbChain(StandardMode mode)
+            => mode == StandardMode.Dual ? "FZ/T 30003-2009" : MICROSCOPE_GB_CHAIN;
+
+        /// <summary>空串不占位 —— 2C 下会有分部落空，不能让它们挤出多余空格。</summary>
+        private static void AddIfNotEmpty(List<string> parts, string value)
+        {
+            if (!string.IsNullOrEmpty(value)) parts.Add(value);
+        }
 
         /// <summary>
         /// Excel L4+L6: 根据标准体系和成分对自动拼接方法标准链。
@@ -121,13 +372,27 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <see cref="IngredientAnalysisCalculation.StandardsToRender"/> 在 Methods 为空时退化成
         /// **单个空标准**，走到这里就该返回空串，不是抛异常。
         /// </remarks>
+        /// <param name="isSingleComponent">见上。</param>
+        /// <param name="mode">
+        /// 取值口径（<see cref="StandardMode.Current"/> = 常规 = 默认 = **改动前的行为**）。
+        ///
+        /// <para>
+        /// <see cref="StandardMode.Dual"/>（2C）只影响**渲染**：年份换资质范围内的版本、
+        /// 资质列写着 `/` 的分部落空。查表规则与链结构一处不分叉。
+        /// 默认值保证既有调用点与全部测试**不传这个参数时输出逐字不变**。
+        /// </para>
+        ///
+        /// <para>
+        /// 这是**纯参数**，不落库 —— 模式只在生成报告这一趟内存里活着，2C 与否由文件名承载。
+        /// </para>
+        /// </param>
         internal static string BuildMethodString(
             string standard, List<string> fibers, IReadOnlyList<FiberSlot> slots,
-            bool isSingleComponent = false)
+            bool isSingleComponent = false, StandardMode mode = StandardMode.Current)
         {
             if (string.IsNullOrWhiteSpace(standard)) return string.Empty;
 
-            return BuildSingleStdChain(standard, fibers, slots, isSingleComponent);
+            return BuildSingleStdChain(standard, fibers, slots, isSingleComponent, mode);
         }
 
         /// <summary>
@@ -140,22 +405,33 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </summary>
         private static string BuildSingleStdChain(
             string standard, List<string> fibers, IReadOnlyList<FiberSlot> slots,
-            bool isSingleComponent)
+            bool isSingleComponent, StandardMode mode)
         {
             if (string.IsNullOrWhiteSpace(standard)) return string.Empty;
 
             var isIso = standard.Equals("ISO1833", StringComparison.OrdinalIgnoreCase);
             var isDin = standard.Equals("DIN EN ISO 1833", StringComparison.OrdinalIgnoreCase);
+            var isEn = standard.Equals("EN ISO 1833", StringComparison.OrdinalIgnoreCase);
+            var isBs = standard.Equals("BS EN ISO 1833", StringComparison.OrdinalIgnoreCase);
             var isGb = standard.StartsWith("FZ/T", StringComparison.OrdinalIgnoreCase)
                     || standard.StartsWith("GB/T", StringComparison.OrdinalIgnoreCase);
+
+            // 四族共用**同一份**组分对规则（ResolveIsoPart），差别只在渲染表 —— 见 StandardFamily。
+            // 不是这四族（且不是 GB）时 family 为 null，后面一律当 GB 侧的 else 处理。
+            StandardFamily? family = null;
+            if (isIso) family = StandardFamily.Iso;
+            else if (isDin) family = StandardFamily.Din;
+            else if (isEn) family = StandardFamily.En;
+            else if (isBs) family = StandardFamily.Bs;
 
             // 分析员勾的是不是 FZ/T 01057 系列（**鉴别**标准，自带显微法 .3）。
             // 用 StartsWith 而不是 Equals：真实库里既有系列名 `FZ/T 01057`，
             // 也有老记录的合并写法 `FZ/T 01057.1-4–2007`，两者都已含 .3。
             var hasIdentificationStd = standard.StartsWith(FZ01057, StringComparison.OrdinalIgnoreCase);
 
-            // 非 ISO/DIN/GB：直接返回原值（Regulation / CAN / CNS / JIS 一律逐字透传）
-            if (!isIso && !isDin && !isGb) return standard;
+            // 非 ISO/DIN/EN/BS/GB：直接返回原值
+            //（Regulation / AATCC / CAN / CNS / JIS / AS 一律逐字透传 —— 含 2C 模式）
+            if (family is null && !isGb) return standard;
 
             // ★ 单组分**一律不派生**。
             // 单组分表里每行是**不同测点下的各一种组分**（每行一种纤维、各 100%），
@@ -163,7 +439,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 子标准（GB/T 2910.x、ISO 1833-x）前提是"一份混纺要拆"，对它不成立。
             // 分流点刻意放在上面那条透传守卫**之后**，Regulation / CAN / CNS / JIS
             // 两种类型都仍然是逐字透传。
-            if (isSingleComponent) return BuildSingleComponentChain(standard, isIso, isDin);
+            if (isSingleComponent) return BuildSingleComponentChain(standard, family, mode);
 
             // ── 以下全部是多组分路径，逐字未动 ──
 
@@ -188,19 +464,29 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
             var parts = new List<string>();
 
-            // ========== ISO/DIN ==========
-            if (isIso || isDin)
+            // ========== ISO / DIN / EN / BS（同构，只差渲染表）==========
+            if (family is StandardFamily fam)
             {
-                var qualitative = isIso ? ISO_QUALITATIVE : DIN_QUALITATIVE;
-                var ternary = isIso ? ISO1833_2 : "DIN EN ISO 1833-2:2020";
+                var qualitative = QualitativeFor(fam);
+                var ternary = RenderIsoSub(fam, mode, 2);
 
-                parts.Add(qualitative);
+                // EN / BS 两族在 xlsx 里**没有 ISO 20705 那一行**，故没有 cellulosic 那串。
+                var microscope = fam == StandardFamily.En || fam == StandardFamily.Bs
+                    ? string.Empty
+                    : IsoMicroscopeChain(mode);
+
+                AddIfNotEmpty(parts, qualitative);
 
                 var subStandards = new List<string>();
                 foreach (var (first, second) in EnumeratePairs(slots))
                 {
-                    var s = LookupSubStandard(first, second, hasAcrylic);
-                    if (!string.IsNullOrEmpty(s) && !subStandards.Contains(s))
+                    if (ResolveIsoPart(first, second, hasAcrylic) is not int part) continue;
+
+                    // 2C 下这个分部落空（资质列写 `/`）→ 直接跳过，不让它占位。
+                    var s = RenderIsoSub(fam, mode, part);
+                    if (s.Length == 0) continue;
+
+                    if (!subStandards.Contains(s))
                         subStandards.Add(s);
                 }
 
@@ -219,22 +505,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 // 累加的那支在末尾追加。
                 if (count == 3 && !expanded)
                 {
-                    return hasCellulosicParent
-                        ? $"{qualitative} {ternary} ISO 20705:2019"
-                        : $"{qualitative} {ternary}";
+                    AddIfNotEmpty(parts, ternary);
+                    if (hasCellulosicParent) AddIfNotEmpty(parts, microscope);
+                    return string.Join(" ", parts);
                 }
 
                 parts.AddRange(subStandards);
 
-                if (isDin)
-                    parts = parts.Select(p => DIN1833_D5x.Contains(p) ? "DIN EN " + p : p).ToList();
-
                 // 展开得来的三元：分部在前、`-2` 在后 —— 与 GB 侧 `…2910.20 …2910.2` 同序
                 if (count == 3)
-                    parts.Add(ternary);
+                    AddIfNotEmpty(parts, ternary);
 
                 if (hasCellulosicParent)
-                    parts.Add("ISO 20705:2019");
+                    AddIfNotEmpty(parts, microscope);
             }
 
             // ========== GB (FZ/T / GB/T) ==========
@@ -243,7 +526,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 // FZ/T 01057 是**系列名** —— 报告上要落 .1~.4 四个分部，不是这一个系列名。
                 // 其余 FZ/T / GB/T 串一律原样透传；**包括老记录的 "FZ/T 01057.1-4–2007"**：
                 if (standard.Equals(FZ01057, StringComparison.OrdinalIgnoreCase))
-                    parts.AddRange(new[] { FZ01057_1, FZ01057_2, FZ01057_3, FZ01057_4 });
+                    parts.AddRange(Fz01057Series(mode));
                 else
                     parts.Add(standard);
 
@@ -260,9 +543,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                     var gbSubs = new HashSet<string>();
                     foreach (var (first, second) in EnumeratePairs(slots))
                     {
-                        var g = LookupGbSubStandard(first, second, hasAcrylic);
-                        if (!string.IsNullOrEmpty(g))
-                            gbSubs.Add(g);
+                        if (ResolveGbPart(first, second, hasAcrylic) is not int part) continue;
+
+                        // 2C 下这个分部落空（`2910.22`）→ 跳过，不让它占位。
+                        var s = GbPartOf(mode, part);
+                        if (s.Length == 0) continue;
+
+                        gbSubs.Add(s);
                     }
                     parts.AddRange(gbSubs);
                 }
@@ -275,7 +562,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
                 // cellulosic
                 if (hasCellulosicParent)
-                    parts.Add(MICROSCOPE_GB_CHAIN);
+                    parts.Add(MicroscopeGbChain(mode));
 
                 // 单组分 = 定性鉴别报告，链里必须有显微法。
                 // 勾 GB/T 2910.x 时上面一条显微法都不会产生（FZ/T 30003 那支要 cellulosic 父槽，
@@ -296,8 +583,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 // ⚠️ **这一整段在单组分路径上走不到了** —— 单组分在方法入口就分流去了
                 // BuildSingleComponentChain（那里有一份等价的 .3 补链）。这段代码保留是因为
                 // 它就是多组分路径的完整形状，且 `isSingleComponent` 恒为 false 时逐字不变。
-                if (isSingleComponent && !hasIdentificationStd && !parts.Contains(FZ01057_3))
-                    parts.Add(FZ01057_3);
+                if (isSingleComponent && !hasIdentificationStd && !parts.Contains(Fz01057Part(3, mode)))
+                    parts.Add(Fz01057Part(3, mode));
             }
 
             return string.Join(" ", parts);
@@ -325,11 +612,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <b>鉴别法保留</b>：单组分报告本来就是定性鉴别报告。
         /// </para>
         /// </summary>
-        /// <param name="standard">已由调用方判定为 ISO / DIN / GB（FZ/T、GB/T）三者之一。</param>
-        private static string BuildSingleComponentChain(string standard, bool isIso, bool isDin)
+        /// <param name="standard">已由调用方判定为 ISO / DIN / EN / BS / GB（FZ/T、GB/T）之一。</param>
+        /// <param name="family">
+        /// 四族之一是 ISO 族，<c>null</c> = GB 族（调用方已保证二者必居其一）。
+        /// </param>
+        /// <param name="mode">
+        /// 取值口径。单组分链里只有「鉴别法」那一条，而鉴别法**不分模式**（见
+        /// <see cref="QualitativeFor"/>），所以对 ISO / DIN / EN / BS 四族这个参数**没有效果**；
+        /// 只在 GB 侧生效 —— FZ/T 01057 系列的 `.2/.3` 退回 2007。
+        /// </param>
+        private static string BuildSingleComponentChain(
+            string standard, StandardFamily? family, StandardMode mode)
         {
-            // ISO / DIN：只有鉴别标准 —— 没有 subStandards、没有三元早退、没有 cellulosic 那串。
-            if (isIso || isDin) return isIso ? ISO_QUALITATIVE : DIN_QUALITATIVE;
+            // ISO / DIN / EN / BS：只有鉴别标准 —— 没有 subStandards、没有三元早退、没有 cellulosic 那串。
+            if (family is StandardFamily f) return QualitativeFor(f);
 
             var parts = new List<string>();
 
@@ -337,7 +633,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 其余 FZ/T / GB/T 串逐字透传，**含老记录的合并写法 `FZ/T 01057.1-4–2007`**
             // （它本身就含 .3）。这一条与多组分路径同构，是"勾选的标准本身"那一半。
             if (standard.Equals(FZ01057, StringComparison.OrdinalIgnoreCase))
-                parts.AddRange(new[] { FZ01057_1, FZ01057_2, FZ01057_3, FZ01057_4 });
+                parts.AddRange(Fz01057Series(mode));
             else
                 parts.Add(standard);
 
@@ -348,9 +644,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 两道守卫与多组分路径里那份同义，缺一不可：
             //   · hasIdentificationStd —— 勾的本身就是 FZ/T 01057 系列（含合并写法），已含 .3；
             //   · parts.Contains —— 系列展开那支已落下的 .3，防重复。
+            //
+            // 比对的是**本模式下的 .3**（2C 是 2007 版）—— 两处都是同一个 `Fz01057Part(3, mode)`，
+            // 所以去重判定不会因模式而错位。
             var hasIdentificationStd = standard.StartsWith(FZ01057, StringComparison.OrdinalIgnoreCase);
-            if (!hasIdentificationStd && !parts.Contains(FZ01057_3))
-                parts.Add(FZ01057_3);
+            if (!hasIdentificationStd && !parts.Contains(Fz01057Part(3, mode)))
+                parts.Add(Fz01057Part(3, mode));
 
             return string.Join(" ", parts);
         }
@@ -410,12 +709,32 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <summary>
         /// 对相邻成分对查表返回 ISO1833 子标准编号。
         /// <paramref name="hasAcrylic"/>：整条纤维列表里是否含丙烯腈类纤维，见类型注释的「丙烯腈守卫」。
+        ///
+        /// 只是 <see cref="ResolveIsoPart"/> + <see cref="RenderIsoSub"/> 的薄包装
+        /// （ISO 族）—— 签名、返回值与拆分前逐字一致。
         /// </summary>
         internal static string LookupSubStandard(string first, string second, bool hasAcrylic)
+            => LookupSubStandard(first, second, hasAcrylic, StandardMode.Current);
+
+        /// <summary>同上，指定取值口径（2C golden 用；四参重载，三参那个 = 传 <see cref="StandardMode.Current"/>）。</summary>
+        internal static string LookupSubStandard(
+            string first, string second, bool hasAcrylic, StandardMode mode)
+            => ResolveIsoPart(first, second, hasAcrylic) is int part
+                ? RenderIsoSub(StandardFamily.Iso, mode, part)
+                : string.Empty;
+
+        /// <summary>
+        /// 组分对 → **ISO 1833 分部号**（<c>null</c> = 落空）。
+        ///
+        /// 规则体与拆分前逐字同源，只有两处形态变化：<c>return ISO1833_20</c> 成了 <c>return 20</c>，
+        /// 以及丙烯腈守卫那三处 <c>? ISO1833_12 : ISO1833_20</c> 成了分部号。
+        /// **串不在这里给**（见 <see cref="IsoPartOf"/> / <see cref="RenderIsoSub"/>）。
+        /// </summary>
+        private static int? ResolveIsoPart(string first, string second, bool hasAcrylic)
         {
             var f = first?.Trim().ToLowerInvariant() ?? string.Empty;
             var s = second?.Trim().ToLowerInvariant() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+            if (string.IsNullOrWhiteSpace(s)) return null;
 
             // 纤维素 × 弹性纤维（**任意顺序**）→ -20
             // 这一条把两个方向并成一处：原先 (纤维素, Elastane) 返回 -1（1833-1 是"试验通则"，
@@ -423,25 +742,25 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // IsCellulosic 的成员全部落在 1833-20 的官方范围内。
             if ((FiberTokens.IsCellulosic(f) && FiberTokens.IsElastane(s))
              || (FiberTokens.IsElastane(f) && FiberTokens.IsCellulosic(s)))
-                return hasAcrylic ? ISO1833_12 : ISO1833_20;
+                return hasAcrylic ? 12 : 20;
 
             // Silk + wool/cashmere → -18
             if (f == "silk" && (s == "wool" || s == "cashmere"))
-                return ISO1833_18;
+                return 18;
 
             // wool/animal + any → -4
             if (FiberTokens.IsAnimal(f))
-                return ISO1833_4;
+                return 4;
 
             // polyester + elastane（涤氨，任意顺序）→ -20（DMAc 法）
             if ((f == "polyester" && FiberTokens.IsElastane(s))
              || (FiberTokens.IsElastane(f) && s == "polyester"))
-                return hasAcrylic ? ISO1833_12 : ISO1833_20;
+                return hasAcrylic ? 12 : 20;
 
             // polyamide/nylon + elastane（锦氨，任意顺序）→ -20（DMAc 法）
             if (((f == "polyamide" || f == "nylon") && FiberTokens.IsElastane(s))
              || (FiberTokens.IsElastane(f) && (s == "polyamide" || s == "nylon")))
-                return hasAcrylic ? ISO1833_12 : ISO1833_20;
+                return hasAcrylic ? 12 : 20;
 
             // 弹性纤维在前 → -12（DMF 法），**但后位必须是"某些其他纤维"**（按官方范围收紧）。
             //
@@ -452,11 +771,11 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 根本到不了这里。(Elastane, Acrylic/Modacrylic) **落空** —— 弹性纤维与腈纶都是
             // -12 的**对象**纤维、都能被 DMF 溶掉，这一对分不出比例，-12 与 -20 都不适用。
             if (FiberTokens.IsElastane(f) && FiberTokens.IsIso1833_12OtherFibre(s))
-                return ISO1833_12;
+                return 12;
 
             // polyamide/nylon + any → -7
             if (f == "polyamide" || f == "nylon")
-                return ISO1833_7;
+                return 7;
 
             // 丙烯腈类在前 → -12（DMF 法）。谓词含 Modacrylic（1833-12 适用范围含 "certain modacrylics"）。
             //
@@ -464,59 +783,76 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             //
             // 够不够格由 FiberTokens.IsIso1833_12OtherFibre 判定（与弹性纤维兜底共用同一条，收法见那个集合的注释）。
             if (FiberTokens.IsAcrylicType(f) && FiberTokens.IsIso1833_12OtherFibre(s))
-                return ISO1833_12;
+                return 12;
 
             // 再生纤维素 + linen/flax → -22（甲酸法）
             // **必须在 -6 之前**：原先排在 -6 后面，而 -6 的旧条件 IsCellulosic(f) && IsCellulosicOrCotton(s)
             // 对 (Viscose, Linen) 成立，于是 -22 永远轮不到、结构上不可达。
             // 补 flax 是因为库里 Flax / Linen 是同一纤维的两行；**不补 ramie**（1833-22:2020 官方范围只有 flax）。
             if (FiberTokens.IsRayonType(f) && (s == "linen" || s == "flax"))
-                return ISO1833_22;
+                return 22;
 
             // 再生纤维素 + cotton 等 → -6（甲酸/氯化锌法）
             // 按官方适用范围收紧：对象纤维是 viscose/certain cupro/modal/lyocell（= IsRayonType），
             // 合作纤维是 cotton（该分部正是为它制定的）+ polypropylene / elastolefin / melamine。
             // **不含** linen / ramie / hemp / paper；而且 cotton 在这里是**合作方**、不是对象纤维。
             if (FiberTokens.IsRayonType(f) && (s == "cotton" || s == "polypropylene" || s == "elastolefin" || s == "melamine"))
-                return ISO1833_6;
+                return 6;
 
             // cellulosic/cotton + elastomultiester/polyester → -11
             if (FiberTokens.IsCellulosicOrCotton(f) && (s == "elastomultiester" || s == "polyester"))
-                return ISO1833_11;
+                return 11;
 
             // acetate alone → -3
             if (f == "acetate")
-                return ISO1833_3;
+                return 3;
 
-            return string.Empty;
+            return null;
         }
 
         /// <summary>
         /// GB版成分对→子标准号映射（数据库B列，Excel N129-N132）。
         /// <paramref name="hasAcrylic"/> 与 ISO 侧同一条守卫。
+        ///
+        /// 只是 <see cref="ResolveGbPart"/> + <see cref="GbPartOf"/> 的薄包装 ——
+        /// 签名、返回值与拆分前逐字一致（含守卫生效时的空串）。
         /// </summary>
         internal static string LookupGbSubStandard(string first, string second, bool hasAcrylic)
+            => LookupGbSubStandard(first, second, hasAcrylic, StandardMode.Current);
+
+        /// <summary>同上，指定取值口径（2C golden 用）。</summary>
+        internal static string LookupGbSubStandard(
+            string first, string second, bool hasAcrylic, StandardMode mode)
+            => ResolveGbPart(first, second, hasAcrylic) is int part
+                ? GbPartOf(mode, part)
+                : string.Empty;
+
+        /// <summary>
+        /// 组分对 → **GB/T 2910 分部号**（<c>null</c> = 落空，含丙烯腈守卫生效时的空串）。
+        /// 规则体与拆分前逐字同源，串由 <see cref="GbPartOf"/> 给。
+        /// </summary>
+        private static int? ResolveGbPart(string first, string second, bool hasAcrylic)
         {
             var f = first?.Trim().ToLowerInvariant() ?? string.Empty;
             var s = second?.Trim().ToLowerInvariant() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+            if (string.IsNullOrWhiteSpace(s)) return null;
 
             // Silk + wool → GB/T 2910.18
             if (f == "silk" && s == "wool")
-                return GB2910_18;
+                return 18;
 
             // wool/Silk + 非spandex/elastane → GB/T 2910.4
             if (FiberTokens.IsAnimal(f) && s != "spandex" && s != "elastane")
-                return GB2910_4;
+                return 4;
 
             // polyamide/nylon + elastane（锦氨，任意顺序）→ GB/T 2910.20
             if (((f == "polyamide" || f == "nylon") && FiberTokens.IsElastane(s))
              || (FiberTokens.IsElastane(f) && (s == "polyamide" || s == "nylon")))
-                return hasAcrylic ? string.Empty : GB2910_20;
+                return hasAcrylic ? null : 20;
 
             // polyamide/nylon + 非spandex/elastane → GB/T 2910.7
             if ((f == "polyamide" || f == "nylon") && s != "spandex" && s != "elastane")
-                return GB2910_7;
+                return 7;
 
             // 丙烯腈类在前 → GB/T 2910.12（谓词含 Modacrylic），后位同样必须是"某些其他纤维"
             //
@@ -525,40 +861,40 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // 聚酯复合弹性纤维、聚烯烃弹性纤维、三聚氰胺、聚丙烯/聚酰胺复合纤维、聚丙烯酸酯、玻璃。
             // 故不另建一份 GB 专用集合。
             if (FiberTokens.IsAcrylicType(f) && FiberTokens.IsIso1833_12OtherFibre(s))
-                return GB2910_12;
+                return 12;
 
             // rayon系 + cotton → GB/T 2910.6
             if (FiberTokens.IsRayonType(f) && s == "cotton")
-                return GB2910_6;
+                return 6;
 
             // 纤维素 × 弹性纤维（**任意顺序**）→ GB/T 2910.20 —— 与 ISO 侧同一条对称
             if ((FiberTokens.IsCellulosic(f) && FiberTokens.IsElastane(s))
              || (FiberTokens.IsElastane(f) && FiberTokens.IsCellulosic(s)))
-                return hasAcrylic ? string.Empty : GB2910_20;
+                return hasAcrylic ? null : 20;
 
             // polyester + elastane（涤氨，任意顺序）→ GB/T 2910.20 —— 与 ISO 侧的涤氨规则逐字对称
             // 这一条取代了原先的 `if (f == "polyester") return GB2910_24;` 兜底：
             // 2910.24 的适用范围不是"任意后位纤维"，凡聚酯在前一律给它本身就是错的。
             if ((f == "polyester" && FiberTokens.IsElastane(s))
              || (FiberTokens.IsElastane(f) && s == "polyester"))
-                return hasAcrylic ? string.Empty : GB2910_20;
+                return hasAcrylic ? null : 20;
 
             // cellulosic/cotton/acetate/linen/ramie + polyester → GB/T 2910.11
             if ((FiberTokens.IsCellulosicOrCotton(f) || f == "acetate" || f == "linen" || f == "ramie") && s == "polyester")
-                return GB2910_11;
+                return 11;
 
             // rayon系 + linen/ramie/flax → GB/T 2910.22
             // 中国版把苎麻扩了进来、ISO 侧没有（两侧刻意不对称）；而 `flax` 与 `linen`
             // 是 fiber_database 里**同一纤维的两行**（ISO 侧已补），这里必须同步补——
             // 否则同一纤维录成 Linen 给 2910.22、录成 Flax 就落空，结果由拼写决定。
             if (FiberTokens.IsRayonType(f) && (s == "linen" || s == "ramie" || s == "flax"))
-                return GB2910_22;
+                return 22;
 
             // acetate → GB/T 2910.3
             if (f == "acetate")
-                return GB2910_3;
+                return 3;
 
-            return string.Empty;
+            return null;
         }
     }
 }

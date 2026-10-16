@@ -11,6 +11,11 @@
 //   SaveDocx/{报告号}_{yyMMddHHmmss}_FiberAnalysis.docx                        ← 归档前的老报告
 //   文件名末段恒为 FiberAnalysis, 所以它**只能当校验键, 不能当过滤键** —— 这也是本接口
 //   没有 mode 参数的原因(干燥速率那边末段是 nf5022/aatcc201, 是要按它过滤的)。
+//
+// 2C(CNAS+CMA 双资质)报告在时间戳前多一个 2C 段:
+//   {报告号}_2C_{yyMMddHHmmss}_FiberAnalysis.docx
+//   末段仍是 FiberAnalysis, 所以上面那条"只当校验键"与 ResolvePath/DeleteReport 一行不用改;
+//   只有 TryParseMeta 要多认这一段(剥掉它, 并把 Is2C 置真)。
 // ============================================================
 using System.Globalization;
 using NX_lims_Softlines_Command_System.src.Application.Contract.DTOs;
@@ -155,7 +160,21 @@ public class FiberReportFileStore : IFiberReportFileStore, IScopedDependency
                 return false; // 报告号为空 / 没有时间戳段 —— 不是本模块的命名
 
             meta.FileName = fileName;
-            meta.ReportNumber = string.Join('_', parts[..^1]);
+
+            // 2C 记录是 {报告号}_2C_{时间戳}: 模式段紧贴时间戳、位置**固定**在倒数第二段
+            // （生成侧也按固定位置拼, 见 FiberWorksheetService.BuildAnalysisAsync）。
+            //
+            // 段数 >= 3 这道守卫保证剥完还剩报告号 —— 否则名字叫 "2C_260910120000" 的
+            // （报告号恰好是 2C）会被剥成空报告号。
+            int reportEnd = parts.Length - 1;
+            if (reportEnd >= 2
+                && parts[reportEnd - 1].Equals(FiberWorksheetService.TwoCModeSegment, StringComparison.OrdinalIgnoreCase))
+            {
+                meta.Is2C = true;
+                reportEnd--;
+            }
+
+            meta.ReportNumber = string.Join('_', parts[..reportEnd]);
             meta.GeneratedAt = DateTime.TryParseExact(parts[^1], "yyMMddHHmmss", CultureInfo.InvariantCulture,
                     DateTimeStyles.None, out DateTime generated)
                 ? generated

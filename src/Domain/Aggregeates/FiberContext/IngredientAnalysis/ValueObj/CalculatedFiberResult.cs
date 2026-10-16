@@ -48,6 +48,15 @@
         public decimal RateTrail2 { get; init; }
         public decimal Avg { get; init; }
         public decimal Correct { get; init; }
+
+        /// <summary>
+        /// 扣掉"下一个成员被 d 放大出来的增量"之后的 <see cref="Avg"/>，**只用来算 Rate、不上报告**。
+        /// <c>U_i = Avg_i·Correct_i − Avg_{i+1}·(Correct_{i+1} − 1)</c>，组内最后一个成员不扣。
+        /// 为空表示这一行没走扣减链（反序列化 / 直接构造），公式回退到 <c>Avg × Correct</c>。
+        /// 见 <c>IngredientAnalysisCalculation.CalculateDissolvedUnits</c>。
+        /// </summary>
+        public decimal? DeductedAvg { get; init; }
+
         public decimal MoistureRegain { get; init; }
 
         /// <summary>

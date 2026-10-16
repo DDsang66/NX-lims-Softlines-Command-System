@@ -20,5 +20,13 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
 
         /// <summary>生成时间（文件名时间戳解析，解析失败回退文件修改时间）</summary>
         public DateTime GeneratedAt { get; set; }
+
+        /// <summary>
+        /// 这份报告是否为 **2C 口径**（只印 CNAS / CMA 双资质范围内的标准版本）。
+        ///
+        /// 模式**不落库**，它只体现在文件名里那个 `2C` 段上（`{报告号}_2C_{时间戳}_FiberAnalysis.docx`），
+        /// 所以这里是**从文件名解析出来的**、不是从库里查出来的。前端历史列表按它打标签。
+        /// </summary>
+        public bool Is2C { get; set; }
     }
 }
