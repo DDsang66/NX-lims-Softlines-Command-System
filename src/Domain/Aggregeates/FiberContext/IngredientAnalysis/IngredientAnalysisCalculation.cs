@@ -603,14 +603,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 Recommendation = PostProcessBicomponent(result.Recommendation, calculatedFiberResult, "F0")
             };
 
-            // 最后一步：百分比右对齐补齐，让两列的名称落在同一竖列。
-            // 位置是硬的 —— 必须在 PostProcessBicomponent **之后**，理由见 AlignResultLines。
-            result = result with
-            {
-                Results = AlignResultLines(result.Results),
-                Recommendation = AlignResultLines(result.Recommendation)
-            };
-
+            // 结果行保持 `{pct}% {name}` 原样，**不再补行首空格**：
+            // 模板已拆成 percent/name 两列，适配器 SplitFiberResultLine 会 Trim 行首空白，
+            // 补齐到不了报告；竖列对齐由单元格承担（percent 列在模板里是 w:jc="right"）。
             return result;
         }
 
@@ -629,15 +624,14 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <param name="isAatcc">本份是否 AATCC（亚 5% 聚合行）。</param>
         /// <param name="useChineseNames">
         /// 本份是否国标 —— 纤维名印成 `中文English`。
-        /// **只加在名字位置**（第一个 `%` 之后），所以下游两处解析都取不到它：
-        /// <see cref="AlignResultLines"/> 只认 `%` 之前，<see cref="PostProcessBicomponent"/> 整行重写。
-        /// 双组分父行因此天然保持英文，无需在这里特判。
+        /// **只加在名字位置**（第一个 `%` 之后），所以下游的 <see cref="PostProcessBicomponent"/>
+        /// 整行重写时取不到它。双组分父行因此天然保持英文，无需在这里特判。
         /// </param>
         private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format, bool isAatcc = false, bool useChineseNames = false)
         {
             // 单组分：每个纤维固定 100%，不求和。
-            // 单组分**不走** AlignResultLines 的对齐：LeadingPercentNumber 见到 `{Sample}:`
-            // 里的冒号就返回 null，这行永远不参与补齐 —— 去掉 `\n` 前后都是这样。
+            // `{Sample}:  100% {Name}` 冒号后**固定两个空格**，是外观约定（Arial 下两个空格才等于
+            // 一个数字宽），不是行首补齐，别合并成一个。
             if (calculatedFiberResult.All(c => c is SingleCalculatedFiberItem))
             {
                 return calculatedFiberResult
@@ -755,57 +749,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// </summary>
         private string ResultFiberName(string name, bool useChineseNames)
             => useChineseNames ? FiberChineseName.Localize(name, _fiberChineseNames) : name;
-
-        /// <summary>
-        /// 把 `<数字>% <名称>` 这类结果行按**本块内最长的数字**补空格，让名称落在同一竖列。
-        ///
-        /// **每缺一位补两个空格，不是补一个** —— 结果行的字体是 Arial（比例字体）：
-        /// 数字宽 0.556em、空格只有 0.278em，**恰好一半**。补一个空格只把名称推半格，
-        /// 看着就是"好像没对齐"。
-        /// ⚠️ **必须排在 <see cref="PostProcessBicomponent"/> 之后**：双组分那条会**整行重写**
-        /// （父行百分比取的是 `line.Split('%')[0].Trim()`），`Trim()` 会把先补的空格吃掉，先补等于白补。
-        ///
-        /// 认不出的行原样返回 —— 单组分那种 `Sample:  100% Name`（全是 100%，补了也是空操作）走这条路。
-        /// </summary>
-        private static List<string> AlignResultLines(List<string> lines)
-        {
-            int width = 0;
-            foreach (var line in lines)
-            {
-                if (LeadingPercentNumber(line) is { } n)
-                    width = Math.Max(width, n.Length);
-            }
-
-            if (width == 0) return lines;
-
-            var aligned = new List<string>(lines.Count);
-            foreach (var line in lines)
-            {
-                var n = LeadingPercentNumber(line);
-                // 前置补空格，每缺一位补两个 —— Arial 下 2 个空格才等于 1 个数字宽（见方法注释）。
-                aligned.Add(n is null ? line : line.PadLeft(line.Length + (width - n.Length) * 2));
-            }
-            return aligned;
-        }
-
-        /// <summary>
-        /// 取 `<数字>% ...` 里那个数字串；不是这个形状就返回 null（该行不参与对齐）。
-        /// 只认**第一个** `%` 之前的内容 —— 双组分行后面括号里的 `16.4%Polyamide` 因此不会被误取。
-        /// </summary>
-        private static string? LeadingPercentNumber(string line)
-        {
-            // 带换行的行一律不参与对齐：多行值补行首空格会补进第一行里，越补越乱。
-            // 现在**已经没有这种行了**（单组分原先那条 `{Sample}:\n100% {Name}` 已改单行），
-            // 留着是防日后又出多行格式被静默补坏 —— 别当死代码删。
-            if (line.Contains('\n')) return null;
-
-            var pct = line.IndexOf('%');
-            if (pct <= 0) return null;
-
-            // 单组分 `{Sample}:  100% {Name}` 走这里会因为冒号（或样品号里的字母）落进上面那条 all-digit 判定 → null。
-            var head = line[..pct];
-            return head.All(ch => char.IsAsciiDigit(ch) || ch == '.') ? head : null;
-        }
 
         /// <summary>
         /// 亚 5% 却**仍然点名**的两类纤维 —— 16 CFR § 303.3(a) 给了两个豁免，这里各用其一：

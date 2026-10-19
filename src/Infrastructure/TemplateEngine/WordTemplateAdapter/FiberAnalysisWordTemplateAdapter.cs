@@ -339,8 +339,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// </summary>
         /// <remarks>
         /// 只认**第一个** %：双组分父行 `40.0% Bicomponent Fiber (60%Polyester 40%Polyamide)`
-        /// 括号里的 % 不会被误切。行首对齐空格（<c>AlignResultLines</c> 补的）先 Trim 掉，
-        /// 名称列因此不会带着补齐用的前导空格。没有 % 的行整行进名称列、百分比留空。
+        /// 括号里的 % 不会被误切。行首空白先 Trim 掉，名称列因此不会带着前导空格
+        /// （域层已不补对齐空格，这个 Trim 现在防的是历史文件与外部输入）。
+        /// 没有 % 的行整行进名称列、百分比留空。
         /// </remarks>
         internal static (string Percent, string Name) SplitFiberResultLine(string line)
         {
