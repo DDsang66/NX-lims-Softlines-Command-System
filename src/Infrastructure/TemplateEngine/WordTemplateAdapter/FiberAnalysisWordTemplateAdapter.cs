@@ -76,21 +76,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             flatData["BurningTest"] = analysisResult.BurningTest;
 
             // 数组/嵌套结构：留空，后续单独处理
-            // 数组展开：Results → TestResult_1, TestResult_2, ...
+            // 领域层给的是整行 `65.0% Cotton` / 单组分 `a:  100% Modal`，这里按第一个 % 切开。
             var results = analysisResult.Results;
             for (int i = 0; i < results.Count; i++)
             {
-                flatData[$"TestResult_{i + 1}"] = results[i];
+                var (percent, name) = SplitFiberResultLine(results[i]);
+                flatData[$"TestResultper_{i + 1}"] = percent;
+                flatData[$"TestResult_{i + 1}"] = name;
             }
 
-            // 数组展开：Recommendation → Recommendation_1, Recommendation_2, ...
+            // 数组展开：Recommendation → Recommendationper_/Recommendation_ 两列
             // 当推荐标签为空时跳过填入
             if (!string.IsNullOrWhiteSpace(analysisResult.RecommendedLabelString))
             {
                 var recommendations = analysisResult.Recommendation;
                 for (int i = 0; i < recommendations.Count; i++)
                 {
-                    flatData[$"Recommendation_{i + 1}"] = recommendations[i];
+                    var (percent, name) = SplitFiberResultLine(recommendations[i]);
+                    flatData[$"Recommendationper_{i + 1}"] = percent;
+                    flatData[$"Recommendation_{i + 1}"] = name;
                 }
             }
             // flatData["CalculatedFiberResult"] = ?;  // 复杂对象列表，需逐行展开
@@ -327,6 +331,25 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 把结果行拆成「百分比列 + 名称列」。
+        /// 多组分：`65.0% Cotton` → (`65.0%`, `Cotton`)；单组分：`a:  100% Modal` → (`a:  100%`, `Modal`)。
+        /// </summary>
+        /// <remarks>
+        /// 只认**第一个** %：双组分父行 `40.0% Bicomponent Fiber (60%Polyester 40%Polyamide)`
+        /// 括号里的 % 不会被误切。行首对齐空格（<c>AlignResultLines</c> 补的）先 Trim 掉，
+        /// 名称列因此不会带着补齐用的前导空格。没有 % 的行整行进名称列、百分比留空。
+        /// </remarks>
+        internal static (string Percent, string Name) SplitFiberResultLine(string line)
+        {
+            string text = (line ?? string.Empty).Trim();
+            int pct = text.IndexOf('%');
+            if (pct < 0)
+                return (string.Empty, text);
+
+            return (text[..(pct + 1)].TrimEnd(), text[(pct + 1)..].Trim());
         }
 
         /// <summary>
