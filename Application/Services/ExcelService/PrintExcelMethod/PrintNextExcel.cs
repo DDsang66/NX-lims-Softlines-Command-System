@@ -218,6 +218,17 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, iron, ironMethod);
                 afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!,iron);
             }
+            else if (itemName == "Appearance Assessment after Wash")
+            {
+                // 外观页按选择的洗后遍数展开：每个测点每个洗次出一张表
+                var appearanceParam = QueryWetParameter(itemName, dto, reportNo);
+                var afterWash = appearanceParam?.AfterWash;
+                if (!string.IsNullOrWhiteSpace(afterWash))
+                {
+                    samples = SampleNumCounter.GetSample(dto.Sample!, afterWash, null, null) ?? samples;
+                    afterWashMap = SampleNumCounter.ExpandWashNumbers(samples!, afterWash!, null);
+                }
+            }
             //<--------------------需要引入afterWash变量，缩水参数中的Iron变量----------------------->
             int offset = 0; // 假设没有偏移
             offset = OffsetRule.GetValueOrDefault(itemName, 0);
@@ -269,27 +280,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 int[]? afmap = null;
                 if (afterWashMap != null) afmap = afterWashMap.Skip(start).Take(count).ToArray();
                 /* 把这段样本写进去,如果有水洗遍数，那么也把水洗遍数写进去 */
-                WriteSamples(ws, slice, afmap, cellAddrs, AfterWashCellAddrs, itemName,dto.sampleDescription!);
+                // 外观页的洗次格在下面单独填（它没有 AfterWashCellAddrs，不能走 WriteSamples 的通用分支）
+                var writeAfmap = itemName == "Appearance Assessment after Wash" ? null : afmap;
+                WriteSamples(ws, slice, writeAfmap, cellAddrs, AfterWashCellAddrs, itemName,dto.sampleDescription!);
                 //这里是分割样本的逻辑<-------------------------------------------------------------------------------------->
                 // 5) 其余参数
                 if (dto.Type == "Wet")
                 {
-                    // 新增：判断是否为附加的外观项（通过 Parameter 内容识别）
-                    string queryItemName = itemName;
-                    if (itemName == "Appearance Assessment after Wash" &&
-                        dto.Parameter != null &&
-                        dto.Parameter.Contains("Same as Stability"))
-                    {
-                        queryItemName = "Stability to Washing"; // 附加外观使用 Stability to Washing 的数据
-                    }
-
-                    var wp = _db.WetParameterIsos.FirstOrDefault(p => p.ContactItem == queryItemName && p.ReportNumber == reportNo);
-                    if (wp == null)
-                    {
-                        wp = _db.WetParameterIsos
-                            .FirstOrDefault(p => p.ReportNumber == reportNo &&
-                                (p.ContactItem == "Stability to Washing" || p.ContactItem == "Stability to Dry Cleaning"));
-                    }
+                    var wp = QueryWetParameter(itemName, dto, reportNo);
                     // 提前获取默认值或实际值
                     var wetParameter = wp ?? new WetParameterIso();
                     var extraMap = WetExtraMap.GetValueOrDefault(itemName, (wp, dto, reportNo) => new Dictionary<string, Func<WetParameterIso, CheckListDto, string, string>>())(wp!, dto, reportNo);
@@ -297,6 +295,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     foreach (var kv in extraMap)
                     {
                         ws.Cells[kv.Key].Value = kv.Value(wetParameter, dto, reportNo);
+                    }
+                    // 外观页洗涤次数：按当前这张表对应的洗次填（取不到数据时保持 1）
+                    if (itemName == "Appearance Assessment after Wash")
+                    {
+                        int washNo = (afmap != null && afmap.Length > 0 && afmap[0] > 0) ? afmap[0] : 1;
+                        ws.Cells["BK5"].Value = washNo;   // 表头 After _ Wash
+                        ws.Cells["BE12"].Value = washNo;  // Observation on washed sample After _ wash,
+                        ws.Cells["BW5"].Value = washNo;   // 第二块 After _ Wash
                     }
                 }
                 else if (dto.Type == "Physics")
@@ -332,6 +338,32 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
 
 
         }
+
+        /// <summary>
+        /// 取项目对应的湿处理参数。
+        /// 附加外观项（Parameter 为 Same as Stability to Washing）沿用 Stability to Washing 那一行；
+        /// 查不到时退回本报告下任一 Stability 行，与原逻辑一致。
+        /// </summary>
+        private WetParameterIso? QueryWetParameter(string itemName, CheckListDto dto, string reportNo)
+        {
+            string queryItemName = itemName;
+            if (itemName == "Appearance Assessment after Wash" &&
+                dto.Parameter != null &&
+                dto.Parameter.Contains("Same as Stability"))
+            {
+                queryItemName = "Stability to Washing"; // 附加外观使用 Stability to Washing 的数据
+            }
+
+            var wp = _db.WetParameterIsos.FirstOrDefault(p => p.ContactItem == queryItemName && p.ReportNumber == reportNo);
+            if (wp == null)
+            {
+                wp = _db.WetParameterIsos
+                    .FirstOrDefault(p => p.ReportNumber == reportNo &&
+                        (p.ContactItem == "Stability to Washing" || p.ContactItem == "Stability to Dry Cleaning"));
+            }
+            return wp;
+        }
+
         private static readonly Dictionary<string, string> TemplateSheetNamesNormal = new()
         {
             ["Fastness to Light"] = "TM1-TM2-TM3",
@@ -685,8 +717,6 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 ["BC1"] = (w, dto, reportNo) => reportNo,
                 ["BP2"] = (w, dto, reportNo) => "TM9",
-                ["BK5"] = (w, dto, reportNo) => "1",
-                ["BE12"] = (w, dto, reportNo) => "1",
                 ["BI12"] = (w, dto, reportNo) => "/",
                 ["AX42"] = (w, dto, reportNo) => w!.WashingProcedure!,
                 ["BY42"] = (w, dto, reportNo) => w!.Temperature!,
