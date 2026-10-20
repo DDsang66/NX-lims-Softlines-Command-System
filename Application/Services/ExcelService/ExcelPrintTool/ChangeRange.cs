@@ -4,14 +4,16 @@ using System.IO;
 using System.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
+using NX_lims_Softlines_Command_System.Application.Services.ExcelService.ExcelPrintTool;
 
 public static class SheetSorter
 {
     /// <summary>
     /// 排序工作表并修正 Named Range 的 localSheetId，保证名称与重新排序后的表对应。
     /// param filePath: Excel 文件路径
+    /// param rankSelector: 业务顺序（sheet 名 → 档位）；不传则沿用旧的 D→P→S→A→字母序。
     /// </summary>
-    public static void SortSheetsAndFixNames(string filePath)
+    public static void SortSheetsAndFixNames(string filePath, Func<string, int>? rankSelector = null)
     {
         using var stream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
         using var doc = SpreadsheetDocument.Open(stream, true);
@@ -25,22 +27,20 @@ public static class SheetSorter
         var nameMap = sheetList.Select((s, idx) => new { Sheet = s, OldIndex = idx }).ToList();
 
         /* 2. 自定义排序 */
-        var ordered = nameMap
-            .OrderBy(x =>
-            {
-                var first = char.ToUpperInvariant(x.Sheet.Name.Value[0]);
-                // 特殊字母的优先级：D=1，S=2，A=3；其余字母=0（保持字母序）
-                return first switch
-                {
-                    'D' => 0,
-                    'P' => 1,
-                    'S' => 2,
-                    'A' => 3,
-                    _ => 4
-                };
-            })
-            .ThenBy(x => x.Sheet.Name!.Value, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var ordered = rankSelector == null
+            // 旧规则：首字母 D→P→S→A→其他，再按名字
+            ? nameMap
+                .OrderBy(x => LegacyGroup(x.Sheet.Name!.Value!))
+                .ThenBy(x => x.Sheet.Name!.Value, StringComparer.OrdinalIgnoreCase)
+                .ToList()
+            // 业务顺序：先按档位，档内沿用旧规则；副本按基名紧跟基表
+            : nameMap
+                .OrderBy(x => rankSelector(x.Sheet.Name!.Value!))
+                .ThenBy(x => LegacyGroup(WetSheetOrder.BaseName(x.Sheet.Name!.Value!)))
+                .ThenBy(x => WetSheetOrder.BaseName(x.Sheet.Name!.Value!), StringComparer.OrdinalIgnoreCase)
+                .ThenBy(x => WetSheetOrder.CopyIndex(x.Sheet.Name!.Value!))
+                .ThenBy(x => x.Sheet.Name!.Value, StringComparer.OrdinalIgnoreCase)
+                .ToList();
 
         /* 3. 建立 旧索引→新索引 映射 */
         var indexMap = new Dictionary<int, int>();
@@ -67,5 +67,19 @@ public static class SheetSorter
         }
 
         workbook.Save();
+    }
+
+    /// <summary>旧排序规则的字母分档：D=0，P=1，S=2，A=3，其余=4。</summary>
+    private static int LegacyGroup(string sheetName)
+    {
+        var first = char.ToUpperInvariant(sheetName[0]);
+        return first switch
+        {
+            'D' => 0,
+            'P' => 1,
+            'S' => 2,
+            'A' => 3,
+            _ => 4
+        };
     }
 }

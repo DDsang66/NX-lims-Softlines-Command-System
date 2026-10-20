@@ -48,9 +48,9 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService
             ExcelHelper.CompareAndMarkChanges(wetTemplate, wetOut);
             ExcelHelper.CompareAndMarkChanges(physicsTemplate, phyOut);
 
-            // 排 wetOut 文件
-            SheetSorter.SortSheetsAndFixNames(wetOut);
-            // 排 phyOut 文件
+            // 排 wetOut 文件（固定业务顺序）
+            SheetSorter.SortSheetsAndFixNames(wetOut, WetSheetOrder.Rank);
+            // 排 phyOut 文件（保持原规则）
             SheetSorter.SortSheetsAndFixNames(phyOut);
 
             // 本机打开（开发环境可选）
