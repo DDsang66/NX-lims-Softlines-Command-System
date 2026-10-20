@@ -23,7 +23,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     ///   表3 备注: 静态(最小二乘法说明)
     ///   无"曲线图"占位段 → 每个参与工位(样品)独立一张曲线 PNG 追加到文档末尾
     ///   页脚(footer1, TÜV 签名行): R1 末两格 ____°C / ____%RH = 环境温度/湿度(同克重 PHY_Weight)
-    /// "干燥速率："行值格 = 参与工位回归斜率(g/h) 的均值。
+    /// "干燥速率："行值格 = 回归斜率(g/h) 均值: FillReport 取全部参与工位; FillReportByPages 按页各算各的
+    /// (每页只平均本页那组参与样品 —— 6 样品时 1/2/3 一页、4/5/6 一页)。
     /// 注意"测点："与"干燥速率："两行的**位置会被实验室改动**(2026-09-11 两行互换:
     /// 干燥速率从摘要表 R5 挪进独立单行表、测点进摘要表 R5), 故这两行一律按标签文字定位、
     /// 不绑表序号也不绑表 —— 落在哪张表里都认。
@@ -101,7 +102,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 填充 GB21655 干燥速率报告 —— 整页克隆版(报告新布局)。每个参与组(≤3 工位)独占一整页:
         /// 第 2 组起把模板"整页"块(摘要+测点+结果+Equipment+备注, 见 <see cref="CollectTemplatePage"/>)
         /// 整页深拷贝成新页, 页前加分页符(同一节内分页 → 每页共享模板页脚/页边距)。
-        /// 摘要(报告号/干燥速率均值)/样品名称/Equipment/备注随页重复。
+        /// 摘要(报告号)/样品名称/Equipment/备注随页重复; "干燥速率"均值则按页各算各的
+        /// (每页只对本页那组参与样品取平均 —— 6 样品时 1/2/3 一页、4/5/6 一页)。
         /// 与 FillReport(整表克隆)的分工: FillReport 保留原行为供回归对照; 报告生成走本方法。
         /// 单组(≤3 工位)时与 FillReport 输出一致(不克隆, 原地填模板页)。
         /// </summary>
@@ -120,20 +122,11 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 样品名称 → "测点："行值格(模板无独立"样品名称"格)
             SetCellText(sampleNameCell, model.SampleName);
 
-            var participated = model.Stations.Where(s => s.Participated).ToList();
-            if (participated.Count > 0)
-            {
-                double avgRateGPerHour = participated.Average(s => s.RateGPerHour);
-                // 模板值格原内容 = 单位 token"(g/h)"([干燥速率：, (g/h)])——SetCellText 整格重建会把它冲掉,
-                // 故先取回再拼在数值后。
-                string unit = rateCell.InnerText.Trim();
-                string value = avgRateGPerHour.ToString("F3");
-                SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value, bold: true);
-            }
-
             // 参与工位按 3 个一组切页; 整组无参与工位 → 该组不出页。
             //   第 1 组直接用模板自带整页; 之后每组整页克隆。克隆时机在填网格之前:
-            //   上面摘要/样品名/速率已填(克隆页继承同款报告头), 结果网格此刻仍空 → 克隆不会把上一组数据带进新页。
+            //   摘要/样品名已填(克隆页继承同款报告头), 结果网格此刻仍空 → 克隆不会把上一组数据带进新页。
+            //   "干燥速率"均值不在这里填: 它按页各算各的(6 样品 1/2/3、4/5/6 分开算), 必须等每页克隆出来
+            //   再各写各的; 若先填模板页, 克隆页会把第 1 组的数当成模板原单位 token 继承过去。
             var groups = new List<List<DryingRateStationRowModel>>();
             for (int start = 0; start < model.Stations.Count; start += Gb21655Layout.SamplesPerTable)
             {
@@ -142,21 +135,32 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             }
 
             var pageBlock = CollectTemplatePage(doc);        // 模板整页元素块(克隆源)
+            var rateTable = rateCell.Ancestors<Table>().FirstOrDefault();   // 速率行所在表(模板改版可能搬表, 按祖先取)
             var pageTables = new List<Table> { result };     // 每组一页: [0]=模板自带页
+            var pageRateCells = new List<TableCell> { rateCell };
             for (int gi = 1; gi < groups.Count; gi++)
             {
                 var clones = WordEditEngine.ClonePageBlock(body, pageBlock);   // 分页符段+整页深拷贝 → 文末 sectPr 前
-                Table? pageResult = null;
+                Table? pageResult = null, pageRate = null;
                 for (int i = 0; i < pageBlock.Count; i++)
+                {
                     if (ReferenceEquals(pageBlock[i], result)) pageResult = clones[i] as Table;
+                    if (rateTable != null && ReferenceEquals(pageBlock[i], rateTable)) pageRate = clones[i] as Table;
+                }
                 if (pageResult == null)
                     throw new InvalidOperationException("GB21655 模板页块缺结果表, 无法克隆新页");
                 pageTables.Add(pageResult);
+                pageRateCells.Add(FindRateValueCell(pageRate)
+                    ?? throw new InvalidOperationException("GB21655 克隆页缺干燥速率行, 无法按页填均值"));
             }
 
             // 每页各填自己的 3 个样品槽(表头样品号=工位号、m0、0..60min 网格; 未参与留空)
+            // 与自己的速率均值(只取本页这组参与样品)
             for (int gi = 0; gi < groups.Count; gi++)
+            {
+                FillPageRate(pageRateCells[gi], groups[gi]);
                 FillSampleGroup(pageTables[gi], groups[gi], model.SpaceTimeMin);
+            }
 
             // 曲线图: 每个参与工位(样品)独立一张 PNG →
             // 按序追加到文档末尾(模板无占位段), 图内已自带头"样品N 蒸发曲线"
@@ -419,6 +423,39 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 var cells = row.Elements<TableCell>().ToList();
                 if (cells.Count <= Gb21655Layout.ValueColumn) continue;
                 if (cells[0].InnerText.Trim() == label)
+                    return cells[Gb21655Layout.ValueColumn];
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// 每页"干燥速率"值格 = 本页参与样品速率的算术平均(6 样品分两页时 1/2/3 一页、4/5/6 一页,
+        /// 各页各算各的 —— 不是全报告一个均值)。模板值格原内容 = 单位 token"(g/h)",
+        /// SetCellText 整格重建会把它冲掉, 故先取回再拼在数值后。整组无参与样品时该页不会产生, 这里只做空集守卫。
+        /// </summary>
+        private void FillPageRate(TableCell rateCell, IReadOnlyList<DryingRateStationRowModel> group)
+        {
+            var participated = group.Where(s => s.Participated).ToList();
+            if (participated.Count == 0) return;
+
+            double avgRateGPerHour = participated.Average(s => s.RateGPerHour);
+            string unit = rateCell.InnerText.Trim();
+            string value = avgRateGPerHour.ToString("F3");
+            SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value, bold: true);
+        }
+
+        /// <summary>
+        /// 在某一页的速率表里取"干燥速率："行的值格。整页克隆后文档里有多张同构表,
+        /// 全局 FindValueCellByLabel 只会返回第一个 —— 按页填均值必须限定到本页这张表。
+        /// </summary>
+        private static TableCell? FindRateValueCell(Table? rateTable)
+        {
+            if (rateTable == null) return null;
+            foreach (var row in rateTable.Elements<TableRow>())
+            {
+                var cells = row.Elements<TableCell>().ToList();
+                if (cells.Count <= Gb21655Layout.ValueColumn) continue;
+                if (cells[0].InnerText.Trim() == Gb21655Layout.RateLabel)
                     return cells[Gb21655Layout.ValueColumn];
             }
             return null;
