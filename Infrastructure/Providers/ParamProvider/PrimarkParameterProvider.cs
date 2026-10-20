@@ -244,6 +244,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 SpecialCareInstruction = p.Sci,
                 Iron = p.Iron ?? null,
                 IronMethod = p.IronMethod ?? null,
+                Detergent = DetergentHelper(p.Detergent, sampleDesc, p.WashingProcedure!),
                 Ballast = _helper.IsCompositionTypeExist("Cellulose", fiberContent!) >= 51 ? "Type I (100% Cotton)"
                 : _helper.IsCompositionSourceExist("Synthetic", fiberContent!) >= 51 ? "Type III (100% Polyester)"
                 : "Type III (100% Polyester)",

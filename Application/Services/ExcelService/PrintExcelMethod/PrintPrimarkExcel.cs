@@ -605,14 +605,14 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             {
                 "Physical & Mechanical" => standard switch
                 {
-                    _ when standard.Contains("EN 71-1:2014+A1:2018 8.4") => "Attachment Strength",
+                    _ when standard.Contains("EN 71-1:2026") => "Attachment Strength",
                     _ when standard.Contains("ASTM F963-23") => "ASTM F963-23",
                     _ => "Physical & Mechanical"
                 },
                 "Torque & Tension" => standard switch
                 {
                     _ when standard.Contains("16 CFR 1500.51-53") => "Torque&Tension",
-                    _ when standard.Contains("EN 71-1:2024+A1:2018") => "Torque&Tension-EN 71",
+                    _ when standard.Contains("EN 71-1:2026") => "Torque&Tension-EN 71",
                     _ => "Torque & Tension"
                 },
                 _ => templateName // 或根据描述值组合
@@ -867,7 +867,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             [("Physical & Mechanical")] = new Dictionary<string[], string>
             {
-                {new[] { "EN 71-1:2014+A1:2018 8.4" }, "Attachment Strength" },
+                {new[] { "EN 71-1:2026" }, "Attachment Strength" },
             },
             [("Physical & Mechanical")] = new Dictionary<string[], string>
             {
@@ -879,7 +879,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
             },
             [("Torque & Tension")] = new Dictionary<string[], string>
             {
-                {new[] { "EN 71-1:2024+A1:2018" }, "Torque&Tension-EN 71" },
+                {new[] { "EN 71-1:2026" }, "Torque&Tension-EN 71" },
             },
             [("Spirality")] = new Dictionary<string[], string>
             {
@@ -1367,6 +1367,8 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     ["AJ40"] = (wp, np, row, esDto, sample) => wp.Temperature!,
                     ["Q41"] = (wp, np, row, esDto, sample) => wp.Ballast!,
                     ["S42"] = (wp, np, row, esDto, sample) => wp.DryProcedure!,
+                    ["A42"] = (wp, np, row, esDto, sample) => wp.Detergent!,
+                    ["A43"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.SpecialCareInstruction!)? "-" : wp.SpecialCareInstruction!,
                     ["AB42"] = (wp, np, row, esDto, sample) => string.IsNullOrEmpty(wp.Iron) ? "/ Iron" : wp.IronMethod!
                 },
                 ["Mass per Unit Area"] = (wp, np, row, esDto, sample) => new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>
@@ -1599,7 +1601,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                     var map = new Dictionary<string, Func<WetParameterIso, NormalParameter, NewSelectedRows, ExcelSubmitDto, string, string>>();
                     map["M1"] = (wp, np, row, esDto, sample)  => esDto.ReportNumber!;
                     if (row.standards!.Contains("ASTM F963-23")) map["A3"] = (wp, np, row, esDto, sample) => row.standards!;
-                    else if (row.standards!.Contains("EN 71-1:2014+A1:2018 8.4")) map["A18"] = (wp, np, row, esDto, sample) => row.standards!;
+                    else if (row.standards!.Contains("EN 71-1:2026")) map["A18"] = (wp, np, row, esDto, sample) => row.standards!;
                     return map;
                 },
                 ["Torque & Tension"] = (wp, np, row, esDto, sample) =>
