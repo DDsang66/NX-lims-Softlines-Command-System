@@ -62,7 +62,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 Stations = model.Stations
             });
 
-            // 数据表 → 曲线图: 两者都排到文末, 先调的先排 → 文档里是"表在前、图在后"(用户要求)
+            // 数据表 → 曲线图: 两者都排到文末, 先调的先排 → 文档里是"表在前、图在后"
             AppendDataTablesAtEnd(doc, new[]
             {
                 new Aatcc201SampleBlockModel { SampleName = model.SampleName, Stations = model.Stations }

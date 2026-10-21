@@ -48,7 +48,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Contract.DTOs
         public string JudgmentLabelRemark { get; set; } = string.Empty;
         public string LanguageLabelRemark { get; set; } = string.Empty;
 
-        /// <summary>conclusion 段唯一字段。2026-09-28 起 DurabilityLabel/OtherLabel/Comprehensive/FinalResult 已随模板删行下线。</summary>
+        /// <summary>conclusion 段唯一字段。DurabilityLabel/OtherLabel/Comprehensive/FinalResult 已下线。</summary>
         public string VerifyResult { get; set; } = string.Empty;
     }
 

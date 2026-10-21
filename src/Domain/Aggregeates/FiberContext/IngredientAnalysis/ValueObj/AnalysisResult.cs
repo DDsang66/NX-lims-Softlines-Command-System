@@ -56,7 +56,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         public string JudgmentLabelRemark => Get<string>("JudgmentLabelRemark") ?? string.Empty;
         public string LanguageLabelRemark => Get<string>("LanguageLabelRemark") ?? string.Empty;
 
-        /// <summary>conclusion 段唯一字段。2026-09-28 起 DurabilityLabel/OtherLabel/Comprehensive/FinalResult 已下线。</summary>
+        /// <summary>conclusion 段唯一字段。DurabilityLabel/OtherLabel/Comprehensive/FinalResult 已下线。</summary>
         public string VerifyResult => Get<string>("VerifyResult") ?? string.Empty;
         public string BurningTest => Get<string>("BurningTest") ?? string.Empty;
         public List<string> Results => Get<List<string>>("Results") ?? new List<string>();

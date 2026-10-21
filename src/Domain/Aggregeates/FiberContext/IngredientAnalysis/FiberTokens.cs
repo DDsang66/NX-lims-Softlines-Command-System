@@ -19,8 +19,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     /// 黄麻（jute）虽然是纤维素纤维，但 ISO 1833 系列没有它的分部（1833-15 是黄麻+动物纤维的含氮量法，
     /// 本规则表没有这条），所以 IsCellulosicOrCotton **刻意不收**它——收进去会让
     /// (Jute, Polyester) 命中 -11，而 1833-11 的对象表里没有黄麻。
-    /// 同理 Elastodiene 不入 IsElastane（-12/-20 都不含它），故含它的配对一律落空，
-    /// 该配什么分部待实验室裁定。
+    /// 同理 Elastodiene 不入 IsElastane（-12/-20 都不含它），故含它的配对一律落空。
     /// </summary>
     internal static class FiberTokens
     {
