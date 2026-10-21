@@ -137,6 +137,19 @@ namespace NX_lims_Softlines_Command_System.src.Web_API
             );
         }
 
+        /// <summary>
+        /// 历史报告回填：按文件名找回生成时的录入数据（表单 DTO）。
+        /// 与下载同一个入口标识（fileName），报告号/口径/时间戳全部从文件名解析 —— 不用前端再拼。
+        /// </summary>
+        [HttpGet("reports/{fileName}/worksheet")]
+        public async Task<IActionResult> GetReportWorksheet(string fileName)
+        {
+            var result = await _worksheetService.GetWorkSheetByFileNameAsync(fileName);
+            var obj = result as dynamic;
+            if (obj?.success == false) return NotFound(result);
+            return Ok(result);
+        }
+
         [HttpGet("worksheet/{reportNumber:regex(^.+$)}")]
         public async Task<IActionResult> GetWorkSheet(string reportNumber)
         {

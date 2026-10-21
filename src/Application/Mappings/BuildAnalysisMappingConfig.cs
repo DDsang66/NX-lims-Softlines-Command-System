@@ -23,6 +23,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                 .Map(dest => dest.ReportNumber, src => src.ReportNumber ?? string.Empty)
                 .Map(dest => dest.Method, src => ParseMethods(src.Method))
                 .Map(dest => dest.Buyer, src => src.Buyer ?? string.Empty)
+                .Map(dest => dest.ComponentType, src => GetComponentType(src))
                 .Map(dest => dest.MultipleBuildAnalysis, src => DeserializeMultipleAnalysis(src.FiberAnalysis1))
                 .Map(dest => dest.SingleBuildAnalysis, src => DeserializeSingleAnalysis(src.FiberAnalysis1))
                 .Map(dest => dest.RecommendedLabel, src => DeserializeRecommendedLabel(src.Remark))
@@ -215,6 +216,29 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
             if (hasSingle) return 0;
 
             return null;
+        }
+
+        /// <summary>
+        /// 反方向（库 → 表单）的组分类型：<c>0 = Single</c>、<c>1 = Multi</c>。
+        /// 以列 fiber_analysis.type 为准；列为 NULL 时按 JSON 里的 type 探针判断 ——
+        /// 与 <c>FiberAnalysisToIngredientAnalysisAdapter.ResolveAnalysisType</c> 同口径，
+        /// 别只信列（历史行里存在列为空、JSON 却是 multiple 的记录）。
+        /// </summary>
+        private string GetComponentType(FiberAnalysis src)
+        {
+            if (src.Type.HasValue) return src.Type.Value == 1 ? "Multi" : "Single";
+
+            if (string.IsNullOrWhiteSpace(src.FiberAnalysis1)) return "Multi";
+
+            try
+            {
+                using var doc = JsonDocument.Parse(src.FiberAnalysis1);
+                if (doc.RootElement.TryGetProperty("type", out var typeProp))
+                    return typeProp.GetString() == "Single" ? "Single" : "Multi";
+            }
+            catch { }
+
+            return "Multi";
         }
 
         /// <summary>
