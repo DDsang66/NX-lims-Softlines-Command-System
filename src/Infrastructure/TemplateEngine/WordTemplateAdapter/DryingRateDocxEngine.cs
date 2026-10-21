@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
@@ -25,7 +27,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
     ///   页脚(footer1, TÜV 签名行): R1 末两格 ____°C / ____%RH = 环境温度/湿度(同克重 PHY_Weight)
     /// "干燥速率："行值格 = 回归斜率(g/h) 均值: FillReport 取全部参与工位; FillReportByPages 按页各算各的
     /// (每页只平均本页那组参与样品 —— 6 样品时 1/2/3 一页、4/5/6 一页)。
-    /// 注意"测点："与"干燥速率："两行的**位置会被实验室改动**(2026-09-11 两行互换:
+    /// 注意"测点："与"干燥速率："两行的**位置会被实验室改动**(两行互换过:
     /// 干燥速率从摘要表 R5 挪进独立单行表、测点进摘要表 R5), 故这两行一律按标签文字定位、
     /// 不绑表序号也不绑表 —— 落在哪张表里都认。
     /// </summary>
@@ -175,9 +177,340 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         }
 
         /// <summary>
+        /// 解析一份历史 NF5022 报告 —— 合并报告的数据源(生成时刻没有另存结构化结果)。
+        /// 按正文分页符切页: 每页 = 一次测试(≤3 样品); 报告号/测点/干燥速率一律按标签在页内找,
+        /// 兼容"测点/干燥速率两行互换"前后的两种排版;
+        /// 结果表每样品 [时间|Δmi|mi] 三列, 由 Δmi 还原蒸发曲线、由 mi(0) 还原滴水量。
+        /// 数值全部读回历史报告印出来的数, 不重算单样品速率(报告本来就没印)。
+        /// </summary>
+        public Nf5022ParsedReport ReadReport(string filePath)
+        {
+            using var doc = WordprocessingDocument.Open(filePath, false);
+            var mainPart = doc.MainDocumentPart
+                ?? throw new InvalidOperationException($"NF5022 报告缺少主部件: {Path.GetFileName(filePath)}");
+            var body = mainPart.Document?.Body
+                ?? throw new InvalidOperationException($"NF5022 报告缺少正文: {Path.GetFileName(filePath)}");
+
+            var parsed = new Nf5022ParsedReport();
+
+            var summary = LocateTable(doc, Gb21655Layout.SummaryTableMarker);
+            parsed.ReportNumber = Row(summary, Gb21655Layout.SummaryRowReportNumber)?
+                .Elements<TableCell>().ElementAtOrDefault(Gb21655Layout.ValueColumn)?.InnerText.Trim() ?? string.Empty;
+
+            foreach (var segment in SplitReportPages(body))
+            {
+                var page = ReadPage(segment);
+                if (page != null) parsed.Pages.Add(page);
+            }
+            if (parsed.Pages.Count == 0)
+                throw new InvalidOperationException("报告里没有可读取的结果表");
+
+            parsed.Charts.AddRange(ReadBodyChartPngs(mainPart, body));
+            (parsed.Temperature, parsed.Humidity) = ReadFooterValues(doc);
+            return parsed;
+        }
+
+        /// <inheritdoc />
+        public IReadOnlyList<string> ReadSampleNames(string filePath)
+        {
+            try
+            {
+                using var doc = WordprocessingDocument.Open(filePath, false);
+                var body = doc.MainDocumentPart?.Document?.Body;
+                if (body == null) return Array.Empty<string>();
+
+                var names = new List<string>();
+                foreach (var segment in SplitReportPages(body))
+                {
+                    string name = FindValueCellIn(segment, Gb21655Layout.MeasurePointLabel)?.InnerText.Trim()
+                                  ?? string.Empty;
+                    if (name.Length > 0 && !names.Contains(name)) names.Add(name);
+                }
+                return names;
+            }
+            catch
+            {
+                // 单个文件读不出来不影响列表其它行(报告坏了不该让历史界面打不开)
+                return Array.Empty<string>();
+            }
+        }
+
+        /// <summary>
+        /// 填充合并报告 —— 同一报告号下多份历史报告, 每次测试原样成一页:
+        ///   1. 第 2 页起整页克隆模板页(同 FillReportByPages);
+        ///   2. 每页填自己的样品名称、干燥速率均值(历史报告上印的值, 原样沿用)、结果网格(用本页采样间隔);
+        ///   3. 曲线图全部追加到文末; 页脚温湿度只填一次(一份文档共用一个页脚)。
+        /// 克隆必须先于填充: 模板页值格的单位 token 与空网格要保持原样被克隆,
+        /// 否则第 1 页的数会被当成模板内容带进后续页。
+        /// </summary>
+        public void FillCombinedReport(string filePath, DryingRateCombinedReportFillModel model)
+        {
+            using var doc = WordprocessingDocument.Open(filePath, true);
+            var body = doc.MainDocumentPart?.Document?.Body
+                ?? throw new InvalidOperationException("GB21655 模板正文缺失");
+            var (_, _, _, result) = ValidateTemplate(doc);
+
+            if (model.Pages.Count == 0)
+                throw new InvalidOperationException("合并报告没有可填充的页");
+
+            var pageBlock = CollectTemplatePage(doc);
+            var pageTables = new List<Table> { result };
+            var pageBlocks = new List<List<OpenXmlElement>> { pageBlock };
+
+            for (int pi = 1; pi < model.Pages.Count; pi++)
+            {
+                var clones = WordEditEngine.ClonePageBlock(body, pageBlock);
+                Table? pageResult = null;
+                for (int i = 0; i < pageBlock.Count; i++)
+                {
+                    if (ReferenceEquals(pageBlock[i], result)) pageResult = clones[i] as Table;
+                }
+                if (pageResult == null)
+                    throw new InvalidOperationException("GB21655 模板页块缺结果表, 无法克隆新页");
+                pageTables.Add(pageResult);
+                pageBlocks.Add(clones);
+            }
+
+            for (int pi = 0; pi < model.Pages.Count; pi++)
+            {
+                var page = model.Pages[pi];
+                var block = pageBlocks[pi];
+
+                var summary = block.OfType<Table>()
+                    .FirstOrDefault(t => t.InnerText.Contains(Gb21655Layout.SummaryTableMarker))
+                    ?? throw new InvalidOperationException("GB21655 报告页缺少摘要表(Test Report)");
+                SetCellText(Row(summary, Gb21655Layout.SummaryRowReportNumber)!, Gb21655Layout.ValueColumn,
+                            model.ReportNumber, bold: true, fontSizeHalfPoints: ReportNumberFontSizeHalfPoints);
+
+                var sampleNameCell = FindValueCellIn(block, Gb21655Layout.MeasurePointLabel)
+                    ?? throw new InvalidOperationException("GB21655 报告页缺少样品名称行(测点：)");
+                SetCellText(sampleNameCell, page.SampleName);
+
+                var rateCell = FindValueCellIn(block, Gb21655Layout.RateLabel)
+                    ?? throw new InvalidOperationException("GB21655 报告页缺少干燥速率行(干燥速率：)");
+                FillRateValue(rateCell, page.RateGPerHour ?? 0);
+
+                FillSampleGroup(pageTables[pi], page.Stations, page.SpaceTimeMin);
+            }
+
+            for (int i = 0; i < model.ChartPngs.Count; i++)
+                if (model.ChartPngs[i] is { Length: > 0 })
+                    AppendChartAtEnd(doc, model.ChartPngs[i], i);
+
+            FillFooter(doc, model.Temperature, model.Humidity);
+
+            doc.MainDocumentPart?.Document?.Save();
+        }
+
+        /// <summary>
+        /// 把正文按分页符切成"页": 每段 = 一次测试(摘要/测点/速率/结果/Equipment/备注)。
+        /// 前导分节段(带 w:sectPr 的空段)与文末 body 级 sectPr 不算内容; 分页符段本身跳过(它属于下一页)。
+        /// 没有分页符的单页报告 = 一个段; 文末追加的曲线图段没有结果表, 由 ReadPage 返回 null 跳过。
+        /// </summary>
+        private static List<List<OpenXmlElement>> SplitReportPages(Body body)
+        {
+            var pages = new List<List<OpenXmlElement>>();
+            var current = new List<OpenXmlElement>();
+
+            foreach (var e in body.ChildElements)
+            {
+                if (e is SectionProperties) break;   // 文末 body 级节属性之后不再有内容
+                if (e is Paragraph p)
+                {
+                    // 前导分节空段不属于页内容(与 CollectTemplatePage 一致)
+                    if (p.ParagraphProperties?.SectionProperties is not null) continue;
+                    if (p.Descendants<Break>().Any(b => b.Type?.Value == BreakValues.Page))
+                    {
+                        if (current.Count > 0) { pages.Add(current); current = new List<OpenXmlElement>(); }
+                        continue;
+                    }
+                }
+                current.Add(e);
+            }
+            if (current.Count > 0) pages.Add(current);
+            return pages;
+        }
+
+        /// <summary>
+        /// 读一页历史报告: 结果表按 3 槽还原样品行; 关键值(均值/滴水量/曲线)读不出来 → 抛说明性异常。
+        /// 一页里出现两张结果表 = 旧整表克隆布局(一个摘要两张结果表、无分页符), 明确拒绝合并,
+        /// 不做"猜哪张属于哪次测试"的拆分。
+        /// </summary>
+        private DryingRateParsedPageModel? ReadPage(List<OpenXmlElement> segment)
+        {
+            var resultTables = segment.OfType<Table>()
+                .Where(t => t.InnerText.Contains(Gb21655Layout.ResultTableMarker))
+                .Where(HasSampleHeader)
+                .ToList();
+            if (resultTables.Count == 0) return null;
+            if (resultTables.Count > 1)
+                throw new InvalidOperationException("旧版布局不支持合并(一个摘要两张结果表)");
+
+            var table = resultTables[0];
+
+            var rateCell = FindValueCellIn(segment, Gb21655Layout.RateLabel)
+                ?? throw new InvalidOperationException("报告页缺少干燥速率行(干燥速率：)");
+            double? rate = ParseFirstNumber(rateCell.InnerText);
+            if (rate == null)
+                throw new InvalidOperationException("报告页的干燥速率不是数字");
+
+            var page = new DryingRateParsedPageModel
+            {
+                SampleName = FindValueCellIn(segment, Gb21655Layout.MeasurePointLabel)?.InnerText.Trim()
+                             ?? string.Empty,
+                RateGPerHour = rate
+            };
+            page.SpaceTimeMin = ReadSpaceTime(table);
+
+            for (int s = 0; s < Gb21655Layout.SamplesPerTable; s++)
+            {
+                string header = Row(table, Gb21655Layout.HeaderRow)?
+                    .Elements<TableCell>().ElementAtOrDefault(s)?.InnerText.Trim() ?? string.Empty;
+                if (header.Length == 0) continue;   // 本页不足 3 个样品 → 尾部空槽不产生工位
+
+                var st = new DryingRateStationRowModel
+                {
+                    Station = ParseFirstInt(header) ?? (s + 1)
+                };
+
+                // R1 [m0:][值]: 干布重(g) → mg; 空 → 未参与
+                double? m0 = ParseCellNumber(Row(table, Gb21655Layout.M0Row)?
+                    .Elements<TableCell>().ElementAtOrDefault(2 * s + 1));
+                if (m0 != null)
+                {
+                    st.ClothWeightMg = Math.Round(m0.Value * 1000.0);
+                    st.Participated = true;
+                }
+
+                // 时间网格 [时间|Δmi|mi]: Δmi(g)×1000 = 累计蒸发量(mg); 首行 mi(g) 用于还原滴水量。
+                // 早停/尾部留空 → 从该点起没有记录, 直接截断曲线(与生成侧 EvapAtMin 的留空一致)。
+                var curve = new List<double>();
+                double? mi0 = null;
+                for (int k = 0; ; k++)
+                {
+                    var row = Row(table, Gb21655Layout.FirstTimeRow + k);
+                    if (row == null) break;
+                    double? deltaMg = ParseCellNumber(row.Elements<TableCell>().ElementAtOrDefault(3 * s + 1));
+                    if (deltaMg == null) break;
+                    curve.Add(Math.Round(deltaMg.Value * 1000.0));
+                    if (k == 0)
+                        mi0 = ParseCellNumber(row.Elements<TableCell>().ElementAtOrDefault(3 * s + 2));
+                }
+
+                if (st.Participated)
+                {
+                    if (curve.Count == 0 || mi0 == null)
+                        throw new InvalidOperationException($"样品{st.Station} 缺少蒸发曲线/布样总重, 无法还原滴水量");
+                    st.EvaporationCurveMg = curve;
+                    st.WaterMg = Math.Round(mi0.Value * 1000.0) - st.ClothWeightMg;
+                }
+
+                page.Stations.Add(st);
+            }
+
+            return page;
+        }
+
+        /// <summary>结果表判据: R0 表头含"样品"(备注表虽然也含"水分蒸发时间", 但没有样品表头)。</summary>
+        private static bool HasSampleHeader(Table table)
+            => Row(table, Gb21655Layout.HeaderRow)?.InnerText.Contains("样品") == true;
+
+        /// <summary>由时间网格前两行标签差还原采样间隔(分钟): "0 min"/"3 min" → 3。</summary>
+        private static int ReadSpaceTime(Table table)
+        {
+            int? first = ParseFirstInt(Row(table, Gb21655Layout.FirstTimeRow)?
+                .Elements<TableCell>().ElementAtOrDefault(0)?.InnerText);
+            int? second = ParseFirstInt(Row(table, Gb21655Layout.FirstTimeRow + 1)?
+                .Elements<TableCell>().ElementAtOrDefault(0)?.InnerText);
+            if (first == null || second == null || second.Value - first.Value <= 0)
+                throw new InvalidOperationException("报告结果表的时间标签无法读取采样间隔");
+            return second.Value - first.Value;
+        }
+
+        /// <summary>在给定元素集合(一页/整篇)的表里按标签格文字找值格; 找不到返回 null。</summary>
+        private static TableCell? FindValueCellIn(IEnumerable<OpenXmlElement> elements, string label)
+        {
+            foreach (var table in elements.OfType<Table>())
+            {
+                foreach (var row in table.Elements<TableRow>())
+                {
+                    var cells = row.Elements<TableCell>().ToList();
+                    if (cells.Count <= Gb21655Layout.ValueColumn) continue;
+                    if (cells[0].InnerText.Trim() == label)
+                        return cells[Gb21655Layout.ValueColumn];
+                }
+            }
+            return null;
+        }
+
+        /// <summary>读一个数值格(空格/非数字 → null)。</summary>
+        private static double? ParseCellNumber(TableCell? cell)
+            => double.TryParse(cell?.InnerText.Trim() ?? string.Empty, NumberStyles.Float,
+                CultureInfo.InvariantCulture, out double value) ? value : null;
+
+        /// <summary>取文本里第一个数字(干燥速率格是 "1.791 (g/h)" 这种带单位的形态)。</summary>
+        private static double? ParseFirstNumber(string? text)
+        {
+            var m = Regex.Match(text ?? string.Empty, @"-?\d+(\.\d+)?");
+            return m.Success && double.TryParse(m.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out double v)
+                ? v : null;
+        }
+
+        /// <summary>取文本里第一个整数("样品4" → 4)。</summary>
+        private static int? ParseFirstInt(string? text)
+        {
+            var m = Regex.Match(text ?? string.Empty, @"-?\d+");
+            return m.Success && int.TryParse(m.Value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int v)
+                ? v : null;
+        }
+
+        /// <summary>
+        /// 读正文里的图片字节(= 引擎追加到文末的曲线图)。遍历正文 blip 关系逐个取 ImagePart 流;
+        /// 关系失效/非图片一律跳过(宽容), 一张坏图不影响其它图。
+        /// </summary>
+        private static List<byte[]> ReadBodyChartPngs(MainDocumentPart mainPart, Body body)
+        {
+            var pngs = new List<byte[]>();
+            foreach (var blip in body.Descendants<A.Blip>())
+            {
+                string? relId = blip.Embed?.Value;
+                if (string.IsNullOrEmpty(relId)) continue;
+                try
+                {
+                    if (mainPart.GetPartById(relId) is not ImagePart image) continue;
+                    using var ms = new MemoryStream();
+                    using (var stream = image.GetStream()) stream.CopyTo(ms);
+                    if (ms.Length > 0) pngs.Add(ms.ToArray());
+                }
+                catch (ArgumentOutOfRangeException) { /* 关系失效的图: 跳过 */ }
+                catch (KeyNotFoundException) { /* 关系缺失的图: 跳过 */ }
+            }
+            return pngs;
+        }
+
+        /// <summary>读页脚温湿度(没填过 → null, 由调用方决定回退到别的文件或留空)。</summary>
+        private static (string? Temperature, string? Humidity) ReadFooterValues(WordprocessingDocument doc)
+        {
+            var footerEl = doc.MainDocumentPart?.FooterParts
+                .FirstOrDefault(fp => fp.Footer?.InnerText.Contains("%RH") == true)?.Footer;
+            var row = footerEl?.Elements<Table>().FirstOrDefault()?.Elements<TableRow>().ElementAtOrDefault(1);
+            var cells = row?.Elements<TableCell>().ToList();
+            if (cells == null || cells.Count < 4) return (null, null);
+
+            return (ExtractNumber(cells[2].InnerText), ExtractNumber(cells[3].InnerText));
+        }
+
+        /// <summary>取文本里第一个数字(页脚格是 "__23.5__°C" 这种带横线/单位的形态)。</summary>
+        private static string? ExtractNumber(string? text)
+        {
+            var m = Regex.Match(text ?? string.Empty, @"-?\d+(\.\d+)?");
+            return m.Success ? m.Value : null;
+        }
+
+        /// <summary>
         /// 取模板"整页"元素块(整页克隆的克隆源)。模板 body 布局:
         /// [前导分节空段(带 w:pPr/w:sectPr)] 摘要表 干燥速率表 结果表 Equipment 段 备注表 [文末 body 级 sectPr]。
-        /// (摘要表内含"测点"行; 2026-09-11 版把"干燥速率"行抽成摘要表后独立的单行表。)
+        /// (摘要表内含"测点"行; "干燥速率"行也可能是摘要表后独立的单行表。)
         /// 页块 = 文末 body 级 sectPr 之前、前导分节段之后的全部元素 —— 摘要(报告号/均值速率)/样品名称/
         /// Equipment/备注 全部随页重复。插入位置与分页符由 WordEditEngine.ClonePageBlock 处理,
         /// 这里只负责"哪些元素算一页"。
@@ -277,6 +610,10 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 按 "%RH" 标记定位 footer, 结构不符立即抛异常; 模型值空白 → 不填(保留模板横线)。
         /// </summary>
         private void FillFooter(WordprocessingDocument doc, DryingRateReportFillModel model)
+            => FillFooter(doc, model.Temperature, model.Humidity);
+
+        /// <summary>页脚温湿度写入(合并报告只有一套页脚, 取最新一份非空值传入)。</summary>
+        private void FillFooter(WordprocessingDocument doc, string temperature, string humidity)
         {
             var footer = doc.MainDocumentPart?.FooterParts
                 .FirstOrDefault(fp => fp.Footer?.InnerText.Contains("%RH") == true)
@@ -293,8 +630,8 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             if (cells.Count < 4)
                 throw new InvalidOperationException("GB21655 模板页脚温湿度表 R1 格数不足(应含温度/湿度格)");
 
-            WriteFooterValue(cells[2], model.Temperature, "°C");
-            WriteFooterValue(cells[3], model.Humidity, "%RH");
+            WriteFooterValue(cells[2], temperature, "°C");
+            WriteFooterValue(cells[3], humidity, "%RH");
 
             footerEl.Save();
         }
@@ -407,7 +744,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
 
         /// <summary>
         /// 按标签格文字定位 [标签|值] 行, 返回值格(第 ValueColumn 格); 找不到返回 null。
-        /// 不绑表: 模板改版会把这两行在"摘要表内 / 独立单行表"之间搬(2026-09-11 就搬过一次),
+        /// 不绑表: 模板改版会把这两行在"摘要表内 / 独立单行表"之间搬(曾搬过一次),
         /// 只认标签文字 —— 落在哪张表里都定位得到。取全文档第一个命中行。
         /// 判据是"首格去空白后与标签全等"而非包含: 摘要表里还有静态格写着"干燥速率"(R3 标准引文行),
         /// 用包含判定一旦那格补上冒号就会静默命中、把均值写进引文行; 全等判定下宁可 ValidateTemplate
@@ -437,8 +774,16 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         {
             var participated = group.Where(s => s.Participated).ToList();
             if (participated.Count == 0) return;
+            FillRateValue(rateCell, participated.Average(s => s.RateGPerHour));
+        }
 
-            double avgRateGPerHour = participated.Average(s => s.RateGPerHour);
+        /// <summary>
+        /// 写"干燥速率："值格: 数值 + 模板原单位 token。模板值格原内容 = "(g/h)",
+        /// SetCellText 整格重建会把它冲掉, 故先取回再拼在数值后。
+        /// 单份报告传本页均值; 合并报告传历史报告上印的值(原样沿用, 不重算)。
+        /// </summary>
+        private void FillRateValue(TableCell rateCell, double avgRateGPerHour)
+        {
             string unit = rateCell.InnerText.Trim();
             string value = avgRateGPerHour.ToString("F3");
             SetCellText(rateCell, unit.Length > 0 ? $"{value} {unit}" : value, bold: true);
@@ -563,7 +908,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int GridMinutes = 60;
 
             // 曲线图显示尺寸(EMU, 1cm=360000): 宽 12cm, 高按图像素 1400:800=7:4 等比 → ≈6.9cm
-            // (2026-09-08 目视反馈整体略缩, 原 14cm × 8cm; 保持同比例不拉伸)
+            // (整体略缩自 14cm × 8cm; 保持同比例不拉伸)
             public const long ChartWidthEmu = 12 * 360000L;        // 4,320,000 EMU = 12cm
             public const long ChartHeightEmu = 12 * 360000L * 4 / 7;  // ≈ 2,468,571 EMU ≈ 6.86cm
         }

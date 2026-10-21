@@ -62,6 +62,77 @@ public class Aatcc201CombineRequestDto
 }
 
 /// <summary>
+/// NF5022 合并报告请求 —— 历史报告界面勾选同一报告号下的多份文件, 按"每次测试原样成页"合成一份。
+/// 数据源是历史 docx 本身（生成时刻没有另存结构化结果）, 由引擎 ReadReport 解析回来。
+/// </summary>
+public class Nf5022CombineRequestDto
+{
+    /// <summary>所选历史报告文件名（含 .docx, 来自 GET reports 列表; 必须同报告号）</summary>
+    public List<string> FileNames { get; set; } = new();
+}
+
+/// <summary>
+/// NF5022 历史报告解析出的一页 = 一次测试（≤3 个样品槽）。
+/// 页内数值原样保留: 样品名称、干燥速率均值（历史报告只印每页均值, 不印单样品速率）、
+/// 各样品 m0/滴水量/蒸发曲线, 供 FillCombinedReport 逐页重填。
+/// </summary>
+public class DryingRateParsedPageModel
+{
+    /// <summary>本页样品名称（摘要表"测点："值格; 旧报告没有该行时为空串）</summary>
+    public string SampleName { get; set; } = string.Empty;
+
+    /// <summary>本页采样间隔（分钟, 由时间标签差还原）</summary>
+    public int SpaceTimeMin { get; set; }
+
+    /// <summary>本页"干燥速率："值格里印的数（g/h, 原样沿用, 不重算）</summary>
+    public double? RateGPerHour { get; set; }
+
+    /// <summary>本页样品槽（按结果表表头"样品N"取工位号; 空槽不产生工位）</summary>
+    public List<DryingRateStationRowModel> Stations { get; set; } = new();
+}
+
+/// <summary>解析一份历史 NF5022 报告 docx 得到的内容（引擎 ReadReport 返回）。</summary>
+public class Nf5022ParsedReport
+{
+    /// <summary>报告号（摘要表 R0 col1 读出）</summary>
+    public string ReportNumber { get; set; } = string.Empty;
+
+    /// <summary>环境温度（页脚读出; 模板横线未填过 → null）</summary>
+    public string? Temperature { get; set; }
+
+    /// <summary>环境湿度（页脚读出; 模板横线未填过 → null）</summary>
+    public string? Humidity { get; set; }
+
+    /// <summary>报告里的测试页（按文档顺序; 每页 ≤3 样品）</summary>
+    public List<DryingRateParsedPageModel> Pages { get; set; } = new();
+
+    /// <summary>正文里的曲线图 PNG（正文只有追加在文末的曲线图; 表头/页脚 logo 在别的部件）</summary>
+    public List<byte[]> Charts { get; set; } = new();
+}
+
+/// <summary>
+/// NF5022 合并报告填充模型 —— 同一报告号下多份历史报告, 每次测试原样成一页。
+/// 页内均值来自历史报告上印的值（不重算）; 页脚温湿度全文一套, 服务侧取最新非空值。
+/// </summary>
+public class DryingRateCombinedReportFillModel
+{
+    /// <summary>报告号（所选历史文件必须同一报告号）</summary>
+    public string ReportNumber { get; set; } = string.Empty;
+
+    /// <summary>环境温度（取所选文件里最新一份非空值共用）</summary>
+    public string Temperature { get; set; } = string.Empty;
+
+    /// <summary>环境湿度（取所选文件里最新一份非空值共用）</summary>
+    public string Humidity { get; set; } = string.Empty;
+
+    /// <summary>测试页（顺序 = 报告旧→新、页内顺序）</summary>
+    public List<DryingRateParsedPageModel> Pages { get; set; } = new();
+
+    /// <summary>曲线图 PNG, 按报告顺序全部追加到文档末尾</summary>
+    public List<byte[]> ChartPngs { get; set; } = new();
+}
+
+/// <summary>
 /// 解析一份历史 AATCC 报告 docx 得到的内容（引擎 ReadReport 返回）。
 /// Samples/Charts 的形状与 Aatcc201SampleBlockModel 一致, 服务可直接拼进合并填充模型。
 /// </summary>

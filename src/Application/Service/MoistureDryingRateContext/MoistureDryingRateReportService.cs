@@ -207,6 +207,77 @@ public class MoistureDryingRateReportService : IMoistureDryingRateReportService,
     }
 
     /// <inheritdoc />
+    public Result<DocxUrlResponseDto> GenerateNf5022Combined(Nf5022CombineRequestDto dto)
+    {
+        var fileNames = (dto?.FileNames ?? new List<string>())
+            .Where(f => !string.IsNullOrWhiteSpace(f))
+            .Select(f => f.Trim())
+            .Distinct()
+            .ToList();
+        if (fileNames.Count == 0)
+            return Result<DocxUrlResponseDto>.Fail("请选择要合并的报告文件");
+        if (fileNames.Count > MaxCombineFiles)
+            return Result<DocxUrlResponseDto>.Fail($"一次最多合并 {MaxCombineFiles} 份报告");
+
+        // 逐份解析(数据源 = 历史 docx 本身): 校验文件在、结构能读出来, 顺便取生成时间用于排序
+        var parsedFiles = new List<(string FileName, DateTime GeneratedAt, Nf5022ParsedReport Parsed)>();
+        foreach (string fileName in fileNames)
+        {
+            string? path = _reportStore.ResolvePath(fileName);
+            if (path == null)
+                return Result<DocxUrlResponseDto>.Fail($"报告文件不存在: {fileName}");
+
+            Nf5022ParsedReport parsed;
+            try { parsed = _nf5022Engine.ReadReport(path); }
+            catch (Exception ex) { return Result<DocxUrlResponseDto>.Fail($"解析报告失败({fileName}): {ex.Message}"); }
+
+            parsedFiles.Add((fileName, ReadGeneratedAt(fileName, path), parsed));
+        }
+
+        // 同一报告号才能合成一份(界面已按报告号筛, 这里兜一层: 免得把别的报告号的测试混进去)
+        string reportNumber = parsedFiles[0].Parsed.ReportNumber;
+        if (string.IsNullOrWhiteSpace(reportNumber))
+            return Result<DocxUrlResponseDto>.Fail($"报告号无法读取(可能不是 NF5022 报告): {parsedFiles[0].FileName}");
+        var mismatch = parsedFiles.FirstOrDefault(p => !string.Equals(p.Parsed.ReportNumber, reportNumber, StringComparison.Ordinal));
+        if (mismatch.FileName != null)
+            return Result<DocxUrlResponseDto>.Fail(
+                $"所选报告的报告号不一致: {reportNumber} 与 {mismatch.Parsed.ReportNumber}({mismatch.FileName})");
+
+        // 旧 → 新: 最早的那次测试在报告最前(每次测试原样成一页)
+        var ordered = parsedFiles.OrderBy(p => p.GeneratedAt).ToList();
+
+        var model = new DryingRateCombinedReportFillModel { ReportNumber = reportNumber };
+        foreach (var f in ordered)
+        {
+            model.Pages.AddRange(f.Parsed.Pages);
+            model.ChartPngs.AddRange(f.Parsed.Charts);
+            // 环境温湿度取最新一份共用: 升序遍历, 记住最后一个有值的(最新那份没填就退而取次新)
+            if (!string.IsNullOrWhiteSpace(f.Parsed.Temperature)) model.Temperature = f.Parsed.Temperature!;
+            if (!string.IsNullOrWhiteSpace(f.Parsed.Humidity)) model.Humidity = f.Parsed.Humidity!;
+        }
+
+        if (model.Pages.Count == 0)
+            return Result<DocxUrlResponseDto>.Fail("所选报告里没有可合并的样品数据");
+
+        // 产物落同一报告目录、mode 仍 nf5022 → 直接出现在历史列表, 可再被选中继续合并
+        return Generate(reportNumber, "nf5022", Path.Combine("Common_PHY", "PHY_GB21655_DryingRate.docx"), model, _nf5022Engine.FillCombinedReport);
+    }
+
+    /// <inheritdoc />
+    public Result<List<ReportFileMeta>> ListNf5022Reports(string? keyword)
+    {
+        var list = _reportStore.ListReports("nf5022", keyword);
+        foreach (var meta in list)
+        {
+            string? path = _reportStore.ResolvePath(meta.FileName);
+            if (path == null) continue;
+            // 样品名只能从报告内容读(文件名里没有); 读不出 → 空串, 不影响这行其它信息
+            meta.SampleName = string.Join("、", _nf5022Engine.ReadSampleNames(path));
+        }
+        return Result<List<ReportFileMeta>>.Ok(list);
+    }
+
+    /// <inheritdoc />
     public Result<List<ReportFileMeta>> ListAatcc201Reports(string? keyword)
     {
         var list = _reportStore.ListReports("aatcc201", keyword);
