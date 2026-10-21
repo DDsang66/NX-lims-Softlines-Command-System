@@ -20,26 +20,35 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
         //仅仅用于修改对应ItemName中的Parameter
         public WetParameterIso CreateWetParameters(ParamsInput p) => (p.ItemName, p.WashingProcedure, p.DCProcedure) switch
         {
-            ("CF to Washing", "4N" or "4M" or "4G" or "3N", _) => new WetParameterIso
+            ("CF to Washing", "4N" or "4M" or "4G" or "3N" , _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Standard = p.Standard,
-                Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
+                Temperature = p.WashingProcedure.Contains("3") == true ? "30" :"40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
                 SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10
             },
-            ("CF to Washing", "4H" or "3M" or "3G" or "3H", _) => new WetParameterIso
+            ("CF to Washing", "4H" or "3M" or "3G" or "3H" , _) => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 ReportNumber = p.OrderNumber!,
                 Standard = p.Standard,
-                Temperature = p.WashingProcedure.Contains("3") == true ? "30" : "40",
+                Temperature = p.WashingProcedure.Contains("3") == true ? "30" :"40",
                 Program = p.WashingProcedure.Contains("3") == true ? "ref A2S" : "A2S",
                 SteelBallNum = 0
             },
-            ("DS to Washing", _, _) => new WetParameterIso
+            ("CF to Washing", "6M" or "6N" , _) => new WetParameterIso
             {
+                ContactItem = p.ItemName,
+                ReportNumber = p.OrderNumber!,
+                Standard = p.Standard,
+                Temperature = "60",
+                Program = "C2S",
+                SteelBallNum = 0
+            },
+            ("DS to Washing", _, _) => new WetParameterIso
+            { 
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
@@ -48,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
                 DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure.Contains("3") == true ? "30" : p.WashingProcedure.Contains("4") == true ? "40" : "60",
                 Detergent = "77％ECE(A)+3%TAED+20% sodium perborate",
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
@@ -75,7 +84,7 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
                 : "Wollens procedure",
                 DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("3") == true ? "30" : p.WashingProcedure!.Contains("4") == true ? "40" : "60 ",
                 Detergent = "77％ECE(A)+3%TAED+20% sodium perborate",
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,
@@ -90,10 +99,10 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
                 ReportNumber = p.OrderNumber!,
                 WashingProcedure = p.WashingProcedure!.Contains("N") ? "Cotton procedure"
     : p.WashingProcedure!.Contains("M") ? "Minimum iron procedure"
-    : p.WashingProcedure!.Contains("G") ? "Delicates procedure"
+    : p.WashingProcedure!.Contains("G") ? "Delicates procedure"     
     : "Wollens procedure",
                 DryProcedure = DryProcedureHelper(p.SampleDescription!, p.DryProcedure),
-                Temperature = p.WashingProcedure!.Contains("4") ? "40" : "30",
+                Temperature = p.WashingProcedure!.Contains("3") == true ? "30" : p.WashingProcedure!.Contains("4") == true ? "40" : "60 ",
                 Detergent = "77％ECE(A)+3%TAED+20% sodium perborate",
                 SpecialCareInstruction = p.Sci ?? null,
                 Iron = p.Iron ?? null,

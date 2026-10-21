@@ -17,13 +17,23 @@ namespace NX_lims_Softlines_Command_System.Infrastructure.Providers.ParamProvide
 
         public async Task<WetParameterIso> CreateWetParameters(ParamsInput p) => (p.ItemName, p.SampleDescription) switch
         {
-            ("CF to Washing", _) => new WetParameterIso
+            ("CF to Washing", var add) when (add!.Contains("Fabric") && add.Contains("Components")) == true => new WetParameterIso
+            {
+                ContactItem = p.ItemName,
+                Standard = p.Standard,
+                ReportNumber = p.OrderNumber!,
+                Temperature = "40",
+                Program = "B1M" ,
+                SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10
+            },
+            ("CF to Washing", var add) when add!.Contains("Fabric")== true => new WetParameterIso
             {
                 ContactItem = p.ItemName,
                 Standard = p.Standard,
                 ReportNumber = p.OrderNumber!,
                 Temperature = p.SampleDescription!.Contains("Fabric") == true ? "40" : null,
-                Program = p.SampleDescription.Contains("Fabric") == true ? "A2S" : null,
+                Program = p.SampleDescription.Contains("Fabric") ? "A2S"
+                :null,
                 SteelBallNum = _helper.IsCompositionExist("Animal", p.FiberContent!) == true ? 0 : 10
             },
             ("Appearance", var add) when (add!.Contains("Fabric") || add.Contains("Components")) == true => new WetParameterIso
