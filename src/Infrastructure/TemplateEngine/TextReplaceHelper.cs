@@ -25,7 +25,6 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
         /// ParamValue 拆包时使用的候选字段名（大小写不敏感）
         /// </summary>
         private static readonly string[] ValueFieldNames = { "Value" };
-        private static readonly string[] UnitFieldNames = { "Unit" };
 
         /// <summary>
         /// 用 JSON 字符串填充模板

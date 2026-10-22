@@ -206,6 +206,34 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.DataSheetConte
         }
 
         /// <summary>
+        /// 生成阶段回写本任务实际使用的模板 URL。
+        ///
+        /// 建任务时写入的 ContactTemplateUrl 只是请求阶段的粗值 —— 那时拿不到 ConditionPool,
+        /// 无法按完整条件选模板。真实模板由 DataSheetModelGenerator 按完整 runtimeConditions
+        /// 选出并写进 DataSheetModel.TemplateUrl, 此处把它同步回聚合根, 保证重试与查询时数据一致。
+        ///
+        /// 幂等: 与当前值相同时直接返回, 不刷新 UpdateTime。
+        /// </summary>
+        /// <param name="templateUrl">要回写的模板相对路径(来自 DataSheetModel.TemplateUrl)</param>
+        /// <exception cref="InvalidOperationException">当前状态既不是 Pending 也不是 Generating 时抛出</exception>
+        /// <exception cref="ArgumentException">templateUrl 为 null 或空白时抛出</exception>
+        public void BindTemplate(string templateUrl)
+        {
+            if (Status != DataSheetStatus.Pending && Status != DataSheetStatus.Generating)
+                throw new InvalidOperationException($"Cannot bind template when status is {Status}");
+
+            if (string.IsNullOrWhiteSpace(templateUrl))
+                throw new ArgumentException("templateUrl is required", nameof(templateUrl));
+
+            // 幂等: 同值不产生副作用, 避免重试时重复刷新 UpdateTime
+            if (string.Equals(ContactTemplateUrl, templateUrl, StringComparison.Ordinal))
+                return;
+
+            ContactTemplateUrl = templateUrl;
+            UpdateTime = DateTime.UtcNow;
+        }
+
+        /// <summary>
         /// 标记datasheet为待处理
         /// </summary>
         public void MarkPending()

@@ -129,12 +129,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
             // 用 OpenXML SDK 检查宏、外部链接、嵌入对象等
             using var doc = WordprocessingDocument.Open(filePath, false);
 
-            // 1. 检查宏（.docm 才有，.docx 一般没有）
-            var hasMacros = doc.MainDocumentPart?.Document
-                .Descendants<DocumentFormat.OpenXml.Wordprocessing.AltChunk>().Any() ?? false;
-            // 更准的是检查 VBA 项目，但 .docx 不允许宏
-
-            // 2. 检查外部链接
+            // 1. 检查外部链接
             var embeddedObjects = doc.MainDocumentPart?.Parts
                 .Where(p => p.OpenXmlPart is EmbeddedObjectPart)
                 .ToList() ?? new List<IdPartPair>();
@@ -142,7 +137,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
             if (embeddedObjects.Any())
                 return new ValidationResult(false, "文档包含嵌入对象，不允许发布");
 
-            // 3. 检查嵌入对象（OLE）
+            // 2. 检查嵌入对象（OLE）
             var externalRels = doc.MainDocumentPart?.Parts
                 .SelectMany(p => p.OpenXmlPart.ExternalRelationships)
                 .ToList() ?? new List<ExternalRelationship>();
@@ -150,7 +145,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Service
             if (externalRels.Any())
                 return new ValidationResult(false, "文档包含外部链接，不允许发布");
 
-            // 4. 检查 AltChunk（嵌入 HTML/RTF 等）
+            // 3. 检查 AltChunk（嵌入 HTML/RTF 等）
             var altChunks = doc.MainDocumentPart?.Document?.Body?
                 .Descendants<DocumentFormat.OpenXml.Wordprocessing.AltChunk>().ToList()
                 ?? new List<DocumentFormat.OpenXml.Wordprocessing.AltChunk>();

@@ -84,8 +84,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                 }
             }
 
-            // 3. 模板查询（领域服务）—— 先固定，后续替换成真正的查询
-            var contactTemplateUrl = "DocxModel/Common_WET/WET_Dimensional_Change_Wasing.docx";
+            // 3. 模板 URL 由生成阶段决定: DataSheetGenerateWorker 会按完整 runtimeConditions
+            //    选出模板(DataSheetModel.TemplateUrl)后经 DataSheet.BindTemplate 回写。
+            //    此处不再硬编码 —— 原值既不符合 Template.BuildFileName 的命名约定(缺前导 /、
+            //    缺 _v{n}_{时间戳}), 盘上也没有同名文件, 一旦被 CopyTemplate 真正使用即为必现故障。
+            var contactTemplateUrl = string.Empty;
 
             // 4. 创建批次
             var batch = DataSheetBatch.Create(

@@ -70,11 +70,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                     .ToList();
 
                 // 2. 查库批量获取 Standard 实体
-                var standards = await _standardRepository.GetByIdsAsync(standardIds, CancellationToken.None);
+                var standards = await _standardRepository.GetByIdsAsync(standardIds, ct);
 
                 // 3. 提取名称并用 ";" 分割，若查不到则降级显示 Id
+                // 排序后再拼接: TestMethod 会进入 TemplateIndex 匹配条件(MatchesAll 逐字比对),
+                // 若依赖 DB 返回顺序, 同一组标准可能拼出 "A;B" 或 "B;A" 造成索引匹配漂移
                 var testMethod = standards.Any()
-                    ? string.Join(";", standards.Select(s => s.StandardCode ?? s.StandardCodeNameEn ?? s.Id.Value))
+                    ? string.Join(";", standards
+                        .OrderBy(s => s.Id.Value, StringComparer.OrdinalIgnoreCase)
+                        .Select(s => s.StandardCode ?? s.StandardCodeNameEn ?? s.Id.Value))
                     : string.Join(";", item.StandardIds.Select(id => id?.Value ?? string.Empty));
 
                 // 合并 package.ParamSet
@@ -160,7 +164,6 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                             : v.Value ?? string.Empty;          // 若v.Value为null，同样降级为空字符串
                     }
                     var key = JsonConvert.SerializeObject(filteredValues);
-                    Console.WriteLine($"[{kv.Key}] -> [{key}]");
                     return key;
                 })
                 // 2. 保留原始的 ParamSet (包含 WashCycle)，仅用分组键聚合测点
@@ -257,43 +260,40 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
         public async Task<SampleMap> CalcuteSampleMapAsync(CheckListItem item, TestPointPackage package, Template template , string[] samplemap) 
         {
             //获取Template对应的TemplateStructure数据，
-            //获取SampleDataCount字段的值和SampleResultCount字段的值
-            //例如 SampleDataCount = 3，可以得出对应的SampleDataMap为 [Sample_data_1, Sample_data_2, Sample_data_3]
+            //获取 SampleDataAreaCount 字段的值（模板预留的试样编号格数）
+            //例如 SampleDataAreaCount = 3，可以得出对应的书签为 [Sample_data_1, Sample_data_2, Sample_data_3]
+            //注：TemplateStructure.SampleResultAreaCount（试验结果区）当前未参与本模型的计算
             //这和书签的内容对应，故可以根据之前的水洗扩展map对对应的samplemap进行赋值，具体规则为：
-            //      1.如果实际的samplemap的个数大于等于SampleDataCount，计算出而外的sample_data_x,并且进行赋值，isAppend记录是否需要复制data表格
-            //      2.如果实际的samplemap的个数小于SampleDataCount，则直接赋值，并且isAppend记录false
+            //      1.如果实际的samplemap的个数大于 SampleDataAreaCount，多出的 sample_data_x 需由模板引擎复制 data 表后再填充，isAppend 记录是否需要复制data表格
+            //      2.如果实际的samplemap的个数小于等于 SampleDataAreaCount，直接赋值，isAppend 记录 false
             //      3.例外：如果没有sample，跳过即可
             // 1. 获取模板信息（假设已从数据库获取）
 
-            int sampleDataCount = template.TemplateStructure.SampleDataAreaCount; // templateInfo.SampleDataCount;
+            int sampleDataCount = template.TemplateStructure.SampleDataAreaCount;
 
-            // 2. 计算当前参数包因水洗扩展所需的实际数据区域总数
-            int actualDataAreaCount = CalculateDataAreaCount(item, package);
-
-            // 3. 例外：如果没有sample，直接返回空Map
-            if (actualDataAreaCount <= 0)
+            // 例外：没有测点（或展开后为空）时无需任何 sample 映射。
+            // 注：这里不再调用 CalculateDataAreaCount 做二次计算 —— 它与展开结果长度恒等，
+            // 两套同构算法并存会在日后一处口径变更时悄悄分叉，故统一以展开结果为准。
+            if (samplemap == null || samplemap.Length == 0)
             {
                 return new SampleMap();
             }
 
-            // 4. 生成 SampleMetaData 字典
+            // 生成 SampleMetaData 字典：按展开后的测点顺序铺平，Sample_data_{i+1} 对应第 i 个测点
             var sampleMap = new SampleMap
             {
-                SampleMetaData = new Dictionary<string, string>()
+                SampleMetaData = new Dictionary<string, string>(samplemap.Length)
             };
 
-            // 5. 处理测点映射
-            var expandedSamples = ExpandSampleArray(item, package);
-
-            for (int i = 0; i < expandedSamples.Length; i++)
+            for (int i = 0; i < samplemap.Length; i++)
             {
-                string sampleKey = $"Sample_data_{i + 1}";
-                string sampleValue = expandedSamples[i];
-                sampleMap.SampleMetaData[sampleKey] = sampleValue;
+                sampleMap.SampleMetaData[$"Sample_data_{i + 1}"] = samplemap[i];
             }
 
-            // 6. 根据 实际数量 与 模板预设数量 的比较设置 IsAppend
-            sampleMap.IsAppend = expandedSamples.Length >= sampleDataCount;
+            // 需求口径：测点数「超过」模板预留格数才需要复制整块 data 表（相等时刚好填满，不复制）。
+            // 另：SampleDataAreaCount 未配置时为 0（TemplateStructure 无初始化器，工厂只校验 < 0），
+            // 此时若直接比较会恒为 true，故必须先要求模板确实配置了 sample 区。
+            sampleMap.IsAppend = sampleDataCount > 0 && samplemap.Length > sampleDataCount;
 
             return sampleMap;
         }
@@ -311,33 +311,26 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                 return new AfterWashMap();
             }
 
-            // 2. 计算当前参数包因水洗扩展所需的实际数据区域总数
-            int actualDataAreaCount = CalculateDataAreaCount(item, package);
-
-            // 3. 例外：如果没有afterWash，直接返回空Map
-            if (actualDataAreaCount <= 0)
+            // 2. 例外：没有水洗数据（或展开后为空）时无需任何映射。
+            // 注：不再调用 CalculateDataAreaCount 做二次同构计算，统一以展开结果为准。
+            if (afterWashArray == null || afterWashArray.Length == 0)
             {
                 return new AfterWashMap();
             }
 
-            // 4. 生成 AfterWashMetaData 字典
+            // 3. 生成 AfterWashMetaData 字典：After_wash_data_{i+1} 对应第 i 个水洗次数
             var afterWashMap = new AfterWashMap
             {
-                AfterWashMetaData = new Dictionary<string, string>()
+                AfterWashMetaData = new Dictionary<string, string>(afterWashArray.Length)
             };
 
-            // 5. 处理测点映射
-            var expandedAfterWashes = ExpandAfterWashArray(item, package);
-
-            for (int i = 0; i < expandedAfterWashes.Length; i++)
+            for (int i = 0; i < afterWashArray.Length; i++)
             {
-                string afterWashKey = $"After_wash_data_{i + 1}";
-                string afterWashValue = expandedAfterWashes[i];
-                afterWashMap.AfterWashMetaData[afterWashKey] = afterWashValue;
+                afterWashMap.AfterWashMetaData[$"After_wash_data_{i + 1}"] = afterWashArray[i];
             }
 
-            // 6. 根据 实际数量 与 模板预设数量 的比较设置 IsAppend
-            afterWashMap.IsAppend = expandedAfterWashes.Length >= afterWashDataCount;
+            // 4. 需求口径：水洗格数「超过」模板预留格数才需要复制整块表（相等时刚好填满，不复制）
+            afterWashMap.IsAppend = afterWashDataCount > 0 && afterWashArray.Length > afterWashDataCount;
 
             return afterWashMap;
         }
@@ -348,7 +341,11 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
         public string[] ExpandAfterWashArray(CheckListItem item, TestPointPackage package)
         {
             if (item.TestPointParams == null || item.TestPointParams.Count == 0)
-                return package.TestPointIds.ToArray();
+            {
+                // 与下方兜底口径一致：无参数配置视为水洗 1 次
+                // （原实现误返回测点 ID 数组，会把测点号填进水洗次数列）
+                return Enumerable.Repeat("1", package.TestPointIds.Count).ToArray();
+            }
 
             var expandedAfterWashes = new List<string>();
 
@@ -356,7 +353,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             {
                 if (!item.TestPointParams.TryGetValue(testPointId, out var paramSet) || paramSet?.Values == null)
                 {
-                    expandedAfterWashes.Add("1"); // 无参数配置，默认0次
+                    expandedAfterWashes.Add("1"); // 无参数配置，默认水洗 1 次
                     continue;
                 }
 
@@ -373,7 +370,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                 }
                 else
                 {
-                    expandedAfterWashes.Add("1"); // 非水洗扩展，默认0次
+                    expandedAfterWashes.Add("1"); // 非水洗扩展，默认水洗 1 次
                 }
             }
 

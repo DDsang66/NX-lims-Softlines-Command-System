@@ -202,6 +202,15 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                     return;
                 }
 
+                // 模板 URL 的真实来源是 DataSheetModelGenerator 按完整 runtimeConditions 选出的模板,
+                // 批次/占位任务上的 URL 只是请求阶段的粗值 —— 在此回写, 重试时即幂等
+                // 空值防护: 历史快照可能没有 TemplateUrl 字段, 不能让回写把任务打成失败
+                if (!string.IsNullOrWhiteSpace(myModel.TemplateUrl)
+                    && !string.Equals(ds.ContactTemplateUrl, myModel.TemplateUrl, StringComparison.Ordinal))
+                {
+                    ds.BindTemplate(myModel.TemplateUrl);
+                }
+
                 // 2. 生成文件
                 var fileUrl = fillingEngine.FillDataSheet(myModel);
 
@@ -285,7 +294,9 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
                 var newDs = DataSheet.Create(
                     origin.CheckListId,
                     null,
-                    origin.ContactTemplateUrl,
+                    // 用各自 model 的模板, 而不是 origin 的粗值 —— 一个 CheckListItem 展开出的多份数据单,
+                    // 模板可能因参数包不同而不同(models 来自 GenerateAsync, TemplateUrl 必然已填充)
+                    model.TemplateUrl,
                     DataSheetStatus.Pending,
                     origin.ReportNumber,
                     origin.TestItemId,
