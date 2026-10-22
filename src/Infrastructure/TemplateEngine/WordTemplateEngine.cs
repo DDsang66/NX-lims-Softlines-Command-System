@@ -580,6 +580,19 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             var table = bookmark.Ancestors<Table>().FirstOrDefault();
             if (table == null) return;   // 书签不在表里：什么都不做，绝不误删正文
 
+            // 表前的「真空段 / 纯分页段」—— 那个分页符是**为这张表**开的页，
+            // 表删了它必须跟着走，否则报告尾部会多出一张空白页。
+            // 先收集、后动手；nearest-first，与下面的尾部空段清理互不干扰。
+            var leadingRun = new List<Paragraph>();
+            for (var cursor = table.PreviousSibling();
+                 cursor is Paragraph leading && (IsTrulyEmpty(leading) || IsPageBreakOnlyParagraph(leading));
+                 cursor = cursor.PreviousSibling())
+            {
+                leadingRun.Add(leading);
+            }
+
+            bool hasPageBreak = leadingRun.Any(IsPageBreakOnlyParagraph);
+
             if (table.PreviousSibling() is Paragraph prev && IsTrulyEmpty(prev))
             {
                 var next = table.NextSibling();
@@ -589,6 +602,20 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
                     p.Remove();
                     next = after;
                 }
+            }
+
+            // 只有前导段里真有分页符时才收前导段 —— 没有分页符时（Conclusion / Remark）
+            // 这段完全不执行，删除行为与改动前逐字相同。
+            if (hasPageBreak)
+            {
+                int lastBreak = leadingRun.FindLastIndex(IsPageBreakOnlyParagraph);
+                for (int i = 0; i <= lastBreak; i++)
+                    leadingRun[i].Remove();
+
+                // 前导段收光后若两张表贴到一起，Word 会把它们并成一张 —— 补一个空段隔开。
+                var afterTable = table.NextSibling();
+                if (table.PreviousSibling() is Table && afterTable is Table)
+                    afterTable.InsertBeforeSelf(new Paragraph());
             }
 
             table.Remove();
@@ -602,6 +629,22 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine
             => !p.Descendants<Text>().Any(t => !string.IsNullOrWhiteSpace(t.Text))
             && !p.Descendants<BookmarkStart>().Any()
             && !p.Descendants().Any(e => e.LocalName is "drawing" or "pict" or "object" or "br");
+
+        /// <summary>
+        /// **纯分页段**：只承担分页，没有任何别的内容。
+        /// 与 <see cref="IsTrulyEmpty"/> 刻意分开 —— 后者把带 <c>br</c> 的段落判为非空，
+        /// 而这里要认的正是"除分页符外什么都没有"的那一段。同样从严：拿不准就不删。
+        /// </summary>
+        private static bool IsPageBreakOnlyParagraph(Paragraph p)
+        {
+            var breaks = p.Descendants<Break>().ToList();
+            return breaks.Count > 0
+                && breaks.All(b => b.Type?.Value == BreakValues.Page)
+                && !p.Descendants<Text>().Any(t => !string.IsNullOrWhiteSpace(t.Text))
+                && !p.Descendants<BookmarkStart>().Any()
+                && !p.Descendants<SectionProperties>().Any()
+                && !p.Descendants().Any(e => e.LocalName is "drawing" or "pict" or "object");
+        }
 
         /// <summary>
         /// 获取两个元素之间的所有元素（仅处理在同一父级内的情况）

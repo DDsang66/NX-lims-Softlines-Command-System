@@ -56,7 +56,13 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             "wool", "mohair", "cashmere", "camel", "alpaca", "llama", "vicuna",
         };
 
-        /// <summary>弹性纤维。只含 -12 / -20 两个分部适用范围里确实列到的两种。</summary>
+        /// <summary>
+        /// 弹性纤维。只含 -12 / -20 两个分部适用范围里确实列到的两种。
+        ///
+        /// 除方法链外，报告上的**显示名**也用它（国标/ISO 印 Elastane、CNS 印 Spandex、
+        /// JIS/Korea 印 Polyurethane，见 <see cref="IngredientAnalysisCalculation"/> 的取名口）。
+        /// 判定是精确等值 —— `Polyurethane` 录什么印什么，不在此列。
+        /// </summary>
         private static readonly HashSet<string> Elastane = new(StringComparer.OrdinalIgnoreCase)
         {
             "elastane", "spandex",
@@ -145,6 +151,80 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         internal static bool IsCellulosicOrCotton(string f) => CellulosicOrCotton.Contains(Clean(f));
         internal static bool IsRayonType(string f) => RayonType.Contains(Clean(f));
         internal static bool IsAcrylicType(string f) => AcrylicType.Contains(Clean(f));
+
+        /// <summary>
+        /// 亚麻 —— `Linen` 与 `Flax` 是 fiber_database 里**同一纤维的两行**（中文名同为"亚麻"，
+        /// 回潮率同值）。判定用精确等值、忽略大小写，不匹配 `Linen/Cotton` 这类拼接串。
+        ///
+        /// 只服务报告上的**显示名**（国标统一印 Flax、AATCC 统一印 Linen，见
+        /// <see cref="IngredientAnalysisCalculation"/> 的取名口）；取值、排序、去重一律仍用录入名。
+        /// </summary>
+        internal static bool IsLinenOrFlax(string f)
+            => Clean(f).Equals("linen", StringComparison.OrdinalIgnoreCase)
+            || Clean(f).Equals("flax", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 金属纤维 —— fiber_database 里的英式写法是 `Metal fibre`，美式 `Metal fiber` 一并认。
+        /// 精确等值、忽略大小写与首尾空白；`Metallic` / `Metallised fibre` / `Metallized fibres`
+        /// 是**别的纤维**，不在此列。
+        ///
+        /// 只服务报告上的**显示名**（AATCC 印 `Metal`，其余标准照录入）；取值、排序、去重仍用录入名。
+        /// </summary>
+        internal static bool IsMetalFibre(string f)
+            => Clean(f).Equals("metal fibre", StringComparison.OrdinalIgnoreCase)
+            || Clean(f).Equals("metal fiber", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 橡筋 —— `Elastodiene` 与 `Rubber` 是 fiber_database 里**同一纤维的两行**
+        /// （中文名同为"二烯类弹性纤维"）。精确等值、忽略大小写与首尾空白。
+        ///
+        /// **刻意与 <see cref="IsElastane"/> 分开**：ISO 1833-12/-20 的范围写着 elastodiene
+        /// 不在弹性纤维那一类里（见 <see cref="Elastane"/> 注释），方法链不能因为改名规则把它们并进去。
+        ///
+        /// 只服务报告上的**显示名**（国标/ISO 印 `Elastodiene`、AATCC 印 `Rubber`）；
+        /// 取值、排序、去重仍用录入名。
+        /// </summary>
+        internal static bool IsElastodieneOrRubber(string f)
+            => Clean(f).Equals("elastodiene", StringComparison.OrdinalIgnoreCase)
+            || Clean(f).Equals("rubber", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 锦纶 —— `Polyamide` 与 `Nylon` 是 fiber_database 里**同一纤维的两行**
+        /// （中文名同为"锦纶"）。精确等值、忽略大小写与首尾空白；带型号的
+        /// `Nylon 6` / `Polyamide 6.6` 不命中（库里没有这些写法，规则也不替实验室断言牌号）。
+        ///
+        /// 只服务报告上的**显示名**（国标印 `Polyamide`，其余标准照录入）；
+        /// 取值、排序、去重仍用录入名。
+        /// </summary>
+        internal static bool IsPolyamideOrNylon(string f)
+            => Clean(f).Equals("polyamide", StringComparison.OrdinalIgnoreCase)
+            || Clean(f).Equals("nylon", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 粘纤 —— `Viscose` 与 `Rayon` 是 fiber_database 里**同一纤维的两行**
+        /// （中文名同为"粘纤"）。精确等值、忽略大小写与首尾空白。
+        ///
+        /// **刻意不复用 <see cref="IsRayonType"/>**：那一张是 ISO 1833-6/-22 的对象纤维
+        /// （含 modal / lyocell / cupro），改名规则只认这两个写法，不能顺带把它们也改了。
+        ///
+        /// 只服务报告上的**显示名**（国标/ISO 印 `Viscose`、JIS/Korea 印 `Rayon`）；
+        /// 取值、排序、去重仍用录入名。
+        /// </summary>
+        internal static bool IsViscoseOrRayon(string f)
+            => Clean(f).Equals("viscose", StringComparison.OrdinalIgnoreCase)
+            || Clean(f).Equals("rayon", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// 莫代尔 —— 精确等值、忽略大小写与首尾空白；
+        /// 只服务 JIS 的显示名（印 `Regenerated fiber (Modal)`），取值/排序/去重仍用录入名。
+        /// 与 <see cref="IsRayonType"/> 无关（那是方法链的对象纤维集合，含 Viscose/Cupro）。
+        /// </summary>
+        internal static bool IsModal(string f)
+            => Clean(f).Equals("modal", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>莱赛尔 —— 同 <see cref="IsModal"/>，JIS 下印 `Regenerated fiber (Lyocell)`。</summary>
+        internal static bool IsLyocell(string f)
+            => Clean(f).Equals("lyocell", StringComparison.OrdinalIgnoreCase);
 
         /// <summary>是不是分组父槽。决定它下面的 cellulosicSubFibers 该不该顶替它（见集合注释）。</summary>
         internal static bool IsCellulosicGroupParent(string f) => CellulosicGroupParent.Contains(Clean(f));

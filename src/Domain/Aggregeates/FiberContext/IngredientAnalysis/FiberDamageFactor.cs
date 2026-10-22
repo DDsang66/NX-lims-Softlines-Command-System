@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis
 {
@@ -18,6 +19,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     /// 取值：
     ///   · 再生纤维素被溶掉后残留**棉** → 1.03、残留**亚麻** → 1.07
     ///     （ISO 1833-6 / GB/T 2910.6 甲酸/氯化锌法，70℃）。苎麻、大麻官方即 1.00，故不列。
+    ///   · 残留方是**分组父槽** `*cellulosic fibre` 时，它自己没有 d，按录的子纤维取：
+    ///     有棉 → 1.03（棉、亚麻同时有也取 1.03），没棉只有亚麻 → 1.07，
+    ///     其余 / 一条子纤维都没录 → 1.00（不猜组成）。见 <see cref="Resolve(string?, string?, IReadOnlyCollection{CellulosicSubFiber}?)"/>。
     ///   · 丙烯腈类被溶掉后残留名单内纤维 → 1.01
     ///     （GB/T 2910.12—2023，MOD ISO 1833-12:2020）。**弹性纤维 / 氨纶刻意不在此列，恒 1.00**。
     ///
@@ -46,6 +50,9 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// 官方在这个方法里只给**棉** 1.03；**亚麻** 1.07。苎麻、大麻同在该法的混合物范围里，
         /// 但苎麻的 d 官方就是 1.00、大麻未给，故本表不收 —— 它们落 1.00 是按标准来的结果。
         /// Flax 与 Linen 是 fiber_database 里同一纤维的两行，照本模块的既有口径一并收。
+        ///
+        /// **分组父槽字面量不在本表**：父槽本身没有 d，要按它下面录的子纤维取，
+        /// 走 <see cref="Resolve(string?, string?, IReadOnlyCollection{CellulosicSubFiber}?)"/> 里那条分支。
         /// </summary>
         private static readonly Dictionary<string, decimal> AfterRayonType = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -84,16 +91,58 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <param name="dissolved">组内**前一个**成员（被本组溶剂溶掉的那方）。</param>
         /// <param name="residue">本行纤维（留在残渣里的那方）。</param>
         internal static decimal Resolve(string? dissolved, string? residue)
+            => Resolve(dissolved, residue, null);
+
+        /// <summary>
+        /// 同上；<paramref name="residueSubFibers"/> 只在残留方是**分组父槽**时用得上。
+        ///
+        /// 分组父槽自己没有 d（`*cellulosic fibre` 不在任何一张官方表里），它的 d 取自下面录的子纤维：
+        /// **有棉就 1.03**（棉、亚麻同时有也取 1.03 —— 棉这一档先把系数定下来，与份额无关），
+        /// **没棉、只有亚麻才 1.07**，其余（苎麻、大麻等官方即 1.00 的）落 1.00。
+        /// 一条子纤维都没录时**不猜组成**，同样落 1.00。
+        ///
+        /// **与丙烯腈那一支是两回事**：那里成员的 d 全一样（1.01），所以父槽能有单一取值；
+        /// 这里成员分 1.03 / 1.07 两档，必须看组成。别为了"统一"把这段删了、改回按父槽字面量查字典。
+        /// </summary>
+        /// <param name="dissolved">组内**前一个**成员（被本组溶剂溶掉的那方）。</param>
+        /// <param name="residue">本行纤维（留在残渣里的那方）。</param>
+        /// <param name="residueSubFibers">本行是分组父槽时，它下面录的子纤维；其他纤维可传 null。</param>
+        internal static decimal Resolve(
+            string? dissolved, string? residue, IReadOnlyCollection<CellulosicSubFiber>? residueSubFibers)
         {
             // 再生纤维素在前：它是 -6 / -22 的对象纤维，与 -12 的对象集不相交，两支互斥。
             if (FiberTokens.IsRayonType(dissolved))
+            {
+                if (FiberTokens.IsCellulosicGroupParent(residue) && residueSubFibers is { Count: > 0 })
+                    return ResolveGroupParent(dissolved, residueSubFibers);
+
                 return AfterRayonType.TryGetValue(Clean(residue), out var d) ? d : None;
+            }
 
             // 弹性纤维刻意不在这一支 —— 见类注释（涤氨按 1.00）。
             if (FiberTokens.IsAcrylicType(dissolved))
                 return IsDmfResidue(residue) ? AfterAcrylic : None;
 
             return None;
+        }
+
+        /// <summary>
+        /// 分组父槽的 d：棉优先，其次亚麻，都没命中才 1.00。
+        /// 只看子纤维**有没有**，不看份额 —— 见 <see cref="Resolve(string?, string?, IReadOnlyCollection{CellulosicSubFiber}?)"/>。
+        /// </summary>
+        private static decimal ResolveGroupParent(string? dissolved, IReadOnlyCollection<CellulosicSubFiber> subFibers)
+        {
+            var hasLinen = false;
+
+            foreach (var sub in subFibers)
+            {
+                var d = Resolve(dissolved, sub.FiberName);
+
+                if (d == CottonAfterRegenerated) return CottonAfterRegenerated;
+                if (d == LinenAfterRegenerated) hasLinen = true;
+            }
+
+            return hasLinen ? LinenAfterRegenerated : None;
         }
 
         private static bool IsDmfResidue(string? f)

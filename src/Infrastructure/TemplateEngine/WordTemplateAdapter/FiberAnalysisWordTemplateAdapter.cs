@@ -2,6 +2,7 @@
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis;
 using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 using NX_lims_Softlines_Command_System.src.Domain.Share.DependencyInject;
+using NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository;
 
 namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.WordTemplateAdapter
 {
@@ -125,6 +126,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             //
             // 取位与 MR **栏**那一列刻意不同：栏里恒两位（0.00 / 8.50），页脚第二位小数为 0 时只留一位
             // （8.50 → 8.5、4.00 → 4.0），有值才印两位（5.75）—— 见 FormatFooterMoistureRegain。
+            // 欧洲（ISO1833 / DIN / EN / BS）与澳洲（AS 2001.7）体系恒两位小数。
             //
             // 同名只留第一条。
             // 去重不会改到值：能走到这里行的回潮率都是按名字查表来的（双组分父行已被上面
@@ -133,13 +135,14 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 去重仍在**英文原名**上做（DistinctBy 排在取名之前）—— 反过来的话，
             // 同一只纤维在表里出现两种写法就会重复列一条。
             var useChinese = analysisResult.UseChineseNames;
+            var keepTwoDecimals = MoistureRegainResolver.UsesIsoSchedule(analysisResult.Methods);
             var mrItems = analysisResult.CalculatedFiberResult
                 .OfType<MultiCalculatedFiberItem>()
                 .SelectMany(m => m.MultiFiberRowUnits ?? new List<MultiFiberRowUnit>())
                 .Where(r => !string.IsNullOrWhiteSpace(r.Sum) && !r.Sum.Contains('/'))
                 .Where(r => r.MoistureRegainKnown)
                 .DistinctBy(r => r.Sum)
-                .Select(r => $"{FiberChineseName.Localize(r.Sum, useChinese ? analysisResult.ChineseFiberNames : null)} {FormatFooterMoistureRegain(r.MoistureRegain)}%");
+                .Select(r => $"{FiberChineseName.Localize(r.Sum, useChinese ? analysisResult.ChineseFiberNames : null)} {FormatFooterMoistureRegain(r.MoistureRegain, keepTwoDecimals)}%");
             flatData["MR"] = string.Join("  ", mrItems);
 
             // 计数字段
@@ -174,7 +177,9 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                 {
                     case SingleCalculatedFiberItem single:
                         var idx = itemIndex;
-                        flatData[$"Qualitative_{idx}"] = single.Qualitative;
+                        // 单组分模板里 `Qualitative` 是**不索引**的（只有一个），没有 Qualitative_1；
+                        // 写索引名会被 ReplaceText 静默丢弃 —— 定性栏就是这样恒空的。
+                        flatData["Qualitative"] = single.Qualitative;
                         flatData[$"Reagent_{idx}"] = single.Reagent;
                         flatData[$"Sample_{idx}"] = "-";
                         flatData[$"Rate_{idx}"] = single.Rate.ToString("F2")+"%";
@@ -357,13 +362,20 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
         /// 页脚回潮率的取位：**第二位小数为 0 就只留一位**（8.50 → <c>8.5</c>、4.00 → <c>4.0</c>），
         /// 有值才印两位（5.75 → <c>5.75</c>）。
         /// </summary>
+        /// <param name="keepTwoDecimals">
+        /// 恒两位（`8.50`）—— 欧洲（ISO1833 / DIN / EN / BS）与澳洲（AS 2001.7）体系走这条，
+        /// 由 <paramref name="moistureRegain"/> 所属记录的回潮率列决定，见
+        /// <see cref="MoistureRegainResolver.UsesIsoSchedule"/>。
+        /// </param>
         /// <remarks>
         /// 只用于页脚那串汇总，**不动** MR 栏那一列（栏里恒两位，含真值 0 的 <c>0.00</c>）。
         /// 判法是先取到「分」位再问它是不是 0，不用字符串去尾零 —— 那样会连 <c>4.00</c> 的整数部分一起看错。
         /// </remarks>
-        private static string FormatFooterMoistureRegain(decimal moistureRegain)
+        private static string FormatFooterMoistureRegain(decimal moistureRegain, bool keepTwoDecimals)
         {
             var twoDecimals = decimal.Round(moistureRegain, 2);
+            if (keepTwoDecimals) return twoDecimals.ToString("F2");
+
             return twoDecimals == decimal.Round(twoDecimals, 1)
                 ? twoDecimals.ToString("F1")
                 : twoDecimals.ToString("F2");
