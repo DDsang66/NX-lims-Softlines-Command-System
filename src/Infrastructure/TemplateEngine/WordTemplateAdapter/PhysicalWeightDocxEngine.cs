@@ -414,7 +414,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             // 定位文本 (LocateTable 按 InnerText.Contains 匹配)
             public const string SummaryTableMarker = "Test Report Number";  // 表0: 摘要表
 
-            /// <summary>表1 数据表的唯一标记。用 "#1" 而不是 "Specimen": 2026-09-15 版 NEXT 模板里
+            /// <summary>表1 数据表的唯一标记。用 "#1" 而不是 "Specimen": NEXT 模板里
             /// "每测点汇总表"(Specimen | Number of Sample | Total(g) | Ave(g/m²)) 的 R0 也含 Specimen
             /// 且排在数据表**前面**, 用 Specimen 定位会先命中它 —— 于是测点被写进 Specimen 列、数值被写进
             /// Number of Sample 列, 静默错位。 "#1" 只出现在数据表那行 #1~#5 表头里。</summary>
@@ -429,7 +429,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int SummaryCellCount = 9;        // Normal 汇总网格数据行应有格数(Sample|g/m²|oz/yd²|g/m|oz/yd|g/linear meter|g/piece|lb/dozen|oz/dozen)
             public const int ValueColumn = 1;             // 报告号/方法值所在列
 
-            // 表1 (数据表) — 2026-09-08 模板去掉 Measure 列, 回到 7 格(与最早版一致):
+            // 表1 (数据表) — 7 格(无 Measure 列):
             //   R1 表头: Sample | Specimen(合并5格) | Average  —— 3个真实 tc
             //   R2 表头:   空   |    #1 ~ #5      |  空    —— 7个独立 tc(部分格合并加宽)
             //   R3+ 数据行: Sample | #1 | #2 | #3 | #4 | #5 | Average  —— 7个独立 tc
@@ -447,7 +447,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int RowCellCount = 7;            // 数据行应有格数(Sample|#1~#5|Average)
             public const int HeaderCellCount = 3;         // 表头行1应有格数(Sample|Specimen|Average)
 
-            // 表2 (文档末登记表) — 2026-09-10 模板由 5 格缩为 3 格(删掉 No. / Report Number 两列):
+            // 表2 (文档末登记表) — 3 格:
             //   R0 表头: Sample | Weight (g) | <类型尺寸: 引擎补>   —— 3 个独立 tc
             //   R1+ 数据行: 测点 | 重量g | 尺寸                     —— 3 个独立 tc
             public const int TrailerHeaderRow = 0;
@@ -466,7 +466,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
             public const int NextTrailerTotalColumn = 2;   // Total(g)
             public const int NextTrailerAveColumn = 3;     // Ave(g/m²)
 
-            // 表3 FOCUS 版布边长度表 (2026-09-15 模板新增, 在数据表与文末登记表之间) —— **每个测点一行**:
+            // 表3 FOCUS 版布边长度表 (在数据表与文末登记表之间) —— **每个测点一行**:
             //   R0 表头: Sample | Selvage Length   —— 模板已写全, 引擎不补列名
             //   R1+ 数据行: 测点 | 该测点用的布边长度 cm
             public const int SelvageCellCount = 2;
@@ -532,7 +532,7 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.TemplateEngine.Wor
                         .ToArray()
             };
 
-            /// <summary>表1 数据表的三行坐标 —— 2026-09-15 版 NEXT 模板有了数据表, 但**没有顶部那行单位换算注释**
+            /// <summary>表1 数据表的三行坐标 —— NEXT 模板有数据表, 但**没有顶部那行单位换算注释**
             /// (Normal 系: R0 注释 / R1 Sample|Specimen|Average / R2 #1~#5 / R3 起数据),
             /// 所以 NEXT 整张表比其余买家上移一行(0/1/2)。</summary>
             public static int DataHeaderRow1Of(string buyer) => buyer == PhysicalWeightReportRequestDto.BuyerNext ? 0 : HeaderRow1;

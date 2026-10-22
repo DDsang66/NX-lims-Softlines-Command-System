@@ -726,7 +726,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             //    16 CFR § 303.16(a)(1)（羊毛制品见 § 300.3(b)）：通用名按占比由多到少排列，
             //    "other fiber" / "other fibers" 必须出现在末尾。
             //
-            //  ⚠️ 排序键必须是**原始 Rate，不能是 RoundedRate**（2026-09-29 用户裁定）：
+            //  ⚠️ 排序键必须是**原始 Rate，不能是 RoundedRate**：
             //  本方法被同一个记录调两次，取位不同（Test Result 1 位 / Recommendation 0 位），
             //  用取整值排就会出现"一边还分得出大小、另一边已经全平"的情况 ——
             //  全平那边退化成输入顺序，于是两列顺序对不上。实测 87.405.26.61074.01：
@@ -854,8 +854,8 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// 这个成分行的回潮率**该不该印到报告上**。
         ///
         /// 两道闸，缺一不可：
-        /// ① 纤维表里真有这个数 —— **真值 0 也算有**，这正是本次要修的（2026-09-29 用户裁定）；
-        /// ② 不是双组分父行 —— 父行那个加权值只用来算，不上报告（2026-09-28 裁定）。
+        /// ① 纤维表里真有这个数 —— **真值 0 也算有**；
+        /// ② 不是双组分父行 —— 父行那个加权值只用来算，不上报告。
         ///
         /// 两道都不满足时 MR 栏留空。组头行（`Sum` 是 `M/E/S` 这种缩写串）走①就被挡下了。
         /// </summary>
@@ -1194,7 +1194,6 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
 
         // 设备编码常量（对应 Excel L23/O23/R23/L24/O24 —— 五格对五台）
         // 显微镜设备串统一为 `Microscope: SFL-NGB-EQP-XXX`（冒号后带空格 + 设备号用连字符）。
-        // 原先两处格式不一致（一处无空格、一处用下划线），2026-09-29 起只剩这一处。
         // 纯报告外观一致性，不涉及模板匹配 —— 模板与已生成 docx 里 `SFL` 均 0 命中。
         //
         // ⚠️ 显微镜**只有一台**，别再按 cellulosic 父槽追加第二台。

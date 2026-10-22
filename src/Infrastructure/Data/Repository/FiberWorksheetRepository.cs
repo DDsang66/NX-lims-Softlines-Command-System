@@ -21,6 +21,15 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
                 .FirstOrDefaultAsync(f => f.ReportNumber == reportNumber);
         }
 
+        public async Task<List<FiberAnalysis>> GetAllByReportNumberAsync(string reportNumber)
+        {
+            return await _context.FiberAnalyses
+                .AsNoTracking()
+                .Where(f => f.ReportNumber == reportNumber)
+                .OrderByDescending(f => f.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<FiberAnalysis?> GetByIdAsync(long id, CancellationToken ct)
         {
             return await _context.FiberAnalyses.FindAsync(id, ct);

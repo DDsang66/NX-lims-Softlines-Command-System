@@ -119,7 +119,7 @@ public class PhysicalWeightReportService : IPhysicalWeightReportService, IScoped
             }
         }
 
-        // 表2 文档末登记: 每次测量一行(模板 2026-09-10 改为 3 格: Sample | Weight (g) | 尺寸):
+        // 表2 文档末登记: 每次测量一行(模板 3 格: Sample | Weight (g) | 尺寸):
         //   试样测点 | 重量(g) | 尺寸(面积/长度/条数)。按行源原序即前端行序。
         //   area 长×宽录入 → 第3列直写尺寸文本 "5×5"(MeasureText), 不再显示换算面积 cm²。
         var trailerRows = detailRecords.Select(r => new PhysicalWeightTrailerRowModel

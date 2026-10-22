@@ -78,7 +78,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// </summary>
         private static readonly IReadOnlyList<string> MethodOptionsDual = new[]
         {
-            "EU regulation No. 1007/2011 VIII",
+            "EU regulation No. 1007/2011",
             "AATCC TM20-2021",
             "AATCC TM20-2021  AATCC TM20A-2021",
             "ISO1833",
@@ -97,6 +97,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         private readonly IFileStorageService _fileStorage;
         private readonly ILabelOptionRepository _labelOptionRepo;
         private readonly IDocxMerger _docxMerger;
+        private readonly IFiberReportFileStore _fiberReportStore;
 
         public FiberWorksheetService(
             IFiberWorksheetRepository worksheetRepo,
@@ -105,7 +106,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             IWordTemplateEngine wordTemplateEngine,
             IFileStorageService fileStorage,
             ILabelOptionRepository labelOptionRepo,
-            IDocxMerger docxMerger)
+            IDocxMerger docxMerger,
+            IFiberReportFileStore fiberReportStore)
         {
             _worksheetRepo = worksheetRepo;
             _fiberDatabaseRepo = fiberDatabaseRepo;
@@ -114,6 +116,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             _fileStorage = fileStorage;
             _labelOptionRepo = labelOptionRepo;
             _docxMerger = docxMerger;
+            _fiberReportStore = fiberReportStore;
         }
 
         /// <summary>月度子目录名 —— 与 FiberReportFileStore 共用, 防两边写岔</summary>
@@ -213,6 +216,53 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             return new { success = true, data = result };
         }
 
+        /// <summary>
+        /// 历史报告回填：由**文件名**找回生成这份报告时的那条录入行，反序列化成表单 DTO。
+        ///
+        /// <para>
+        /// 为什么入口是 fileName 而不是 reportNumber：报告号一个对多行（每次 Build / Save a Draft
+        /// 都新插一行），而模式（常规 / 2C）与生成时刻都不在库里 —— 它们只写在文件名上：
+        /// <c>{报告号}[_2C]_{yyMMddHHmmss}_FiberAnalysis.docx</c>。
+        /// 文件名给出报告号 + 口径，时间戳用来在同一报告号的多行里挑"生成那一刻"的那一行。
+        /// </para>
+        ///
+        /// <para>
+        /// <c>created_at</c> 落库时是 <c>DateTime.UtcNow</c>（见 FiberWorksheetRepository.AddAsync），
+        /// 而 EF 从 <c>datetime</c> 列读回来的 Kind 是 Unspecified —— 必须先 SpecifyKind(Utc)
+        /// 再 ToLocalTime，否则 UTC 会被当成本地时间，时区一差就永远匹配不上。
+        /// </para>
+        /// </summary>
+        public async Task<object> GetWorkSheetByFileNameAsync(string fileName)
+        {
+            var meta = _fiberReportStore.ListReports(null)
+                .FirstOrDefault(m => string.Equals(m.FileName, fileName, StringComparison.OrdinalIgnoreCase));
+
+            if (meta == null) return new { success = false, message = "报告文件不存在" };
+
+            var rows = await _worksheetRepo.GetAllByReportNumberAsync(meta.ReportNumber);
+            if (rows.Count == 0) return new { success = false, message = "该报告在库中无对应录入记录" };
+
+            var best = rows
+                .Select(r => new
+                {
+                    Row = r,
+                    DeltaMinutes = Math.Abs(
+                        (DateTime.SpecifyKind(r.CreatedAt, DateTimeKind.Utc).ToLocalTime() - meta.GeneratedAt)
+                        .TotalMinutes)
+                })
+                .OrderBy(x => x.DeltaMinutes)
+                .First();
+
+            if (best.DeltaMinutes > 10)
+                return new { success = false, message = "该报告在库中无对应录入记录" };
+
+            var dto = best.Row.Adapt<BuildAnalysisDto>();
+            // 模式不是库列，只能从文件名的 _2C_ 段来
+            dto.StandardMode = meta.Is2C ? "Dual" : "Current";
+
+            return new { success = true, data = dto };
+        }
+
         public async Task<object> DeleteWorksheetAsync(Guid id)
         {
             var result = await _worksheetRepo.DeleteAsync(id);
@@ -220,8 +270,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         }
 
         /// <summary>
-        /// 组分类型 → 模板在 DocxModel 下的 [目录, 文件名]。2026-09-28 起单/多组分各用一份模板，
-        /// 两份都在 <c>DocxModel/Common_FIBER/</c>（原先是根目录下唯一那份 FIBER_ANALYSIS_DATA_SHEET.docx）。
+        /// 组分类型 → 模板在 DocxModel 下的 [目录, 文件名]。单/多组分各用一份模板，
+        /// 两份都在 <c>DocxModel/Common_FIBER/</c>。
         /// </summary>
         /// <remarks>
         /// ⚠️ **必须写成白名单，不能拼字符串。** 文件名是 <c>_Multi</c>，而枚举值是

@@ -101,7 +101,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Mappings
                     JudgmentLabelRemark = GetStringProperty(root, "judgmentLabelRemark"),
                     LanguageLabelRemark = GetStringProperty(root, "languageLabelRemark"),
                     // 老记录里可能还有 durabilityLabel/otherLabel/comprehensive/finalResult 四个键，
-                    // 2026-09-28 随模板 conclusion 段删行一起下线，此处不再读取（键留在库里不动）
+                    // 已下线，此处不再读取（键留在库里不动）
                     VerifyResult = GetStringProperty(root, "verifyResult")
                 };
             }

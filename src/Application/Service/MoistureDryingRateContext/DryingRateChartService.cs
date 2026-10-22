@@ -348,7 +348,7 @@ public static class DryingRateChartService
             g.DrawString(yTitle, axisFont, Brushes.Black, -yTitleSize.Width / 2, 0);
             g.Restore(yState);
 
-            // ── 曲线末尾名称 (替代原右上图例, 用户拍板 2026-09-03) ──
+            // ── 曲线末尾名称 (替代原右上图例) ──
             // 每条曲线在自己的最后一点右侧标「工位N」(黑字 + 白底圆角小签, 压住别的曲线/网格也清晰)。
             // 真实蒸发曲线多条终点常挤在右上同一带——各签若按各自末点 Y 硬放必互相重叠;
             // 故按屏幕 Y 从上到下逐条排签, 下一条撞上上一条就往下让(≥6px): 顺序保持,

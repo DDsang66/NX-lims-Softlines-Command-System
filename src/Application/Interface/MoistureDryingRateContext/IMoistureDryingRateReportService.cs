@@ -15,6 +15,15 @@ public interface IMoistureDryingRateReportService : IScopedDependency
     /// <summary>NF5022: 内嵌权威结果 → DryingRate.docx 报告文件。</summary>
     Result<DocxUrlResponseDto> GenerateNf5022(Nf5022ReportRequestDto dto);
 
+    /// <summary>
+    /// NF5022 合并报告: 历史报告界面勾选的同一报告号下多份文件 → 一份报告
+    /// (每次测试原样成一页, 页内均值/样品名称沿用原报告)。数据源是所选 docx 本身, 不重算。
+    /// </summary>
+    Result<DocxUrlResponseDto> GenerateNf5022Combined(Nf5022CombineRequestDto dto);
+
+    /// <summary>NF5022 历史报告列表（含从报告 docx 回填的样品名称, 供界面样品名列）。</summary>
+    Result<List<ReportFileMeta>> ListNf5022Reports(string? keyword);
+
     /// <summary>AATCC 201: 内嵌权威结果 → Aatcc201.docx 报告文件（回显校准参数需读库, 故 async）。</summary>
     Task<Result<DocxUrlResponseDto>> GenerateAatcc201(Aatcc201ReportRequestDto dto, CancellationToken ct);
 
