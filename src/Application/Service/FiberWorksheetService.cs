@@ -57,7 +57,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             "CAN/CGSB-4.2 No.14-2005",
             "CNS 2339-1:2013 CNS 2339-2:2013",
             "JIS L1030-1:2012 JIS L1030-2:2012",
-            "AS 2001.7-2005",
+            "AS 2001.7-2005  AS/NZS 2622:1996",
         };
 
         /// <summary>
@@ -66,19 +66,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// **顺序与 <see cref="MethodOptionsCurrent"/> 逐条对齐**，只有两类差别：
         ///
         /// <list type="number">
-        /// <item><b>换值（体系名不变、版本变）</b> —— EU 的写法；两条 AATCC 的年份 `2025` → `2021`。
-        /// 这两处**只换值、不补空格**：Korea 那条本来就是单空格，与双空格那条是两个不同的串，
+        /// <item><b>换值（体系名不变、版本变）</b> —— 两条 AATCC 的年份 `2025` → `2021`。
+        /// **只换值、不补空格**：Korea 那条本来就是单空格，与双空格那条是两个不同的串，
         /// 别顺手统一。</item>
         /// <item><b>删除</b> —— CAN / CNS / JIS 三族整族不进（xlsx 里 CNAS 列写「无CNAS能力」）。
         /// JIS 2012 → 2024 的版本问题因此不存在。</item>
         /// </list>
         ///
-        /// ⚠️ 前端切模式时**必须先按值重映射、再滤掉不在新清单里的** —— 那三个换值的串
+        /// ⚠️ 前端切模式时**必须先按值重映射、再滤掉不在新清单里的** —— 那两条换值的串
         /// 只做 filter 会把常规串原样提交给 2C 记录，派生出来的链就错口径了。
         /// </summary>
         private static readonly IReadOnlyList<string> MethodOptionsDual = new[]
         {
-            "EU regulation No. 1007/2011",
+            "Regulation (Eu) No. 1007/2011",
             "AATCC TM20-2021",
             "AATCC TM20-2021  AATCC TM20A-2021",
             "ISO1833",
@@ -87,7 +87,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
             "BS EN ISO 1833",
             "FZ/T 01057",
             "AATCC TM20-2021 AATCC TM20A-2021 (Korea)",
-            "AS 2001.7-2005",
+            "AS 2001.7-2005  AS/NZS 2622:1996",
         };
 
         private readonly IFiberWorksheetRepository _worksheetRepo;
@@ -364,13 +364,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 // 逐标准重算只产出 AnalysisResult），故只收集一次、每份复用。
                 var microscopeFibers = CollectMicroscopeFiberNames(ingredientsAnalysis.Components);
 
+                // 常规模式的多组分报告不印第二页的称量瓶表；
+                // 2C 仍保留这张表。判据与选模板同源：Type 来自聚合根，模式来自表单。
+                bool suppressWeighingBottle =
+                    mode == StandardMode.Current && ingredientsAnalysis.Type == AnalysisType.Multiple;
+
                 // 第 1 份渲进基底文件 —— **单标准记录到此为止**，走的就是单标准那条老路径。
-                RenderOne(targetPath, ingredientsAnalysis.StandardResults[0], microscopeFibers);
+                RenderOne(targetPath, ingredientsAnalysis.StandardResults[0], microscopeFibers, suppressWeighingBottle);
 
                 // 多标准 → 第 2..N 份各渲一份中间产物，再并进上面那一份。
                 // 零回归保证：StandardResults.Count == 1 时**不经过合并器**。
                 if (ingredientsAnalysis.StandardResults.Count > 1)
-                    MergeStandardReports(targetPath, template, ingredientsAnalysis.StandardResults.Skip(1).ToList(), microscopeFibers);
+                    MergeStandardReports(targetPath, template, ingredientsAnalysis.StandardResults.Skip(1).ToList(), microscopeFibers, suppressWeighingBottle);
 
                 //ingredientsAnalysis.WorkSheetGenerator(filePath);
                 //执行保存
@@ -399,9 +404,19 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// <remarks>
         /// 现在不动这三步中的任何一步：多标准是"同一套渲染跑 N 遍"，不是"改渲染"。
         /// </remarks>
-        private void RenderOne(string targetPath, AnalysisResult result, IReadOnlyList<string> microscopeFibers)
+        private void RenderOne(
+            string targetPath, AnalysisResult result, IReadOnlyList<string> microscopeFibers,
+            bool suppressWeighingBottle)
         {
             var (values, redBookmarks, removeWhenEmpty, removeBlockWhenEmpty) = _wordTemplateAdapter.Adapt(result);
+
+            if (suppressWeighingBottle)
+            {
+                // 不改适配器返回的实例：调用方/测试可能留着这份输出复用。
+                values = new Dictionary<string, string>(values);
+                removeBlockWhenEmpty = new HashSet<string>(removeBlockWhenEmpty);
+                SuppressWeighingBottle(values, removeBlockWhenEmpty);
+            }
 
             // 模板里那五个标签是**纯文本**、连书签都没有，所以只能整段改写。
             // 由 result 自己说了算（按段判定），非国标传 null → 引擎一个段落都不动。
@@ -412,6 +427,54 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
 
             var imageFolder = Path.Combine("wwwroot", "MicroscopeImages");
             _wordTemplateEngine.InsertMicroscopeImages(targetPath, microscopeFibers, imageFolder);
+        }
+
+        /// <summary>
+        /// 称量瓶表（第二页那张）的书签族。适配器用 `前缀+行号` 生成，行号连续无上限。
+        /// </summary>
+        private static readonly string[] WeighingBottleFamilies =
+        {
+            "Description", "Component",
+            "WeighingA", "TotalA", "sampleA",
+            "WeighingB", "TotalB", "sampleB",
+        };
+
+        /// <summary>
+        /// 剪枝用的哨兵书签：它一定在称量瓶表里，且表里必然有它。
+        /// 复用引擎既有的「值为空 → 删整表」通道，从而不必给 Adapt/ReplaceText 加参数。
+        /// </summary>
+        internal const string WeighingBottleAnchor = "Description1";
+
+        /// <summary>
+        /// 把称量瓶表从这个渲染单元里除掉：删掉它们全部的书签值，
+        /// 再让哨兵为空并登记进 <paramref name="removeBlockWhenEmpty"/>，引擎会连同表一起删。
+        /// </summary>
+        internal static void SuppressWeighingBottle(
+            Dictionary<string, string> values, HashSet<string> removeBlockWhenEmpty)
+        {
+            foreach (var key in values.Keys
+                         .Where(k => WeighingBottleFamilies.Any(f => IsIndexedBookmark(k, f)))
+                         .ToList())
+                values.Remove(key);
+
+            values[WeighingBottleAnchor] = string.Empty;
+            removeBlockWhenEmpty.Add(WeighingBottleAnchor);
+        }
+
+        /// <summary>
+        /// 书签名是否是「前缀 + 纯数字」。
+        /// **不能用 StartsWith**：`ComponentType` 是报告正常字段，`StartsWith("Component")`
+        /// 会把整条记录的类型一起剪掉。
+        /// </summary>
+        private static bool IsIndexedBookmark(string name, string prefix)
+        {
+            if (!name.StartsWith(prefix, StringComparison.Ordinal) || name.Length == prefix.Length)
+                return false;
+
+            for (int i = prefix.Length; i < name.Length; i++)
+                if (name[i] is < '0' or > '9') return false;
+
+            return true;
         }
 
         /// <summary>
@@ -440,7 +503,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
         /// 不在这里按 rest[i] 的类型另取：一份合并稿的所有段必须同版式。
         /// </param>
         private void MergeStandardReports(
-            string basePath, string template, IReadOnlyList<AnalysisResult> rest, IReadOnlyList<string> microscopeFibers)
+            string basePath, string template, IReadOnlyList<AnalysisResult> rest,
+            IReadOnlyList<string> microscopeFibers, bool suppressWeighingBottle)
         {
             string tempDir = Path.Combine(Path.GetTempPath(), "nxlims-docx-merge", Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
@@ -452,7 +516,7 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service
                 {
                     string path = Path.Combine(tempDir, $"section{i + 2}.docx");
                     _fileStorage.CopyTemplateTo(template, path);
-                    RenderOne(path, rest[i], microscopeFibers);
+                    RenderOne(path, rest[i], microscopeFibers, suppressWeighingBottle);
                     sources.Add(path);
                 }
 

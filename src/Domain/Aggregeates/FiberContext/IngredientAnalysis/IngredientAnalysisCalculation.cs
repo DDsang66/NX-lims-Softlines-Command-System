@@ -459,8 +459,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                         RateTrail2 = rateTrail2,
                         Avg = (rateTrail1 + rateTrail2) / TrialDivisor(curGsm1, curGsm2),
                         // 损伤系数挂在"前一个成分被溶掉、本行是残留"这一对上，所以组内第一个成员恒 1。
+                        // 本行是分组父槽时 d 要按它下面录的子纤维取，故把子纤维一并传进去。
                         // 见 FiberDamageFactor 的类注释。
-                        Correct = i == 0 ? 1m : FiberDamageFactor.Resolve(groupUnits[i - 1].FiberName, current.FiberName),
+                        Correct = i == 0 ? 1m : FiberDamageFactor.Resolve(
+                            groupUnits[i - 1].FiberName, current.FiberName, current.CellulosicSubFibers),
                         MoistureRegain = 0,
                         Rate = 0,
                         CellulosicSubFibers = current.CellulosicSubFibers ?? new(),
@@ -578,12 +580,19 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             // （规则与豁免见 CalculateFormattedResults 与 IsNamedBelowFivePercent）。
             // 必须按**这一份自己的**标准判：读 Methods[0] 的话，单标准下与入参同值、行为不变，
             // 多标准下却会让 ISO 段拿到 AATCC 的合并口径（或反过来）。
+            // 只喂 Recommendation 那一列 —— Test Result 照实测逐项点名，见下面 Results 的说明。
             var isAatcc = standard?.StartsWith("AATCC", StringComparison.OrdinalIgnoreCase) == true;
 
             // 国标（FZ/T 01057）：结果行里的纤维名印成 `中文English`。
             // 判据同样读**入参**、不读 Methods，理由与上面 isAatcc 一字不差。
             // 与 AATCC 天然互斥 —— 一个标准串不可能既是 FZ/T 又是 AATCC。
             var isGb = FiberChineseName.IsChineseReport(standard);
+
+            // 报告上的**显示名**策略（亚麻 / 氨纶 / 金属纤维 / 橡筋 / 锦纶 / 粘纤 / 莫代尔·莱赛尔），
+            // 按本份标准一张表选（见 ReportFiberNaming.For）。
+            // 两列都要改，所以不能复用 isAatcc（那只喂 Recommendation 的亚 5% 聚合）。
+            // 只改印出来的名字 —— 查表、排序、去重仍用录入名（见 ResultFiberName）。
+            var naming = ReportFiberNaming.For(standard, isGb, isAatcc);
 
             var result = new CalculatedRemarkResult {
                 RecommendedLabel = new List<string>(remarkLabel.RecommendedLabel),
@@ -592,8 +601,10 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
                 JudgmentLabelRemark = remarkLabel.JudgmentLabelRemark,
                 LanguageLabelRemark = remarkLabel.LanguageLabelRemark,
                 VerifyResult = remarkLabel.VerifyResult,
-                Results = CalculateFormattedResults(calculatedFiberResult, 1, "F1", isAatcc, isGb),
-                Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0", isAatcc, isGb)
+                // Test Result **不传 isAatcc**：AATCC 的亚 5% 聚合只作用于推荐标签。
+                // 显示名两列同值，所以两处都传 naming。
+                Results = CalculateFormattedResults(calculatedFiberResult, 1, "F1", false, isGb, naming),     //不传 isAatcc
+                Recommendation = CalculateFormattedResults(calculatedFiberResult, 0, "F0", isAatcc, isGb, naming)
             };
 
             // Bicomponent/Biconstituent 格式化后处理
@@ -621,13 +632,20 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <param name="calculatedFiberResult">计算结果</param>
         /// <param name="decimalPlaces">保留小数位（0=整数, 1=1位小数）</param>
         /// <param name="format">格式化字符串（F0 或 F1）</param>
-        /// <param name="isAatcc">本份是否 AATCC（亚 5% 聚合行）。</param>
+        /// <param name="isAatcc">
+        /// 是否做亚 5% 聚合。**只有 Recommendation 那一列传 true**；Test Result 一律传 false
+        /// （检验结果照实测逐项点名）。
+        /// </param>
         /// <param name="useChineseNames">
         /// 本份是否国标 —— 纤维名印成 `中文English`。
         /// **只加在名字位置**（第一个 `%` 之后），所以下游的 <see cref="PostProcessBicomponent"/>
         /// 整行重写时取不到它。双组分父行因此天然保持英文，无需在这里特判。
         /// </param>
-        private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format, bool isAatcc = false, bool useChineseNames = false)
+        /// <param name="naming">
+        /// 本份的显示名策略（亚麻 / 氨纶 / 金属纤维 / 橡筋 / 锦纶）。null 等同照录入。
+        /// **先改名、后中文化** —— 反了会印成 `亚麻Linen` / `氨纶Spandex`。
+        /// </param>
+        private List<string> CalculateFormattedResults(List<CalculatedFiberResult> calculatedFiberResult, int decimalPlaces, string format, bool isAatcc = false, bool useChineseNames = false, ReportFiberNaming? naming = null)
         {
             // 单组分：每个纤维固定 100%，不求和。
             // `{Sample}:  100% {Name}` 冒号后**固定两个空格**，是外观约定（Arial 下两个空格才等于
@@ -636,7 +654,7 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             {
                 return calculatedFiberResult
                     .OfType<SingleCalculatedFiberItem>()
-                    .Select(s => $"{s.Sample}:  100% {ResultFiberName(s.FiberName, useChineseNames)}")
+                    .Select(s => $"{s.Sample}:  100% {ResultFiberName(s.FiberName, useChineseNames, naming)}")
                     .ToList();
             }
 
@@ -729,26 +747,237 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
             //  ⚠️ 排序键必须是**原始 Rate，不能是 RoundedRate**：
             //  本方法被同一个记录调两次，取位不同（Test Result 1 位 / Recommendation 0 位），
             //  用取整值排就会出现"一边还分得出大小、另一边已经全平"的情况 ——
-            //  全平那边退化成输入顺序，于是两列顺序对不上。实测 87.405.26.61074.01：
-            //  Wool 0.57 / Polyamide 1.20 / Acrylic 1.19 → 1 位是 0.6/1.2/1.2（排得出序），
-            //  0 位是 1/1/1（全平，退成表里的行序 Wool→Polyamide→Acrylic）。
-            //  改用原始值后两列的输入与键都相同，顺序必然一致；
-            //  只有原始值**恰好相等**时才退到输入顺序 —— 那时两列仍然是同一个顺序。
+            //  全平那边退化成输入顺序，于是两列顺序对不上。
             return rounded
                 .OrderBy(r => IsOtherFiberLine(r.Name) ? 1 : 0)
                 .ThenByDescending(r => r.Rate)
-                .Select(r => $"{r.RoundedRate.ToString(format)}% {ResultFiberName(r.Name, useChineseNames)}")
+                .Select(r => $"{r.RoundedRate.ToString(format)}% {ResultFiberName(r.Name, useChineseNames, naming)}")
                 .ToList();
         }
 
         /// <summary>
-        /// 报告上印的纤维名：国标且查得到中文 → `中文English`，否则原样。
+        /// 亚麻显示名：`AsEntered` 照录入原样，另两种把 Linen/Flax 统一成其中一个拼法。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        /// </summary>
+        private enum LinenFlaxNaming
+        {
+            AsEntered,
+            Flax,
+            Linen,
+        }
+
+        /// <summary>
+        /// 氨纶显示名：`AsEntered` 照录入原样，另三种把 Elastane/Spandex 统一成其中一个拼法。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        ///
+        /// 录入名是 `Polyurethane` 的记录**不在此列** —— 规则只覆盖 elastane/spandex 两种写法，
+        /// 录什么印什么（见 <see cref="FiberTokens.IsElastane"/>）。
+        /// </summary>
+        private enum ElastaneNaming
+        {
+            AsEntered,
+            Elastane,
+            Spandex,
+            Polyurethane,
+        }
+
+        /// <summary>
+        /// 金属纤维显示名：`AsEntered` 照录入原样，`Metal` 统一印 `Metal`（AATCC 用）。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        /// </summary>
+        private enum MetalNaming
+        {
+            AsEntered,
+            Metal,
+        }
+
+        /// <summary>
+        /// 橡筋显示名：`AsEntered` 照录入原样，另两种把 Elastodiene/Rubber 统一成其中一个名字。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        /// </summary>
+        private enum ElastodieneNaming
+        {
+            AsEntered,
+            Elastodiene,
+            Rubber,
+        }
+
+        /// <summary>
+        /// 锦纶显示名：`AsEntered` 照录入原样，`Polyamide` 统一印 `Polyamide`（国标用）。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        /// </summary>
+        private enum PolyamideNaming
+        {
+            AsEntered,
+            Polyamide,
+        }
+
+        /// <summary>
+        /// 粘纤显示名：`AsEntered` 照录入原样，另两种把 Viscose/Rayon 统一成其中一个名字。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        /// </summary>
+        private enum ViscoseNaming
+        {
+            AsEntered,
+            Viscose,
+            Rayon,
+        }
+
+        /// <summary>
+        /// 莫代尔 / 莱赛尔的显示名：`AsEntered` 照录入原样，
+        /// `JisParenthetical` 印成 `Regenerated fiber (Modal)` / `Regenerated fiber (Lyocell)`。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        /// </summary>
+        private enum RegeneratedNaming
+        {
+            AsEntered,
+            JisParenthetical,
+        }
+
+        /// <summary>
+        /// 报告上的纤维**显示名**策略 —— 亚麻、氨纶、金属纤维、橡筋、锦纶、粘纤、莫代尔/莱赛尔
+        /// 合在一处，按本份标准选一次。
+        /// 只影响印出来的名字，不进任何取值/排序/聚合的键。
+        /// </summary>
+        private sealed class ReportFiberNaming
+        {
+            /// <summary>全照录入（无规则命中时的默认值）。</summary>
+            public static readonly ReportFiberNaming AsEntered =
+                new(LinenFlaxNaming.AsEntered, ElastaneNaming.AsEntered, MetalNaming.AsEntered,
+                    ElastodieneNaming.AsEntered, PolyamideNaming.AsEntered, ViscoseNaming.AsEntered,
+                    RegeneratedNaming.AsEntered);
+
+            private ReportFiberNaming(LinenFlaxNaming linen, ElastaneNaming elastane, MetalNaming metal,
+                                      ElastodieneNaming elastodiene, PolyamideNaming polyamide,
+                                      ViscoseNaming viscose, RegeneratedNaming regenerated)
+            {
+                Linen = linen;
+                Elastane = elastane;
+                Metal = metal;
+                Elastodiene = elastodiene;
+                Polyamide = polyamide;
+                Viscose = viscose;
+                Regenerated = regenerated;
+            }
+
+            private LinenFlaxNaming Linen { get; }
+            private ElastaneNaming Elastane { get; }
+            private MetalNaming Metal { get; }
+            private ElastodieneNaming Elastodiene { get; }
+            private PolyamideNaming Polyamide { get; }
+            private ViscoseNaming Viscose { get; }
+            private RegeneratedNaming Regenerated { get; }
+
+            /// <summary>
+            /// 按本份标准选策略。`isGb`/`isAatcc` 由调用方传入，避免同一个判据在本类里再写一遍。
+            ///
+            /// ⚠️ **Korea 必须排在 AATCC 之前**：库里的 Korea 值是 `AATCC TM20-2021 … (Korea)`，
+            /// `StartsWith("AATCC")` 同时成立。与 <c>MoistureRegainResolver</c> 里
+            /// 「AATCC 优先、Korea 兜底」的顺序**相反** —— 那边是取回潮率，两件事判据不同，别顺手统一。
+            ///
+            /// ISO 用 `Contains("ISO")`，把 `DIN EN ISO 1833` / `EN ISO 1833` / `BS EN ISO 1833`
+            /// 三族同构采标一并算进来；CAN / AS / Regulation (Eu) 不算，照录入。
+            /// </summary>
+            public static ReportFiberNaming For(string? standard, bool isGb, bool isAatcc)
+            {
+                // Korea 刻意落在 AATCC 之前、且不继承 AATCC 的短名（Metal / Rubber)。
+                if (standard?.Contains("Korea", StringComparison.OrdinalIgnoreCase) == true)
+                    return new ReportFiberNaming(LinenFlaxNaming.AsEntered, ElastaneNaming.Polyurethane, MetalNaming.AsEntered,
+                        ElastodieneNaming.AsEntered, PolyamideNaming.AsEntered, ViscoseNaming.Rayon,
+                        RegeneratedNaming.AsEntered);
+
+                if (isGb)
+                    return new ReportFiberNaming(LinenFlaxNaming.Flax, ElastaneNaming.Elastane, MetalNaming.AsEntered,
+                        ElastodieneNaming.Elastodiene, PolyamideNaming.Polyamide, ViscoseNaming.Viscose,
+                        RegeneratedNaming.AsEntered);
+
+                if (isAatcc)
+                    return new ReportFiberNaming(LinenFlaxNaming.Linen, ElastaneNaming.AsEntered, MetalNaming.Metal,
+                        ElastodieneNaming.Rubber, PolyamideNaming.AsEntered, ViscoseNaming.AsEntered,
+                        RegeneratedNaming.AsEntered);
+
+                if (standard?.StartsWith("CNS", StringComparison.OrdinalIgnoreCase) == true)
+                    return new ReportFiberNaming(LinenFlaxNaming.AsEntered, ElastaneNaming.Spandex, MetalNaming.AsEntered,
+                        ElastodieneNaming.AsEntered, PolyamideNaming.AsEntered, ViscoseNaming.AsEntered,
+                        RegeneratedNaming.AsEntered);
+
+                // JIS：莫代尔 / 莱赛尔印成「大类名 (具体纤维)」，见 RegeneratedNaming。
+                if (standard?.StartsWith("JIS", StringComparison.OrdinalIgnoreCase) == true)
+                    return new ReportFiberNaming(LinenFlaxNaming.AsEntered, ElastaneNaming.Polyurethane, MetalNaming.AsEntered,
+                        ElastodieneNaming.AsEntered, PolyamideNaming.AsEntered, ViscoseNaming.Rayon,
+                        RegeneratedNaming.JisParenthetical);
+
+                if (standard?.Contains("ISO", StringComparison.OrdinalIgnoreCase) == true)
+                    return new ReportFiberNaming(LinenFlaxNaming.AsEntered, ElastaneNaming.Elastane, MetalNaming.AsEntered,
+                        ElastodieneNaming.Elastodiene, PolyamideNaming.AsEntered, ViscoseNaming.Viscose,
+                        RegeneratedNaming.AsEntered);
+
+                return AsEntered;
+            }
+
+            /// <summary>
+            /// 只改名，不做中文化。七条规则各管各的纤维名，先后无影响。
+            /// </summary>
+            public string Apply(string name)
+            {
+                if (Metal != MetalNaming.AsEntered && FiberTokens.IsMetalFibre(name))
+                    return "Metal";
+
+                if (Polyamide != PolyamideNaming.AsEntered && FiberTokens.IsPolyamideOrNylon(name))
+                    return "Polyamide";
+
+                if (Viscose != ViscoseNaming.AsEntered && FiberTokens.IsViscoseOrRayon(name))
+                    return Viscose == ViscoseNaming.Viscose ? "Viscose" : "Rayon";
+
+                // JIS：大类名 + 括号内具体纤维（2026-10-22 用户裁定，Modal / Lyocell 两项）。
+                if (Regenerated == RegeneratedNaming.JisParenthetical && FiberTokens.IsModal(name))
+                    return "Regenerated fiber (Modal)";
+
+                if (Regenerated == RegeneratedNaming.JisParenthetical && FiberTokens.IsLyocell(name))
+                    return "Regenerated fiber (Lyocell)";
+
+                if (Elastodiene != ElastodieneNaming.AsEntered && FiberTokens.IsElastodieneOrRubber(name))
+                {
+                    return Elastodiene == ElastodieneNaming.Elastodiene ? "Elastodiene" : "Rubber";
+                }
+
+                if (Elastane != ElastaneNaming.AsEntered && FiberTokens.IsElastane(name))
+                {
+                    return Elastane switch
+                    {
+                        ElastaneNaming.Elastane => "Elastane",
+                        ElastaneNaming.Spandex => "Spandex",
+                        _ => "Polyurethane",
+                    };
+                }
+
+                return Linen switch
+                {
+                    LinenFlaxNaming.Flax when FiberTokens.IsLinenOrFlax(name) => "Flax",
+                    LinenFlaxNaming.Linen when FiberTokens.IsLinenOrFlax(name) => "Linen",
+                    _ => name,
+                };
+            }
+        }
+
+        /// <summary>
+        /// 报告上印的纤维名：先按体系改名（亚麻 / 氨纶 / 金属纤维 / 橡筋 / 锦纶 / 粘纤 / 莫代尔·莱赛尔），
+        /// 国标且查得到中文 → `中文English`，否则原样。
         ///
         /// 这里是**唯一的**取名口，单组分与多组分两条格式化分支都走它 ——
-        /// 排序、去重、亚 5% 聚合一律仍用英文原名做键，中文化只发生在最后拼串那一步。
+        /// 排序、去重、亚 5% 聚合一律仍用英文原名做键，改名与中文化只发生在最后拼串那一步。
+        ///
+        /// ⚠️ **先改名、后中文化**：`Flax`/`Linen` 在 fiber_database 里中文名同为"亚麻"、
+        /// `Elastane`/`Spandex` 同为"氨纶"、`Polyamide`/`Nylon` 同为"锦纶"、
+        /// `Viscose`/`Rayon` 同为"粘纤" ——
+        /// 顺序反过来会印成 `亚麻Linen` / `氨纶Spandex` / `锦纶Nylon` / `粘纤Rayon`。
         /// </summary>
-        private string ResultFiberName(string name, bool useChineseNames)
-            => useChineseNames ? FiberChineseName.Localize(name, _fiberChineseNames) : name;
+        private string ResultFiberName(string name, bool useChineseNames, ReportFiberNaming? naming)
+        {
+            var printed = naming?.Apply(name) ?? name;
+
+            return useChineseNames ? FiberChineseName.Localize(printed, _fiberChineseNames) : printed;
+        }
 
         /// <summary>
         /// 亚 5% 却**仍然点名**的两类纤维 —— 16 CFR § 303.3(a) 给了两个豁免，这里各用其一：
@@ -967,14 +1196,21 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         }
 
         /// <summary>
-        /// 单组分：从 _components 中提取纤维名称
+        /// 单组分：每个样品一条 `{Sample}:{FiberName}`（如 `A-shell:Cotton`），条目之间**两个空格**。
+        ///
+        /// 单组分的一条记录里，几行是**同一种纤维的不同测点**（部位/大货样），所以定性栏要连
+        /// 样品号一起列 —— 只写纤维名会把"哪个部位"丢掉，三行全变成 `Cotton`。
+        /// **不按纤维名去重**（多组分那条才去重），同名纤维几个测点就列几条。
+        /// 两个空格与 `<see cref="CalculateFormattedResults"/>` 的坐标同一套外观约定，别合并成一个。
         /// </summary>
         private string GetSingleFiberNames()
         {
-            return string.Join("/",
+            return string.Join("  ",
                 _components
                     .OfType<SingleFiberComponent>()
-                    .Select(c => c.FiberName));
+                    .Select(c => string.IsNullOrWhiteSpace(c.Sample)
+                        ? c.FiberName
+                        : $"{c.Sample}:{c.FiberName}"));
         }
 
         /// <summary>

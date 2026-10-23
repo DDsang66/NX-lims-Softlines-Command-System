@@ -68,6 +68,17 @@ namespace NX_lims_Softlines_Command_System.src.Infrastructure.Data.Repository
         }
 
         /// <summary>
+        /// 这条记录的回潮率是否按 **ISO 表**取 —— 欧洲体系（ISO1833 / DIN / EN / BS 采标版）
+        /// 与澳洲（AS 2001.7）都落 ISO 列，**互相之间没有别的回潮率列**。
+        ///
+        /// 报告页脚据此把它们印成**恒两位小数**，其余体系（AATCC→Aatcc、CAN→Can、
+        /// FZ/T/GB→Gb、CNS→Cns、JIS→Jis）保持"第二位为 0 只留一位"的取位。
+        /// 判据刻意复用取值的候选链本身，不另写一张标准名单 ——
+        /// 名单会与取值口径走岔（比如 `ISO1833,FZ/T 01057` 的 MR 实际取自 Iso 列）。
+        /// </summary>
+        internal static bool UsesIsoSchedule(string? standard) => Resolve(standard)[0] == MrColumn.Iso;
+
+        /// <summary>
         /// 按候选链取该纤维的回潮率：**逐个列试，返回第一个非 NULL**；全落空则 null。
         ///
         /// ⚠️ **只跳 NULL，不跳 0.00。** 0.00 是本表"该标准未收录此纤维"的写法，

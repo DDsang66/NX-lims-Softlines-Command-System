@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis.ValueObj;
 
 namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.IngredientAnalysis
 {
@@ -18,8 +19,12 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
     /// 取值：
     ///   · 再生纤维素被溶掉后残留**棉** → 1.03、残留**亚麻** → 1.07
     ///     （ISO 1833-6 / GB/T 2910.6 甲酸/氯化锌法，70℃）。苎麻、大麻官方即 1.00，故不列。
-    ///   · 丙烯腈类被溶掉后残留名单内纤维 → 1.01
-    ///     （GB/T 2910.12—2023，MOD ISO 1833-12:2020）。**弹性纤维 / 氨纶刻意不在此列，恒 1.00**。
+    ///   · 残留方是**分组父槽** `*cellulosic fibre` 时，它自己没有 d，按录的子纤维取：
+    ///     有棉 → 1.03（棉、亚麻同时有也取 1.03），没棉只有亚麻 → 1.07，
+    ///     其余 / 一条子纤维都没录 → 1.00（不猜组成）。见 <see cref="Resolve(string?, string?, IReadOnlyCollection{CellulosicSubFiber}?)"/>。
+    ///
+    /// **只此一支**：丙烯腈类的 DMF 1.01 已按 2026-10-23 裁定整支删除（纸件工作簿没有
+    /// 1.01 这一档），丙烯腈类前位一律按 1.00 计；方法栏照常印 -12 / 2910.12，删的只是 d。
     ///
     /// <see cref="MultiFiberRowUnit.Correct"/> **不是**可以独立乘进百分比公式的权重：
     /// <c>1.03</c> 表示残留方质量比称出来的重 3%，这 3% 要在**同组的溶解方**身上扣回来
@@ -37,15 +42,15 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         /// <summary>甲酸/氯化锌法里亚麻的 d。</summary>
         private const decimal LinenAfterRegenerated = 1.07m;
 
-        /// <summary>DMF 法（-12 / 2910.12）里丙烯腈类溶掉后残留方的 d。</summary>
-        private const decimal AfterAcrylic = 1.01m;
-
         /// <summary>
         /// 再生纤维素溶掉后、d ≠ 1 的残留纤维。
         ///
         /// 官方在这个方法里只给**棉** 1.03；**亚麻** 1.07。苎麻、大麻同在该法的混合物范围里，
         /// 但苎麻的 d 官方就是 1.00、大麻未给，故本表不收 —— 它们落 1.00 是按标准来的结果。
         /// Flax 与 Linen 是 fiber_database 里同一纤维的两行，照本模块的既有口径一并收。
+        ///
+        /// **分组父槽字面量不在本表**：父槽本身没有 d，要按它下面录的子纤维取，
+        /// 走 <see cref="Resolve(string?, string?, IReadOnlyCollection{CellulosicSubFiber}?)"/> 里那条分支。
         /// </summary>
         private static readonly Dictionary<string, decimal> AfterRayonType = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -55,49 +60,60 @@ namespace NX_lims_Softlines_Command_System.src.Domain.Aggregeates.FiberContext.I
         };
 
         /// <summary>
-        /// -12（DMF 法）里 d = 1.01 的残留纤维，逐字取自官方名单：
-        /// 绵羊毛、棉、粘胶、铜氨、莫代尔、莱赛尔、聚酰胺、聚酯、弹性涤、三聚氰胺、聚丙烯酸酯。
-        ///
-        /// **与 <see cref="FiberTokens.Iso1833_12OtherFibres"/> 是两个问题，别合并**：
-        /// 那一张是 -12 的**适用范围**（含聚丙烯、弹性烯烃、玻璃，不含羊毛），
-        /// 这一张是 **d 值名单**（含羊毛，不含那三个）。名字像、内容不同。
-        ///
-        /// **羊毛只收绵羊毛本身**，不借 <see cref="FiberTokens.IsWoolFamily"/> ——
-        /// 那张表是 16 CFR § 300.3(b) 的羊毛法口径，含羊驼、马海毛、山羊绒等特种毛，
-        /// 官方这张 d 表里没有它们。
-        ///
-        /// 两个**分组父槽字面量**（*cellulosic fibre / *Regenerated cellulose fibre）不在此列，
-        /// 由 <see cref="FiberTokens.IsCellulosicGroupParent"/> 那一支并进来 —— 父槽代表其成员，
-        /// 原工作簿的名单里也是把它们与真实纤维名并列收的。
-        /// </summary>
-        private static readonly HashSet<string> DmfResidues = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "wool", "cotton", "viscose", "rayon", "cupro", "modal", "lyocell",
-            "polyamide", "nylon", "polyester", "elastomultiester",
-            "melamine", "polyacrylate",
-        };
-
-        /// <summary>
         /// 求 <paramref name="residue"/> 作为残留、<paramref name="dissolved"/> 刚被溶掉时的损伤系数。
-        /// 查不到、或前位不在任何一张对象名单里，都返回 1.00。
+        /// 查不到、或前位不是再生纤维素，都返回 1.00。
         /// </summary>
         /// <param name="dissolved">组内**前一个**成员（被本组溶剂溶掉的那方）。</param>
         /// <param name="residue">本行纤维（留在残渣里的那方）。</param>
         internal static decimal Resolve(string? dissolved, string? residue)
-        {
-            // 再生纤维素在前：它是 -6 / -22 的对象纤维，与 -12 的对象集不相交，两支互斥。
-            if (FiberTokens.IsRayonType(dissolved))
-                return AfterRayonType.TryGetValue(Clean(residue), out var d) ? d : None;
+            => Resolve(dissolved, residue, null);
 
-            // 弹性纤维刻意不在这一支 —— 见类注释（涤氨按 1.00）。
-            if (FiberTokens.IsAcrylicType(dissolved))
-                return IsDmfResidue(residue) ? AfterAcrylic : None;
+        /// <summary>
+        /// 同上；<paramref name="residueSubFibers"/> 只在残留方是**分组父槽**时用得上。
+        ///
+        /// 分组父槽自己没有 d（`*cellulosic fibre` 不在任何一张官方表里），它的 d 取自下面录的子纤维：
+        /// **有棉就 1.03**（棉、亚麻同时有也取 1.03 —— 棉这一档先把系数定下来，与份额无关），
+        /// **没棉、只有亚麻才 1.07**，其余（苎麻、大麻等官方即 1.00 的）落 1.00。
+        /// 一条子纤维都没录时**不猜组成**，同样落 1.00。
+        ///
+        /// 父槽成员分 1.03 / 1.07 两档，**必须看组成**；别改回按父槽字面量查字典。
+        /// </summary>
+        /// <param name="dissolved">组内**前一个**成员（被本组溶剂溶掉的那方）。</param>
+        /// <param name="residue">本行纤维（留在残渣里的那方）。</param>
+        /// <param name="residueSubFibers">本行是分组父槽时，它下面录的子纤维；其他纤维可传 null。</param>
+        internal static decimal Resolve(
+            string? dissolved, string? residue, IReadOnlyCollection<CellulosicSubFiber>? residueSubFibers)
+        {
+            // 再生纤维素是 -6 / -22 的对象纤维。
+            if (FiberTokens.IsRayonType(dissolved))
+            {
+                if (FiberTokens.IsCellulosicGroupParent(residue) && residueSubFibers is { Count: > 0 })
+                    return ResolveGroupParent(dissolved, residueSubFibers);
+
+                return AfterRayonType.TryGetValue(Clean(residue), out var d) ? d : None;
+            }
 
             return None;
         }
 
-        private static bool IsDmfResidue(string? f)
-            => DmfResidues.Contains(Clean(f)) || FiberTokens.IsCellulosicGroupParent(f);
+        /// <summary>
+        /// 分组父槽的 d：棉优先，其次亚麻，都没命中才 1.00。
+        /// 只看子纤维**有没有**，不看份额 —— 见 <see cref="Resolve(string?, string?, IReadOnlyCollection{CellulosicSubFiber}?)"/>。
+        /// </summary>
+        private static decimal ResolveGroupParent(string? dissolved, IReadOnlyCollection<CellulosicSubFiber> subFibers)
+        {
+            var hasLinen = false;
+
+            foreach (var sub in subFibers)
+            {
+                var d = Resolve(dissolved, sub.FiberName);
+
+                if (d == CottonAfterRegenerated) return CottonAfterRegenerated;
+                if (d == LinenAfterRegenerated) hasLinen = true;
+            }
+
+            return hasLinen ? LinenAfterRegenerated : None;
+        }
 
         private static string Clean(string? f) => f?.Trim() ?? string.Empty;
     }
