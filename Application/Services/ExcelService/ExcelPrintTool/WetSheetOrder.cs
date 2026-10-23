@@ -65,6 +65,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Exc
                 ["CFtoWRLS"] = 6,
                 ["CFtoWRSL"] = 6,
                 ["CFtoWSL&PVC"] = 6,
+                ["CFtoWash&Rub&Lig&Wat"] = 6,
 
                 // 7 CF to rubbing
                 ["CFtoRubbing&Cl&Sea&yellow&light"] = 7,
