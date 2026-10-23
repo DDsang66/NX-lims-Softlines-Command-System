@@ -905,7 +905,7 @@ namespace NX_lims_Softlines_Command_System.Application.Services.ExcelService.Pri
                 map["M1"] = (w, dto, esDto, ws, reportNo) => reportNo;
                 map["V32"] = (w, dto, esDto, ws, reportNo) => dto.sampleDescription!.Contains("Teflon Coated")?"10"
                 : dto.sampleDescription.Contains("Coated") ? "5"
-                :"1";
+                :"5";
                 if (string.IsNullOrWhiteSpace(w.Sensitive)==false)
                 {
                     map["L46"] = (w, dto, esDto, ws, reportNo) => w!.Sensitive == "Y" ? "Sensitive" : "Normal";

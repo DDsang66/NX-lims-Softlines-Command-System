@@ -199,10 +199,10 @@ namespace NX_lims_Softlines_Command_System.src.Application.Service.DataSheetCont
             if (string.IsNullOrWhiteSpace(datasheet.Url))
                 throw new InvalidOperationException($"Datasheet {datasheetId} 没有 Url 字段");
 
-            //报错代码：后续用其他方式幂等
-            //// ★ 2. 幂等：同一个 callback url 重复推送直接跳过
+            // ★ 2. 幂等：同一 callback url 重复推送直接跳过，避免同一份文件被重复下载落盘，
+            // 以及 EditorVersion 被重复 +1（前端靠版本变化判断保存成功，重复 +1 会误导判断）
             //if (!string.IsNullOrEmpty(datasheet.LastCallbackUrl)
-            //    && datasheet.LastCallbackUrl == url)
+            //    && string.Equals(datasheet.LastCallbackUrl, url, StringComparison.Ordinal))
             //{
             //    _logger.LogInformation(
             //        "重复的 ONLYOFFICE 回调，跳过。datasheetId={DatasheetId}, url={Url}",

@@ -166,7 +166,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
                 .GroupBy(d => (d.CheckListId, d.TestItemId))
                 .ToDictionary(
                     g => g.Key,
-                    g => g.OrderBy(x => x.ModelIndex).ToList()
+                    // ModelIndex 升序确定分包顺序；同 ModelIndex 时优先取版本号更高的（重新生成后应展示最新）
+                    g => g.OrderBy(x => x.ModelIndex).ThenByDescending(x => x.Version).ToList()
                 );
 
             // ============ 内存拼装 ============
@@ -196,9 +197,8 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
                     TestGroups = string.Join(", ", groups),
                     Items = cItems.Select(i =>
                     {
-                        // ★ 用 (CheckListId, TestItemId) 找 datasheet
+                        // ★ 用 (CheckListId, TestItemId) 找该 item 下的全部 DataSheet 分包
                         dsLookup.TryGetValue((c.CheckListId, i.TestItemId ?? string.Empty), out var dsList);
-                        var ds = dsList?.FirstOrDefault();
 
                         return new CheckListItemReaderDto
                         {
@@ -207,9 +207,18 @@ namespace NX_lims_Softlines_Command_System.src.Application.UseCase
                             TestItem = i.TestItemId ??  string.Empty,
                             Status = ((CheckListStatus)i.Status).ToString(),
 
-                            DatasheetId = ds?.DataSheetId.ToString() ?? string.Empty,
-                            ModelKey = ds?.ModelKey ?? string.Empty,
-                            Url = ds?.Url ?? string.Empty,
+                            // 全部分包按 ModelIndex 升序输出；DatasheetId/ModelKey/Url 三个兼容字段由 DTO 内部取第一项
+                            DataSheets = dsList == null
+                                ? new List<DataSheetPartDto>()
+                                : dsList.Select(d => new DataSheetPartDto
+                                {
+                                    DataSheetId = d.DataSheetId,
+                                    ModelIndex = d.ModelIndex,
+                                    ModelKey = d.ModelKey ?? string.Empty,
+                                    Url = d.Url ?? string.Empty,
+                                    Status = d.Status.ToString(),
+                                }).ToList(),
+
                             Approver = string.Empty,   // ★ DataSheet 上没有 Approver，见下方说明
 
                             // 关联键

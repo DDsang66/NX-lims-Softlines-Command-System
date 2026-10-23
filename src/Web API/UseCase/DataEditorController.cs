@@ -101,6 +101,12 @@ namespace NX_lims_Softlines_Command_System.src.Web_API.UseCase
                 _ => "application/octet-stream"
             };
 
+            // 落盘是覆盖同一物理路径，若不加 no-cache，浏览器/代理可能命中旧缓存，
+            // 导致前端重建编辑器后仍拉到保存前的旧文件
+            Response.Headers.CacheControl = "no-cache, no-store, must-revalidate";
+            Response.Headers.Pragma = "no-cache";
+            Response.Headers.Expires = "0";
+
             return PhysicalFile(fullPath, contentType, Path.GetFileName(url), enableRangeProcessing: true);
         }
 
